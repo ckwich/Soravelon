@@ -1,0 +1,559 @@
+{
+  "version": "2.0",
+  "skills": {
+    "banking": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/banking.py",
+        "world/models.py",
+        "commands/bank*.py",
+        "tests/test_banking.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "banking",
+          "bank",
+          "deposit",
+          "withdraw",
+          "scales",
+          "draft",
+          "debt",
+          "recurring payment",
+          "engine",
+          "deposits",
+          "withdrawals",
+          "recurring",
+          "world",
+          "models",
+          "commands",
+          "tests",
+          "test_banking"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*recurring payment",
+          "recurring payment.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "base": {
+      "type": "base",
+      "enforcement": "suggest",
+      "priority": "critical",
+      "scope": "all",
+      "alwaysActivate": true,
+      "filePatterns": [],
+      "promptTriggers": {
+        "keywords": [
+          "core",
+          "conventions",
+          "tech",
+          "stack",
+          "project"
+        ],
+        "intentPatterns": []
+      }
+    },
+    "faction-system": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/world_state.py",
+        "world/mob_disposition.py",
+        "world/models.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "faction",
+          "standing",
+          "trust",
+          "betrayal",
+          "subfaction",
+          "disposition",
+          "mob behavior",
+          "system",
+          "faction system",
+          "subfactions",
+          "world",
+          "world_state",
+          "mob_disposition",
+          "models"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*mob behavior",
+          "mob behavior.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*faction system",
+          "faction system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*faction.*system"
+        ]
+      }
+    },
+    "group-system": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/group_engine.py",
+        "tests/test_group_engine.py",
+        "commands/*group*"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "group",
+          "party",
+          "invite",
+          "loot mode",
+          "group engine",
+          "kick",
+          "leadership",
+          "system",
+          "group system",
+          "session-only",
+          "flow",
+          "world",
+          "group_engine",
+          "tests",
+          "test_group_engine",
+          "commands"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*loot mode",
+          "loot mode.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*group engine",
+          "group engine.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*group system",
+          "group system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "inventory-engine": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/inventory_engine.py",
+        "world/inventory_helpers.py",
+        "typeclasses/objects.py",
+        "world/models.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "inventory",
+          "item",
+          "pickup",
+          "drop",
+          "equip",
+          "unequip",
+          "container",
+          "keyring",
+          "encumbrance",
+          "carry weight",
+          "stacking",
+          "engine",
+          "inventory engine",
+          "lifecycle",
+          "world",
+          "inventory_engine",
+          "inventory_helpers",
+          "typeclasses",
+          "objects",
+          "models"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*carry weight",
+          "carry weight.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*inventory engine",
+          "inventory engine.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*inventory.*engine"
+        ]
+      }
+    },
+    "item-typeclasses": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "typeclasses/objects.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "item",
+          "container",
+          "equipment",
+          "keyring",
+          "inventory",
+          "loot",
+          "weight",
+          "equip",
+          "slot",
+          "typeclasses",
+          "item typeclasses",
+          "typeclass",
+          "hierarchy",
+          "soravelonitem",
+          "objects"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*item typeclasses",
+          "item typeclasses.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*item.*typeclasses"
+        ]
+      }
+    },
+    "loot-tables": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/loot_tables.py",
+        "world/group_engine.py",
+        "world/zone_scaling.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "loot",
+          "drops",
+          "rarity",
+          "loot table",
+          "loot mode",
+          "tables",
+          "loot tables",
+          "system",
+          "stubs",
+          "rarity-based",
+          "drop",
+          "world",
+          "loot_tables",
+          "group_engine",
+          "zone_scaling"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*loot table",
+          "loot table.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*loot mode",
+          "loot mode.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*loot tables",
+          "loot tables.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "mob-affix-system": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/mob_affixes.py",
+        "world/mob_affix_roller.py",
+        "typeclasses/mobs.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "affix",
+          "rarity",
+          "mob spawn",
+          "pack",
+          "combat modifier",
+          "immunity",
+          "reveal",
+          "mob",
+          "system",
+          "mob affix system",
+          "rarity-tiered",
+          "affixes",
+          "weighted",
+          "pools",
+          "forbidden",
+          "world",
+          "mob_affixes",
+          "mob_affix_roller",
+          "typeclasses",
+          "mobs"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*mob spawn",
+          "mob spawn.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*combat modifier",
+          "combat modifier.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*mob affix system",
+          "mob affix system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "mob-disposition": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/mob_disposition.py",
+        "typeclasses/mobs.py",
+        "tests/test_mob_disposition.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "disposition",
+          "mob behavior",
+          "faction standing",
+          "trust sensitive",
+          "ancestry modifier",
+          "aggression",
+          "mob",
+          "mob disposition",
+          "computed",
+          "float",
+          "world",
+          "mob_disposition",
+          "typeclasses",
+          "mobs",
+          "tests",
+          "test_mob_disposition"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*mob behavior",
+          "mob behavior.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*faction standing",
+          "faction standing.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*trust sensitive",
+          "trust sensitive.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "node-system": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/scripts/node_script.py",
+        "world/node_helpers.py",
+        "world/nodes/node_effects.py",
+        "world/zone_object.py",
+        "typeclasses/rooms.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "node",
+          "layer1",
+          "layer0",
+          "failure",
+          "stabiliz",
+          "zone_object",
+          "node_effect",
+          "node_script",
+          "system",
+          "node system",
+          "zone",
+          "state",
+          "machine",
+          "world",
+          "node_helpers",
+          "nodes",
+          "node_effects",
+          "typeclasses",
+          "rooms"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*node system",
+          "node system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*node.*system"
+        ]
+      }
+    },
+    "server-conf": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "server/conf/settings.py",
+        "server/conf/at_server_startstop.py",
+        "server/conf/at_initial_setup.py",
+        "server/conf/connection_screens.py",
+        "server/conf/**/*.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "settings",
+          "ticker",
+          "server start",
+          "server stop",
+          "lifecycle",
+          "TICKER_HANDLER",
+          "connection screen",
+          "MSSP",
+          "server",
+          "conf",
+          "server conf",
+          "hooks",
+          "registration",
+          "at_server_startstop",
+          "at_initial_setup",
+          "connection_screens"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*server start",
+          "server start.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*server stop",
+          "server stop.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*connection screen",
+          "connection screen.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "world-state-engine": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/world_state.py",
+        "world/mob_disposition.py",
+        "world/models.py",
+        "typeclasses/characters.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "world state",
+          "dimension",
+          "reputation",
+          "attunement",
+          "network",
+          "bond",
+          "legacy",
+          "domain xp",
+          "faction standing",
+          "mob disposition",
+          "backend level",
+          "decay",
+          "world",
+          "state",
+          "engine",
+          "world state engine",
+          "five-dimension",
+          "character",
+          "progression",
+          "domain",
+          "faction",
+          "world_state",
+          "mob_disposition",
+          "models",
+          "typeclasses",
+          "characters"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*world state",
+          "world state.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*domain xp",
+          "domain xp.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*faction standing",
+          "faction standing.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "zone-attunement": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/world_state.py",
+        "world/models.py",
+        "world/zone_scaling.py",
+        "world/zone_object.py",
+        "tests/test_world_state.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "attunement",
+          "zone attunement",
+          "zone score",
+          "attunement aggregate",
+          "ZoneAttunement",
+          "zone",
+          "per-zone",
+          "tracking",
+          "(0-100)",
+          "dual",
+          "world",
+          "world_state",
+          "models",
+          "zone_scaling",
+          "zone_object",
+          "tests",
+          "test_world_state"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*zone attunement",
+          "zone attunement.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*zone score",
+          "zone score.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*attunement aggregate",
+          "attunement aggregate.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "zone-scaling": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/zone_scaling.py",
+        "world/zone_object.py",
+        "tests/test_zone_scaling.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "zone scaling",
+          "combat scaling",
+          "mob damage",
+          "scale factor",
+          "material tier",
+          "loot tier",
+          "rarity multiplier",
+          "zone",
+          "scaling",
+          "per-player",
+          "logarithmic",
+          "combat",
+          "initialization",
+          "world",
+          "zone_scaling",
+          "zone_object",
+          "tests",
+          "test_zone_scaling"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*zone scaling",
+          "zone scaling.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*combat scaling",
+          "combat scaling.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*mob damage",
+          "mob damage.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    }
+  }
+}
