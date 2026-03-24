@@ -33,7 +33,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. A player can type `at` and have it resolve to `attack` without ambiguity; `n` resolves to `north` in contexts where only one match exists
   5. A player alias `kill $1` expands correctly and never overrides built-in system commands
   6. A player boards the Dragon Courier, selects a discovered destination, and arrives instantly at the correct location with Standing-based fare applied
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Action vocabulary dispatch module + trigger engine (IWA-05, IWA-06, IWA-07)
+- [ ] 01-02-PLAN.md — Patrol engine BFS + PatrolScript + SoravelonMob/Room hooks (IWA-01, IWA-02, IWA-03)
+- [ ] 01-03-PLAN.md — Command prefix resolution + player alias system (CMD-01 through CMD-05)
+- [ ] 01-04-PLAN.md — AreaBuilder extensions: patrol(), trigger(), custom_command(), flight_point(), flight_route() (IWA-04, IWA-08)
+- [ ] 01-05-PLAN.md — Dragon Courier flight engine, FlightScript, and flight commands (FLT-01 through FLT-04)
 
 ### Phase 2: OOB Push and Desktop Client
 **Goal**: Players can connect to Soravelon via a dedicated Tauri desktop app that shows the MUD terminal, live character status, and a visual zone map; all server→client state flows through a typed OOB publisher
@@ -113,7 +120,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Patrol, Commands, and Flight Paths | 0/TBD | Not started | - |
+| 1. Patrol, Commands, and Flight Paths | 0/5 | Not started | - |
 | 2. OOB Push and Desktop Client | 0/TBD | Not started | - |
 | 3. GUI Area Builder | 0/TBD | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
