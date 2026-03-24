@@ -142,13 +142,73 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (Populated during roadmap creation) | | |
+| IWA-01 | Phase 1 | Pending |
+| IWA-02 | Phase 1 | Pending |
+| IWA-03 | Phase 1 | Pending |
+| IWA-04 | Phase 1 | Pending |
+| IWA-05 | Phase 1 | Pending |
+| IWA-06 | Phase 1 | Pending |
+| IWA-07 | Phase 1 | Pending |
+| IWA-08 | Phase 1 | Pending |
+| FLT-01 | Phase 1 | Pending |
+| FLT-02 | Phase 1 | Pending |
+| FLT-03 | Phase 1 | Pending |
+| FLT-04 | Phase 1 | Pending |
+| CMD-01 | Phase 1 | Pending |
+| CMD-02 | Phase 1 | Pending |
+| CMD-03 | Phase 1 | Pending |
+| CMD-04 | Phase 1 | Pending |
+| CMD-05 | Phase 1 | Pending |
+| CLI-01 | Phase 2 | Pending |
+| CLI-02 | Phase 2 | Pending |
+| CLI-03 | Phase 2 | Pending |
+| CLI-04 | Phase 2 | Pending |
+| CLI-05 | Phase 2 | Pending |
+| CLI-06 | Phase 2 | Pending |
+| CLI-07 | Phase 2 | Pending |
+| BLD-01 | Phase 3 | Pending |
+| BLD-02 | Phase 3 | Pending |
+| BLD-03 | Phase 3 | Pending |
+| BLD-04 | Phase 3 | Pending |
+| BLD-05 | Phase 3 | Pending |
+| BLD-06 | Phase 3 | Pending |
+| DOM-01 | Phase 4 | Pending |
+| DOM-02 | Phase 4 | Pending |
+| DOM-03 | Phase 4 | Pending |
+| DOM-04 | Phase 4 | Pending |
+| DOM-05 | Phase 4 | Pending |
+| ANC-01 | Phase 5 | Pending |
+| ANC-02 | Phase 5 | Pending |
+| ANC-03 | Phase 5 | Pending |
+| ANC-04 | Phase 5 | Pending |
+| ANC-05 | Phase 5 | Pending |
+| ABL-01 | Phase 5 | Pending |
+| ABL-02 | Phase 5 | Pending |
+| ABL-03 | Phase 5 | Pending |
+| ABL-04 | Phase 5 | Pending |
+| ABL-05 | Phase 5 | Pending |
+| ABL-06 | Phase 5 | Pending |
+| CMB-01 | Phase 6 | Pending |
+| CMB-02 | Phase 6 | Pending |
+| CMB-03 | Phase 6 | Pending |
+| CMB-04 | Phase 6 | Pending |
+| SKL-01 | Phase 6 | Pending |
+| SKL-02 | Phase 6 | Pending |
+| SKL-03 | Phase 6 | Pending |
+| SKL-04 | Phase 6 | Pending |
+| NPC-01 | Phase 6 | Pending |
+| NPC-02 | Phase 6 | Pending |
+| NPC-03 | Phase 6 | Pending |
+| CON-01 | Phase 7 | Pending |
+| CON-02 | Phase 7 | Pending |
+| CON-03 | Phase 7 | Pending |
+| CON-04 | Phase 7 | Pending |
 
 **Coverage:**
-- v1 requirements: 48 total
-- Mapped to phases: 0
-- Unmapped: 48 ⚠️
+- v1 requirements: 61 total
+- Mapped to phases: 61
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-24*
-*Last updated: 2026-03-24 after initial definition*
+*Last updated: 2026-03-24 after roadmap creation*
