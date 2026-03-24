@@ -99,7 +99,10 @@ class Character(ObjectParent, DefaultCharacter):
         super().at_pre_unpuppet()
 
     def at_before_move(self, destination, **kwargs):
-        """Block movement if overloaded."""
+        """Block movement during Dragon Courier flight (D-12) or when overloaded."""
+        if self.ndb.in_flight:
+            self.msg("You cannot move while aboard the Dragon Courier.")
+            return False
         from world.inventory_helpers import get_carry_state
         state = get_carry_state(self)
         if state == "overloaded":
@@ -108,7 +111,7 @@ class Character(ObjectParent, DefaultCharacter):
                 "Drop something first."
             )
             return False
-        return True
+        return super().at_before_move(destination, **kwargs)
 
     def execute_cmd(self, raw_string, session=None, **kwargs):
         """Pre-process input for prefix expansion and alias substitution (CMD-01 through CMD-05)."""

@@ -46,6 +46,7 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
         self.db.awakening_desc = None
         self.db.triggers = []          # trigger list for trigger_engine
         self.db.custom_commands = []   # custom command definitions for custom_command() builder method
+        self.db.flight_point_id = None  # set by area.flight_point(); truthy = Dragon Courier stop
 
     def return_appearance(self, looker, **kwargs):
         """
@@ -91,6 +92,18 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
         from world.trigger_engine import fire_triggers
         fire_triggers(self, "on_enter", obj)
         fire_triggers(self, "on_first_visit", obj)
+        # Auto-discover flight points on room enter (D-08)
+        # db.flight_point_id initialized None in at_object_creation; truthy only when set by area.flight_point()
+        flight_point_id = self.db.flight_point_id
+        if flight_point_id:
+            discovered = set(obj.db.discovered_flight_points or set())
+            if flight_point_id not in discovered:
+                discovered.add(flight_point_id)
+                obj.db.discovered_flight_points = discovered
+                from world.flight_registry import FlightRegistry
+                point = FlightRegistry.get_point(flight_point_id)
+                point_name = point["name"] if point else flight_point_id
+                obj.msg(f"|yYou have discovered the {point_name} Dragon Courier stop.|n")
         # D-02: Check disposition against any patrol mobs already in this room
         for mob in list(self.contents):
             if not (hasattr(mob, 'db') and mob.db.patrol):

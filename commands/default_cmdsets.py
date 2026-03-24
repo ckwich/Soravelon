@@ -37,6 +37,10 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         from commands.cmd_alias import CmdAlias, CmdUnalias
         self.add(CmdAlias())
         self.add(CmdUnalias())
+        from commands.cmd_fly import CmdFly, CmdDisembark, CmdFlightRoutes
+        self.add(CmdFly())
+        self.add(CmdDisembark())
+        self.add(CmdFlightRoutes())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
