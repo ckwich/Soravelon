@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 6 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Action vocabulary (execute_action dispatch) + trigger engine
+- [x] 01-01-PLAN.md — Action vocabulary (execute_action dispatch) + trigger engine
 - [x] 01-02-PLAN.md — Patrol engine BFS + PatrolScript + mob/room hooks
 - [x] 01-03-PLAN.md — Command prefix resolution + player alias system
 - [ ] 01-04-PLAN.md — AreaBuilder extensions: patrol(), trigger(), custom_command(), flight_point(), flight_route()
@@ -121,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Patrol, Commands, and Flight Paths | 2/6 | In Progress|  |
+| 1. Patrol, Commands, and Flight Paths | 3/6 | In Progress|  |
 | 2. OOB Push and Desktop Client | 0/TBD | Not started | - |
 | 3. GUI Area Builder | 0/TBD | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |

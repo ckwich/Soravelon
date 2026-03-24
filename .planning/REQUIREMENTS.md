@@ -9,13 +9,13 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 ### Interactive World Authoring
 
-- [ ] **IWA-01**: Patrol system with BFS pathfinding drives mob route-following behavior
-- [ ] **IWA-02**: Patrol mobs check disposition against players on room arrival and break for combat
-- [ ] **IWA-03**: Patrol interruption modes work correctly (resume / reset_to_start / abandon)
+- [x] **IWA-01**: Patrol system with BFS pathfinding drives mob route-following behavior
+- [x] **IWA-02**: Patrol mobs check disposition against players on room arrival and break for combat
+- [x] **IWA-03**: Patrol interruption modes work correctly (resume / reset_to_start / abandon)
 - [ ] **IWA-04**: Custom commands can be attached to rooms, mobs, and items via AreaBuilder
-- [ ] **IWA-05**: Shared action vocabulary executes teleport, echo, modify_standing, spawn_mob, and other actions
-- [ ] **IWA-06**: Trigger system fires on room enter, exit, first visit, mob death, and examine events
-- [ ] **IWA-07**: Triggers support once-per-character and cooldown constraints
+- [x] **IWA-05**: Shared action vocabulary executes teleport, echo, modify_standing, spawn_mob, and other actions
+- [x] **IWA-06**: Trigger system fires on room enter, exit, first visit, mob death, and examine events
+- [x] **IWA-07**: Triggers support once-per-character and cooldown constraints
 - [ ] **IWA-08**: AreaBuilder exposes patrol(), custom_command(), and trigger() methods
 
 ### Flight Paths
@@ -27,11 +27,11 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 ### Commands
 
-- [ ] **CMD-01**: Command prefix matching resolves shortest unambiguous prefix
-- [ ] **CMD-02**: Context-sensitive CmdSet scope narrows ambiguity automatically
-- [ ] **CMD-03**: Player aliases support up to 3 commands per alias with semicolons
-- [ ] **CMD-04**: Argument tokens ($1, $2, $*, $@) expand correctly in aliases
-- [ ] **CMD-05**: Aliases never override system commands
+- [x] **CMD-01**: Command prefix matching resolves shortest unambiguous prefix
+- [x] **CMD-02**: Context-sensitive CmdSet scope narrows ambiguity automatically
+- [x] **CMD-03**: Player aliases support up to 3 commands per alias with semicolons
+- [x] **CMD-04**: Argument tokens ($1, $2, $*, $@) expand correctly in aliases
+- [x] **CMD-05**: Aliases never override system commands
 
 ### Desktop Client
 
@@ -142,23 +142,23 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| IWA-01 | Phase 1 | Pending |
-| IWA-02 | Phase 1 | Pending |
-| IWA-03 | Phase 1 | Pending |
+| IWA-01 | Phase 1 | Complete |
+| IWA-02 | Phase 1 | Complete |
+| IWA-03 | Phase 1 | Complete |
 | IWA-04 | Phase 1 | Pending |
-| IWA-05 | Phase 1 | Pending |
-| IWA-06 | Phase 1 | Pending |
-| IWA-07 | Phase 1 | Pending |
+| IWA-05 | Phase 1 | Complete |
+| IWA-06 | Phase 1 | Complete |
+| IWA-07 | Phase 1 | Complete |
 | IWA-08 | Phase 1 | Pending |
 | FLT-01 | Phase 1 | Pending |
 | FLT-02 | Phase 1 | Pending |
 | FLT-03 | Phase 1 | Pending |
 | FLT-04 | Phase 1 | Pending |
-| CMD-01 | Phase 1 | Pending |
-| CMD-02 | Phase 1 | Pending |
-| CMD-03 | Phase 1 | Pending |
-| CMD-04 | Phase 1 | Pending |
-| CMD-05 | Phase 1 | Pending |
+| CMD-01 | Phase 1 | Complete |
+| CMD-02 | Phase 1 | Complete |
+| CMD-03 | Phase 1 | Complete |
+| CMD-04 | Phase 1 | Complete |
+| CMD-05 | Phase 1 | Complete |
 | CLI-01 | Phase 2 | Pending |
 | CLI-02 | Phase 2 | Pending |
 | CLI-03 | Phase 2 | Pending |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-03-24T23:03:06.298Z"
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-03-24T23:09:30.646Z"
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 01 (patrol-commands-and-flight-paths) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Plan: 3 of 6
 *Updated after each plan completion*
 | Phase 01 P03 | 7 | 2 tasks | 5 files |
 | Phase 01 P02 | 7 | 2 tasks | 5 files |
+| Phase 01 P01 | 25 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Used unittest.TestCase for preprocessor tests (not EvenniaTest) — pure-logic modules with MagicMock need no Evennia DB setup
 - [Phase 01]: get_mob_behavior imported at patrol_engine module level (not lazy) to enable test patching
 - [Phase 01]: trigger_engine calls in mobs.py/rooms.py guarded by if self.db.triggers — safe no-op until plan 01-01 delivers the module
+- [Phase 01]: Used unittest.TestCase for trigger_engine tests (pure-logic MagicMock modules need no Evennia DB setup)
+- [Phase 01]: fire_triggers returns None (void) — errors logged not raised; non-character guard via account attribute check
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T23:03:06.296Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-03-24T23:09:30.643Z
+Stopped at: Completed 01-01-PLAN.md
 Resume file: None
