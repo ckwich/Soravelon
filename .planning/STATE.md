@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-03-24T21:55:24.305Z"
-last_activity: 2026-03-24 — Roadmap created from requirements and research
+status: Ready to execute
+stopped_at: Completed 01-03-PLAN.md (command preprocessor + alias system)
+last_updated: "2026-03-24T23:02:01.765Z"
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 6
+  completed_plans: 1
 ---
 
 # Project State
@@ -21,16 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 1 — Patrol, Commands, and Flight Paths
+**Current focus:** Phase 01 — patrol-commands-and-flight-paths
 
 ## Current Position
 
-Phase: 1 of 7 (Patrol, Commands, and Flight Paths)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-24 — Roadmap created from requirements and research
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 01 (patrol-commands-and-flight-paths) — EXECUTING
+Plan: 2 of 6
 
 ## Performance Metrics
 
@@ -52,6 +46,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P03 | 7 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -65,6 +60,8 @@ Recent decisions affecting current work:
 - Roadmap: Phase 2 (OOB publisher) gates Phase 3 (desktop client) — typed envelope protocol defined before any client event handler is written
 - Research: Use single CmdUseAbility dispatcher for all 360+ abilities; never per-ability Cmd classes
 - Research: Two-pass area loading fix (BLD-06) must ship in Phase 3 before any cross-zone content is authored
+- [Phase 01]: Used commands.command.Command (local base) instead of evennia.Command — lazy init prevents static class definition before server start
+- [Phase 01]: Used unittest.TestCase for preprocessor tests (not EvenniaTest) — pure-logic modules with MagicMock need no Evennia DB setup
 
 ### Pending Todos
 
@@ -78,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T21:55:24.303Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-patrol-commands-and-flight-paths/01-CONTEXT.md
+Last session: 2026-03-24T23:02:01.763Z
+Stopped at: Completed 01-03-PLAN.md (command preprocessor + alias system)
+Resume file: None
