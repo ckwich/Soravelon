@@ -12,10 +12,9 @@ Trigger engine behavior:
 - Depth is propagated to execute_action
 """
 
+import unittest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch, call
-
-from evennia.utils.test_resources import EvenniaTest
 
 
 def _make_character(fired_triggers=None, trigger_cooldowns=None):
@@ -35,7 +34,7 @@ def _make_source(triggers=None):
     return source
 
 
-class TestFireTriggersBasic(EvenniaTest):
+class TestFireTriggersBasic(unittest.TestCase):
     """fire_triggers dispatches actions from matching triggers in order."""
 
     def test_matching_event_fires_actions(self):
@@ -120,7 +119,7 @@ class TestFireTriggersBasic(EvenniaTest):
         mock_ea.assert_not_called()
 
 
-class TestFireTriggersNonCharacterGuard(EvenniaTest):
+class TestFireTriggersNonCharacterGuard(unittest.TestCase):
     """Non-Character objects (no .account) must not trigger fire."""
 
     def test_object_without_account_skipped(self):
@@ -181,7 +180,7 @@ class TestFireTriggersNonCharacterGuard(EvenniaTest):
         mock_ea.assert_called_once()
 
 
-class TestOncePerCharacter(EvenniaTest):
+class TestOncePerCharacter(unittest.TestCase):
     """once_per_character=True triggers do not re-fire for the same character."""
 
     def test_once_per_character_fires_first_time(self):
@@ -268,7 +267,7 @@ class TestOncePerCharacter(EvenniaTest):
         mock_ea.assert_called_once()
 
 
-class TestCooldownTriggers(EvenniaTest):
+class TestCooldownTriggers(unittest.TestCase):
     """cooldown_seconds > 0 triggers do not re-fire within the cooldown window."""
 
     def test_cooldown_fires_when_no_previous_record(self):
@@ -335,7 +334,7 @@ class TestCooldownTriggers(EvenniaTest):
         mock_ea.assert_called_once()
 
 
-class TestDepthPropagation(EvenniaTest):
+class TestDepthPropagation(unittest.TestCase):
     """Depth counter is propagated to execute_action calls."""
 
     def test_depth_passed_to_execute_action(self):
@@ -390,7 +389,7 @@ class TestDepthPropagation(EvenniaTest):
             self.assertFalse(results[0][0])
 
 
-class TestFireTriggersReturnsNone(EvenniaTest):
+class TestFireTriggersReturnsNone(unittest.TestCase):
     """fire_triggers is void — returns None."""
 
     def test_returns_none(self):
