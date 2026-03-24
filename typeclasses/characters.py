@@ -55,6 +55,21 @@ class Character(ObjectParent, DefaultCharacter):
         # Exploration state
         self.db.discovered_exits = []
 
+        # LLM quest system — data collection (implementation post-Milestone-2)
+        # Populated by quest consequence system when branching quests complete.
+        # Format: list of {quest_id, choice, context, timestamp, arc} dicts.
+        self.db.questline_choices = []
+        # FK to SeerQuest record when a generated quest is active.
+        self.db.active_llm_quest_id = None
+
+        # Command alias system (CMD-03, CMD-04, CMD-05)
+        self.db.aliases = {}           # persistent alias dict: {alias_key: expansion_string}
+
+        # Trigger and flight state (used by patrol trigger system and Dragon Courier)
+        self.db.fired_triggers = set()          # trigger_ids that have fired once-per-char
+        self.db.trigger_cooldowns = {}          # trigger_id -> datetime of last fire
+        self.db.discovered_flight_points = set()  # room dbrefs of discovered Dragon Courier stops
+
         # Tag for queryset filtering
         self.tags.add("player_character", category="character_type")
 
@@ -94,6 +109,20 @@ class Character(ObjectParent, DefaultCharacter):
             )
             return False
         return True
+
+    def execute_cmd(self, raw_string, session=None, **kwargs):
+        """Pre-process input for prefix expansion and alias substitution (CMD-01 through CMD-05)."""
+        from world.command_preprocessor import preprocess_input
+        processed = preprocess_input(self, raw_string)
+        if processed is None:
+            # Ambiguity error already sent to player in preprocess_input
+            return
+        if isinstance(processed, list):
+            # Alias expanded to multiple commands (D-16 chaining)
+            for cmd_str in processed:
+                super().execute_cmd(cmd_str, session=session, **kwargs)
+            return
+        super().execute_cmd(processed, session=session, **kwargs)
 
     @property
     def banked_scales(self):

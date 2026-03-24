@@ -34,6 +34,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
+        from commands.cmd_alias import CmdAlias, CmdUnalias
+        self.add(CmdAlias())
+        self.add(CmdUnalias())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
