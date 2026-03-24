@@ -200,7 +200,7 @@ class TestCheckPatrolEncounterAggressive(EvenniaTestCase):
         room = MagicMock()
         room.contents = [player]
 
-        with patch("world.mob_disposition.get_mob_behavior", return_value="aggressive"):
+        with patch("world.patrol_engine.get_mob_behavior", return_value="aggressive"):
             result = check_patrol_encounter(mob, room)
 
         self.assertTrue(result)
@@ -221,7 +221,7 @@ class TestCheckPatrolEncounterTerritorial(EvenniaTestCase):
         room = MagicMock()
         room.contents = [player]
 
-        with patch("world.mob_disposition.get_mob_behavior", return_value="territorial"):
+        with patch("world.patrol_engine.get_mob_behavior", return_value="territorial"):
             result = check_patrol_encounter(mob, room)
 
         self.assertTrue(result)
@@ -242,7 +242,7 @@ class TestCheckPatrolEncounterPassive(EvenniaTestCase):
         room = MagicMock()
         room.contents = [player]
 
-        with patch("world.mob_disposition.get_mob_behavior", return_value="passive"):
+        with patch("world.patrol_engine.get_mob_behavior", return_value="passive"):
             result = check_patrol_encounter(mob, room)
 
         self.assertFalse(result)
@@ -263,7 +263,7 @@ class TestCheckPatrolEncounterFriendly(EvenniaTestCase):
         room = MagicMock()
         room.contents = [player]
 
-        with patch("world.mob_disposition.get_mob_behavior", return_value="friendly"):
+        with patch("world.patrol_engine.get_mob_behavior", return_value="friendly"):
             result = check_patrol_encounter(mob, room)
 
         self.assertFalse(result)
