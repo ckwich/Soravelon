@@ -574,6 +574,60 @@ class AreaBuilder:
         return self
 
     # ------------------------------------------------------------------
+    # flight_point()
+    # ------------------------------------------------------------------
+
+    def flight_point(self, room_or_id, point_id, name=None):
+        """
+        Mark a room as a Dragon Courier flight stop.
+
+        Args:
+            room_or_id: Room object or room_id string
+            point_id: Unique string ID for this stop (e.g., "vaels_crossing_docks")
+            name: Display name shown in flight listings. Defaults to room name.
+        Returns:
+            self (for method chaining)
+        """
+        if isinstance(room_or_id, str):
+            room = self._rooms.get(room_or_id)
+        else:
+            room = room_or_id
+        if not room:
+            self._build_warnings.append(f"flight_point(): room '{room_or_id}' not found")
+            return self
+        from world.flight_registry import FlightRegistry
+        FlightRegistry.register_point(point_id, room, name=name)
+        # Tag the room for discovery detection
+        room.tags.add("flight_point", category="travel")
+        room.db.flight_point_id = point_id
+        return self
+
+    # ------------------------------------------------------------------
+    # flight_route()
+    # ------------------------------------------------------------------
+
+    def flight_route(self, point_a_id, point_b_id, base_fare, leg_duration=30, echoes=None):
+        """
+        Define a Dragon Courier connection between two flight points.
+
+        Args:
+            point_a_id: ID of origin flight point
+            point_b_id: ID of destination flight point
+            base_fare: Base cost in scales before Standing discount
+            leg_duration: Seconds for this leg (D-10: minimum 30)
+            echoes: List of {"delay": N, "message": "..."} dicts for in-flight narration
+        Returns:
+            self (for method chaining)
+        """
+        if leg_duration < 30:
+            raise AreaBuilderValidationError(
+                f"flight_route() leg_duration must be >= 30 seconds; got {leg_duration}"
+            )
+        from world.flight_registry import FlightRegistry
+        FlightRegistry.register_route(point_a_id, point_b_id, base_fare, leg_duration, echoes or [])
+        return self
+
+    # ------------------------------------------------------------------
     # node()
     # ------------------------------------------------------------------
 
