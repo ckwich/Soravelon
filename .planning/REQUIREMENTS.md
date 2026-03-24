@@ -1,0 +1,154 @@
+# Requirements: Soravelon
+
+**Defined:** 2026-03-24
+**Core Value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different.
+
+## v1 Requirements
+
+Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
+
+### Interactive World Authoring
+
+- [ ] **IWA-01**: Patrol system with BFS pathfinding drives mob route-following behavior
+- [ ] **IWA-02**: Patrol mobs check disposition against players on room arrival and break for combat
+- [ ] **IWA-03**: Patrol interruption modes work correctly (resume / reset_to_start / abandon)
+- [ ] **IWA-04**: Custom commands can be attached to rooms, mobs, and items via AreaBuilder
+- [ ] **IWA-05**: Shared action vocabulary executes teleport, echo, modify_standing, spawn_mob, and other actions
+- [ ] **IWA-06**: Trigger system fires on room enter, exit, first visit, mob death, and examine events
+- [ ] **IWA-07**: Triggers support once-per-character and cooldown constraints
+- [ ] **IWA-08**: AreaBuilder exposes patrol(), custom_command(), and trigger() methods
+
+### Flight Paths
+
+- [ ] **FLT-01**: Dragon Courier Service provides instant transit between discovered flight points
+- [ ] **FLT-02**: Flight points are discovery-gated (must visit the location first)
+- [ ] **FLT-03**: Multi-leg booking supported for indirect routes
+- [ ] **FLT-04**: Standing-based pricing with faction discounts
+
+### Commands
+
+- [ ] **CMD-01**: Command prefix matching resolves shortest unambiguous prefix
+- [ ] **CMD-02**: Context-sensitive CmdSet scope narrows ambiguity automatically
+- [ ] **CMD-03**: Player aliases support up to 3 commands per alias with semicolons
+- [ ] **CMD-04**: Argument tokens ($1, $2, $*, $@) expand correctly in aliases
+- [ ] **CMD-05**: Aliases never override system commands
+
+### Desktop Client
+
+- [ ] **CLI-01**: Tauri 2.0 desktop client connects to Evennia via WebSocket
+- [ ] **CLI-02**: Terminal pane renders MUD text output with ANSI color support
+- [ ] **CLI-03**: Status panel displays character dimensions, domain scores, and companion status
+- [ ] **CLI-04**: Map panel renders zone layout with room nodes and exit edges
+- [ ] **CLI-05**: Map panel shows node activity state (color-coded failure slider)
+- [ ] **CLI-06**: OOB publisher module provides typed contract for all server→client push data
+- [ ] **CLI-07**: Room coordinates stored in AreaBuilder for map rendering
+
+### GUI Area Builder
+
+- [ ] **BLD-01**: Tauri 2.0 app with @xyflow/react canvas for visual zone editing
+- [ ] **BLD-02**: Builder outputs valid AreaBuilder .py files
+- [ ] **BLD-03**: Owner mode has full access to all zone IDs and type definitions
+- [ ] **BLD-04**: Contributor mode works from reference bundle with restricted scope
+- [ ] **BLD-05**: Mob ability composer allows data-driven ability design without code
+- [ ] **BLD-06**: Two-pass area loading fix resolves cross-zone exit load-order bug
+
+### Domain & Guild System
+
+- [ ] **DOM-01**: 10 domains tracked with 0-100 scores and diminishing returns
+- [ ] **DOM-02**: Guild Tier Score computed as (primary × 0.66) + (secondary × 0.33)
+- [ ] **DOM-03**: Guild discovers player organically at Practiced proficiency (~30 domain score)
+- [ ] **DOM-04**: GTS tier labels provide non-numeric progression feedback to players
+- [ ] **DOM-05**: 10 domain mechanical fingerprints designed (distinct gameplay verb per domain)
+
+### Ability System
+
+- [ ] **ABL-01**: Global data-driven ability registry (not per-character instances)
+- [ ] **ABL-02**: CmdUseAbility dispatcher handles all 360+ abilities through one command
+- [ ] **ABL-03**: Ability tier gating unlocks at Guild Tier Score 0/20/50/85
+- [ ] **ABL-04**: All 90 subclasses have mechanically distinct ability sets (4 tiers each)
+- [ ] **ABL-05**: Ability cooldowns tracked per-encounter on mob.ndb
+- [ ] **ABL-06**: Subclass engine derives identity from primary + secondary domain pair
+
+### Combat
+
+- [ ] **CMB-01**: Combat system integrates ability effects with damage, status, and targeting
+- [ ] **CMB-02**: Zone scaling applies per-player logarithmic factors during combat
+- [ ] **CMB-03**: Mob abilities fire based on weight, cooldown, and condition vocabulary
+- [ ] **CMB-04**: Group combat uses existing group engine for proximity and loot
+
+### Skills & Professions
+
+- [ ] **SKL-01**: General proficiency skills (0-100) with learn-by-use progression
+- [ ] **SKL-02**: 4 profession tracks: Cooking, Smithing, Alchemy, Scholarly Research
+- [ ] **SKL-03**: Animal Handling skill track (0-100) with Dragon Handling unlock at 100
+- [ ] **SKL-04**: Profession progression is independent of domain/guild system
+
+### Ancestries
+
+- [ ] **ANC-01**: Human ancestry with Empire Standing bonus and world-reaction traits
+- [ ] **ANC-02**: Kau'roran ancestry with size, cultural traits, and kiai ceremony access
+- [ ] **ANC-03**: Veth ancestry with size modifiers, tunnel shortcuts, and information networks
+- [ ] **ANC-04**: Selvar ancestry with seasonal coat variation and social perception modifiers
+- [ ] **ANC-05**: Ancestry modifiers feed into mob disposition calculation (additive, not override)
+
+### Content
+
+- [ ] **CON-01**: Hub City 1 (Vael's Crossing) authored via GUI builder with full services
+- [ ] **CON-02**: 3 starter zones with Layer 0 content (rooms, mobs, NPCs, quests)
+- [ ] **CON-03**: 1 starter zone with active node and Layer 1 implementation
+- [ ] **CON-04**: Basic equipment (weapons/armor) available without procedural affixes
+
+### NPC System
+
+- [ ] **NPC-01**: NPC template system injects world-state variables into dialogue
+- [ ] **NPC-02**: NPCs respond differently based on character standing, ancestry, and reputation
+- [ ] **NPC-03**: Context packet feeds NPC templates (same interface as future LLM consumer)
+
+## v2 Requirements
+
+### Companion System (Milestone 2)
+
+- **CMP-01**: Animal Handling skill progression unlocks companion tiers (Familiar/Companion/Bonded)
+- **CMP-02**: Dragon bonding requires AH 100 + Warding 75+ or kiai ceremony
+- **CMP-03**: Dragon growth stages (Hatchling → Juvenile → Adult → Elder)
+- **CMP-04**: Mount system with saddlebag containers and mounted combat
+
+### Content Push (Milestone 4)
+
+- **CTN-01**: Procedural equipment affixes
+- **CTN-02**: Zones 1-20 complete
+- **CTN-03**: Hub City 2: Caldenmere (walking golem city)
+
+### Economy (Future)
+
+- **ECO-01**: Auction House (local hub AHs, then Wandering Exchange)
+- **ECO-02**: Tome system + Loremaster NPC framework
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Companion/mount/dragon system | Milestone 2 — requires domain mastery first |
+| Procedural equipment affixes | Milestone 4 content push |
+| LLM quest generation | Post-M2 — data collection started, infrastructure deferred |
+| Auction House / Wandering Exchange | Future milestone — banking ready as dependency |
+| Day/night cycle runtime | Triggers stored but not fired until time system built |
+| Mobile client | No plans — desktop client only |
+| Zones beyond starter region | Milestone 4+ content push |
+| Visible level numbers | Anti-feature — contradicts core design (no visible levels) |
+| Stamina/mana resource pools | Design TBD — not decided, don't build speculatively |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| (Populated during roadmap creation) | | |
+
+**Coverage:**
+- v1 requirements: 48 total
+- Mapped to phases: 0
+- Unmapped: 48 ⚠️
+
+---
+*Requirements defined: 2026-03-24*
+*Last updated: 2026-03-24 after initial definition*
