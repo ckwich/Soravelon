@@ -44,6 +44,11 @@ class SoravelonMob(DefaultCharacter):
         # Abilities (data-driven, authored by builder)
         self.db.abilities = []
 
+        # Patrol system attributes
+        self.db.patrol = None          # patrol definition dict; None = not a patrol mob
+        self.db.combat_enabled = True  # D-03: set False for invulnerable mobs (e.g., Caldenmere)
+        self.db.triggers = []          # trigger list for trigger_engine
+
     def spawn_with_affixes(self, room):
         """Roll and apply affixes. Call after creation, not in at_object_creation."""
         return apply_affixes_to_mob(self, room)
@@ -133,7 +138,12 @@ class SoravelonMob(DefaultCharacter):
         return get_mob_behavior(self, character)
 
     def at_death(self, killer=None):
-        """Clean up ndb on death."""
+        """Clean up ndb on death and fire on_mob_death triggers."""
         self.ndb.revealed_affixes = set()
         if hasattr(self.ndb, 'combat_scales'):
             self.ndb.combat_scales = {}
+        if self.db.triggers:
+            from world.trigger_engine import fire_triggers
+            context = {"mob": self, "room": self.location}
+            if killer and hasattr(killer, 'account') and killer.account:
+                fire_triggers(self, "on_mob_death", killer, context=context)
