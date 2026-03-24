@@ -47,6 +47,29 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
         self.db.triggers = []          # trigger list for trigger_engine
         self.db.custom_commands = []   # custom command definitions for custom_command() builder method
 
+    def return_appearance(self, looker, **kwargs):
+        """
+        Extend default room appearance to show custom commands marked
+        visible_in_exits=True (D-21). These commands act as exits or
+        interactions that builders want discoverable.
+        """
+        appearance = super().return_appearance(looker, **kwargs)
+        # Append visible custom commands to the appearance string
+        custom_cmds = list(self.db.custom_commands or [])
+        visible = [c for c in custom_cmds if c.get("visible_in_exits")]
+        if not visible:
+            return appearance
+        lines = []
+        for cmd_def in visible:
+            key = cmd_def.get("key", "")
+            desc = cmd_def.get("desc", "")
+            if desc:
+                lines.append(f"|w{key}|n - {desc}")
+            else:
+                lines.append(f"|w{key}|n")
+        extra = "\nOther exits: " + ", ".join(lines)
+        return appearance + extra
+
     def get_display_desc(self, looker, **kwargs):
         """Return description appropriate to current node state."""
         if (self.tags.get("node_awakening", category="node_state")
