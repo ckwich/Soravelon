@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-04-PLAN.md
-last_updated: "2026-03-24T23:15:19.948Z"
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-03-24T23:22:43.842Z"
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 01 (patrol-commands-and-flight-paths) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Plan: 5 of 6
 | Phase 01 P02 | 7 | 2 tasks | 5 files |
 | Phase 01 P01 | 25 | 2 tasks | 4 files |
 | Phase 01 P04 | 3 | 3 tasks | 4 files |
+| Phase 01 P05 | 5 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase 01]: fire_triggers returns None (void) — errors logged not raised; non-character guard via account attribute check
 - [Phase 01]: Added mob() method to AreaBuilder — required for _mobs dict that patrol() uses to look up mob objects in build() finalization
 - [Phase 01]: Used evennia.commands.cmdset.CmdSet directly in cmd_dynamic.py — evennia.CmdSet returns None before full Evennia init
+- [Phase 01]: sys.modules injection for flight tests — world.world_state imports Django at module level; inject stubs before import to keep pure unittest.TestCase approach
+- [Phase 01]: D-08 NPC booking gate deferred — discovery alone unlocks Dragon Courier booking for Phase 01; NPC gate wires in during content phase
 
 ### Pending Todos
 
@@ -84,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T23:15:19.945Z
-Stopped at: Completed 01-04-PLAN.md
+Last session: 2026-03-24T23:22:43.839Z
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None

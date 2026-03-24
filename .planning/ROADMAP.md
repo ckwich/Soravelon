@@ -40,7 +40,7 @@ Plans:
 - [x] 01-02-PLAN.md — Patrol engine BFS + PatrolScript + mob/room hooks
 - [x] 01-03-PLAN.md — Command prefix resolution + player alias system
 - [x] 01-04-PLAN.md — AreaBuilder extensions: patrol(), trigger(), custom_command(), flight_point(), flight_route()
-- [ ] 01-05-PLAN.md — Flight engine, FlightScript, CmdFly/CmdDisembark, character/room wiring
+- [x] 01-05-PLAN.md — Flight engine, FlightScript, CmdFly/CmdDisembark, character/room wiring
 - [ ] 01-06-PLAN.md — Test suite: patrol, trigger, command prefix, flight system
 
 ### Phase 2: OOB Push and Desktop Client
@@ -121,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Patrol, Commands, and Flight Paths | 4/6 | In Progress|  |
+| 1. Patrol, Commands, and Flight Paths | 5/6 | In Progress|  |
 | 2. OOB Push and Desktop Client | 0/TBD | Not started | - |
 | 3. GUI Area Builder | 0/TBD | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
