@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-03-PLAN.md (command preprocessor + alias system)
-last_updated: "2026-03-24T23:02:01.765Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-24T23:03:06.298Z"
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 01 (patrol-commands-and-flight-paths) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Plan: 2 of 6
 
 *Updated after each plan completion*
 | Phase 01 P03 | 7 | 2 tasks | 5 files |
+| Phase 01 P02 | 7 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,8 @@ Recent decisions affecting current work:
 - Research: Two-pass area loading fix (BLD-06) must ship in Phase 3 before any cross-zone content is authored
 - [Phase 01]: Used commands.command.Command (local base) instead of evennia.Command — lazy init prevents static class definition before server start
 - [Phase 01]: Used unittest.TestCase for preprocessor tests (not EvenniaTest) — pure-logic modules with MagicMock need no Evennia DB setup
+- [Phase 01]: get_mob_behavior imported at patrol_engine module level (not lazy) to enable test patching
+- [Phase 01]: trigger_engine calls in mobs.py/rooms.py guarded by if self.db.triggers — safe no-op until plan 01-01 delivers the module
 
 ### Pending Todos
 
@@ -75,6 +78,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T23:02:01.763Z
-Stopped at: Completed 01-03-PLAN.md (command preprocessor + alias system)
+Last session: 2026-03-24T23:03:06.296Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
