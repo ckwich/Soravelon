@@ -25,9 +25,7 @@ from evennia import create_object
 from world import zone_registry, named_mob_registry
 
 
-class AreaBuilderValidationError(Exception):
-    """Raised when an area spec contains invalid values."""
-    pass
+# AreaBuilderValidationError imported from area_validator above
 
 
 # --- Direction offsets for BFS grid auto-layout ---
@@ -102,34 +100,17 @@ def auto_layout_zone(rooms_dict):
             queue.append((dest, nx, ny))
 
 
-# --- Validation constants ---
+# --- Validation constants (single source of truth: area_validator) ---
 
-VALID_ZONE_TYPES = {
-    "ancient_forest", "plains", "mountain", "coastal",
-    "underground", "imperial_city", "frontier", "node_active",
-}
-
-VALID_CONTINENTS = {"varath", "sorath", "veluana"}
-
-VALID_NODE_TYPES = {
-    "resonance", "thermal", "gravity", "temporal", "cognitive",
-}
-
-VALID_FACTION_TERRITORIES = {
-    "imperial", "neutral", "warden", "kauroran",
-    "contested", "hidden",
-}
-
-VALID_DIRECTIONS = {
-    "north", "south", "east", "west",
-    "northeast", "northwest", "southeast", "southwest",
-    "up", "down", "in", "out",
-}
-
-VALID_ROOM_TYPES = {
-    "path", "clearing", "ruins", "cave", "building",
-    "underground", "node_center", "generic",
-}
+from world.area_validator import (
+    VALID_ZONE_TYPES,
+    VALID_CONTINENTS,
+    VALID_NODE_TYPES,
+    VALID_FACTION_TERRITORIES,
+    VALID_DIRECTIONS,
+    VALID_ROOM_TYPES,
+    AreaBuilderValidationError,
+)
 
 
 class AreaBuilder:
