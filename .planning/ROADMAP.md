@@ -81,24 +81,24 @@ Plans:
 
 ### Phase 03.1: Mob Spawn Runtime (INSERTED)
 
-**Goal:** Mobs appear in zones at runtime — spawn definitions on rooms produce actual SoravelonMob instances with affixes, patrol scripts attach automatically, named mobs register globally, dead mobs respawn on timers, and loot drops on death
-**Requirements**: (new — not in original REQUIREMENTS.md, added as infrastructure prerequisite for Phase 6 combat and Phase 7 content)
-**Depends on:** Phase 3 (AreaBuilder stores spawn/named_mob/patrol definitions), Phase 1 (mob_affix_roller, PatrolScript, zone_scaling)
+**Goal:** Mobs appear in zones at runtime -- spawn definitions on rooms produce SoravelonMob instances with affixes, patrol scripts attach automatically, named mobs are merged into spawn_definitions (no separate registry), dead mobs respawn on timers, and skill-based loot drops on death
+**Requirements**: SPAWN-01 through SPAWN-14 (added as infrastructure prerequisite for Phase 6 combat and Phase 7 content)
+**Depends on:** Phase 3 (AreaBuilder stores spawn/patrol definitions), Phase 1 (mob_affix_roller, PatrolScript, zone_scaling)
 **Success Criteria** (what must be TRUE):
   1. When a zone loads, rooms with spawn_definitions produce the correct count of SoravelonMob instances with rarity-rolled affixes and combat stats
-  2. Named mob definitions produce unique persistent mobs registered in named_mob_registry
-  3. Patrol definitions automatically attach PatrolScript to spawned mobs with the correct route
-  4. Dead mobs respawn after respawn_minutes ± respawn_variance without duplicating
-  5. Count management enforces count_min/count_max per spawn definition
-  6. roll_loot() resolves data-driven loot drops from mobs on death; items placed in room via item_spawner
+  2. Named mobs are spawn_definitions with is_named=True -- named_mob_registry.py is deleted; area.named_mob() wraps area.spawn()
+  3. Patrol definitions automatically attach PatrolScript to spawned mobs with the correct route; find_path() skips no_mobs rooms
+  4. Dead mobs respawn after respawn_minutes +/- respawn_variance without duplicating (Twisted callLater)
+  5. Count management enforces count_min/count_max per spawn definition; server reload preserves existing mobs
+  6. roll_loot() uses killer's skill score (not level) for material tier; items created via item_spawner and placed in room
 **Plans:** 5 plans
 
 Plans:
-- [ ] 03.1-01-PLAN.md — world/mob_spawner.py: spawn_room_mobs, spawn_zone, respawn_mob, spawn_single_mob, spawn_named_mob
-- [ ] 03.1-02-PLAN.md — world/item_templates.py (registry) + world/item_spawner.py (create_item_from_template)
-- [ ] 03.1-03-PLAN.md — Integration wiring: spawn_zone in at_server_startstop, at_death respawn timers, patrol no_mobs guard, action_vocabulary spawn_mob + give_item template_id
-- [ ] 03.1-04-PLAN.md — Test suite: test_mob_spawner.py + test_item_spawner.py (includes loot_tables tests)
-- [ ] 03.1-05-PLAN.md — world/loot_tables.py: extend stub to roll_loot() + LOOT_TABLES dict; wire at_death() loot drops
+- [ ] 03.1-01-PLAN.md -- world/mob_spawner.py: spawn_zone, spawn_room_mobs, spawn_single_mob, spawn_named_mob, _maybe_attach_patrol, _schedule_respawn
+- [ ] 03.1-02-PLAN.md -- world/item_spawner.py (create_item_from_template) + AreaBuilder refactor (item() method, named_mob() wrapper, remove named_mob_registry)
+- [ ] 03.1-03-PLAN.md -- Integration wiring: spawn_zone in _load_all_zones, at_death respawn/loot/tome, patrol no_mobs filter, action_vocabulary spawn_mob + give_item template_id
+- [ ] 03.1-04-PLAN.md -- world/loot_tables.py: extend stub to full roll_loot() + skill-based LOOT_TABLES; zone override support
+- [ ] 03.1-05-PLAN.md -- Test suite: test_mob_spawner.py + test_item_spawner.py + test_loot_tables.py + area_builder regression tests
 
 ### Phase 4: Domain Fingerprints and Guild Engine
 **Goal**: The mechanical identity of all 10 domains is locked in a design document and enforced by the guild/GTS engine — no ability will be authored without a fingerprint to validate against
