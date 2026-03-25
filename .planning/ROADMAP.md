@@ -59,7 +59,7 @@ Plans:
 - [x] 02-01-PLAN.md — OOB publisher (world/oob_publisher.py) + character hooks (at_after_move, visited_room_ids, at_post_puppet wiring)
 - [x] 02-02-PLAN.md — Room coordinates and BFS auto-layout (AreaBuilder grid_x/grid_y + auto_layout_zone + zone world coords)
 - [x] 02-03-PLAN.md — Integration hooks (NodeScript node_event, FlightScript flight_progress, commit_session_xp status_update)
-- [ ] 02-04-PLAN.md — Test suite: test_oob_publisher.py (CLI-06) + coordinate tests in test_area_builder.py (CLI-07)
+- [x] 02-04-PLAN.md — Test suite: test_oob_publisher.py (CLI-06) + coordinate tests in test_area_builder.py (CLI-07)
 
 ### Phase 3: GUI Area Builder
 **Goal**: Zone content can be authored visually — a Tauri app lets the owner create rooms, place exits, attach mobs, and save a valid AreaBuilder .py file to disk; cross-zone exits never silently fail on load

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-03-25T06:31:41.739Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-03-25T06:47:04.577Z"
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -54,6 +54,7 @@ Plan: 4 of 4
 | Phase 02 P01 | 2 | 2 tasks | 2 files |
 | Phase 02 P02 | 35 | 2 tasks | 2 files |
 | Phase 02 P03 | 15 | 2 tasks | 3 files |
+| Phase 02 P04 | 25 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,7 @@ Recent decisions affecting current work:
 - [Phase 02]: auto_layout_zone is a module-level function (not a method) in area_builder.py; called at build() step 3.5 after _finalize_patrols
 - [Phase 02]: Intermediate stop uses leg index (current-1) after counter increment — leg was already advanced before disembark OOB push
 - [Phase 02]: Final landing push_flight_progress uses leg_index=total_legs (sentinel) to signal completion to client
+- [Phase 02]: Used unittest.TestCase + django.setup() (not EvenniaTest) for test_oob_publisher — all characters are MagicMock so no DB objects needed; EvenniaTest.setUp hits SQLite under lock from running server
 
 ### Pending Todos
 
@@ -96,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T06:31:41.736Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-03-25T06:47:04.574Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
