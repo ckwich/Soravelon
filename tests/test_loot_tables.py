@@ -318,7 +318,7 @@ class TestRollLootZoneOverride(unittest.TestCase):
         zone_obj = MagicMock()
         zone_obj.db.loot_table_overrides = {"wolf": override_entry}
 
-        # Patch get_zone_obj_for_room to return our mock zone
+        # Patch module-level wrapper so _resolve_loot_table uses our mock
         with patch("world.loot_tables.get_zone_obj_for_room", return_value=zone_obj):
             mob.location = MagicMock()  # room exists so override path runs
             results = roll_loot(mob, killer)
@@ -334,6 +334,7 @@ class TestRollLootZoneOverride(unittest.TestCase):
 
         entry = dict(LOOT_TABLES["wolf"], base_drop_chance=1.0)
         with patch.dict(LOOT_TABLES, {"wolf": entry}):
+            # Patch module-level wrapper in loot_tables
             with patch("world.loot_tables.get_zone_obj_for_room", return_value=None):
                 mob.location = MagicMock()
                 results = roll_loot(mob, killer)
