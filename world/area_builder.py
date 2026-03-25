@@ -28,6 +28,22 @@ from world import zone_registry, named_mob_registry
 # AreaBuilderValidationError imported from area_validator above
 
 
+# --- Module-level registry for cross-zone exit second-pass retry (BLD-06) ---
+
+_UNRESOLVED_EXITS_REGISTRY = []
+
+
+def get_unresolved_exits():
+    """Return all unresolved cross-zone exits registered during this load cycle."""
+    return list(_UNRESOLVED_EXITS_REGISTRY)
+
+
+def clear_unresolved_exits():
+    """Clear the registry before a new load cycle."""
+    global _UNRESOLVED_EXITS_REGISTRY
+    _UNRESOLVED_EXITS_REGISTRY = []
+
+
 # --- Direction offsets for BFS grid auto-layout ---
 
 DIRECTION_OFFSETS = {
@@ -127,6 +143,7 @@ class AreaBuilder:
         self._rooms = {}                # room_id -> Evennia room object
         self._mobs = {}                 # mob_key -> Evennia mob object
         self._deferred_exits = []       # cross-zone exits to resolve later
+        self._unresolved_exits = []     # exits that failed first-pass resolution
         self._deferred_patrols = []     # patrol definitions resolved in build()
         self._zone_obj = None           # ZoneObject created in zone()
         self._build_warnings = []       # non-fatal issues
@@ -833,15 +850,23 @@ class AreaBuilder:
             "rooms_created": len(self._rooms),
             "exits_created": self._exits_created,
             "warnings": list(self._build_warnings),
+            "unresolved_exits": [
+                {"to": e["to"], "direction": e["direction"]}
+                for e in self._unresolved_exits
+            ],
         }
 
     def _resolve_cross_zone_exits(self):
-        """Resolve deferred cross-zone exits by tag lookup."""
+        """Resolve deferred cross-zone exits by tag lookup.
+
+        Unresolved exits are saved to both self._unresolved_exits and the
+        module-level _UNRESOLVED_EXITS_REGISTRY for second-pass retry by
+        _load_all_zones() (BLD-06).
+        """
         for exit_data in self._deferred_exits:
-            target_str = exit_data.pop("to")
+            target_str = exit_data["to"]  # peek, don't pop
             target_zone_id, target_room_id = target_str.split(":", 1)
 
-            # Find target room by room_id tag, then filter by zone_id
             candidates = evennia.search_tag(
                 target_room_id, category="room_id"
             )
@@ -856,11 +881,27 @@ class AreaBuilder:
                     f"Cross-zone exit unresolved: {target_str} "
                     f"(target zone may not be loaded yet)"
                 )
+                # Save for second-pass retry — keep full dict intact
+                unresolved_copy = dict(exit_data)
+                self._unresolved_exits.append(unresolved_copy)
+                _UNRESOLVED_EXITS_REGISTRY.append(unresolved_copy)
                 continue
 
-            from_room = exit_data.pop("from_room")
-            direction = exit_data.pop("direction")
-            self._create_exit_object(from_room, target, direction, **exit_data)
+            # Resolved — build the exit
+            resolved = dict(exit_data)
+            resolved.pop("to")
+            from_room = resolved.pop("from_room")
+            direction = resolved.pop("direction")
+            self._create_exit_object(from_room, target, direction, **resolved)
+
+    def expose_unresolved_exits(self):
+        """
+        Return unresolved cross-zone exits from the last build() call.
+        Each item: {"from_room": room_obj, "to": "zone_id:room_id",
+                     "direction": str, ...kwargs}
+        Used by _load_all_zones() for second-pass retry.
+        """
+        return list(self._unresolved_exits)
 
     def _initialize_node(self):
         """Call the existing node system to set up this zone's node."""
