@@ -37,6 +37,10 @@ def find_path(start_room, target_room, max_depth=20):
     if start_room == target_room:
         return [start_room]
 
+    # D-04: if target has no_mobs tag, unreachable by patrol
+    if target_room.tags.get("no_mobs", category="room_flag"):
+        return []
+
     zone_id = start_room.db.zone_id
 
     # parent dict: room → parent room (None for start)
@@ -53,6 +57,9 @@ def find_path(start_room, target_room, max_depth=20):
                 # Zone boundary: only traverse within same zone_id
                 dest_zone = destination.db.zone_id
                 if dest_zone != zone_id:
+                    continue
+                # D-04: no_mobs rooms block patrol routing
+                if destination.tags.get("no_mobs", category="room_flag"):
                     continue
                 visited[destination] = room
                 if destination == target_room:

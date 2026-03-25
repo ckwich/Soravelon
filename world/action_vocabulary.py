@@ -6,8 +6,9 @@ Every action type in the game routes through execute_action().
 
 12 action types (D-07):
   Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
-               modify_standing, modify_attunement, log_world_event, despawn_self
-  Stubs (D-05): set_quest_flag, open_dialogue, spawn_mob
+               modify_standing, modify_attunement, log_world_event, despawn_self,
+               spawn_mob
+  Stubs (D-05): set_quest_flag, open_dialogue
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
 execute_action() enforces a trigger chain depth limit of 3 (D-19).
@@ -73,13 +74,37 @@ def _handle_teleport_to_mob(action_dict, context, _depth):
 
 
 def _handle_give_item(action_dict, context, _depth):
-    """Give an item to the character (by item id)."""
+    """Give an item to the character. Supports item_id (existing object) or
+    template_id (create from zone item_definitions, D-24)."""
     character = context.get("character")
     if not character:
         return False, "No character in context"
+
+    # Template-based creation (D-24)
+    template_id = action_dict.get("template_id")
+    if template_id:
+        room = context.get("room") or (character.location if character else None)
+        if not room:
+            return False, "give_item: no room context for template lookup"
+        import evennia
+        zone_objs = evennia.search_tag("zone_object", category="object_type")
+        zone_id = room.db.zone_id
+        zone_obj = next((o for o in zone_objs if o.db.zone_id == zone_id), None)
+        if not zone_obj:
+            return False, f"give_item: zone object not found for zone '{zone_id}'"
+        item_defs = zone_obj.db.item_definitions or []
+        item_def = next((d for d in item_defs if d.get("item_id") == template_id), None)
+        if not item_def:
+            return False, f"give_item: template '{template_id}' not found in zone"
+        from world.item_spawner import create_item_from_template
+        item = create_item_from_template(item_def, location=None)
+        from world.inventory_engine import pick_up
+        return pick_up(character, item)
+
+    # Existing object by dbref (original behavior)
     item_id = action_dict.get("item_id")
     if item_id is None:
-        return False, "give_item: missing item_id"
+        return False, "give_item: missing item_id or template_id"
     import evennia
     results = evennia.search_object(dbref=item_id)
     if not results:
@@ -161,6 +186,50 @@ def _handle_despawn_self(action_dict, context, _depth):
     return True, ""
 
 
+def _handle_spawn_mob(action_dict, context, _depth):
+    """Spawn a mob using a spawn_def dict or mob template string (D-26).
+
+    action_dict keys:
+        mob (str): mob template key (required)
+        room_id (str, optional): tag room_id to spawn into; defaults to context room
+        base_disposition (float, optional): base disposition override (default 0.0)
+        flee_threshold (int, optional): flee HP threshold (default 20)
+    """
+    room = context.get("room")
+    mob_template = action_dict.get("mob")
+    if not mob_template:
+        return False, "spawn_mob: missing 'mob' key"
+    target_room = room
+    room_id = action_dict.get("room_id")
+    if room_id:
+        import evennia
+        results = evennia.search_tag(room_id, category="room_id")
+        if results:
+            target_room = results[0]
+    if not target_room:
+        return False, "spawn_mob: no target room"
+    spawn_def = {
+        "mob": mob_template,
+        "count_min": 1,
+        "count_max": 1,
+        "is_named": False,
+        "base_disposition": action_dict.get("base_disposition", 0.0),
+        "flee_threshold": action_dict.get("flee_threshold", 20),
+        "respawn_minutes": 0,   # action-spawned mobs don't auto-respawn
+        "respawn_variance": 0,
+        "trust_sensitive": False,
+        "behavior": [],
+        "standing_check": None,
+        "prestige_modifier": 1.0,
+        "tome_drop": None,
+        "spawn_condition": None,
+        "sequence": [],
+    }
+    from world.mob_spawner import spawn_single_mob
+    mob = spawn_single_mob(spawn_def, target_room)
+    return True, f"Spawned {mob.key}"
+
+
 def _stub_handler(action_dict, context, _depth):
     """Placeholder for not-yet-implemented actions."""
     action_type = action_dict.get("action_type", "unknown")
@@ -183,7 +252,7 @@ ACTION_HANDLERS = {
     "despawn_self": _handle_despawn_self,
     "set_quest_flag": _stub_handler,
     "open_dialogue": _stub_handler,
-    "spawn_mob": _stub_handler,
+    "spawn_mob": _handle_spawn_mob,
 }
 
 
