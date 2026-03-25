@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 03.1-01-PLAN.md
-last_updated: "2026-03-25T21:51:01.967Z"
+stopped_at: Completed 03.1-03-PLAN.md
+last_updated: "2026-03-25T21:55:46.953Z"
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 19
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 03.1 (mob-spawn-runtime) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Plan: 3 of 5
 | Phase 03 P03 | 8 | 2 tasks | 2 files |
 | Phase 03.1 P02 | 5 | 2 tasks | 6 files |
 | Phase 03.1 P01 | 18 | 1 tasks | 2 files |
+| Phase 03.1 P03 | 10 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 03.1]: named_mob() delegates to spawn() with is_named=True, count_min=1, count_max=1 — named mobs merged into unified spawn_definitions schema (D-13/D-14)
 - [Phase 03.1]: Named mobs merged into spawn_definitions (no separate registry) — mob_id tag enables search_tag reload detection
 - [Phase 03.1]: _schedule_respawn called from at_death only (not initial spawn) — keeps mob_spawner as pure creation engine
+- [Phase 03.1]: spawn_zone called inline after each zone build (both .py and .zone.json branches) using tag search for zone_obj
+- [Phase 03.1]: Action-spawned mobs use respawn_minutes=0 — event-driven, not area-managed; only at_death triggers respawn for area-defined mobs
+- [Phase 03.1]: tome_drop initialized in at_object_creation to avoid getattr trap on db attributes (project convention)
 
 ### Pending Todos
 
@@ -107,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T21:51:01.964Z
-Stopped at: Completed 03.1-01-PLAN.md
+Last session: 2026-03-25T21:55:46.950Z
+Stopped at: Completed 03.1-03-PLAN.md
 Resume file: None
