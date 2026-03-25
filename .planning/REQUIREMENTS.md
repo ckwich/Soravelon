@@ -41,7 +41,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 - [ ] **CLI-04**: Map panel renders zone layout with room nodes and exit edges
 - [ ] **CLI-05**: Map panel shows node activity state (color-coded failure slider)
 - [x] **CLI-06**: OOB publisher module provides typed contract for all server→client push data
-- [ ] **CLI-07**: Room coordinates stored in AreaBuilder for map rendering
+- [x] **CLI-07**: Room coordinates stored in AreaBuilder for map rendering
 
 ### GUI Area Builder
 
@@ -165,7 +165,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | CLI-04 | Phase 2 | Pending |
 | CLI-05 | Phase 2 | Pending |
 | CLI-06 | Phase 2 | Complete |
-| CLI-07 | Phase 2 | Pending |
+| CLI-07 | Phase 2 | Complete |
 | BLD-01 | Phase 3 | Pending |
 | BLD-02 | Phase 3 | Pending |
 | BLD-03 | Phase 3 | Pending |

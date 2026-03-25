@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-25T05:54:44.282Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-25T06:28:30.462Z"
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 02 (oob-push-and-desktop-client) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Plan: 2 of 4
 | Phase 01 P04 | 3 | 3 tasks | 4 files |
 | Phase 01 P05 | 5 | 2 tasks | 7 files |
 | Phase 02 P01 | 2 | 2 tasks | 2 files |
+| Phase 02 P02 | 35 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,8 @@ Recent decisions affecting current work:
 - [Phase 01]: D-08 NPC booking gate deferred — discovery alone unlocks Dragon Courier booking for Phase 01; NPC gate wires in during content phase
 - [Phase 02]: Used get_character_context_packet keys (reputation/network/bond/legacy/attunement) directly — not *_score suffixed keys
 - [Phase 02]: push_inventory_update items list is an intentional stub — full item query deferred to Phase 6 per plan spec
+- [Phase 02]: BFS collision nudge shifts east (nx += 1) for up/down/in/out exits that map to (0,0) offset — deterministic, simple
+- [Phase 02]: auto_layout_zone is a module-level function (not a method) in area_builder.py; called at build() step 3.5 after _finalize_patrols
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T05:54:44.279Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-25T06:28:30.459Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
