@@ -100,6 +100,16 @@ class NodeScript(DefaultScript):
         if new_state == "critical" and old_state != "critical":
             self._apply_state_tags("node_critical")
 
+        # OOB: push node_event to all connected players in this zone (CLI-06)
+        zone_id = self.obj.db.zone_id if self.obj else None
+        if zone_id:
+            from world import oob_publisher
+            candidates = evennia.search_tag(zone_id, category="zone_id")
+            for obj in candidates:
+                if (hasattr(obj, "sessions") and obj.sessions.all()
+                        and obj.tags.get("player_character", category="character_type")):
+                    oob_publisher.push_node_event(obj, zone_id, old_state, new_state)
+
     def _get_center_room(self):
         if not self.db.center_room_id:
             return None
