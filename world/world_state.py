@@ -189,6 +189,10 @@ def commit_session_xp(character):
     # Recalculate attunement aggregate
     recalculate_attunement_aggregate(character)
 
+    # OOB: notify client of updated scores after XP commit (CLI-06)
+    from world import oob_publisher
+    oob_publisher.push_status_update(character)
+
 
 # --- Backend Level (INTERNAL ONLY — never expose to player) ---
 
@@ -325,7 +329,38 @@ def get_character_context_packet(character, npc=None, zone=None):
         "companion_present": bool(character.db.companion_id),
         "companion_type": character.db.companion_type,
         "companion_tier": character.db.companion_tier,
+
+        # World event summary — populated when LLM quest system is built.
+        # NPC template system ignores None fields.
+        "world_event_summary": None,
     }
+
+
+# --- World Event Logging ---
+
+def log_world_event(event_type, description, zone_id=None,
+                    faction_id=None, character_id=None, data=None):
+    """
+    Record a significant world event.
+    Call this from any system that produces world-state changes:
+    - Named mob kills
+    - Faction Standing threshold crossings
+    - Node activation/stabilization
+    - Quest consequence world expressions
+    - Legacy dimension entries
+
+    Safe to call now — populates WorldEventLog immediately.
+    LLM reads these events when quest generation is built.
+    """
+    from world.models import WorldEventLog
+    WorldEventLog.objects.create(
+        event_type=event_type,
+        description=description,
+        zone_id=zone_id or "",
+        faction_id=faction_id or "",
+        character_id=character_id,
+        data=data or {},
+    )
 
 
 # --- TickerHandler callbacks ---

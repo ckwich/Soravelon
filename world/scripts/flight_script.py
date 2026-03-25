@@ -85,6 +85,17 @@ class FlightScript(SoravelonScript):
         # Schedule arrival at end of leg duration (D-10: minimum 30s)
         delay(leg["duration"], self._arrive_at_stop)
 
+        # OOB: notify client of flight progress (CLI-06)
+        from world import oob_publisher
+        total_legs = len(list(self.db.legs or []))
+        oob_publisher.push_flight_progress(
+            character,
+            leg_index=self.db.current_leg,
+            total_legs=total_legs,
+            destination_name=dest_name,
+            disembark_available=False,
+        )
+
     def _send_echo(self, message):
         """Send a mid-leg atmospheric echo message if character still present."""
         character = self.obj
@@ -128,6 +139,21 @@ class FlightScript(SoravelonScript):
         else:
             # Intermediate stop — give player a disembark window (D-11)
             character.msg("Type |wdisembark|n to stay here, or remain seated to continue.")
+            # OOB: notify client of intermediate arrival (disembark_available=True) (CLI-06)
+            from world import oob_publisher
+            _legs = list(self.db.legs or [])
+            _cur = self.db.current_leg
+            _leg = _legs[_cur - 1] if 0 < _cur <= len(_legs) else {}
+            from world.flight_registry import FlightRegistry
+            _to_point = FlightRegistry.get_point(_leg.get("to_point_id", ""))
+            _dest_name = _to_point["name"] if _to_point else _leg.get("to_point_id", "")
+            oob_publisher.push_flight_progress(
+                character,
+                leg_index=_cur - 1,
+                total_legs=len(_legs),
+                destination_name=_dest_name,
+                disembark_available=True,
+            )
             from evennia.utils.utils import delay
             delay(10, self._check_continue)
 
@@ -153,6 +179,17 @@ class FlightScript(SoravelonScript):
         if character and character.pk:
             character.ndb.in_flight = False
             character.msg("Your dragon lands. You have arrived at your destination.")
+            # OOB: final landing — push flight_progress (complete) and map_update (Pitfall 6)
+            from world import oob_publisher
+            _total = len(list(self.db.legs or []))
+            oob_publisher.push_flight_progress(
+                character,
+                leg_index=_total,
+                total_legs=_total,
+                destination_name="",
+                disembark_available=False,
+            )
+            oob_publisher.push_map_update(character)
         self.stop()
 
     def do_disembark(self):
