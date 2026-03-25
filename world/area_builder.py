@@ -30,6 +30,78 @@ class AreaBuilderValidationError(Exception):
     pass
 
 
+# --- Direction offsets for BFS grid auto-layout ---
+
+DIRECTION_OFFSETS = {
+    "north":     (0,  1),
+    "south":     (0, -1),
+    "east":      (1,  0),
+    "west":      (-1, 0),
+    "northeast": (1,  1),
+    "northwest": (-1, 1),
+    "southeast": (1, -1),
+    "southwest": (-1, -1),
+    "up":        (0,  0),
+    "down":      (0,  0),
+    "in":        (0,  0),
+    "out":       (0,  0),
+}
+
+
+def auto_layout_zone(rooms_dict):
+    """
+    Assign grid_x, grid_y to zone rooms that lack explicit coords.
+
+    Uses BFS traversal from the first room without explicit coords.
+    Rooms with existing grid_x are not overwritten. Collision on (0,0)
+    exits (up/down/in/out) resolved by nudging nx += 1 until a free cell
+    is found.
+
+    Args:
+        rooms_dict: dict mapping room_id -> room_obj (self._rooms in AreaBuilder)
+    """
+    from collections import deque
+
+    room_list = list(rooms_dict.values())
+    if not room_list:
+        return
+
+    # Find the first room that needs layout
+    root = None
+    for r in room_list:
+        if r.db.grid_x is None:
+            root = r
+            break
+    if root is None:
+        return  # All rooms have explicit coords; nothing to do
+
+    occupied = {}   # (x, y) -> room_obj
+    root.db.grid_x = 0
+    root.db.grid_y = 0
+    occupied[(0, 0)] = root
+
+    queue = deque()
+    queue.append((root, 0, 0))
+
+    while queue:
+        room, cx, cy = queue.popleft()
+        for exit_obj in room.exits:
+            dest = exit_obj.destination
+            if dest is None:
+                continue
+            if dest.db.grid_x is not None:
+                continue  # Already placed (explicit or earlier BFS visit)
+            dx, dy = DIRECTION_OFFSETS.get(exit_obj.key, (0, 0))
+            nx, ny = cx + dx, cy + dy
+            # Collision nudge: shift east until a free cell is found
+            while (nx, ny) in occupied:
+                nx += 1
+            dest.db.grid_x = nx
+            dest.db.grid_y = ny
+            occupied[(nx, ny)] = dest
+            queue.append((dest, nx, ny))
+
+
 # --- Validation constants ---
 
 VALID_ZONE_TYPES = {
@@ -138,6 +210,10 @@ class AreaBuilder:
         zone_obj.db.node_failure_start = kwargs.get("node_failure_start", 0)
         zone_obj.db.faction_territory = faction_territory
         zone_obj.db.faction_presence = kwargs.get("faction_presence", [])
+        zone_obj.db.world_x = kwargs.get("world_x")
+        zone_obj.db.world_y = kwargs.get("world_y")
+        zone_obj.db.world_radius = kwargs.get("world_radius")
+        zone_obj.db.fog_of_war = kwargs.get("fog_of_war", False)
         # DO NOT set level_floor or level_cap — removed from design
 
         # Tag for indexed lookup
@@ -212,6 +288,8 @@ class AreaBuilder:
         room_obj.db.ambient_interval = kwargs.get("ambient_interval", 60)
         room_obj.db.ambient_variance = kwargs.get("ambient_variance", 30)
         room_obj.db.time_echoes = kwargs.get("time_echoes", {})
+        room_obj.db.grid_x = kwargs.get("grid_x", None)
+        room_obj.db.grid_y = kwargs.get("grid_y", None)
 
         # Initialize list attrs only if not already present
         if not room_obj.db.spawn_definitions:
@@ -750,6 +828,9 @@ class AreaBuilder:
 
         # 3. Finalize patrol definitions
         self._finalize_patrols()
+
+        # 3.5: Assign grid coordinates to rooms without explicit coords (CLI-07)
+        auto_layout_zone(self._rooms)
 
         # 4. Register named mobs
         for mob_id, room, definition in getattr(self, "_named_mobs", []):
