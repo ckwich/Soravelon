@@ -398,6 +398,11 @@ class TestIdempotency(ZoneSerializerTestBase):
         self.assertEqual(report2["rooms_created"], 2)
 
         # Total rooms for this zone should still be 2 in DB
-        rooms = evennia.search_tag("idempotent_json_zone", category="zone_id")
-        room_objs = [r for r in rooms if hasattr(r, "exits")]
-        self.assertEqual(len(room_objs), 2)
+        # Filter by room_id tag (rooms are tagged with room_id AND zone_id)
+        rooms = evennia.search_tag("room_001", category="room_id")
+        rooms_in_zone = [r for r in rooms if (r.db.zone_id or "") == "idempotent_json_zone"]
+        self.assertEqual(len(rooms_in_zone), 1)
+
+        rooms2 = evennia.search_tag("room_002", category="room_id")
+        rooms_in_zone2 = [r for r in rooms2 if (r.db.zone_id or "") == "idempotent_json_zone"]
+        self.assertEqual(len(rooms_in_zone2), 1)
