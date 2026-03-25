@@ -94,8 +94,8 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
-- [ ] 03.1-01-PLAN.md -- world/mob_spawner.py: spawn_zone, spawn_room_mobs, spawn_single_mob, spawn_named_mob, _maybe_attach_patrol, _schedule_respawn
-- [ ] 03.1-02-PLAN.md -- world/item_spawner.py (create_item_from_template) + AreaBuilder refactor (item() method, named_mob() wrapper, remove named_mob_registry)
+- [x] 03.1-01-PLAN.md -- world/mob_spawner.py: spawn_zone, spawn_room_mobs, spawn_single_mob, spawn_named_mob, _maybe_attach_patrol, _schedule_respawn
+- [x] 03.1-02-PLAN.md -- world/item_spawner.py (create_item_from_template) + AreaBuilder refactor (item() method, named_mob() wrapper, remove named_mob_registry)
 - [ ] 03.1-03-PLAN.md -- Integration wiring: spawn_zone in _load_all_zones, at_death respawn/loot/tome, patrol no_mobs filter, action_vocabulary spawn_mob + give_item template_id
 - [ ] 03.1-04-PLAN.md -- world/loot_tables.py: extend stub to full roll_loot() + skill-based LOOT_TABLES; zone override support
 - [ ] 03.1-05-PLAN.md -- Test suite: test_mob_spawner.py + test_item_spawner.py + test_loot_tables.py + area_builder regression tests
@@ -156,7 +156,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6 → 7
 | 1. Patrol, Commands, and Flight Paths | 6/6 | Complete | 2026-03-24 |
 | 2. OOB Push and Desktop Client | 4/4 | Complete | 2026-03-25 |
 | 3. GUI Area Builder | 4/4 | Complete | 2026-03-25 |
-| 3.1 Mob Spawn Runtime (INSERTED) | 0/5 | Not started | - |
+| 3.1 Mob Spawn Runtime (INSERTED) | 2/5 | In Progress|  |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |
 | 6. Combat, Skills, and NPC Templates | 0/TBD | Not started | - |

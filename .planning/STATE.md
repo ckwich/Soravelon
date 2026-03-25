@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-03-25T19:43:17.228Z"
+stopped_at: Completed 03.1-01-PLAN.md
+last_updated: "2026-03-25T21:51:01.967Z"
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 2
-  total_plans: 14
-  completed_plans: 11
+  total_plans: 19
+  completed_plans: 14
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 03 — gui-area-builder
+**Current focus:** Phase 03.1 — mob-spawn-runtime
 
 ## Current Position
 
-Phase: 03 (gui-area-builder) — EXECUTING
-Plan: 2 of 4
+Phase: 03.1 (mob-spawn-runtime) — EXECUTING
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -56,6 +56,8 @@ Plan: 2 of 4
 | Phase 02 P03 | 15 | 2 tasks | 3 files |
 | Phase 02 P04 | 25 | 2 tasks | 2 files |
 | Phase 03 P03 | 8 | 2 tasks | 2 files |
+| Phase 03.1 P02 | 5 | 2 tasks | 6 files |
+| Phase 03.1 P01 | 18 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -88,6 +90,10 @@ Recent decisions affecting current work:
 - [Phase 02]: Used unittest.TestCase + django.setup() (not EvenniaTest) for test_oob_publisher — all characters are MagicMock so no DB objects needed; EvenniaTest.setUp hits SQLite under lock from running server
 - [Phase 03]: Task 2 (_load_all_zones .zone.json branch) was pre-implemented in 03-02 — verified correct and skipped re-implementation
 - [Phase 03]: load_zone_from_json uses rooms_lookup dict (not DB search) for local exit/spawn/npc resolution — mirrors AreaBuilder's _rooms pattern, no extra DB queries
+- [Phase 03.1]: Item typeclass selected via string map; unknown item_type defaults to SoravelonItem
+- [Phase 03.1]: named_mob() delegates to spawn() with is_named=True, count_min=1, count_max=1 — named mobs merged into unified spawn_definitions schema (D-13/D-14)
+- [Phase 03.1]: Named mobs merged into spawn_definitions (no separate registry) — mob_id tag enables search_tag reload detection
+- [Phase 03.1]: _schedule_respawn called from at_death only (not initial spawn) — keeps mob_spawner as pure creation engine
 
 ### Pending Todos
 
@@ -101,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T19:43:17.226Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-03-25T21:51:01.964Z
+Stopped at: Completed 03.1-01-PLAN.md
 Resume file: None
