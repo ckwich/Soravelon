@@ -44,16 +44,22 @@ Plans:
 - [x] 01-06-PLAN.md — Test suite: patrol, trigger, command prefix, flight system
 
 ### Phase 2: OOB Push and Desktop Client
-**Goal**: Players can connect to Soravelon via a dedicated Tauri desktop app that shows the MUD terminal, live character status, and a visual zone map; all server→client state flows through a typed OOB publisher
+**Goal**: Server-side OOB publisher delivers a typed contract for all server→client push data; room coordinates computed and stored for map rendering; Tauri desktop client deferred to Phase 2.1
 **Depends on**: Phase 1 (room coordinates added in IWA/AreaBuilder work)
-**Requirements**: CLI-01, CLI-02, CLI-03, CLI-04, CLI-05, CLI-06, CLI-07
+**Requirements**: CLI-06, CLI-07
+**Note**: CLI-01 through CLI-05 (Tauri client) deferred to Phase 2.1 per CONTEXT.md D-01/D-02.
 **Success Criteria** (what must be TRUE):
-  1. The Tauri client connects to Evennia over WebSocket and renders MUD text with correct ANSI colors in a scrollable terminal pane (5000-line cap, no memory growth in 4-hour sessions)
-  2. The status panel updates in real time showing current domain scores, dimension values, and companion status as they change
-  3. The map panel renders the current zone's rooms as nodes and exits as edges, color-coded by node activity state
-  4. The server pushes all structured state through oob_publisher.py with a typed envelope contract; the client handles unknown message types without crashing
-**Plans**: TBD
-**UI hint**: yes
+  1. The server pushes all structured state through oob_publisher.py with a typed envelope contract covering 8 message types
+  2. Debounce prevents message flooding per message type; combat_update max 4/sec, inventory_update max 1/sec
+  3. Every room in every zone has non-None grid_x/grid_y integer coords after build(); builder-placed coords are preserved
+  4. Zone objects store world_x, world_y, world_radius, fog_of_war for world map rendering
+**Plans**: 4 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — OOB publisher (world/oob_publisher.py) + character hooks (at_after_move, visited_room_ids, at_post_puppet wiring)
+- [ ] 02-02-PLAN.md — Room coordinates and BFS auto-layout (AreaBuilder grid_x/grid_y + auto_layout_zone + zone world coords)
+- [ ] 02-03-PLAN.md — Integration hooks (NodeScript node_event, FlightScript flight_progress, commit_session_xp status_update)
+- [ ] 02-04-PLAN.md — Test suite: test_oob_publisher.py (CLI-06) + coordinate tests in test_area_builder.py (CLI-07)
 
 ### Phase 3: GUI Area Builder
 **Goal**: Zone content can be authored visually — a Tauri app lets the owner create rooms, place exits, attach mobs, and save a valid AreaBuilder .py file to disk; cross-zone exits never silently fail on load
@@ -122,7 +128,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Patrol, Commands, and Flight Paths | 6/6 | Complete | 2026-03-24 |
-| 2. OOB Push and Desktop Client | 0/TBD | Not started | - |
+| 2. OOB Push and Desktop Client | 0/4 | Not started | - |
 | 3. GUI Area Builder | 0/TBD | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |
