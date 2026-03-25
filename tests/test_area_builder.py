@@ -613,3 +613,91 @@ class TestAutoLayoutNoCollision(AreaBuilderTestBase):
 
         coords = [(r.db.grid_x, r.db.grid_y) for r in [r1, r2, r3]]
         self.assertEqual(len(coords), len(set(coords)), f"Collision detected: {coords}")
+
+
+# ------------------------------------------------------------------
+# Additional coordinate tests (CLI-07, plan 02-04)
+# ------------------------------------------------------------------
+
+class TestExplicitCoordsPreserved(AreaBuilderTestBase):
+    """Builder-placed coords are preserved exactly after build()."""
+
+    def test_explicit_coords_not_overwritten(self):
+        """Rooms with specific grid_x/grid_y in area spec keep those exact values."""
+        ab = self._make_builder("coord_zone_4")
+        r1 = self._make_room(ab, "placed_1", grid_x=5, grid_y=3)
+        r2 = self._make_room(ab, "placed_2", grid_x=6, grid_y=3)
+        ab.exit(r1, r2, "east")
+        ab.build()
+        self.assertEqual(r1.db.grid_x, 5)
+        self.assertEqual(r1.db.grid_y, 3)
+        self.assertEqual(r2.db.grid_x, 6)
+        self.assertEqual(r2.db.grid_y, 3)
+
+    def test_mixed_explicit_and_auto(self):
+        """One room with explicit coords, adjacent room gets auto-assigned coords."""
+        ab = self._make_builder("coord_zone_5")
+        r1 = self._make_room(ab, "anchor", grid_x=10, grid_y=0)
+        r2 = self._make_room(ab, "auto_placed")
+        ab.exit(r1, r2, "east")
+        ab.build()
+        # Explicit coord preserved
+        self.assertEqual(r1.db.grid_x, 10)
+        # Auto-placed room received a coord
+        self.assertIsNotNone(r2.db.grid_x)
+        self.assertIsNotNone(r2.db.grid_y)
+
+
+class TestAutoLayoutAllRoomsGetCoords(AreaBuilderTestBase):
+    """Every room in a zone receives grid coords after build(), even in 5-room chains."""
+
+    def test_all_rooms_get_coords_after_build(self):
+        """Every room in the zone has non-None grid_x and grid_y after build()."""
+        ab = self._make_builder("coord_zone_all")
+        rooms = [self._make_room(ab, f"rx{i}") for i in range(5)]
+        for i in range(len(rooms) - 1):
+            ab.exit(rooms[i], rooms[i + 1], "east")
+        ab.build()
+        for r in rooms:
+            self.assertIsNotNone(r.db.grid_x, f"room {r.key} has no grid_x")
+            self.assertIsNotNone(r.db.grid_y, f"room {r.key} has no grid_y")
+
+    def test_up_down_exits_no_collision(self):
+        """Up/down exits (no 2D offset) do not cause two rooms to share coords."""
+        ab = self._make_builder("coord_zone_updown")
+        r1 = self._make_room(ab, "base")
+        r2 = self._make_room(ab, "above")
+        r3 = self._make_room(ab, "below")
+        ab.exit(r1, r2, "up")
+        ab.exit(r1, r3, "down")
+        ab.build()
+        coords = [(r.db.grid_x, r.db.grid_y) for r in (r1, r2, r3)]
+        self.assertEqual(len(coords), len(set(coords)), "Two rooms share the same coordinates")
+
+
+class TestZoneWorldCoordsExtra(AreaBuilderTestBase):
+    """Extra coverage for zone world_x/world_y/world_radius/fog_of_war storage."""
+
+    def test_fog_of_war_defaults_false(self):
+        """Zone without fog_of_war=True stores False on zone_obj.db.fog_of_war."""
+        ab = self._make_builder("fog_default_zone_extra")
+        self.assertFalse(ab._zone_obj.db.fog_of_war)
+
+    def test_world_coords_stored_on_zone_obj(self):
+        """zone() with world_x/world_y/world_radius/fog_of_war stores all four attrs."""
+        ab = AreaBuilder("world_coord_zone_2")
+        ab.zone(
+            name="World Coord Zone 2",
+            tier=1,
+            zone_type="plains",
+            continent="varath",
+            faction_territory="neutral",
+            world_x=15,
+            world_y=8,
+            world_radius=3,
+            fog_of_war=True,
+        )
+        self.assertEqual(ab._zone_obj.db.world_x, 15)
+        self.assertEqual(ab._zone_obj.db.world_y, 8)
+        self.assertEqual(ab._zone_obj.db.world_radius, 3)
+        self.assertTrue(ab._zone_obj.db.fog_of_war)
