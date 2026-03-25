@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-25T06:28:30.462Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-25T06:31:41.739Z"
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 02 (oob-push-and-desktop-client) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: 3 of 4
 | Phase 01 P05 | 5 | 2 tasks | 7 files |
 | Phase 02 P01 | 2 | 2 tasks | 2 files |
 | Phase 02 P02 | 35 | 2 tasks | 2 files |
+| Phase 02 P03 | 15 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase 02]: push_inventory_update items list is an intentional stub — full item query deferred to Phase 6 per plan spec
 - [Phase 02]: BFS collision nudge shifts east (nx += 1) for up/down/in/out exits that map to (0,0) offset — deterministic, simple
 - [Phase 02]: auto_layout_zone is a module-level function (not a method) in area_builder.py; called at build() step 3.5 after _finalize_patrols
+- [Phase 02]: Intermediate stop uses leg index (current-1) after counter increment — leg was already advanced before disembark OOB push
+- [Phase 02]: Final landing push_flight_progress uses leg_index=total_legs (sentinel) to signal completion to client
 
 ### Pending Todos
 
@@ -93,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T06:28:30.459Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-25T06:31:41.736Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
