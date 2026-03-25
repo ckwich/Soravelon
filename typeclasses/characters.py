@@ -70,6 +70,9 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.trigger_cooldowns = {}          # trigger_id -> datetime of last fire
         self.db.discovered_flight_points = set()  # room dbrefs of discovered Dragon Courier stops
 
+        # OOB map state — fog-of-war visited rooms (CLI-07)
+        self.db.visited_room_ids = set()        # room_id tags of rooms the character has visited
+
         # Tag for queryset filtering
         self.tags.add("player_character", category="character_type")
 
@@ -89,6 +92,17 @@ class Character(ObjectParent, DefaultCharacter):
         if not self.scripts.get("session_commit_script"):
             create_script(SessionCommitScript, obj=self)
 
+        # Initialize OOB debounce dict on (re)connect (Pitfall 1: ndb is None until set)
+        self.ndb.oob_debounce = {}
+        # Push full initial state to newly connected client (per D-05)
+        from world import oob_publisher
+        oob_publisher.push_status_update(self)
+        oob_publisher.push_stat_update(self)
+        oob_publisher.push_map_update(self)
+        oob_publisher.push_inventory_update(self)
+        # push_node_event, push_flight_progress, push_combat_update, push_quest_update
+        # are event-driven — not pushed on login unless those states are active
+
     def at_pre_unpuppet(self):
         """Called just before a player disconnects from this character."""
         from world.world_state import commit_session_xp
@@ -97,6 +111,23 @@ class Character(ObjectParent, DefaultCharacter):
         commit_session_xp(self)
         on_member_disconnect(self)
         super().at_pre_unpuppet()
+
+    def at_after_move(self, source_location, **kwargs):
+        """Track visited rooms and push map_update on movement."""
+        super().at_after_move(source_location, **kwargs)
+        # Track visited room (for fog-of-war, Pitfall 5)
+        if self.location:
+            room_id = self.location.tags.get(category="room_id")
+            if room_id:
+                visited = set(self.db.visited_room_ids or set())
+                if room_id not in visited:
+                    visited.add(room_id)
+                    self.db.visited_room_ids = visited
+        # Skip map_update during Dragon Courier flight — _arrive_final pushes it instead (Pitfall 6)
+        if self.ndb.in_flight:
+            return
+        from world import oob_publisher
+        oob_publisher.push_map_update(self)
 
     def at_before_move(self, destination, **kwargs):
         """Block movement during Dragon Courier flight (D-12) or when overloaded."""
