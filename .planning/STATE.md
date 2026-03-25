@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 03.1-03-PLAN.md
-last_updated: "2026-03-25T21:55:46.953Z"
+stopped_at: Completed 03.1-04-PLAN.md
+last_updated: "2026-03-25T21:56:33.874Z"
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 19
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 03.1 (mob-spawn-runtime) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Plan: 4 of 5
 | Phase 03.1 P02 | 5 | 2 tasks | 6 files |
 | Phase 03.1 P01 | 18 | 1 tasks | 2 files |
 | Phase 03.1 P03 | 10 | 2 tasks | 4 files |
+| Phase 03.1 P04 | 3 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,7 @@ Recent decisions affecting current work:
 - [Phase 03.1]: spawn_zone called inline after each zone build (both .py and .zone.json branches) using tag search for zone_obj
 - [Phase 03.1]: Action-spawned mobs use respawn_minutes=0 — event-driven, not area-managed; only at_death triggers respawn for area-defined mobs
 - [Phase 03.1]: tome_drop initialized in at_object_creation to avoid getattr trap on db attributes (project convention)
+- [Phase 03.1]: Exposed get_zone_obj_for_room and get_material_tier as module-level wrappers in loot_tables.py — avoids lazy-import patching trap in tests
 
 ### Pending Todos
 
@@ -111,6 +113,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T21:55:46.950Z
-Stopped at: Completed 03.1-03-PLAN.md
+Last session: 2026-03-25T21:56:33.871Z
+Stopped at: Completed 03.1-04-PLAN.md
 Resume file: None

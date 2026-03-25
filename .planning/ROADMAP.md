@@ -91,13 +91,13 @@ Plans:
   4. Dead mobs respawn after respawn_minutes +/- respawn_variance without duplicating (Twisted callLater)
   5. Count management enforces count_min/count_max per spawn definition; server reload preserves existing mobs
   6. roll_loot() uses killer's skill score (not level) for material tier; items created via item_spawner and placed in room
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 - [x] 03.1-01-PLAN.md -- world/mob_spawner.py: spawn_zone, spawn_room_mobs, spawn_single_mob, spawn_named_mob, _maybe_attach_patrol, _schedule_respawn
 - [x] 03.1-02-PLAN.md -- world/item_spawner.py (create_item_from_template) + AreaBuilder refactor (item() method, named_mob() wrapper, remove named_mob_registry)
 - [x] 03.1-03-PLAN.md -- Integration wiring: spawn_zone in _load_all_zones, at_death respawn/loot/tome, patrol no_mobs filter, action_vocabulary spawn_mob + give_item template_id
-- [ ] 03.1-04-PLAN.md -- world/loot_tables.py: extend stub to full roll_loot() + skill-based LOOT_TABLES; zone override support
+- [x] 03.1-04-PLAN.md -- world/loot_tables.py: extend stub to full roll_loot() + skill-based LOOT_TABLES; zone override support
 - [ ] 03.1-05-PLAN.md -- Test suite: test_mob_spawner.py + test_item_spawner.py + test_loot_tables.py + area_builder regression tests
 
 ### Phase 4: Domain Fingerprints and Guild Engine
