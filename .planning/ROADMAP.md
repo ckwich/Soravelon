@@ -56,7 +56,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — OOB publisher (world/oob_publisher.py) + character hooks (at_after_move, visited_room_ids, at_post_puppet wiring)
+- [x] 02-01-PLAN.md — OOB publisher (world/oob_publisher.py) + character hooks (at_after_move, visited_room_ids, at_post_puppet wiring)
 - [ ] 02-02-PLAN.md — Room coordinates and BFS auto-layout (AreaBuilder grid_x/grid_y + auto_layout_zone + zone world coords)
 - [ ] 02-03-PLAN.md — Integration hooks (NodeScript node_event, FlightScript flight_progress, commit_session_xp status_update)
 - [ ] 02-04-PLAN.md — Test suite: test_oob_publisher.py (CLI-06) + coordinate tests in test_area_builder.py (CLI-07)
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Patrol, Commands, and Flight Paths | 6/6 | Complete | 2026-03-24 |
-| 2. OOB Push and Desktop Client | 0/4 | Not started | - |
+| 2. OOB Push and Desktop Client | 1/4 | In Progress|  |
 | 3. GUI Area Builder | 0/TBD | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |

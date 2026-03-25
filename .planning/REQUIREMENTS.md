@@ -20,10 +20,10 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 ### Flight Paths
 
-- [ ] **FLT-01**: Dragon Courier Service provides instant transit between discovered flight points
-- [ ] **FLT-02**: Flight points are discovery-gated (must visit the location first)
-- [ ] **FLT-03**: Multi-leg booking supported for indirect routes
-- [ ] **FLT-04**: Standing-based pricing with faction discounts
+- [x] **FLT-01**: Dragon Courier Service provides instant transit between discovered flight points
+- [x] **FLT-02**: Flight points are discovery-gated (must visit the location first)
+- [x] **FLT-03**: Multi-leg booking supported for indirect routes
+- [x] **FLT-04**: Standing-based pricing with faction discounts
 
 ### Commands
 
@@ -40,7 +40,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 - [ ] **CLI-03**: Status panel displays character dimensions, domain scores, and companion status
 - [ ] **CLI-04**: Map panel renders zone layout with room nodes and exit edges
 - [ ] **CLI-05**: Map panel shows node activity state (color-coded failure slider)
-- [ ] **CLI-06**: OOB publisher module provides typed contract for all server→client push data
+- [x] **CLI-06**: OOB publisher module provides typed contract for all server→client push data
 - [ ] **CLI-07**: Room coordinates stored in AreaBuilder for map rendering
 
 ### GUI Area Builder
@@ -150,10 +150,10 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | IWA-06 | Phase 1 | Complete |
 | IWA-07 | Phase 1 | Complete |
 | IWA-08 | Phase 1 | Complete |
-| FLT-01 | Phase 1 | Pending |
-| FLT-02 | Phase 1 | Pending |
-| FLT-03 | Phase 1 | Pending |
-| FLT-04 | Phase 1 | Pending |
+| FLT-01 | Phase 1 | Complete |
+| FLT-02 | Phase 1 | Complete |
+| FLT-03 | Phase 1 | Complete |
+| FLT-04 | Phase 1 | Complete |
 | CMD-01 | Phase 1 | Complete |
 | CMD-02 | Phase 1 | Complete |
 | CMD-03 | Phase 1 | Complete |
@@ -164,7 +164,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | CLI-03 | Phase 2 | Pending |
 | CLI-04 | Phase 2 | Pending |
 | CLI-05 | Phase 2 | Pending |
-| CLI-06 | Phase 2 | Pending |
+| CLI-06 | Phase 2 | Complete |
 | CLI-07 | Phase 2 | Pending |
 | BLD-01 | Phase 3 | Pending |
 | BLD-02 | Phase 3 | Pending |

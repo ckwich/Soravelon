@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-03-24T23:22:43.842Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-25T05:54:44.282Z"
 progress:
   total_phases: 7
-  completed_phases: 0
-  total_plans: 6
-  completed_plans: 5
+  completed_phases: 1
+  total_plans: 10
+  completed_plans: 7
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 01 — patrol-commands-and-flight-paths
+**Current focus:** Phase 02 — oob-push-and-desktop-client
 
 ## Current Position
 
-Phase: 01 (patrol-commands-and-flight-paths) — EXECUTING
-Plan: 6 of 6
+Phase: 02 (oob-push-and-desktop-client) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Plan: 6 of 6
 | Phase 01 P01 | 25 | 2 tasks | 4 files |
 | Phase 01 P04 | 3 | 3 tasks | 4 files |
 | Phase 01 P05 | 5 | 2 tasks | 7 files |
+| Phase 02 P01 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Used evennia.commands.cmdset.CmdSet directly in cmd_dynamic.py — evennia.CmdSet returns None before full Evennia init
 - [Phase 01]: sys.modules injection for flight tests — world.world_state imports Django at module level; inject stubs before import to keep pure unittest.TestCase approach
 - [Phase 01]: D-08 NPC booking gate deferred — discovery alone unlocks Dragon Courier booking for Phase 01; NPC gate wires in during content phase
+- [Phase 02]: Used get_character_context_packet keys (reputation/network/bond/legacy/attunement) directly — not *_score suffixed keys
+- [Phase 02]: push_inventory_update items list is an intentional stub — full item query deferred to Phase 6 per plan spec
 
 ### Pending Todos
 
@@ -87,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T23:22:43.839Z
-Stopped at: Completed 01-05-PLAN.md
+Last session: 2026-03-25T05:54:44.279Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None
