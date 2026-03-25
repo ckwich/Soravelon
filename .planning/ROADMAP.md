@@ -79,6 +79,22 @@ Plans:
 - [x] 03-03-PLAN.md — world/zone_serializer.py (JSON→AreaBuilder adapter) + _load_all_zones() .zone.json support
 - [x] 03-04-PLAN.md — Test suite: test_area_validator.py + test_zone_serializer.py + two-pass registry tests
 
+### Phase 03.1: Mob Spawn Runtime (INSERTED)
+
+**Goal:** Mobs appear in zones at runtime — spawn definitions on rooms produce actual SoravelonMob instances with affixes, patrol scripts attach automatically, named mobs register globally, and dead mobs respawn on timers
+**Requirements**: (new — not in original REQUIREMENTS.md, added as infrastructure prerequisite for Phase 6 combat and Phase 7 content)
+**Depends on:** Phase 3 (AreaBuilder stores spawn/named_mob/patrol definitions), Phase 1 (mob_affix_roller, PatrolScript, zone_scaling)
+**Success Criteria** (what must be TRUE):
+  1. When a zone loads, rooms with spawn_definitions produce the correct count of SoravelonMob instances with rarity-rolled affixes and combat stats
+  2. Named mob definitions produce unique persistent mobs registered in named_mob_registry
+  3. Patrol definitions automatically attach PatrolScript to spawned mobs with the correct route
+  4. Dead mobs respawn after respawn_minutes ± respawn_variance without duplicating
+  5. Count management enforces count_min/count_max per spawn definition
+**Plans:** TBD
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 03.1 to break down)
+
 ### Phase 4: Domain Fingerprints and Guild Engine
 **Goal**: The mechanical identity of all 10 domains is locked in a design document and enforced by the guild/GTS engine — no ability will be authored without a fingerprint to validate against
 **Depends on**: Phase 1 (domain score tracking already exists; this formalizes it with GTS computation)
@@ -128,13 +144,14 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Patrol, Commands, and Flight Paths | 6/6 | Complete | 2026-03-24 |
 | 2. OOB Push and Desktop Client | 4/4 | Complete | 2026-03-25 |
 | 3. GUI Area Builder | 4/4 | Complete | 2026-03-25 |
+| 3.1 Mob Spawn Runtime (INSERTED) | 0/TBD | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |
 | 6. Combat, Skills, and NPC Templates | 0/TBD | Not started | - |
