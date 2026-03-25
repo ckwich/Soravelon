@@ -74,10 +74,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — world/area_validator.py (pure-Python validation module, constants extracted from area_builder)
-- [ ] 03-02-PLAN.md — Two-pass cross-zone exit fix (AreaBuilder._UNRESOLVED_EXITS_REGISTRY + _load_all_zones() second pass)
+- [x] 03-01-PLAN.md — world/area_validator.py (pure-Python validation module, constants extracted from area_builder)
+- [x] 03-02-PLAN.md — Two-pass cross-zone exit fix (AreaBuilder._UNRESOLVED_EXITS_REGISTRY + _load_all_zones() second pass)
 - [x] 03-03-PLAN.md — world/zone_serializer.py (JSON→AreaBuilder adapter) + _load_all_zones() .zone.json support
-- [ ] 03-04-PLAN.md — Test suite: test_area_validator.py + test_zone_serializer.py + two-pass registry tests
+- [x] 03-04-PLAN.md — Test suite: test_area_validator.py + test_zone_serializer.py + two-pass registry tests
 
 ### Phase 4: Domain Fingerprints and Guild Engine
 **Goal**: The mechanical identity of all 10 domains is locked in a design document and enforced by the guild/GTS engine — no ability will be authored without a fingerprint to validate against
@@ -134,7 +134,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Patrol, Commands, and Flight Paths | 6/6 | Complete | 2026-03-24 |
 | 2. OOB Push and Desktop Client | 4/4 | Complete | 2026-03-25 |
-| 3. GUI Area Builder | 1/4 | In Progress|  |
+| 3. GUI Area Builder | 4/4 | Complete | 2026-03-25 |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |
 | 6. Combat, Skills, and NPC Templates | 0/TBD | Not started | - |
