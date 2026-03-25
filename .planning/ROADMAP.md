@@ -90,10 +90,13 @@ Plans:
   3. Patrol definitions automatically attach PatrolScript to spawned mobs with the correct route
   4. Dead mobs respawn after respawn_minutes ± respawn_variance without duplicating
   5. Count management enforces count_min/count_max per spawn definition
-**Plans:** TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 03.1 to break down)
+- [ ] 03.1-01-PLAN.md — world/mob_spawner.py: spawn_room_mobs, spawn_zone, respawn_mob, spawn_single_mob, spawn_named_mob
+- [ ] 03.1-02-PLAN.md — world/item_templates.py (registry) + world/item_spawner.py (create_item_from_template)
+- [ ] 03.1-03-PLAN.md — Integration wiring: spawn_zone in at_server_startstop, at_death respawn timers, patrol no_mobs guard, action_vocabulary spawn_mob + give_item template_id
+- [ ] 03.1-04-PLAN.md — Test suite: test_mob_spawner.py + test_item_spawner.py
 
 ### Phase 4: Domain Fingerprints and Guild Engine
 **Goal**: The mechanical identity of all 10 domains is locked in a design document and enforced by the guild/GTS engine — no ability will be authored without a fingerprint to validate against
@@ -151,7 +154,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6 → 7
 | 1. Patrol, Commands, and Flight Paths | 6/6 | Complete | 2026-03-24 |
 | 2. OOB Push and Desktop Client | 4/4 | Complete | 2026-03-25 |
 | 3. GUI Area Builder | 4/4 | Complete | 2026-03-25 |
-| 3.1 Mob Spawn Runtime (INSERTED) | 0/TBD | Not started | - |
+| 3.1 Mob Spawn Runtime (INSERTED) | 0/4 | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |
 | 6. Combat, Skills, and NPC Templates | 0/TBD | Not started | - |
