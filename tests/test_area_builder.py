@@ -915,3 +915,140 @@ class TestTwoPassLoadAllZones(AreaBuilderTestBase):
         # Verify the exit now exists
         exits = [ex for ex in origin_room.exits if ex.key == "north"]
         self.assertEqual(len(exits), 1, "Second-pass retry must have created the exit")
+
+
+# ------------------------------------------------------------------
+# Item method tests (Phase 03.1 plan 05)
+# ------------------------------------------------------------------
+
+class TestAreaBuilderItemMethod(AreaBuilderTestBase):
+    """area.item() stores item_definitions on zone_obj and supports chaining."""
+
+    def test_item_stores_on_zone_obj(self):
+        """area.item() with full kwargs stores one item_def with item_id on zone_obj."""
+        ab = self._make_builder()
+        ab.item(
+            "sword_01",
+            key="iron sword",
+            item_type="equipment",
+            weight=2.0,
+            rarity="normal",
+            equip_slot="weapon",
+            desc="A basic sword.",
+            value=10,
+        )
+        defs = ab._zone_obj.db.item_definitions
+        self.assertIsNotNone(defs)
+        self.assertEqual(len(defs), 1)
+        self.assertEqual(defs[0]["item_id"], "sword_01")
+        self.assertEqual(defs[0]["key"], "iron sword")
+        self.assertEqual(defs[0]["item_type"], "equipment")
+        self.assertEqual(defs[0]["equip_slot"], "weapon")
+
+    def test_item_chaining(self):
+        """area.item('a').item('b') stores two entries on zone_obj.db.item_definitions."""
+        ab = self._make_builder()
+        ab.item("item_a", key="thing a", item_type="item", weight=0.1, desc="A.", value=1)
+        ab.item("item_b", key="thing b", item_type="item", weight=0.2, desc="B.", value=2)
+        defs = ab._zone_obj.db.item_definitions
+        self.assertEqual(len(defs), 2)
+        item_ids = [d["item_id"] for d in defs]
+        self.assertIn("item_a", item_ids)
+        self.assertIn("item_b", item_ids)
+
+    def test_item_requires_zone(self):
+        """Calling area.item() before zone() raises AreaBuilderValidationError."""
+        ab = AreaBuilder("no_zone_yet")
+        with self.assertRaises(AreaBuilderValidationError):
+            ab.item("orphan_item", key="orphan", item_type="item", weight=0.0, desc="", value=0)
+
+    def test_item_returns_self_for_chaining(self):
+        """area.item() returns self so calls can be chained."""
+        ab = self._make_builder()
+        result = ab.item("x", key="x", item_type="item", weight=0.0, desc="", value=0)
+        self.assertIs(result, ab)
+
+    def test_item_def_preserves_extra_keys(self):
+        """Extra keys like damage_min are preserved in the stored item_def."""
+        ab = self._make_builder()
+        ab.item(
+            "battle_axe",
+            key="battle axe",
+            item_type="equipment",
+            weight=4.0,
+            rarity="rare",
+            equip_slot="weapon",
+            desc="A heavy axe.",
+            value=50,
+            damage_min=8,
+            damage_max=16,
+        )
+        defs = ab._zone_obj.db.item_definitions
+        self.assertEqual(defs[0]["damage_min"], 8)
+        self.assertEqual(defs[0]["damage_max"], 16)
+
+
+# ------------------------------------------------------------------
+# Named mob refactor tests (Phase 03.1 plan 05)
+# ------------------------------------------------------------------
+
+class TestAreaBuilderNamedMobRefactor(AreaBuilderTestBase):
+    """area.named_mob() uses spawn_definitions schema (D-13/D-14 refactor)."""
+
+    def test_named_mob_creates_spawn_def(self):
+        """area.named_mob() adds a spawn_def with is_named=True to room.db.spawn_definitions."""
+        ab = self._make_builder()
+        r1 = self._make_room(ab, "room_001")
+        ab.named_mob("boss_wolf", r1)
+
+        spawns = r1.db.spawn_definitions
+        self.assertIsNotNone(spawns)
+        self.assertEqual(len(spawns), 1)
+        self.assertEqual(spawns[0]["mob"], "boss_wolf")
+        self.assertTrue(spawns[0]["is_named"])
+
+    def test_named_mob_no_named_mob_definitions(self):
+        """After area.named_mob(), room.db.named_mob_definitions is NOT set."""
+        ab = self._make_builder()
+        r1 = self._make_room(ab, "room_001")
+        ab.named_mob("boss_wolf", r1)
+
+        # The old attr should not exist — should be None (not set)
+        self.assertIsNone(r1.db.named_mob_definitions)
+
+    def test_named_mob_respawn_minutes(self):
+        """area.named_mob(..., respawn_minutes=240) stored in spawn_def."""
+        ab = self._make_builder()
+        r1 = self._make_room(ab, "room_001")
+        ab.named_mob("boss", r1, respawn_minutes=240)
+
+        spawn_def = r1.db.spawn_definitions[0]
+        self.assertEqual(spawn_def["respawn_minutes"], 240)
+
+    def test_named_mob_tome_drop(self):
+        """area.named_mob(..., tome_drop='ancient_tome') stored in spawn_def."""
+        ab = self._make_builder()
+        r1 = self._make_room(ab, "room_001")
+        ab.named_mob("boss", r1, tome_drop="ancient_tome")
+
+        spawn_def = r1.db.spawn_definitions[0]
+        self.assertEqual(spawn_def["tome_drop"], "ancient_tome")
+
+    def test_named_mob_count_min_max_are_one(self):
+        """Named mob always has count_min=1 and count_max=1 (unique spawn)."""
+        ab = self._make_builder()
+        r1 = self._make_room(ab, "room_001")
+        ab.named_mob("unique_boss", r1)
+
+        spawn_def = r1.db.spawn_definitions[0]
+        self.assertEqual(spawn_def["count_min"], 1)
+        self.assertEqual(spawn_def["count_max"], 1)
+
+    def test_named_mob_prestige_modifier(self):
+        """area.named_mob(..., prestige_modifier=2.0) stored in spawn_def."""
+        ab = self._make_builder()
+        r1 = self._make_room(ab, "room_001")
+        ab.named_mob("elite_boss", r1, prestige_modifier=2.0)
+
+        spawn_def = r1.db.spawn_definitions[0]
+        self.assertEqual(spawn_def["prestige_modifier"], 2.0)
