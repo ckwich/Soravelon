@@ -48,6 +48,7 @@ class SoravelonMob(DefaultCharacter):
         self.db.patrol = None          # patrol definition dict; None = not a patrol mob
         self.db.combat_enabled = True  # D-03: set False for invulnerable mobs (e.g., Caldenmere)
         self.db.triggers = []          # trigger list for trigger_engine
+        self.db.tome_drop = None       # D-18: item_id of tome to drop on named mob death
 
     def spawn_with_affixes(self, room):
         """Roll and apply affixes. Call after creation, not in at_object_creation."""
@@ -138,12 +139,46 @@ class SoravelonMob(DefaultCharacter):
         return get_mob_behavior(self, character)
 
     def at_death(self, killer=None):
-        """Clean up ndb on death and fire on_mob_death triggers."""
+        """Clean up ndb on death, fire triggers, drop loot, schedule respawn."""
         self.ndb.revealed_affixes = set()
         if hasattr(self.ndb, 'combat_scales'):
             self.ndb.combat_scales = {}
+
+        # Fire on_mob_death triggers (existing)
         if self.db.triggers:
             from world.trigger_engine import fire_triggers
             context = {"mob": self, "room": self.location}
             if killer and hasattr(killer, 'account') and killer.account:
                 fire_triggers(self, "on_mob_death", killer, context=context)
+
+        # Drop loot (D-35: roll_loot called from at_death)
+        room = self.location
+        if room and killer:
+            from world.loot_tables import roll_loot
+            from world.item_spawner import create_item_from_template
+            drops = roll_loot(self, killer)
+            for item_def in drops:
+                create_item_from_template(item_def, location=room)
+
+        # Drop tome if named mob (D-18: tome pre-assigned)
+        if self.db.tome_drop and room:
+            from world.item_spawner import create_item_from_template
+            tome_def = {
+                "item_id": self.db.tome_drop,
+                "key": self.db.tome_drop.replace("_", " "),
+                "item_type": "item",
+                "desc": f"A tome recovered from {self.key}.",
+                "rarity": "rare",
+                "weight": 0.5,
+                "value": 50,
+            }
+            create_item_from_template(tome_def, location=room)
+
+        # Schedule respawn from matching spawn_definition on the room
+        if room and room.db.spawn_definitions:
+            from world.mob_spawner import _schedule_respawn
+            mob_key = self.key
+            for spawn_def in room.db.spawn_definitions:
+                if spawn_def.get("mob") == mob_key:
+                    _schedule_respawn(spawn_def, room)
+                    break

@@ -122,6 +122,15 @@ def _load_all_zones():
                             f"Zone [{filename}]: {len(unresolved)} "
                             f"cross-zone exit(s) deferred to second pass"
                         )
+                    zone_id = report.get("zone_id")
+                    if zone_id:
+                        from world.mob_spawner import spawn_zone
+                        zone_objs = _evennia.search_tag("zone_object", category="object_type")
+                        zone_obj = next((o for o in zone_objs if o.db.zone_id == zone_id), None)
+                        if zone_obj:
+                            count = spawn_zone(zone_obj)
+                            if count:
+                                print(f"Zone [{filename}]: spawned {count} mob(s)")
             except Exception as e:
                 import traceback
                 print(f"Error loading zone {filename}: {e}")
@@ -143,6 +152,15 @@ def _load_all_zones():
                         f"Zone [{filename}]: {len(unresolved)} "
                         f"cross-zone exit(s) deferred to second pass"
                     )
+                zone_id = report.get("zone_id")
+                if zone_id:
+                    from world.mob_spawner import spawn_zone
+                    zone_objs = _evennia.search_tag("zone_object", category="object_type")
+                    zone_obj = next((o for o in zone_objs if o.db.zone_id == zone_id), None)
+                    if zone_obj:
+                        count = spawn_zone(zone_obj)
+                        if count:
+                            print(f"Zone [{filename}]: spawned {count} mob(s)")
             except ImportError:
                 print(
                     f"Skipping {filename}: zone_serializer not available"
