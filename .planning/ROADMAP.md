@@ -41,7 +41,7 @@ Plans:
 - [x] 01-03-PLAN.md — Command prefix resolution + player alias system
 - [x] 01-04-PLAN.md — AreaBuilder extensions: patrol(), trigger(), custom_command(), flight_point(), flight_route()
 - [x] 01-05-PLAN.md — Flight engine, FlightScript, CmdFly/CmdDisembark, character/room wiring
-- [ ] 01-06-PLAN.md — Test suite: patrol, trigger, command prefix, flight system
+- [x] 01-06-PLAN.md — Test suite: patrol, trigger, command prefix, flight system
 
 ### Phase 2: OOB Push and Desktop Client
 **Goal**: Players can connect to Soravelon via a dedicated Tauri desktop app that shows the MUD terminal, live character status, and a visual zone map; all server→client state flows through a typed OOB publisher
@@ -121,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Patrol, Commands, and Flight Paths | 5/6 | In Progress|  |
+| 1. Patrol, Commands, and Flight Paths | 6/6 | Complete | 2026-03-24 |
 | 2. OOB Push and Desktop Client | 0/TBD | Not started | - |
 | 3. GUI Area Builder | 0/TBD | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
