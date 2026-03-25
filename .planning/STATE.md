@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase complete — ready for verification
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-03-25T06:47:04.577Z"
+status: Ready to execute
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-03-25T19:43:17.228Z"
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 14
+  completed_plans: 11
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 02 — oob-push-and-desktop-client
+**Current focus:** Phase 03 — gui-area-builder
 
 ## Current Position
 
-Phase: 02 (oob-push-and-desktop-client) — EXECUTING
-Plan: 4 of 4
+Phase: 03 (gui-area-builder) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Plan: 4 of 4
 | Phase 02 P02 | 35 | 2 tasks | 2 files |
 | Phase 02 P03 | 15 | 2 tasks | 3 files |
 | Phase 02 P04 | 25 | 2 tasks | 2 files |
+| Phase 03 P03 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Intermediate stop uses leg index (current-1) after counter increment — leg was already advanced before disembark OOB push
 - [Phase 02]: Final landing push_flight_progress uses leg_index=total_legs (sentinel) to signal completion to client
 - [Phase 02]: Used unittest.TestCase + django.setup() (not EvenniaTest) for test_oob_publisher — all characters are MagicMock so no DB objects needed; EvenniaTest.setUp hits SQLite under lock from running server
+- [Phase 03]: Task 2 (_load_all_zones .zone.json branch) was pre-implemented in 03-02 — verified correct and skipped re-implementation
+- [Phase 03]: load_zone_from_json uses rooms_lookup dict (not DB search) for local exit/spawn/npc resolution — mirrors AreaBuilder's _rooms pattern, no extra DB queries
 
 ### Pending Todos
 
@@ -98,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T06:47:04.574Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-03-25T19:43:17.226Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None

@@ -46,7 +46,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 ### GUI Area Builder
 
 - [ ] **BLD-01**: Tauri 2.0 app with @xyflow/react canvas for visual zone editing
-- [ ] **BLD-02**: Builder outputs valid AreaBuilder .py files
+- [x] **BLD-02**: Builder outputs valid AreaBuilder .py files
 - [ ] **BLD-03**: Owner mode has full access to all zone IDs and type definitions
 - [ ] **BLD-04**: Contributor mode works from reference bundle with restricted scope
 - [ ] **BLD-05**: Mob ability composer allows data-driven ability design without code
@@ -167,7 +167,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | CLI-06 | Phase 2 | Complete |
 | CLI-07 | Phase 2 | Complete |
 | BLD-01 | Phase 3 | Pending |
-| BLD-02 | Phase 3 | Pending |
+| BLD-02 | Phase 3 | Complete |
 | BLD-03 | Phase 3 | Pending |
 | BLD-04 | Phase 3 | Pending |
 | BLD-05 | Phase 3 | Pending |
