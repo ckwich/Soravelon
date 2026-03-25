@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock
 from evennia.utils.test_resources import EvenniaTest
 
 from world.area_builder import AreaBuilderValidationError
-from world import zone_registry, named_mob_registry
+from world import zone_registry
 
 
 # ---------------------------------------------------------------------------
@@ -78,11 +78,9 @@ class ZoneSerializerTestBase(EvenniaTest):
     def setUp(self):
         super().setUp()
         zone_registry.clear()
-        named_mob_registry.clear()
 
     def tearDown(self):
         zone_registry.clear()
-        named_mob_registry.clear()
         super().tearDown()
 
 
@@ -390,7 +388,6 @@ class TestIdempotency(ZoneSerializerTestBase):
 
         report1 = load_zone_from_json(zone_data)
         zone_registry.clear()
-        named_mob_registry.clear()
         report2 = load_zone_from_json(zone_data)
 
         # Both passes should report 2 rooms (not 4)

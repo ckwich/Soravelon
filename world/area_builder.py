@@ -22,7 +22,7 @@ Usage::
 import evennia
 from evennia import create_object
 
-from world import zone_registry, named_mob_registry
+from world import zone_registry
 
 
 # AreaBuilderValidationError imported from area_validator above
@@ -296,8 +296,6 @@ class AreaBuilder:
             room_obj.db.npc_definitions = []
         if not room_obj.db.lore_fragments:
             room_obj.db.lore_fragments = []
-        if not room_obj.db.named_mob_definitions:
-            room_obj.db.named_mob_definitions = []
 
         room_obj.tags.add(self._zone_id, category="zone_id")
         room_obj.tags.add(room_id, category="room_id")
@@ -410,6 +408,12 @@ class AreaBuilder:
             "standing_check": kwargs.get("standing_check"),
             "base_disposition": kwargs.get("base_disposition", 0.0),
             "trust_sensitive": kwargs.get("trust_sensitive", False),
+            # Named mob fields (D-13)
+            "is_named": kwargs.get("is_named", False),
+            "prestige_modifier": kwargs.get("prestige_modifier", 1.0),
+            "tome_drop": kwargs.get("tome_drop"),
+            "spawn_condition": kwargs.get("spawn_condition"),
+            "sequence": kwargs.get("sequence", []),
         }
 
         # Copy current list, append, assign back (SaverDict pattern)
@@ -429,39 +433,38 @@ class AreaBuilder:
 
     def named_mob(self, mob_id, room, **kwargs):
         """
-        Register a named mob definition on a room.
-        Named mobs are world-attached with lore.
+        Register a named mob as a spawn definition.
+
+        Named mobs are spawn definitions with is_named=True. They flow
+        through the same spawn_definitions list as regular mobs — no
+        separate named_mob_definitions room attr.
+
+        Args:
+            mob_id: Unique string ID for this named mob (also the mob template key).
+            room: Room object where the named mob spawns.
+            **kwargs: respawn_minutes (default 120), respawn_variance (default 30),
+                      tome_drop, spawn_condition, sequence, prestige_modifier,
+                      behavior, base_disposition, flee_threshold.
+        Returns:
+            self (for method chaining)
         """
-        named_def = {
-            "mob_id": mob_id,
-            "behavior": kwargs.get("behavior", []),
-            "home_rooms": kwargs.get("home_rooms", []),
-            "respawn_minutes": kwargs.get("respawn_minutes", 120),
-            "tome_drop": kwargs.get("tome_drop"),
-            "spawn_condition": kwargs.get("spawn_condition"),
-            "sequence": kwargs.get("sequence", []),
-        }
-
-        # Convert any room objects in home_rooms to room IDs
-        home_rooms = named_def["home_rooms"]
-        resolved = []
-        for hr in home_rooms:
-            if hasattr(hr, "id"):
-                # It's a room object — find its room_id
-                rid = self._room_id_for(hr)
-                resolved.append(rid)
-            else:
-                resolved.append(hr)
-        named_def["home_rooms"] = resolved
-
-        current = list(room.db.named_mob_definitions or [])
-        current.append(named_def)
-        room.db.named_mob_definitions = current
-
-        # Store for registry in build()
-        if not hasattr(self, "_named_mobs"):
-            self._named_mobs = []
-        self._named_mobs.append((mob_id, room, named_def))
+        self.spawn(
+            room,
+            mob_id,
+            is_named=True,
+            count_min=1,
+            count_max=1,
+            respawn_minutes=kwargs.get("respawn_minutes", 120),
+            respawn_variance=kwargs.get("respawn_variance", 30),
+            prestige_modifier=kwargs.get("prestige_modifier", 1.0),
+            tome_drop=kwargs.get("tome_drop"),
+            spawn_condition=kwargs.get("spawn_condition"),
+            sequence=kwargs.get("sequence", []),
+            behavior=kwargs.get("behavior", []),
+            base_disposition=kwargs.get("base_disposition", 0.0),
+            flee_threshold=kwargs.get("flee_threshold", 20),
+        )
+        return self
 
     # ------------------------------------------------------------------
     # npc()
@@ -480,6 +483,32 @@ class AreaBuilder:
         current = list(room.db.npc_definitions or [])
         current.append(npc_def)
         room.db.npc_definitions = current
+
+    # ------------------------------------------------------------------
+    # item()
+    # ------------------------------------------------------------------
+
+    def item(self, item_id, **kwargs):
+        """
+        Register an item template definition on this zone.
+        Stored on zone_obj.db.item_definitions for use by item_spawner.
+
+        Args:
+            item_id: Unique string ID for this item within the zone.
+            **kwargs: Item properties — key, item_type, weight, rarity,
+                      equip_slot, desc, value, plus any extras.
+        Returns:
+            self (for method chaining)
+        """
+        if not self._zone_obj:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — item() called before zone()"
+            )
+        item_def = {"item_id": item_id, **kwargs}
+        current = list(self._zone_obj.db.item_definitions or [])
+        current.append(item_def)
+        self._zone_obj.db.item_definitions = current
+        return self
 
     # ------------------------------------------------------------------
     # mob()
@@ -808,7 +837,8 @@ class AreaBuilder:
 
         1. Resolve deferred cross-zone exits
         2. Initialize node if has_node=True
-        3. Register named mobs in global registry
+        3. Finalize patrol definitions
+        3.5 Assign grid coordinates (auto-layout)
         4. Register zone in global zone registry
         5. Return build report
         """
@@ -830,13 +860,7 @@ class AreaBuilder:
         # 3.5: Assign grid coordinates to rooms without explicit coords (CLI-07)
         auto_layout_zone(self._rooms)
 
-        # 4. Register named mobs
-        for mob_id, room, definition in getattr(self, "_named_mobs", []):
-            named_mob_registry.register_named_mob(
-                mob_id, self._zone_id, room, definition
-            )
-
-        # 5. Register zone
+        # 4. Register zone
         zone_registry.register_zone(self._zone_id, self._zone_obj)
 
         # 6. Initialize zone-level list attrs if not present

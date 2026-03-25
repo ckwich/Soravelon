@@ -68,8 +68,8 @@ def at_server_start():
     from world.node_helpers import initialize_node_pool
     initialize_node_pool()
 
-    # Load all area files from world/areas/ — rebuilds zone and
-    # named mob registries fresh each restart (idempotent)
+    # Load all area files from world/areas/ — rebuilds zone registry
+    # and room spawn definitions fresh each restart (idempotent)
     _load_all_zones()
 
 
@@ -88,13 +88,12 @@ def _load_all_zones():
     import importlib
     import json
     from django.conf import settings
-    from world import zone_registry, named_mob_registry
+    from world import zone_registry
     from world.area_builder import clear_unresolved_exits, get_unresolved_exits
     import evennia as _evennia
 
     # Clear registries before rebuild
     zone_registry.clear()
-    named_mob_registry.clear()
     clear_unresolved_exits()
 
     areas_dir = os.path.join(settings.GAME_DIR, "world", "areas")

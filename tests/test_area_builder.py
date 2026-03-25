@@ -7,7 +7,7 @@ from evennia.utils.test_resources import EvenniaTest
 from evennia import create_object
 
 from world.area_builder import AreaBuilder, AreaBuilderValidationError
-from world import zone_registry, named_mob_registry
+from world import zone_registry, area_builder as area_builder_module
 
 
 class AreaBuilderTestBase(EvenniaTest):
@@ -16,7 +16,6 @@ class AreaBuilderTestBase(EvenniaTest):
     def setUp(self):
         super().setUp()
         zone_registry.clear()
-        named_mob_registry.clear()
 
     def _make_builder(self, zone_id="test_zone"):
         """Create an AreaBuilder with zone() already called."""
@@ -217,8 +216,13 @@ class TestSpawnStoredOnRoom(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 
 class TestNamedMobStoredOnRoom(AreaBuilderTestBase):
-    def test_named_mob_stored_on_room(self):
-        """Named mob definition stored in room.db.named_mob_definitions."""
+    def test_named_mob_stored_in_spawn_definitions(self):
+        """Named mob stored in room.db.spawn_definitions with is_named=True.
+
+        Named mobs were merged into the standard spawn definition schema
+        (D-13/D-14). area.named_mob() is now a thin wrapper around
+        area.spawn() with is_named=True.
+        """
         ab = self._make_builder()
         r1 = self._make_room(ab, "room_001")
         ab.named_mob(
@@ -228,24 +232,29 @@ class TestNamedMobStoredOnRoom(AreaBuilderTestBase):
             tome_drop="tome_verdant",
         )
 
-        named = r1.db.named_mob_definitions
-        self.assertEqual(len(named), 1)
-        self.assertEqual(named[0]["mob_id"], "old_guardian")
-        self.assertEqual(named[0]["tome_drop"], "tome_verdant")
+        spawns = r1.db.spawn_definitions
+        self.assertEqual(len(spawns), 1)
+        spawn = spawns[0]
+        self.assertEqual(spawn["mob"], "old_guardian")
+        self.assertTrue(spawn["is_named"])
+        self.assertEqual(spawn["tome_drop"], "tome_verdant")
+        self.assertEqual(spawn["respawn_minutes"], 120)
+        self.assertEqual(spawn["count_min"], 1)
+        self.assertEqual(spawn["count_max"], 1)
 
 
-class TestNamedMobInRegistry(AreaBuilderTestBase):
-    def test_named_mob_in_registry(self):
-        """Named mob registered in named_mob_registry after build()."""
+class TestNamedMobIsNamedFlag(AreaBuilderTestBase):
+    def test_named_mob_has_is_named_true_in_spawn_def(self):
+        """Named mob spawn definition has is_named=True after build()."""
         ab = self._make_builder()
         r1 = self._make_room(ab, "room_001")
         ab.named_mob("world_boss_1", r1, behavior=["territorial"])
         ab.build()
 
-        entry = named_mob_registry.get_named_mob("world_boss_1")
-        self.assertIsNotNone(entry)
-        self.assertEqual(entry["zone_id"], "test_zone")
-        self.assertEqual(entry["room_id"], r1.id)
+        spawns = r1.db.spawn_definitions
+        self.assertTrue(any(s.get("is_named") for s in spawns))
+        named_spawn = next(s for s in spawns if s.get("is_named"))
+        self.assertEqual(named_spawn["mob"], "world_boss_1")
 
 
 # ------------------------------------------------------------------
@@ -701,3 +710,208 @@ class TestZoneWorldCoordsExtra(AreaBuilderTestBase):
         self.assertEqual(ab._zone_obj.db.world_y, 8)
         self.assertEqual(ab._zone_obj.db.world_radius, 3)
         self.assertTrue(ab._zone_obj.db.fog_of_war)
+
+
+# ------------------------------------------------------------------
+# Unresolved exit registry tests (BLD-06, plan 03-02)
+# ------------------------------------------------------------------
+
+class TestUnresolvedExitsTracked(AreaBuilderTestBase):
+    """AreaBuilder tracks cross-zone exits that could not be resolved."""
+
+    def test_unresolved_exits_list_initialized(self):
+        """AreaBuilder.__init__ creates _unresolved_exits list."""
+        ab = AreaBuilder("init_test_zone")
+        self.assertIsInstance(ab._unresolved_exits, list)
+        self.assertEqual(len(ab._unresolved_exits), 0)
+
+    def test_expose_unresolved_exits_method_exists(self):
+        """expose_unresolved_exits() method exists and returns a list."""
+        ab = self._make_builder()
+        result = ab.expose_unresolved_exits()
+        self.assertIsInstance(result, list)
+
+    def test_unresolved_exit_captured_after_build(self):
+        """After build() with unresolvable cross-zone exit, _unresolved_exits is populated."""
+        ab = self._make_builder("zone_src")
+        r1 = self._make_room(ab, "room_001")
+        ab.exit(r1, "nonexistent_zone:room_999", "north")
+        ab.build()
+
+        unresolved = ab.expose_unresolved_exits()
+        self.assertEqual(len(unresolved), 1)
+        self.assertEqual(unresolved[0]["to"], "nonexistent_zone:room_999")
+        self.assertEqual(unresolved[0]["direction"], "north")
+
+    def test_unresolved_exit_preserves_from_room(self):
+        """Unresolved exit dict preserves 'from_room' key for retry."""
+        ab = self._make_builder("zone_src2")
+        r1 = self._make_room(ab, "room_001")
+        ab.exit(r1, "no_zone:room_x", "south")
+        ab.build()
+
+        unresolved = ab.expose_unresolved_exits()
+        self.assertEqual(len(unresolved), 1)
+        self.assertIn("from_room", unresolved[0])
+        self.assertEqual(unresolved[0]["from_room"], r1)
+
+    def test_resolved_exit_not_in_unresolved(self):
+        """Exit that resolves successfully is NOT added to _unresolved_exits."""
+        # Build target zone first
+        ab_target = AreaBuilder("target_zone_r")
+        ab_target.zone(
+            name="Target Zone R", tier=1, zone_type="plains",
+            continent="varath", faction_territory="neutral",
+        )
+        self._make_room(ab_target, "room_tgt")
+        ab_target.build()
+
+        # Build source zone with resolvable cross-zone exit
+        ab_src = self._make_builder("zone_src_r")
+        r1 = self._make_room(ab_src, "room_001")
+        ab_src.exit(r1, "target_zone_r:room_tgt", "east")
+        ab_src.build()
+
+        unresolved = ab_src.expose_unresolved_exits()
+        self.assertEqual(len(unresolved), 0)
+
+    def test_build_report_contains_unresolved_exits_key(self):
+        """build() return dict contains 'unresolved_exits' key."""
+        ab = self._make_builder("report_zone")
+        r1 = self._make_room(ab, "room_001")
+        ab.exit(r1, "missing_zone:room_x", "west")
+        report = ab.build()
+
+        self.assertIn("unresolved_exits", report)
+        self.assertIsInstance(report["unresolved_exits"], list)
+
+    def test_build_report_unresolved_exits_routing_info_only(self):
+        """build() unresolved_exits list contains 'to' and 'direction' only."""
+        ab = self._make_builder("report_zone2")
+        r1 = self._make_room(ab, "room_001")
+        ab.exit(r1, "missing_zone:room_y", "up")
+        report = ab.build()
+
+        self.assertEqual(len(report["unresolved_exits"]), 1)
+        item = report["unresolved_exits"][0]
+        self.assertEqual(item["to"], "missing_zone:room_y")
+        self.assertEqual(item["direction"], "up")
+        self.assertNotIn("from_room", item)
+
+    def test_module_level_registry_populated_on_unresolved(self):
+        """Module-level _UNRESOLVED_EXITS_REGISTRY is populated when exits are unresolved."""
+        from world.area_builder import clear_unresolved_exits, get_unresolved_exits
+        clear_unresolved_exits()
+
+        ab = self._make_builder("module_reg_zone")
+        r1 = self._make_room(ab, "room_001")
+        ab.exit(r1, "ghost_zone:ghost_room", "north")
+        ab.build()
+
+        registry = get_unresolved_exits()
+        self.assertGreater(len(registry), 0)
+        self.assertEqual(registry[0]["to"], "ghost_zone:ghost_room")
+
+    def test_clear_unresolved_exits_empties_registry(self):
+        """clear_unresolved_exits() resets the module-level registry to empty."""
+        from world.area_builder import clear_unresolved_exits, get_unresolved_exits
+        # Populate it
+        ab = self._make_builder("clear_test_zone")
+        r1 = self._make_room(ab, "room_001")
+        ab.exit(r1, "phantom_zone:r1", "east")
+        ab.build()
+
+        # Now clear
+        clear_unresolved_exits()
+        self.assertEqual(get_unresolved_exits(), [])
+
+
+# ------------------------------------------------------------------
+# Two-pass _load_all_zones tests (BLD-06, plan 03-02)
+# ------------------------------------------------------------------
+
+class TestTwoPassLoadAllZones(AreaBuilderTestBase):
+    """_load_all_zones() uses two-pass strategy for cross-zone exits."""
+
+    def test_load_all_zones_calls_clear_unresolved_exits(self):
+        """_load_all_zones() clears the unresolved exit registry before pass 1."""
+        from server.conf.at_server_startstop import _load_all_zones
+        from world.area_builder import clear_unresolved_exits, get_unresolved_exits
+
+        with patch("world.area_builder.clear_unresolved_exits") as mock_clear:
+            _load_all_zones()
+            mock_clear.assert_called_once()
+
+    def test_load_all_zones_calls_get_unresolved_exits(self):
+        """_load_all_zones() calls get_unresolved_exits() after pass 1."""
+        from server.conf.at_server_startstop import _load_all_zones
+
+        with patch("world.area_builder.get_unresolved_exits", return_value=[]) as mock_get:
+            _load_all_zones()
+            mock_get.assert_called_once()
+
+    def test_second_pass_resolves_cross_zone_exit(self):
+        """
+        Exit that was unresolved in pass 1 (target not yet loaded) gets
+        resolved in pass 2 once all zones are available.
+        This is a full integration test simulating two-zone load order problem.
+        """
+        from world.area_builder import clear_unresolved_exits
+
+        # Build zone A (destination) and zone B (source with exit to A)
+        # Zone B is loaded BEFORE zone A — simulates the BLD-06 failure case
+        clear_unresolved_exits()
+
+        # Build zone_b first with an exit pointing to zone_a (not yet built)
+        ab_b = AreaBuilder("bld06_zone_b")
+        ab_b.zone(
+            name="Zone B BLD06", tier=1, zone_type="plains",
+            continent="varath", faction_territory="neutral",
+        )
+        origin_room = self._make_room(ab_b, "origin_room_b")
+        ab_b.exit(origin_room, "bld06_zone_a:entry_room_a", "north")
+        ab_b.build()
+
+        # Exit is unresolved (zone_a not built yet)
+        unresolved_after_b = ab_b.expose_unresolved_exits()
+        self.assertEqual(len(unresolved_after_b), 1)
+
+        # Now build zone_a (target)
+        ab_a = AreaBuilder("bld06_zone_a")
+        ab_a.zone(
+            name="Zone A BLD06", tier=1, zone_type="plains",
+            continent="varath", faction_territory="neutral",
+        )
+        self._make_room(ab_a, "entry_room_a")
+        ab_a.build()
+
+        # Manually simulate the second pass retry
+        from world.area_builder import get_unresolved_exits
+        import evennia as _ev
+
+        all_unresolved = get_unresolved_exits()
+        self.assertGreater(len(all_unresolved), 0,
+                           "Module registry must have the unresolved exit from zone_b")
+
+        # Second pass: try to resolve each unresolved exit
+        for exit_data in all_unresolved:
+            target_str = exit_data["to"]
+            target_zone_id, target_room_id = target_str.split(":", 1)
+            candidates = _ev.search_tag(target_room_id, category="room_id")
+            target = None
+            for room in candidates:
+                if (room.db.zone_id or "") == target_zone_id:
+                    target = room
+                    break
+            if target:
+                from_room = exit_data["from_room"]
+                direction = exit_data["direction"]
+                from world.area_builder import AreaBuilder as _AB
+                retry_builder = _AB.__new__(_AB)
+                retry_builder._zone_id = from_room.db.zone_id or "unknown"
+                retry_builder._exits_created = 0
+                retry_builder._create_exit_object(from_room, target, direction)
+
+        # Verify the exit now exists
+        exits = [ex for ex in origin_room.exits if ex.key == "north"]
+        self.assertEqual(len(exits), 1, "Second-pass retry must have created the exit")
