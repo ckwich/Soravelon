@@ -62,17 +62,22 @@ Plans:
 - [x] 02-04-PLAN.md — Test suite: test_oob_publisher.py (CLI-06) + coordinate tests in test_area_builder.py (CLI-07)
 
 ### Phase 3: GUI Area Builder
-**Goal**: Zone content can be authored visually — a Tauri app lets the owner create rooms, place exits, attach mobs, and save a valid AreaBuilder .py file to disk; cross-zone exits never silently fail on load
-**Depends on**: Phase 2 (Tauri app foundation, AreaBuilder spec schema stabilized)
-**Requirements**: BLD-01, BLD-02, BLD-03, BLD-04, BLD-05, BLD-06
+**Goal**: Server-side JSON zone loading infrastructure is complete — the server loads .zone.json files natively, cross-zone exits resolve correctly regardless of load order, and a pure-Python validation module provides a shared schema contract for the builder app
+**Depends on**: Phase 2 (AreaBuilder spec schema stabilized)
+**Requirements**: BLD-02, BLD-05, BLD-06
+**Note**: BLD-01, BLD-03, BLD-04 (Tauri app) deferred to separate soravelon-builder project per CONTEXT.md D-01/D-02.
 **Success Criteria** (what must be TRUE):
-  1. The owner can open the builder, create a zone with rooms and exits on a visual canvas, place mob templates, and save a .py file that the server loads correctly on reload
-  2. Cross-zone exits defined in any order load correctly on server reload — no silent skips
-  3. Contributor mode restricts editing to a provided reference bundle scope; owner mode has unrestricted access
-  4. The mob ability composer lets a designer define mob ability data without writing Python
-  5. The builder validates the AreaBuilder spec with Zod before writing to disk and surfaces errors to the user
-**Plans**: TBD
-**UI hint**: yes
+  1. Cross-zone exits defined in any load order resolve correctly on server reload — no silent skips (two-pass fix)
+  2. Server loads .zone.json files from world/areas/ alongside .py files in sorted order
+  3. load_zone_from_json() validates then produces identical DB objects to an equivalent .py zone file
+  4. world/area_validator.py is importable without Django setup (pure Python sidecar-ready)
+**Plans**: 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — world/area_validator.py (pure-Python validation module, constants extracted from area_builder)
+- [ ] 03-02-PLAN.md — Two-pass cross-zone exit fix (AreaBuilder._UNRESOLVED_EXITS_REGISTRY + _load_all_zones() second pass)
+- [ ] 03-03-PLAN.md — world/zone_serializer.py (JSON→AreaBuilder adapter) + _load_all_zones() .zone.json support
+- [ ] 03-04-PLAN.md — Test suite: test_area_validator.py + test_zone_serializer.py + two-pass registry tests
 
 ### Phase 4: Domain Fingerprints and Guild Engine
 **Goal**: The mechanical identity of all 10 domains is locked in a design document and enforced by the guild/GTS engine — no ability will be authored without a fingerprint to validate against
@@ -129,7 +134,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Patrol, Commands, and Flight Paths | 6/6 | Complete | 2026-03-24 |
 | 2. OOB Push and Desktop Client | 4/4 | Complete | 2026-03-25 |
-| 3. GUI Area Builder | 0/TBD | Not started | - |
+| 3. GUI Area Builder | 0/4 | Not started | - |
 | 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |
 | 6. Combat, Skills, and NPC Templates | 0/TBD | Not started | - |
