@@ -89,7 +89,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 - [x] **ANC-02**: Kau'roran ancestry with size, cultural traits, and kiai ceremony access
 - [x] **ANC-03**: Veth ancestry with size modifiers, tunnel shortcuts, and information networks
 - [x] **ANC-04**: Selvar ancestry with seasonal coat variation and social perception modifiers
-- [ ] **ANC-05**: Ancestry modifiers feed into mob disposition calculation (additive, not override)
+- [x] **ANC-05**: Ancestry modifiers feed into mob disposition calculation (additive, not override)
 
 ### Content
 
@@ -181,7 +181,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | ANC-02 | Phase 5 | Complete |
 | ANC-03 | Phase 5 | Complete |
 | ANC-04 | Phase 5 | Complete |
-| ANC-05 | Phase 5 | Pending |
+| ANC-05 | Phase 5 | Complete |
 | ABL-01 | Phase 5 | Complete |
 | ABL-02 | Phase 5 | Complete |
 | ABL-03 | Phase 5 | Complete |

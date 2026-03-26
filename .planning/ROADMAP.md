@@ -134,7 +134,7 @@ Plans:
 - [x] 05-02-PLAN.md — Ability registry (world/ability_registry.py) + CharacterAbility model + migration + Ironwright fix
 - [x] 05-03-PLAN.md — Ability engine (world/ability_engine.py) + Character ndb/db inits + Sense hook
 - [x] 05-04-PLAN.md — Commands (CmdSetAncestry, CmdJoinGuild, CmdDomains, CmdAbilities, CmdUseAbility) + guild discovery wiring + cmdset registration
-- [ ] 05-05-PLAN.md — Test suite: test_ancestry_engine.py + test_ability_engine.py + test_room_state.py
+- [x] 05-05-PLAN.md — Test suite: test_ancestry_engine.py + test_ability_engine.py + test_room_state.py
 
 ### Phase 6: Combat, Skills, and NPC Templates
 **Goal**: Players can engage in ability-driven combat against zone-scaled mobs, develop proficiency skills through use, and NPCs respond with world-state-aware dialogue
