@@ -106,11 +106,15 @@ Plans:
 **Requirements**: DOM-01, DOM-02, DOM-03, DOM-04, DOM-05
 **Success Criteria** (what must be TRUE):
   1. A design document specifies the exclusive mechanical gameplay verb for each of the 10 domains (e.g., "Combat: force-movement", "Subterfuge: information asymmetry") — all 10 are distinct and non-overlapping
-  2. Guild Tier Score computes correctly as (primary × 0.66) + (secondary × 0.33) and returns the correct tier label at thresholds 0/20/50/85
+  2. Guild Tier Score computes correctly as (primary x 0.66) + (secondary x 0.33) and returns the correct tier label at thresholds 0/20/50/85
   3. A guild organically discovers a player when their domain score reaches the Practiced threshold (~30) without explicit player action
   4. Domain scores display the correct GTS tier label to the player with no numeric level shown
   5. CharacterGuild and CharacterAbility Django models exist with correct migrations
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Design doc consolidation + guild_engine.py constants/computation + CharacterGuild model + migration
+- [ ] 04-02-PLAN.md — join_guild/complete_induction mutation functions + test suite (test_guild_engine.py)
 
 ### Phase 5: Ancestry Engine and Ability System
 **Goal**: Players choose from 4 mechanically distinct ancestries at creation, and every one of 90 subclasses has a unique set of abilities across 4 tiers that express its domain-pair identity
@@ -157,7 +161,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6 → 7
 | 2. OOB Push and Desktop Client | 4/4 | Complete | 2026-03-25 |
 | 3. GUI Area Builder | 4/4 | Complete | 2026-03-25 |
 | 3.1 Mob Spawn Runtime (INSERTED) | 5/5 | Complete | 2026-03-25 |
-| 4. Domain Fingerprints and Guild Engine | 0/TBD | Not started | - |
+| 4. Domain Fingerprints and Guild Engine | 0/2 | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |
 | 6. Combat, Skills, and NPC Templates | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
