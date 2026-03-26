@@ -1626,3 +1626,67 @@ def check_guild_eligibility(character):
 def _resolve_subclass(primary_domain, secondary_domain):
     """Return subclass_id for a domain pair, or None."""
     return _DOMAIN_PAIR_TO_SUBCLASS.get((primary_domain, secondary_domain))
+
+
+# ---------------------------------------------------------------------------
+# Mutation functions
+# ---------------------------------------------------------------------------
+
+
+def join_guild(character, guild_id, secondary_domain):
+    """
+    Join a guild, creating CharacterGuild record and updating db caches.
+    Returns (bool, str) per project convention (D-15).
+    """
+    # Check if already in a guild
+    if character.db.guild_id:
+        existing = GUILDS.get(character.db.guild_id, {})
+        existing_name = existing.get("name", character.db.guild_id)
+        return False, f"Already a member of {existing_name}."
+
+    guild = GUILDS.get(guild_id)
+    if not guild:
+        return False, f"Unknown guild: {guild_id}"
+
+    primary = guild["primary_domain"]
+    subclass_id = _resolve_subclass(primary, secondary_domain)
+    if not subclass_id:
+        return False, f"No subclass for {primary}/{secondary_domain}."
+
+    from world.models import CharacterGuild as CGModel
+    CGModel.objects.update_or_create(
+        character=character,
+        defaults={
+            "guild_id": guild_id,
+            "primary_domain": primary,
+            "secondary_domain": secondary_domain,
+            "subclass_id": subclass_id,
+            "induction_complete": False,
+        },
+    )
+    # Update fast-read caches (D-15)
+    character.db.guild_id = guild_id
+    character.db.subclass_id = subclass_id
+    character.db.primary_domain = primary
+    character.db.secondary_domain = secondary_domain
+    return True, f"You have joined the {guild['name']}."
+
+
+def complete_induction(character):
+    """
+    Mark guild induction as complete.
+    Returns (bool, str) per project convention.
+    """
+    guild_id = character.db.guild_id
+    if not guild_id:
+        return False, "No guild membership found."
+
+    from world.models import CharacterGuild as CGModel
+    try:
+        record = CGModel.objects.get(character=character)
+    except CGModel.DoesNotExist:
+        return False, "No guild membership found."
+
+    record.induction_complete = True
+    record.save(update_fields=["induction_complete"])
+    return True, "Guild induction complete."
