@@ -109,7 +109,7 @@ Plans:
   2. Guild Tier Score computes correctly as (primary x 0.66) + (secondary x 0.33) and returns the correct tier label at thresholds 0/20/50/85
   3. A guild organically discovers a player when their domain score reaches the Practiced threshold (~30) without explicit player action
   4. Domain scores display the correct GTS tier label to the player with no numeric level shown
-  5. CharacterGuild and CharacterAbility Django models exist with correct migrations
+  5. CharacterGuild Django model exists with correct migration (CharacterAbility deferred to Phase 5 per D-16)
 **Plans**: 2 plans
 
 Plans:
