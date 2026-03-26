@@ -253,3 +253,34 @@ class DebtRecord(models.Model):
 
     def __str__(self):
         return f"char={self.character_id}:debt={self.amount}:{self.status}"
+
+
+class CharacterGuild(models.Model):
+    """
+    Character guild membership record.
+
+    Source of truth for guild/subclass assignment. character.db.guild_id and
+    character.db.subclass_id are fast-read caches updated when this model
+    changes (D-15). Lazy creation: no record = Wanderer (no guild). Created
+    on join_guild() (D-15).
+    """
+
+    character = models.OneToOneField(
+        "objects.ObjectDB",
+        on_delete=models.CASCADE,
+        related_name="guild_record",
+    )
+    guild_id = models.CharField(max_length=64, db_index=True)
+    primary_domain = models.CharField(max_length=32)
+    secondary_domain = models.CharField(max_length=32)
+    subclass_id = models.CharField(max_length=64, db_index=True)
+    joined_at = models.DateTimeField(auto_now_add=True)
+    induction_complete = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["guild_id"]),
+        ]
+
+    def __str__(self):
+        return f"{self.character.db_key}:{self.guild_id}/{self.subclass_id}"
