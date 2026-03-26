@@ -2,65 +2,187 @@
 Ability execution engine.
 
 Dispatches all abilities through effect-type handlers. Manages cooldowns
-(ndb, per-encounter) and domain resources (ndb, volatile). Combat wiring
-deferred to Phase 6.
+(ndb, per-encounter) and domain resources (ndb, volatile).
+
+Effect handlers delegate to combat_engine.py for damage/heal resolution
+and status_effects.py for buff/debuff/DoT application.
 
 Exports:
     use_ability, clear_encounter_cooldowns, decrement_cooldowns,
     build_domain_resource, spend_domain_resource, get_domain_resource,
-    initialize_domain_resource
+    initialize_domain_resource, EFFECT_HANDLERS
 """
+
+import random
 
 
 # ---------------------------------------------------------------------------
-# Effect handlers -- stubs returning descriptive text (Phase 6 wires real
-# combat effects)
+# Effect handlers -- wired to real combat resolution via combat_engine and
+# status_effects (lazy imports to avoid circular dependencies)
 # ---------------------------------------------------------------------------
 
 def _handle_damage(character, ability, target):
-    return (
-        f"You use {ability['name']} against "
-        f"{target.key if target else 'the air'}. [Combat stub]"
-    )
+    """Resolve direct damage via combat_engine."""
+    from world.combat_engine import resolve_ability_damage
+    ok, msg, dmg = resolve_ability_damage(character, ability, target)
+    return msg
 
 
 def _handle_dot(character, ability, target):
-    return f"You apply {ability['name']}. [DoT stub]"
+    """Apply a damage-over-time status effect to the target."""
+    from world import status_effects
+    effect_type = ability.get("status_effect", "poison")
+    duration = ability.get("effect_duration", 3)
+    magnitude = ability.get("effect_magnitude", ability.get("damage_base", 8))
+    ok, msg = status_effects.apply_effect(
+        target, effect_type, duration, magnitude, character.id
+    )
+    ability_name = ability["name"]
+    return f"{character.key} applies {ability_name}. {msg}"
 
 
 def _handle_buff(character, ability, target):
-    return f"You activate {ability['name']}. [Buff stub]"
+    """Apply a buff to the caster (self-buff)."""
+    from world import status_effects
+    effect_type = ability.get("buff_type", "haste")
+    duration = ability.get("effect_duration", 3)
+    magnitude = ability.get("effect_magnitude", 1.0)
+    ok, msg = status_effects.apply_effect(
+        character, effect_type, duration, magnitude, character.id
+    )
+    ability_name = ability["name"]
+    return f"{character.key} activates {ability_name}. {msg}"
 
 
 def _handle_debuff(character, ability, target):
-    return (
-        f"You cast {ability['name']} on "
-        f"{target.key if target else 'nothing'}. [Debuff stub]"
+    """Apply a debuff to the target."""
+    from world import status_effects
+    effect_type = ability.get("debuff_type", "weaken")
+    duration = ability.get("effect_duration", 3)
+    magnitude = ability.get("effect_magnitude", 1.0)
+    ok, msg = status_effects.apply_effect(
+        target, effect_type, duration, magnitude, character.id
     )
+    ability_name = ability["name"]
+    target_name = target.key if target else "the air"
+    return f"{character.key} casts {ability_name} on {target_name}. {msg}"
 
 
 def _handle_utility(character, ability, target):
-    return f"You use {ability['name']}. [Utility stub]"
+    """Context-dependent utility effect."""
+    utility_action = ability.get("utility_action")
+    if utility_action == "flee_boost":
+        from world import status_effects
+        status_effects.apply_effect(
+            character, "haste", 2, 1.0, character.id
+        )
+        return f"{character.key} uses {ability['name']} to gain a burst of speed."
+    elif utility_action == "reveal":
+        # Reveal a mob's affix (if target is a mob)
+        if target and hasattr(target, "reveal_affix"):
+            affixes = target.db.affix_list or []
+            for affix_tag in affixes:
+                reveal_msg = target.reveal_affix(character, affix_tag)
+                if reveal_msg:
+                    return f"{character.key} uses {ability['name']}. {reveal_msg}"
+        return f"{character.key} uses {ability['name']} to scan the area."
+    return f"{character.key} uses {ability['name']}."
 
 
 def _handle_social(character, ability, target):
-    return f"You invoke {ability['name']}. [Social stub]"
+    """Apply charm or social influence to the target."""
+    from world import status_effects
+    if target and target.db.base_stats is None:
+        # Mob target: apply charm effect
+        ok, msg = status_effects.apply_effect(
+            target, "charm",
+            ability.get("effect_duration", 2),
+            ability.get("effect_magnitude", 1.0),
+            character.id,
+        )
+    else:
+        msg = "Social influence applied."
+    from world.base_attributes import record_stat_use
+    record_stat_use(character, "social_ability")
+    return f"{character.key} invokes {ability['name']}. {msg}"
 
 
 def _handle_tactical(character, ability, target):
-    return f"You deploy {ability['name']}. [Tactical stub]"
+    """Apply tactical buff to group members or self."""
+    from world import status_effects
+    from world.base_attributes import record_stat_use
+    tactical_action = ability.get("tactical_action", "self_buff")
+    buff_type = ability.get("buff_type", "haste")
+    duration = ability.get("effect_duration", 3)
+    magnitude = ability.get("effect_magnitude", 1.0)
+
+    if tactical_action == "group_buff":
+        # Try to buff all group members
+        leader_id = getattr(character.ndb, "group_leader_id", None)
+        if leader_id:
+            from world.group_engine import _get_leader, _get_group_members
+            leader = _get_leader(character)
+            if leader:
+                members = _get_group_members(leader)
+                for member in members:
+                    status_effects.apply_effect(
+                        member, buff_type, duration, magnitude, character.id
+                    )
+                record_stat_use(character, "social_ability")
+                return (
+                    f"{character.key} rallies the group with {ability['name']}! "
+                    f"{len(members)} allies buffed."
+                )
+    # Fallback: self-buff
+    status_effects.apply_effect(
+        character, buff_type, duration, magnitude, character.id
+    )
+    record_stat_use(character, "social_ability")
+    return f"{character.key} deploys {ability['name']}."
 
 
 def _handle_compound_trigger(character, ability, target):
-    return f"You trigger {ability['name']}. [Compound stub]"
+    """Check and trigger compound effects on the target."""
+    from world.status_effects import check_compound_triggers
+    compounds = check_compound_triggers(target)
+    ability_name = ability["name"]
+    if compounds:
+        triggered = ", ".join(compounds)
+        return (
+            f"{character.key} triggers {ability_name}! "
+            f"Compound effects: {triggered}!"
+        )
+    return f"{character.key} triggers {ability_name}, but no compounds activate."
 
 
 def _handle_heal(character, ability, target):
-    return f"You channel {ability['name']}. [Heal stub]"
+    """Resolve healing via combat_engine."""
+    from world.combat_engine import resolve_heal
+    heal_target = target or character
+    ok, msg, healed = resolve_heal(character, ability, heal_target)
+    return msg
 
 
 def _handle_status(character, ability, target):
-    return f"You apply {ability['name']}. [Status stub]"
+    """Apply a status effect with application chance roll."""
+    from world import status_effects
+    effect_type = ability.get("status_effect", "slow")
+    chance = ability.get("application_chance", 1.0)
+    duration = ability.get("effect_duration", 3)
+    magnitude = ability.get("effect_magnitude", 1.0)
+
+    if random.random() > chance:
+        return (
+            f"{character.key} uses {ability['name']} on "
+            f"{target.key if target else 'the air'}, "
+            f"but the effect is resisted!"
+        )
+
+    ok, msg = status_effects.apply_effect(
+        target, effect_type, duration, magnitude, character.id
+    )
+    ability_name = ability["name"]
+    return f"{character.key} uses {ability_name}. {msg}"
 
 
 EFFECT_HANDLERS = {
