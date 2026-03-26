@@ -4,10 +4,10 @@ Action Vocabulary for Soravelon.
 Shared dispatch module for all trigger-driven and command-driven game events.
 Every action type in the game routes through execute_action().
 
-12 action types (D-07):
+13 action types (D-07, D-24):
   Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
                modify_standing, modify_attunement, log_world_event, despawn_self,
-               spawn_mob
+               spawn_mob, add_room_flag
   Stubs (D-05): set_quest_flag, open_dialogue
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
@@ -230,6 +230,18 @@ def _handle_spawn_mob(action_dict, context, _depth):
     return True, f"Spawned {mob.key}"
 
 
+def _action_add_room_flag(action_dict, context, _depth):
+    """Write a room state flag to the character's current room. D-24."""
+    flag = action_dict.get("flag", "")
+    duration = action_dict.get("duration")
+    character = context.get("character")
+    if character and character.location and flag:
+        from world.room_state import add_room_flag
+        add_room_flag(character.location, flag, duration)
+    return True, None
+
+
+
 def _stub_handler(action_dict, context, _depth):
     """Placeholder for not-yet-implemented actions."""
     action_type = action_dict.get("action_type", "unknown")
@@ -253,6 +265,7 @@ ACTION_HANDLERS = {
     "set_quest_flag": _stub_handler,
     "open_dialogue": _stub_handler,
     "spawn_mob": _handle_spawn_mob,
+    "add_room_flag": _action_add_room_flag,
 }
 
 

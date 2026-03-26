@@ -174,6 +174,23 @@ class SoravelonMob(DefaultCharacter):
             }
             create_item_from_template(tome_def, location=room)
 
+        # Write room state flags (D-24)
+        if room:
+            from world.room_state import add_room_flag
+            add_room_flag(room, "blood_soaked")
+
+            # Nature-affinity mob death
+            if self.db.faction and self.db.faction.lower() in (
+                "verdance", "wardens", "nature"
+            ):
+                add_room_flag(room, "fading_life")
+
+            # Named/boss mob death
+            is_named = self.tags.get("mob_id", category="mob_id") is not None
+            is_boss = self.db.rarity == "legendary"
+            if is_named or is_boss:
+                add_room_flag(room, "power_vacuum")
+
         # Schedule respawn from matching spawn_definition on the room
         if room and room.db.spawn_definitions:
             from world.mob_spawner import _schedule_respawn

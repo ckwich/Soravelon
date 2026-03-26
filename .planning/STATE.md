@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 05 planned — 5 plans in 3 waves
-last_updated: "2026-03-26T04:32:29.208Z"
+status: Ready to execute
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-26T05:45:14.878Z"
 progress:
   total_phases: 8
-  completed_phases: 4
-  total_plans: 26
-  completed_plans: 19
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 1
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 04 — domain-fingerprints-guild-engine
+**Current focus:** Phase 05 — ancestry-engine-and-ability-system
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 05 (ancestry-engine-and-ability-system) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Plan: Not started
 | Phase 03.1 P05 | 10 | 2 tasks | 1 files |
 | Phase 04 P01 | 10 | 3 tasks | 4 files |
 | Phase 04 P02 | 28 | 2 tasks | 2 files |
+| Phase 05 P01 | 7 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,8 @@ Recent decisions affecting current work:
 - [Phase 04]: CharacterGuild migration numbered 0004 (after existing 0003_worldeventlog)
 - [Phase 04]: Used EvenniaTest for model mutation tests and unittest.TestCase+MagicMock for pure computation tests
 - [Phase 04]: Included missing 0003_worldeventlog migration to fix dependency chain for EvenniaTest DB setup
+- [Phase 05]: Resistance faction excluded from KNOWN_FACTIONS_AT_CREATION -- applied silently via hidden standing system later
+- [Phase 05]: Room flags use ndb (volatile) storage -- intentional, clears on restart, represents immediate present
 
 ### Pending Todos
 
@@ -122,6 +125,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T04:32:29.204Z
-Stopped at: Phase 05 planned — 5 plans in 3 waves
-Resume file: .planning/phases/05-ancestry-engine-and-ability-system/05-01-PLAN.md
+Last session: 2026-03-26T05:45:14.875Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
