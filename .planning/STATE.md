@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06b-01-PLAN.md
-last_updated: "2026-03-26T23:42:00.979Z"
+stopped_at: Completed 06b-03-PLAN.md
+last_updated: "2026-03-26T23:50:23.092Z"
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 38
-  completed_plans: 34
+  completed_plans: 35
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 06b (spawn-system-skills-and-mob-ai) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ Plan: 3 of 5
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
 | Phase 06b P02 | 3 | 2 tasks | 2 files |
 | Phase 06b P01 | 7 | 2 tasks | 5 files |
+| Phase 06b P03 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -146,6 +147,8 @@ Recent decisions affecting current work:
 - [Phase 06b]: Discovery check fires only on threshold crossings (25/50/75/90/100) to avoid per-use DB queries
 - [Phase 06b]: SpawnRecord uses mob.db.spawn_record_id for direct FK lookup on death (avoids JSONField __contains)
 - [Phase 06b]: Named mob respawn detection via WorldEventLog query, zone-wide vague announcement text
+- [Phase 06b]: Skill accumulator flush piggybacks on existing 600s session_xp_safety_flush timer -- no new ticker
+- [Phase 06b]: Skill name resolution uses three-pass matching: exact, startswith, substring with disambiguation
 
 ### Pending Todos
 
@@ -159,6 +162,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T23:42:00.975Z
-Stopped at: Completed 06b-01-PLAN.md
+Last session: 2026-03-26T23:50:23.089Z
+Stopped at: Completed 06b-03-PLAN.md
 Resume file: None
