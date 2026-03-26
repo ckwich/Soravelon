@@ -168,7 +168,7 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 06b-01-PLAN.md — WorldEventLog fix + SpawnRecord model + migration + spawn_tick + death hook rewrite
+- [x] 06b-01-PLAN.md — WorldEventLog fix + SpawnRecord model + migration + spawn_tick + death hook rewrite
 - [x] 06b-02-PLAN.md — Skill definitions registry (21+ skills) + skill engine (accumulation, practice, training, discovery)
 - [ ] 06b-03-PLAN.md — Ancestry seed wiring + session flush integration + skill commands (CmdSkills/CmdPractice/CmdTrain)
 - [x] 06b-04-PLAN.md — Combat AI extensions: casting time, missing conditions, is_hunter chase

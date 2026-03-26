@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06b-02-PLAN.md
-last_updated: "2026-03-26T23:38:44.688Z"
+stopped_at: Completed 06b-01-PLAN.md
+last_updated: "2026-03-26T23:42:00.979Z"
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 38
-  completed_plans: 33
+  completed_plans: 34
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 06b (spawn-system-skills-and-mob-ai) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Plan: 2 of 5
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
 | Phase 06b P02 | 3 | 2 tasks | 2 files |
+| Phase 06b P01 | 7 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -143,6 +144,8 @@ Recent decisions affecting current work:
 - [Phase 06b]: Skill system fully independent of domain/guild system (SKL-04)
 - [Phase 06b]: Trainer bonus stored as ndb volatile -- consumed on next practice, lost on disconnect
 - [Phase 06b]: Discovery check fires only on threshold crossings (25/50/75/90/100) to avoid per-use DB queries
+- [Phase 06b]: SpawnRecord uses mob.db.spawn_record_id for direct FK lookup on death (avoids JSONField __contains)
+- [Phase 06b]: Named mob respawn detection via WorldEventLog query, zone-wide vague announcement text
 
 ### Pending Todos
 
@@ -156,6 +159,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T23:38:44.684Z
-Stopped at: Completed 06b-02-PLAN.md
+Last session: 2026-03-26T23:42:00.975Z
+Stopped at: Completed 06b-01-PLAN.md
 Resume file: None
