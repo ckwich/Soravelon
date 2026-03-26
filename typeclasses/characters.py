@@ -8,6 +8,8 @@ creation commands.
 
 """
 
+import time
+
 from evennia.objects.objects import DefaultCharacter
 
 from .objects import ObjectParent
@@ -43,6 +45,10 @@ class Character(ObjectParent, DefaultCharacter):
 
         # Ancestry
         self.db.ancestry = None
+
+        # Ability system (Phase 5)
+        self.db.remnance_discovered = False    # D-25: hide Remnance until discovered
+        self.db.active_loadout = []            # D-05: 8 ability_ids from known pool
 
         # Companion
         self.db.companion_id = None
@@ -103,6 +109,16 @@ class Character(ObjectParent, DefaultCharacter):
         # push_node_event, push_flight_progress, push_combat_update, push_quest_update
         # are event-driven — not pushed on login unless those states are active
 
+        # Ability system volatile state (D-12, D-13)
+        self.ndb.ability_cooldowns = {}
+        self.ndb.ancestry_ability_used = False
+        self.ndb.domain_resource = None  # Default; overwritten below if guild member
+        # Initialize domain resource at login for guild members (review feedback:
+        # utility/social abilities used outside combat need resources available)
+        if self.db.guild_id:
+            from world.ability_engine import initialize_domain_resource
+            initialize_domain_resource(self)
+
     def at_pre_unpuppet(self):
         """Called just before a player disconnects from this character."""
         from world.world_state import commit_session_xp
@@ -128,6 +144,23 @@ class Character(ObjectParent, DefaultCharacter):
             return
         from world import oob_publisher
         oob_publisher.push_map_update(self)
+
+        # Update room activity timestamp for still flag logic (review feedback:
+        # room_state.py _room_qualifies_as_still reads room.ndb.last_activity)
+        if self.location:
+            self.location.ndb.last_activity = time.time()
+
+        # Resonance Sense passive (D-22)
+        if self.db.guild_id and self.location:
+            from world.guild_engine import GUILDS
+            guild = GUILDS.get(self.db.guild_id, {})
+            if guild.get("primary_domain") == "resonance":
+                from world.room_state import get_dominant_flag, SENSE_DISPLAY
+                flag = get_dominant_flag(self.location)
+                if flag:
+                    text = SENSE_DISPLAY.get(flag, "")
+                    if text:
+                        self.msg(f"|m[Sense] {text}|n")
 
     def at_before_move(self, destination, **kwargs):
         """Block movement during Dragon Courier flight (D-12) or when overloaded."""
