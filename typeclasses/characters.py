@@ -55,6 +55,11 @@ class Character(ObjectParent, DefaultCharacter):
         # Exploration state
         self.db.discovered_exits = []
 
+        # Base attributes (7-stat system)
+        from world.base_attributes import STAT_NAMES
+        self.db.base_stats = {stat: 10 for stat in STAT_NAMES}
+        self.db.stat_xp = {stat: 0.0 for stat in STAT_NAMES}
+
         # Tag for queryset filtering
         self.tags.add("player_character", category="character_type")
 
@@ -62,8 +67,24 @@ class Character(ObjectParent, DefaultCharacter):
         """Called after a player connects to this character."""
         super().at_post_puppet(**kwargs)
         from world.world_state import init_session_accumulators
+        from world.base_attributes import (
+            STAT_NAMES, derive_max_hp, derive_max_stamina,
+        )
 
         init_session_accumulators(self)
+
+        # Stat growth session accumulators (volatile)
+        self.ndb.stat_xp_accumulators = {stat: 0.0 for stat in STAT_NAMES}
+
+        # Combat-relevant ndb state
+        self.ndb.combat_handler = None
+        self.ndb.combat_target_id = None
+        self.ndb.active_effects = []
+        self.ndb.actions_remaining = 0
+        self.ndb.ability_used_this_turn = False
+        self.ndb.hp = derive_max_hp(self)
+        self.ndb.stamina = derive_max_stamina(self)
+        self.ndb.charged_ability = None
 
         # Start per-character session script (XP flush + debt countdown).
         # persistent=False on the script means it auto-removes on logout,
@@ -77,10 +98,23 @@ class Character(ObjectParent, DefaultCharacter):
     def at_pre_unpuppet(self):
         """Called just before a player disconnects from this character."""
         from world.world_state import commit_session_xp
+        from world.base_attributes import commit_stat_growth
         from world.group_engine import on_member_disconnect
+
+        # Flush stat growth accumulators before logout
+        commit_stat_growth(self)
 
         commit_session_xp(self)
         on_member_disconnect(self)
+
+        # Combat cleanup — remove from active combat on disconnect
+        if self.ndb.combat_handler:
+            try:
+                self.ndb.combat_handler.remove_combatant(self)
+            except Exception:
+                pass  # combat handler may already be cleaned up
+            self.ndb.combat_handler = None
+
         super().at_pre_unpuppet()
 
     def at_before_move(self, destination, **kwargs):
