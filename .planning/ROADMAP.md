@@ -145,7 +145,16 @@ Plans:
   2. Group combat correctly distributes loot using the existing group engine's loot modes
   3. Status effect compounds (Burn+Wet=Steam, Poison+Slow=Venom Lag) trigger correctly in combat
   4. Base attributes display as descriptors only (no numbers visible to players); attributes grow through action-specific use
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 06a-01-PLAN.md — Base attributes: 7 stats, 70 descriptors, point-buy, stat growth, HP/stamina/action-budget derivation
+- [ ] 06a-02-PLAN.md — Status effects: stackable/non-stackable effects, compound matrix, tick logic
+- [ ] 06a-03-PLAN.md — Combat engine: damage resolution, ability handler wiring, corpse containers, death handling
+- [ ] 06a-04-PLAN.md — Combat AI: mob ability selection, targeting, condition vocabulary, scripted sequences
+- [ ] 06a-05-PLAN.md — CombatScript: room-attached turn manager, initiative, round progression, group timeout
+- [ ] 06a-06-PLAN.md — Combat commands: CmdAttack/CmdFlee/CmdTarget/CmdPass, CombatCmdSet, auto-engage, OOB publishers
+- [ ] 06a-07-PLAN.md — Test suite: test_base_attributes + test_status_effects + test_combat_engine + test_combat_ai + test_combat_script
 
 ### Phase 6b: Spawn System, Skills & Mob AI
 **Goal**: Mob spawn/respawn runtime with SpawnRecord model, mob ability AI with weighted priority selection, and full general proficiency + attunement skill system with discovery framework
@@ -193,5 +202,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 3.1 Mob Spawn Runtime (INSERTED) | 5/5 | Complete | 2026-03-25 |
 | 4. Domain Fingerprints and Guild Engine | 0/2 | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/5 | Not started | - |
-| 6. Combat, Skills, and NPC Templates | 0/TBD | Not started | - |
+| 6a. Base Attributes & Combat System | 0/7 | Not started | - |
+| 6b. Spawn System, Skills & Mob AI | 0/TBD | Not started | - |
+| 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
