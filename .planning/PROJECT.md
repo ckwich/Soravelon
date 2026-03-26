@@ -27,6 +27,7 @@ A dark-fantasy MUD built on Evennia 6.0, set in a world where ancient dragon-bui
 - ✓ Faction system: standing -100k to +100k, trust 0-100, betrayal flag, subfactions, atomic F() updates — existing
 - ✓ Zone attunement: per-zone 0-100 tracking, aggregate dimension score — existing
 - ✓ LLM quest data collection: WorldEventLog model, questline_choices on character — existing (stubs)
+- ✓ Domain fingerprints: 10 mechanical verbs locked, guild/GTS engine, CharacterGuild model — Phase 4
 
 ### Active
 
@@ -40,7 +41,7 @@ A dark-fantasy MUD built on Evennia 6.0, set in a world where ancient dragon-bui
 - [ ] GUI area builder — owner mode, then contributor mode; zone content authoring tool
 
 **Milestone 1 — Playable Skeleton**
-- [ ] Guild/domain/subclass system — 10 domains × 9 secondaries = 90 subclasses with mechanical identity
+- [x] Guild/domain/subclass system — 10 domains × 9 secondaries = 90 subclasses with mechanical identity (Phase 4)
 - [ ] Ability system — 360+ abilities across 90 subclasses, 4 tiers (Guild Tier Score 0/20/50/85)
 - [ ] Skill system — general proficiencies (0-100), profession tracks (Cooking, Smithing, Alchemy, Scholarly Research)
 - [ ] 4 playable ancestries — Human, Kau'roran, Veth, Selvar with distinct mechanical traits
@@ -65,7 +66,7 @@ A dark-fantasy MUD built on Evennia 6.0, set in a world where ancient dragon-bui
 
 - **Engine:** Evennia 6.0 (Django + Twisted), Python 3.12, SQLite dev / PostgreSQL prod
 - **Architecture:** 3-layer (typeclasses → world engines → Django models), all game logic in `world/` modules
-- **Codebase state:** 12 foundation systems built across 9 sessions, 247 tests passing, strict build order enforced
+- **Codebase state:** 13 foundation systems built, guild/GTS engine complete, strict build order enforced
 - **World lore:** Backed by original novel trilogy (Dragonsight / Dragonfall / Dragon War). The Dragon Curse is the central plot device — 1,000-year-old curse reduced dragons to animal intelligence, civilizations inherited infrastructure they can't maintain
 - **Design docs:** 18 vault documents in Obsidian covering every major system
 - **Ability design status:** Framework and tier structure documented (soravelon-guilds.md), but individual abilities for 90 subclasses need creative design from scratch during implementation
@@ -111,4 +112,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-24 after initialization*
+*Last updated: 2026-03-26 after Phase 4 completion*
