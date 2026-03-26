@@ -54,6 +54,7 @@ class CombatScript:
         # Volatile state (ndb)
         self.ndb.turn_timer_id = None
         self.ndb.pending_charged = {}  # {char_id: {ability_id, rounds_left, target_id}}
+        self.ndb.pending_mob_casts = {}  # {mob_id: {ability, target_id, rounds_left}}
         self.ndb.call_for_help_count = 0
 
     def at_start(self):
@@ -67,6 +68,8 @@ class CombatScript:
             self.ndb.pending_charged = {}
         if self.ndb.call_for_help_count is None:
             self.ndb.call_for_help_count = 0
+        if self.ndb.pending_mob_casts is None:
+            self.ndb.pending_mob_casts = {}
 
         # Restore active_effects from db to each combatant's ndb
         from evennia import search_object
@@ -170,6 +173,12 @@ class CombatScript:
         if cid in charged:
             del charged[cid]
         self.ndb.pending_charged = charged
+
+        # Remove from pending_mob_casts (mob died mid-cast)
+        pending_casts = dict(self.ndb.pending_mob_casts or {})
+        if cid in pending_casts:
+            del pending_casts[cid]
+            self.ndb.pending_mob_casts = pending_casts
 
         # Remove from active_effects_db
         stored = dict(self.db.active_effects_db or {})
@@ -377,6 +386,12 @@ class CombatScript:
                     self.obj.msg_contents(
                         f"|y{mob.key} calls for reinforcements!|n"
                     )
+
+            elif action_type == "cast_start":
+                # Telegraph emote fires immediately; cast registered by combat_ai
+                emote = action.get("emote") or action.get("text", "")
+                if emote and self.obj:
+                    self.obj.msg_contents(emote)
 
             elif action_type == "echo":
                 text = action.get("text", "")
@@ -629,6 +644,57 @@ class CombatScript:
                 f"|c--- Round {self.db.round_number} ---|n"
             )
 
+        # Resolve pending mob casts at the start of the new round (D-11)
+        from world.combat_ai import resolve_pending_casts
+        resolved = resolve_pending_casts(self)
+        for cast_action in resolved:
+            self._dispatch_resolved_cast(cast_action)
+
+    def _dispatch_resolved_cast(self, cast_action):
+        """
+        Dispatch a resolved mob cast through the normal ability resolution path.
+
+        Called when a pending mob cast timer reaches zero and the mob is not
+        interrupted. Resolves damage/effects via ability_engine.
+
+        Args:
+            cast_action: Action dict from resolve_pending_casts() with mob_id,
+                        target_id, ability_id, and ability parameters.
+        """
+        mob = _resolve_by_id(cast_action.get("mob_id"))
+        target = _resolve_by_id(cast_action.get("target_id"))
+        if mob is None or target is None:
+            return
+
+        from world.combat_engine import check_death, handle_mob_death, handle_player_death
+
+        # Skip if either is already dead
+        if check_death(mob) or check_death(target):
+            return
+
+        ability_id = cast_action.get("ability_id", "")
+        from world.ability_engine import use_ability
+        ok, msg = use_ability(mob, ability_id, target=target)
+        if self.obj:
+            self.obj.msg_contents(msg)
+
+        # Apply cooldown
+        cooldown = cast_action.get("cooldown", 0)
+        if cooldown > 0 and ability_id:
+            cooldowns = dict(getattr(mob.ndb, "ability_cooldowns", None) or {})
+            cooldowns[ability_id] = cooldown
+            mob.ndb.ability_cooldowns = cooldowns
+
+        # Check death of target
+        if check_death(target):
+            if _is_player(target):
+                death_msg = handle_player_death(target)
+            else:
+                death_msg = handle_mob_death(target, mob)
+            if self.obj:
+                self.obj.msg_contents(death_msg)
+            self.remove_combatant(target)
+
     # -- combat end ----------------------------------------------------------
 
     def end_combat(self):
@@ -654,8 +720,9 @@ class CombatScript:
             combatant.ndb.actions_remaining = 0
             combatant.ndb.ability_used_this_turn = False
 
-        # Clear pending charged
+        # Clear pending charged and mob casts
         self.ndb.pending_charged = {}
+        self.ndb.pending_mob_casts = {}
 
         # Cancel active timers
         self.ndb.turn_timer_id = None
