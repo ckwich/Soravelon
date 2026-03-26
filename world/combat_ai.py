@@ -48,6 +48,28 @@ CONDITION_CHECKS = {
     "allies_present": lambda mob, target, ch: (
         len(_get_mob_combatants(ch, exclude=mob)) > 0
     ),
+    # D-13 vault-spec condition keys
+    "pack_present": lambda mob, target, ch: (
+        len(_get_mob_combatants(ch, exclude=mob)) > 0
+    ),
+    "hp_below_50": lambda mob, target, ch: (
+        getattr(mob.ndb, "hp", 0) < (mob.db.hp_max or 1) * 0.5
+    ),
+    "hp_below_25": lambda mob, target, ch: (
+        getattr(mob.ndb, "hp", 0) < (mob.db.hp_max or 1) * 0.25
+    ),
+    "target_rooted": lambda mob, target, ch: (
+        target is not None and _target_has_effect(target, "root")
+    ),
+    "target_blinded": lambda mob, target, ch: (
+        target is not None and _target_has_effect(target, "blind")
+    ),
+    "no_target_dot": lambda mob, target, ch: (
+        target is not None
+        and not _target_has_effect(target, "poison")
+        and not _target_has_effect(target, "bleed")
+        and not _target_has_effect(target, "burn")
+    ),
 }
 
 # Maximum call-for-help spawns per encounter (Pitfall 2)
@@ -176,6 +198,16 @@ def select_mob_action(mob, target, combat_handler):
 
     weights = [a.get("weight", 1) for a in usable]
     selected = random.choices(usable, weights=weights, k=1)[0]
+
+    # D-11: Casting time -- telegraph and defer resolution
+    if selected.get("cast_time", 0) > 0:
+        return {
+            "type": "cast_start",
+            "ability": selected,
+            "target_id": None,  # Set by process_mob_turn after targeting
+            "cast_time": selected["cast_time"],
+            "emote": selected.get("emote", ""),
+        }
 
     return {
         "type": "ability",
@@ -427,6 +459,147 @@ def execute_sequence_action(action, mob, combat_handler):
 
 
 # ---------------------------------------------------------------------------
+# Casting time management (D-11)
+# ---------------------------------------------------------------------------
+
+def start_mob_cast(mob, ability, target, combat_handler):
+    """
+    Register a pending mob cast on the combat handler.
+
+    Called when a mob selects an ability with cast_time > 0. The cast will
+    be tracked and resolved by resolve_pending_casts() on a future round.
+
+    Args:
+        mob: The casting mob.
+        ability: The ability dict being cast.
+        target: The intended target.
+        combat_handler: The room's CombatScript.
+    """
+    pending = dict(combat_handler.ndb.pending_mob_casts or {})
+    pending[mob.id] = {
+        "ability": ability,
+        "target_id": target.id if target else None,
+        "rounds_left": ability.get("cast_time", 1),
+    }
+    combat_handler.ndb.pending_mob_casts = pending
+
+
+def resolve_pending_casts(combat_handler):
+    """
+    Decrement cast timers and resolve any that complete.
+
+    Called at the START of each round by CombatScript. Returns list of
+    action dicts for completed casts.
+
+    Per D-11: Check for stun/root INTERRUPT at resolution time.
+    If mob has stun or root when cast resolves, cancel the cast.
+
+    Args:
+        combat_handler: The room's CombatScript.
+
+    Returns:
+        list[dict]: Action dicts for casts that resolved this round.
+    """
+    pending = dict(combat_handler.ndb.pending_mob_casts or {})
+    resolved_actions = []
+    still_pending = {}
+
+    for mob_id, cast_info in pending.items():
+        cast_info["rounds_left"] -= 1
+        if cast_info["rounds_left"] <= 0:
+            # Cast completes -- check for interrupt
+            mob = _resolve_combatant(mob_id, combat_handler)
+            if mob is None:
+                continue  # mob died during cast
+            from world.status_effects import has_effect
+            if has_effect(mob, "stun") or has_effect(mob, "root"):
+                # Interrupted!
+                if mob.location:
+                    mob.location.msg_contents(
+                        f"|y{mob.key}'s spell is interrupted!|n"
+                    )
+                continue  # cast cancelled, not added to resolved
+            # Cast resolves
+            ability = cast_info["ability"]
+            resolved_actions.append({
+                "type": "ability",
+                "ability_id": ability.get("ability_id"),
+                "element": ability.get("element", "physical"),
+                "damage_base": ability.get("damage_base", 0),
+                "status_effect": ability.get("status_effect"),
+                "effect_duration": ability.get("effect_duration", 0),
+                "effect_magnitude": ability.get("effect_magnitude", 0),
+                "application_chance": ability.get("application_chance", 1.0),
+                "cooldown": ability.get("cooldown", 0),
+                "target_id": cast_info["target_id"],
+                "mob_id": mob_id,
+                "from_cast": True,
+            })
+        else:
+            still_pending[mob_id] = cast_info
+
+    combat_handler.ndb.pending_mob_casts = still_pending
+    return resolved_actions
+
+
+def _resolve_combatant(mob_id, combat_handler):
+    """Find a mob object from the combat handler's combatant lists by ID."""
+    combatant_ids = getattr(combat_handler.db, "combatant_ids", None) or []
+    if mob_id not in combatant_ids:
+        return None
+    # Use the combat_script's resolver pattern
+    if hasattr(combat_handler, "_resolve_combatants"):
+        for c in combat_handler._resolve_combatants():
+            if c is not None and c.id == mob_id:
+                return c
+    return None
+
+
+# ---------------------------------------------------------------------------
+# is_hunter chase behavior (D-15)
+# ---------------------------------------------------------------------------
+
+DEFAULT_HUNTER_DETECTION_RANGE = 3
+
+
+def attempt_hunter_chase(mob, target, room):
+    """
+    is_hunter mob chases a fleeing player via BFS pathfinding.
+
+    Returns True if mob moved toward target, False otherwise.
+    Only called when mob has is_hunter flag and target fled.
+
+    Uses patrol_engine.find_path() for BFS -- same pathfinding
+    already tested and proven. Capped at mob.db.detection_range
+    or DEFAULT_HUNTER_DETECTION_RANGE.
+
+    Args:
+        mob: The hunting mob.
+        target: The fleeing player.
+        room: The room the mob is currently in.
+
+    Returns:
+        bool: True if mob moved toward target.
+    """
+    if not (mob.db.is_hunter or False):
+        return False
+    detection_range = mob.db.detection_range or DEFAULT_HUNTER_DETECTION_RANGE
+    from world.patrol_engine import find_path
+    path = find_path(mob.location, target.location, max_depth=detection_range)
+    if not path or len(path) < 2:
+        return False
+    # Move mob to next room in path
+    next_room = path[1]
+    mob.move_to(next_room, quiet=True)
+    if mob.location == target.location:
+        # Arrived -- initiate combat
+        mob.location.msg_contents(
+            f"|r{mob.key} has tracked you down!|n"
+        )
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Flee behavior
 # ---------------------------------------------------------------------------
 
@@ -502,6 +675,21 @@ def process_mob_turn(mob, combat_handler):
 
     # 4. Action selection
     action = select_mob_action(mob, target, combat_handler)
+
+    # D-11: Handle casting time -- register pending cast and telegraph
+    if action.get("type") == "cast_start":
+        action["target_id"] = target.id
+        start_mob_cast(mob, action["ability"], target, combat_handler)
+        # Return telegraph emote action for immediate display
+        emote = action.get("emote", "")
+        if not emote:
+            emote = f"|y{mob.key} begins casting a spell...|n"
+        actions.append({
+            "type": "echo",
+            "text": emote,
+        })
+        return actions
+
     action["target_id"] = target.id
     actions.append(action)
 
