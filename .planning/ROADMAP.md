@@ -150,8 +150,8 @@ Plans:
 Plans:
 - [x] 06a-01-PLAN.md — Base attributes: 7 stats, 70 descriptors, point-buy, stat growth, HP/stamina/action-budget derivation
 - [x] 06a-02-PLAN.md — Status effects: stackable/non-stackable effects, compound matrix, tick logic
-- [x] 06a-03-PLAN.md — Combat engine: damage resolution, ability handler wiring, corpse containers, death handling
-- [ ] 06a-04-PLAN.md — Combat AI: mob ability selection, targeting, condition vocabulary, scripted sequences
+- [ ] 06a-03-PLAN.md — Combat engine: damage resolution, ability handler wiring, corpse containers, death handling
+- [x] 06a-04-PLAN.md — Combat AI: mob ability selection, targeting, condition vocabulary, scripted sequences
 - [ ] 06a-05-PLAN.md — CombatScript: room-attached turn manager, initiative, round progression, group timeout
 - [ ] 06a-06-PLAN.md — Combat commands: CmdAttack/CmdFlee/CmdTarget/CmdPass, CombatCmdSet, auto-engage, OOB publishers
 - [ ] 06a-07-PLAN.md — Test suite: test_base_attributes + test_status_effects + test_combat_engine + test_combat_ai + test_combat_script

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06a-03-PLAN.md
-last_updated: "2026-03-26T19:02:00Z"
+stopped_at: Completed 06a-04-PLAN.md
+last_updated: "2026-03-26T18:59:59.757Z"
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 33
-  completed_plans: 26
+  completed_plans: 27
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 06a (base-attributes-and-combat) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 
 ## Performance Metrics
 
@@ -69,7 +69,7 @@ Plan: 3 of 7
 | Phase 05 P05 | 9 | 2 tasks | 3 files |
 | Phase 06a P02 | 2 | 1 tasks | 1 files |
 | Phase 06a P01 | 5 | 2 tasks | 2 files |
-| Phase 06a P03 | 5 | 2 tasks | 3 files |
+| Phase 06a P04 | 123 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -131,10 +131,7 @@ Recent decisions affecting current work:
 - [Phase 06a]: HP formula: 50 + endurance*5 + backend_level*10; Stamina: 30 + endurance*2
 - [Phase 06a]: Action budget: floor(1 + agility/30) capped at 4; damage modifier 1/sqrt(actions)
 - [Phase 06a]: Stat growth: 0.5 XP per use, 10 XP = 1 stat point, diminishing returns curve
-- [Phase 06a]: DOMAIN_TO_STAT validated against all ability_registry.py scaling_primary values
-- [Phase 06a]: Mob basic attack uses proportional scaling within zone-scaled damage range
-- [Phase 06a]: Player corpses start in open phase immediately (no killer-locked grace period)
-- [Phase 06a]: _move_room_loot_to_corpse identifies loot via isinstance(obj, SoravelonItem)
+- [Phase 06a]: Mob AI uses lambda dict for condition vocabulary (9 checks); weight-based random.choices for ability selection; fire-once trigger set for scripted sequences
 
 ### Pending Todos
 
@@ -148,6 +145,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T19:02:00Z
-Stopped at: Completed 06a-03-PLAN.md
+Last session: 2026-03-26T18:59:59.754Z
+Stopped at: Completed 06a-04-PLAN.md
 Resume file: None
