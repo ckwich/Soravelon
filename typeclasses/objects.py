@@ -3,8 +3,8 @@ Objects for Soravelon.
 
 ObjectParent is a mixin for all entities with a location.
 SoravelonObject is the base for non-character, non-room objects.
-SoravelonItem, SoravelonContainer, SoravelonEquipment, and
-SoravelonKeyringItem handle the item system.
+SoravelonItem, SoravelonContainer, SoravelonEquipment,
+SoravelonKeyringItem, and CorpseContainer handle the item system.
 """
 
 from evennia.objects.objects import DefaultObject
@@ -95,6 +95,64 @@ class SoravelonContainer(SoravelonItem):
     def get_effective_weight_of(self, item_weight, quantity=1):
         reduction = self.db.weight_reduction / 100
         return item_weight * quantity * (1 - reduction)
+
+
+class CorpseContainer(SoravelonContainer):
+    """
+    A loot container spawned on mob or player death.
+
+    Phases: locked (killer/group only) -> open (anyone) -> decayed (deleted).
+    Phase transitions scheduled via delay() in combat_engine.spawn_corpse().
+
+    Lock is enforced by can_loot() -- combat engine and loot commands
+    call this to gate access.
+    """
+
+    GRACE_PERIOD = 120      # 2 minutes killer-locked
+    OPEN_PERIOD = 300       # 5 minutes open to all
+
+    def at_object_creation(self):
+        super().at_object_creation()
+        self.db.killer_id = None
+        self.db.killer_group_leader_id = None
+        self.db.loot_phase = "locked"
+        self.db.mob_key = ""
+        self.db.mob_rarity = "normal"
+        self.db.decay_at = None
+        self.db.item_type = "corpse"
+        self.locks.add("get:false()")
+
+    def can_loot(self, character):
+        """
+        Check if character can access this corpse's loot.
+
+        locked phase: killer or killer's group members only.
+        open phase: anyone.
+        decayed phase: nobody.
+
+        Returns:
+            (bool, str): Success and message.
+        """
+        phase = self.db.loot_phase or "locked"
+
+        if phase == "decayed":
+            return False, "Nothing remains here."
+
+        if phase == "open":
+            return True, ""
+
+        # Locked phase: check killer or group membership
+        if character.id == self.db.killer_id:
+            return True, ""
+
+        # Check group membership: character's group leader matches killer's group leader
+        killer_group_id = self.db.killer_group_leader_id
+        if killer_group_id:
+            char_group_id = getattr(character.ndb, "group_leader_id", None)
+            if char_group_id == killer_group_id:
+                return True, ""
+
+        return False, "This corpse's loot is still being claimed by the killer."
 
 
 class SoravelonEquipment(SoravelonItem):
