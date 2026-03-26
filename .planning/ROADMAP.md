@@ -131,7 +131,7 @@ Plans:
 
 Plans:
 - [ ] 05-01-PLAN.md — Ancestry engine (world/ancestry_engine.py) + room state (world/room_state.py) + mob death flag writers + action vocabulary handler
-- [ ] 05-02-PLAN.md — Ability registry (world/ability_registry.py) + CharacterAbility model + migration + Ironwright fix
+- [x] 05-02-PLAN.md — Ability registry (world/ability_registry.py) + CharacterAbility model + migration + Ironwright fix
 - [ ] 05-03-PLAN.md — Ability engine (world/ability_engine.py) + Character ndb/db inits + Sense hook
 - [ ] 05-04-PLAN.md — Commands (CmdSetAncestry, CmdJoinGuild, CmdDomains, CmdAbilities, CmdUseAbility) + guild discovery wiring + cmdset registration
 - [ ] 05-05-PLAN.md — Test suite: test_ancestry_engine.py + test_ability_engine.py + test_room_state.py

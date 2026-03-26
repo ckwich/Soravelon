@@ -62,12 +62,12 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 ### Ability System
 
-- [ ] **ABL-01**: Global data-driven ability registry (not per-character instances)
+- [x] **ABL-01**: Global data-driven ability registry (not per-character instances)
 - [ ] **ABL-02**: CmdUseAbility dispatcher handles all 360+ abilities through one command
 - [ ] **ABL-03**: Ability tier gating unlocks at Guild Tier Score 0/20/50/85
-- [ ] **ABL-04**: All 90 subclasses have mechanically distinct ability sets (4 tiers each)
+- [x] **ABL-04**: All 90 subclasses have mechanically distinct ability sets (4 tiers each)
 - [ ] **ABL-05**: Ability cooldowns tracked per-encounter on mob.ndb
-- [ ] **ABL-06**: Subclass engine derives identity from primary + secondary domain pair
+- [x] **ABL-06**: Subclass engine derives identity from primary + secondary domain pair
 
 ### Combat
 
@@ -182,12 +182,12 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | ANC-03 | Phase 5 | Pending |
 | ANC-04 | Phase 5 | Pending |
 | ANC-05 | Phase 5 | Pending |
-| ABL-01 | Phase 5 | Pending |
+| ABL-01 | Phase 5 | Complete |
 | ABL-02 | Phase 5 | Pending |
 | ABL-03 | Phase 5 | Pending |
-| ABL-04 | Phase 5 | Pending |
+| ABL-04 | Phase 5 | Complete |
 | ABL-05 | Phase 5 | Pending |
-| ABL-06 | Phase 5 | Pending |
+| ABL-06 | Phase 5 | Complete |
 | CMB-01 | Phase 6 | Pending |
 | CMB-02 | Phase 6 | Pending |
 | CMB-03 | Phase 6 | Pending |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Phase 05 planned — 5 plans in 3 waves
-last_updated: "2026-03-26T04:32:29.208Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-26T05:42:25.273Z"
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 26
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 05 (ancestry-engine-and-ability-system) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Plan: Not started
 | Phase 03.1 P05 | 10 | 2 tasks | 1 files |
 | Phase 04 P01 | 10 | 3 tasks | 4 files |
 | Phase 04 P02 | 28 | 2 tasks | 2 files |
+| Phase 05 P02 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,8 @@ Recent decisions affecting current work:
 - [Phase 04]: CharacterGuild migration numbered 0004 (after existing 0003_worldeventlog)
 - [Phase 04]: Used EvenniaTest for model mutation tests and unittest.TestCase+MagicMock for pure computation tests
 - [Phase 04]: Included missing 0003_worldeventlog migration to fix dependency chain for EvenniaTest DB setup
+- [Phase 05]: 14 stub abilities cover all 10 domains and 10 effect types; bladestorm chosen as signature stub subclass
+- [Phase 05]: Ironwright hook updated to no-companion weapons-mid-battle design per D-27
 
 ### Pending Todos
 
@@ -122,6 +125,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T04:32:29.204Z
-Stopped at: Phase 05 planned — 5 plans in 3 waves
-Resume file: .planning/phases/05-ancestry-engine-and-ability-system/05-01-PLAN.md
+Last session: 2026-03-26T05:42:25.270Z
+Stopped at: Completed 05-02-PLAN.md
+Resume file: None
