@@ -193,6 +193,33 @@ def commit_session_xp(character):
     from world import oob_publisher
     oob_publisher.push_status_update(character)
 
+    # Guild discovery check (D-17)
+    try:
+        _check_guild_discovery(character)
+    except Exception:
+        import evennia
+        evennia.logger.log_trace("Guild discovery check failed (non-fatal)")
+
+
+def _check_guild_discovery(character):
+    """
+    Fire guild recruitment message if character qualifies and has no guild.
+    Called from commit_session_xp. D-17: fire-and-forget notification.
+    """
+    if character.db.guild_id:
+        return
+    from world.guild_engine import check_guild_eligibility, GUILDS
+    eligible = check_guild_eligibility(character)
+    if not eligible:
+        return
+    # Send recruitment message for first eligible guild
+    guild = GUILDS.get(eligible[0], {})
+    guild_name = guild.get("name", eligible[0])
+    character.msg(
+        f"|y[A messenger approaches with a sealed letter bearing the mark "
+        f"of the {guild_name}. Type 'joinguild' to respond.]|n"
+    )
+
 
 # --- Backend Level (INTERNAL ONLY — never expose to player) ---
 

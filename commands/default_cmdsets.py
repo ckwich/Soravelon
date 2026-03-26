@@ -41,6 +41,15 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdFly())
         self.add(CmdDisembark())
         self.add(CmdFlightRoutes())
+        from commands.cmd_ancestry import CmdSetAncestry
+        self.add(CmdSetAncestry())
+        from commands.cmd_guild import CmdJoinGuild
+        self.add(CmdJoinGuild())
+        from commands.cmd_domains import CmdDomains
+        self.add(CmdDomains())
+        from commands.cmd_abilities import CmdAbilities, CmdUseAbility
+        self.add(CmdAbilities())
+        self.add(CmdUseAbility())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
