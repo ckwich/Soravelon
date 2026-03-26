@@ -284,3 +284,30 @@ class CharacterGuild(models.Model):
 
     def __str__(self):
         return f"{self.character.db_key}:{self.guild_id}/{self.subclass_id}"
+
+
+class CharacterAbility(models.Model):
+    """
+    Tracks which abilities a character has unlocked.
+
+    Source of truth for ability access. Created when player claims an ability
+    at guild hall (D-19). Queried by ability engine for access checks.
+    """
+
+    character = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.CASCADE,
+        related_name="character_abilities",
+    )
+    ability_id = models.CharField(max_length=128, db_index=True)
+    unlocked_at = models.DateTimeField(auto_now_add=True)
+    times_used = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ("character", "ability_id")
+        indexes = [
+            models.Index(fields=["character_id", "ability_id"]),
+        ]
+
+    def __str__(self):
+        return f"{self.character.db_key}:{self.ability_id}"
