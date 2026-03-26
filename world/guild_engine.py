@@ -336,8 +336,9 @@ SUBCLASSES = {
             " for close-range combat support"
         ),
         "hook": (
-            "Combat-hardened companion chassis -- shields, weapon assists,"
-            " disruption; Momentum and companion act in concert"
+            "Builds weapons mid-battle -- improvised, brutal, adaptive;"
+            " no companion -- Engineering knowledge applied to self"
+            " and weapons"
         ),
     },
     "dragonblooded": {
