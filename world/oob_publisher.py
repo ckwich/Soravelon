@@ -120,6 +120,57 @@ def _get_group_positions(character):
 
 
 # ---------------------------------------------------------------------------
+# Combat OOB helpers
+# ---------------------------------------------------------------------------
+
+def _resolve_combatant(cid):
+    """Resolve a single combatant by database ID. Returns obj or None."""
+    if cid is None:
+        return None
+    try:
+        from evennia import search_object
+        results = search_object(str(cid), exact=False, use_dbref="#" + str(cid))
+        if results:
+            return results[0]
+    except Exception:
+        pass
+    return None
+
+
+def _get_available_abilities(character):
+    """
+    Return list of {id, name, on_cooldown} dicts for the character's known abilities.
+
+    Checks per-encounter cooldowns (ndb.ability_cooldowns) to mark availability.
+    """
+    try:
+        from world.ability_registry import ABILITIES
+        from world.models import CharacterAbility
+
+        known_ids = list(
+            CharacterAbility.objects.filter(
+                character=character
+            ).values_list("ability_id", flat=True)
+        )
+    except Exception:
+        return []
+
+    cooldowns = character.ndb.ability_cooldowns or {}
+    available = []
+    for aid in known_ids:
+        ability = ABILITIES.get(aid)
+        if not ability:
+            continue
+        on_cd = cooldowns.get(aid, 0) > 0
+        available.append({
+            "id": aid,
+            "name": ability["name"],
+            "on_cooldown": on_cd,
+        })
+    return available
+
+
+# ---------------------------------------------------------------------------
 # Public push functions
 # ---------------------------------------------------------------------------
 
@@ -154,11 +205,25 @@ def push_status_update(character):
 
 def push_stat_update(character):
     """
-    Push HP and resource bar state (Phase 6 placeholder).
+    Push HP, stamina, domain resource, and active conditions.
 
-    The schema is live; the combat system populates hp/hp_max in Phase 6.
+    Sent on login, after damage/healing, and on status effect changes.
     """
-    data = {"hp": None, "hp_max": None, "conditions": []}
+    from world.base_attributes import derive_max_hp, derive_max_stamina
+    from world.ability_engine import get_domain_resource
+
+    resource = get_domain_resource(character)
+    data = {
+        "hp": character.ndb.hp or 0,
+        "hp_max": derive_max_hp(character),
+        "stamina": character.ndb.stamina or 0,
+        "stamina_max": derive_max_stamina(character),
+        "domain_resource": resource,
+        "conditions": [
+            f"{e['type']}_{e.get('stacks', 1)}"
+            for e in (character.ndb.active_effects or [])
+        ],
+    }
     _send(character, "stat_update", data)
 
 
@@ -259,13 +324,74 @@ def push_flight_progress(character, leg_index, total_legs, destination_name, dis
     _send(character, "flight_progress", data)
 
 
-def push_combat_update(character, data):
+def push_combat_update(character, data=None):
     """
-    Push combat state to the character (Phase 6 placeholder passthrough).
+    Push structured combat state to the character.
 
-    Combat field schema is TBD in Phase 6. Callers assemble and pass data dict.
+    If data is passed (from CombatScript._build_combat_oob), sends it directly.
+    If data is None, builds the payload from the character's combat_handler.
+
+    Payload includes: combat state, round, turn status, actions remaining,
+    combatant list with HP percentages and effects, available abilities,
+    and current target.
     """
-    _send(character, "combat_update", data)
+    if data is not None:
+        # Legacy / direct passthrough from CombatScript
+        _send(character, "combat_update", data)
+        return
+
+    handler = character.ndb.combat_handler
+    if not handler:
+        return
+
+    # Build combatants list
+    combatants = []
+    for cid in (handler.db.combatant_ids or []):
+        obj = _resolve_combatant(cid)
+        if not obj:
+            continue
+        is_mob = not (
+            hasattr(obj, "tags")
+            and obj.tags.has("player_character", category="character_type")
+        )
+        if is_mob:
+            hp_max = obj.db.hp_max or 1
+        else:
+            from world.base_attributes import derive_max_hp
+            hp_max = derive_max_hp(obj) or 1
+        hp_pct = (obj.ndb.hp or 0) / max(1, hp_max)
+        effects = [e["type"] for e in (obj.ndb.active_effects or [])]
+        current_idx = handler.db.current_turn_index or 0
+        ids = handler.db.combatant_ids or []
+        is_current = (
+            current_idx < len(ids)
+            and ids[current_idx] == cid
+        )
+        combatants.append({
+            "id": cid,
+            "name": obj.key,
+            "hp_pct": round(hp_pct, 2),
+            "is_mob": is_mob,
+            "effects": effects,
+            "is_current": is_current,
+        })
+
+    # Build available abilities
+    available = _get_available_abilities(character)
+
+    payload = {
+        "state": "active",
+        "round": handler.db.round_number or 1,
+        "your_turn": (
+            handler.get_current_combatant() == character
+            if hasattr(handler, "get_current_combatant") else False
+        ),
+        "actions_remaining": character.ndb.actions_remaining or 0,
+        "combatants": combatants,
+        "available_abilities": available,
+        "target_id": character.ndb.combat_target_id,
+    }
+    _send(character, "combat_update", payload)
 
 
 def push_quest_update(character, data):

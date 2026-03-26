@@ -184,6 +184,27 @@ class Character(ObjectParent, DefaultCharacter):
         if self.location:
             self.location.ndb.last_activity = time.time()
 
+        # Auto-engage: check for aggressive mobs in room (D-13, same-room only)
+        # is_hunter BFS aggro deferred to Phase 6b (requires patrol tick integration)
+        if self.location and not self.ndb.combat_handler:
+            from world.combat_script import start_combat
+            aggressive_mobs = []
+            for obj in self.location.contents:
+                if obj == self:
+                    continue
+                if hasattr(obj, "get_behavior_toward"):
+                    behavior = obj.get_behavior_toward(self)
+                    if behavior == "aggressive" and (obj.db.combat_enabled is not False):
+                        aggressive_mobs.append(obj)
+            if aggressive_mobs:
+                # First aggressive mob initiates; others join the same combat
+                start_combat(self.location, aggressive_mobs[0], [self])
+                for mob in aggressive_mobs[1:]:
+                    from world.combat_script import join_combat
+                    handler = self.ndb.combat_handler
+                    if handler and not handler.is_combatant(mob):
+                        join_combat(handler, mob)
+
         # Resonance Sense passive (D-22)
         if self.db.guild_id and self.location:
             from world.guild_engine import GUILDS
