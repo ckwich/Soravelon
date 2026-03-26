@@ -117,16 +117,24 @@ Plans:
 - [x] 04-02-PLAN.md — join_guild/complete_induction mutation functions + test suite (test_guild_engine.py)
 
 ### Phase 5: Ancestry Engine and Ability System
-**Goal**: Players choose from 4 mechanically distinct ancestries at creation, and every one of 90 subclasses has a unique set of abilities across 4 tiers that express its domain-pair identity
+**Goal**: Phase 5a builds the ancestry engine, ability framework, room state system, and all structural infrastructure. Phase 5b (separate) authors all 330 ability definitions collaboratively.
 **Depends on**: Phase 4 (domain fingerprints and GTS engine must exist before ability authoring begins)
 **Requirements**: ANC-01, ANC-02, ANC-03, ANC-04, ANC-05, ABL-01, ABL-02, ABL-03, ABL-04, ABL-05, ABL-06
+**Note**: ABL-04 (full 330 ability content) deferred to Phase 5b per CONTEXT.md D-01. Phase 5a delivers stub abilities only.
 **Success Criteria** (what must be TRUE):
   1. Each of the 4 ancestries applies its mechanical trait at character creation (e.g., Kau'roran size modifier, Veth tunnel shortcuts) and the traits feed into mob disposition calculations
   2. A player with a Duskblade (Combat+Subterfuge) subclass has access to abilities that could not be mistaken for a Thornguard (Combat+Naturalism) — each subclass's Tier 1 ability set is mechanically distinct
   3. The `use <ability>` dispatcher handles all 360+ abilities through a single CmdUseAbility command — no per-ability Cmd classes exist
   4. Ability tier gating unlocks correctly at GTS thresholds 0/20/50/85; attempting a locked ability returns a clear feedback message
-  5. Ability cooldowns tracked per-encounter on mob.ndb reset correctly between encounters
-**Plans**: TBD
+  5. Ability cooldowns tracked per-encounter on character.ndb reset correctly between encounters
+**Plans**: 5 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Ancestry engine (world/ancestry_engine.py) + room state (world/room_state.py) + mob death flag writers + action vocabulary handler
+- [ ] 05-02-PLAN.md — Ability registry (world/ability_registry.py) + CharacterAbility model + migration + Ironwright fix
+- [ ] 05-03-PLAN.md — Ability engine (world/ability_engine.py) + Character ndb/db inits + Sense hook
+- [ ] 05-04-PLAN.md — Commands (CmdSetAncestry, CmdJoinGuild, CmdDomains, CmdAbilities, CmdUseAbility) + guild discovery wiring + cmdset registration
+- [ ] 05-05-PLAN.md — Test suite: test_ancestry_engine.py + test_ability_engine.py + test_room_state.py
 
 ### Phase 6: Combat, Skills, and NPC Templates
 **Goal**: Players can engage in ability-driven combat against zone-scaled mobs, develop proficiency skills through use, and NPCs respond with world-state-aware dialogue
@@ -162,6 +170,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6 → 7
 | 3. GUI Area Builder | 4/4 | Complete | 2026-03-25 |
 | 3.1 Mob Spawn Runtime (INSERTED) | 5/5 | Complete | 2026-03-25 |
 | 4. Domain Fingerprints and Guild Engine | 0/2 | Not started | - |
-| 5. Ancestry Engine and Ability System | 0/TBD | Not started | - |
+| 5. Ancestry Engine and Ability System | 0/5 | Not started | - |
 | 6. Combat, Skills, and NPC Templates | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
