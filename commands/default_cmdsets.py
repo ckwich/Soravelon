@@ -50,6 +50,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         from commands.cmd_abilities import CmdAbilities, CmdUseAbility
         self.add(CmdAbilities())
         self.add(CmdUseAbility())
+        from commands.combat_commands import CmdAttack
+        self.add(CmdAttack())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

@@ -840,7 +840,7 @@ def _is_connected(combatant):
 def _add_combat_cmdset(character):
     """Add CombatCmdSet to a player character."""
     try:
-        from commands.cmd_abilities import CombatCmdSet
+        from commands.combat_commands import CombatCmdSet
         character.cmdset.add(CombatCmdSet, persistent=False)
     except ImportError:
         pass
@@ -849,7 +849,7 @@ def _add_combat_cmdset(character):
 def _remove_combat_cmdset(character):
     """Remove CombatCmdSet from a player character."""
     try:
-        from commands.cmd_abilities import CombatCmdSet
+        from commands.combat_commands import CombatCmdSet
         character.cmdset.remove(CombatCmdSet)
     except (ImportError, Exception):
         pass
