@@ -21,7 +21,7 @@ must_haves:
     - "CombatCmdSet replaces default movement during combat per D-17"
     - "push_combat_update sends structured combat state to client"
     - "push_stat_update sends HP/stamina/resource bars to client"
-    - "Auto-engage triggers when player enters room with aggressive mob per D-13"
+    - "Auto-engage triggers when player enters room with aggressive mob per D-13 (same-room only; is_hunter BFS deferred to Phase 6b)"
   artifacts:
     - path: "commands/combat_commands.py"
       provides: "CmdAttack, CmdFlee, CmdTarget, CmdPass, CombatCmdSet"
@@ -175,7 +175,7 @@ The CombatCmdSet version overrides this when combat is active.
   <name>Task 2: Wire auto-engage, OOB publishers, and combat cleanup hooks</name>
   <files>typeclasses/characters.py, world/oob_publisher.py</files>
   <action>
-**Auto-engage in Character.at_after_move (per D-13):**
+**Auto-engage in Character.at_after_move (per D-13, same-room only):**
 Add to at_after_move, after existing map_update logic:
 ```python
 # Auto-engage: check for aggressive mobs in room
@@ -191,6 +191,12 @@ if self.location and not self.ndb.combat_handler:
         start_combat(self.location, aggressive_mobs[0], [self])
 ```
 Only trigger if character is NOT already in combat. Multiple aggressive mobs join the same combat.
+
+NOTE on is_hunter BFS aggro (D-13): is_hunter flag enables grid-distance aggro where flagged
+mobs BFS-pathfind to players within N rooms. This is DEFERRED to Phase 6b because it requires
+patrol tick integration (the hunter mob must actually move rooms toward the player) and BFS
+pathfinding infrastructure that belongs with the mob AI patrol system, not the CombatScript.
+Phase 6a implements same-room auto-engage only; Phase 6b adds hunter aggro on patrol tick.
 
 **Combat cleanup in at_pre_unpuppet:**
 Add before existing commit logic:
@@ -264,7 +270,7 @@ Helper _resolve_combatant(cid) and _get_available_abilities(character) as intern
   <verify>
     <automated>python -c "from world.oob_publisher import push_combat_update, push_stat_update; print('OOB publishers importable')"</automated>
   </verify>
-  <done>Auto-engage fires when player enters room with aggressive mobs. Combat cleanup on disconnect prevents orphaned CombatCmdSets. push_combat_update sends structured combat state per research OOB schema. push_stat_update sends HP/stamina/resource bars. Both respect debounce intervals.</done>
+  <done>Auto-engage fires when player enters room with aggressive mobs (same-room only; is_hunter BFS deferred to Phase 6b). Combat cleanup on disconnect prevents orphaned CombatCmdSets. push_combat_update sends structured combat state per research OOB schema. push_stat_update sends HP/stamina/resource bars. Both respect debounce intervals.</done>
 </task>
 
 </tasks>
@@ -281,7 +287,7 @@ Helper _resolve_combatant(cid) and _get_available_abilities(character) as intern
 </verification>
 
 <success_criteria>
-Player-facing combat commands handle all input types per D-17 (typed commands). Auto-target works per D-14. Flee mechanics follow D-28 (speed check, exit required, blocked by root/stun). Auto-engage from disposition per D-13. OOB publishers deliver combat and stat data to desktop client. Combat cleanup prevents orphaned state on disconnect.
+Player-facing combat commands handle all input types per D-17 (typed commands). Auto-target works per D-14. Flee mechanics follow D-28 (speed check, exit required, blocked by root/stun). Same-room auto-engage from disposition per D-13 (is_hunter BFS aggro deferred to Phase 6b -- requires patrol tick integration and multi-room BFS pathfinding). OOB publishers deliver combat and stat data to desktop client. Combat cleanup prevents orphaned state on disconnect.
 </success_criteria>
 
 <output>

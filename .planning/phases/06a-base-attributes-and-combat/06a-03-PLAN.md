@@ -16,14 +16,15 @@ requirements:
 must_haves:
   truths:
     - "resolve_damage computes raw damage, applies zone scaling, applies resistance, reduces target HP"
+    - "Critical hits roll from Acuity stat and multiply damage by 2.0x per D-20"
     - "Ability effect handlers dispatch to real combat resolution instead of returning stubs"
     - "CorpseContainer spawns on mob death with killer-locked loot phases"
     - "Group loot modes determine who can access corpse contents"
     - "Elite/boss scaling modifiers apply correctly per vault spec"
   artifacts:
     - path: "world/combat_engine.py"
-      provides: "Damage resolution, basic attack, ability damage, corpse spawning, death handling"
-      exports: ["resolve_basic_attack", "resolve_ability_damage", "resolve_heal", "apply_elite_boss_scaling", "handle_mob_death", "handle_player_death", "spawn_corpse", "check_death"]
+      provides: "Damage resolution, basic attack, ability damage, crit system, corpse spawning, death handling"
+      exports: ["resolve_basic_attack", "resolve_ability_damage", "resolve_heal", "apply_elite_boss_scaling", "roll_crit", "handle_mob_death", "handle_player_death", "spawn_corpse", "check_death", "DOMAIN_TO_STAT"]
     - path: "typeclasses/objects.py"
       provides: "CorpseContainer typeclass"
       contains: "class CorpseContainer"
@@ -40,7 +41,7 @@ must_haves:
       pattern: "status_effects\\.apply_effect"
     - from: "world/combat_engine.py"
       to: "world/base_attributes.py"
-      via: "stat lookups for damage formulas"
+      via: "stat lookups for damage formulas and crit chance"
       pattern: "base_attributes\\."
     - from: "world/ability_engine.py"
       to: "world/combat_engine.py"
@@ -49,10 +50,10 @@ must_haves:
 ---
 
 <objective>
-Build the combat engine core: damage resolution formulas, ability effect handler wiring, corpse containers, and death handling for both mobs and players.
+Build the combat engine core: damage resolution formulas (including critical hits per D-20), ability effect handler wiring, corpse containers, and death handling for both mobs and players.
 
-Purpose: This is the mathematical heart of combat. Damage formulas, zone scaling integration, resistance application, and loot container mechanics all live here. The ability engine's 10 stub handlers get replaced with real combat resolution.
-Output: world/combat_engine.py with all damage/heal/death functions. CorpseContainer typeclass. ability_engine.py stubs replaced.
+Purpose: This is the mathematical heart of combat. Damage formulas, zone scaling integration, resistance application, critical hit system, and loot container mechanics all live here. The ability engine's 10 stub handlers get replaced with real combat resolution.
+Output: world/combat_engine.py with all damage/heal/death/crit functions. CorpseContainer typeclass. ability_engine.py stubs replaced.
 </objective>
 
 <execution_context>
@@ -70,6 +71,7 @@ Output: world/combat_engine.py with all damage/heal/death functions. CorpseConta
 @.planning/phases/06a-base-attributes-and-combat/06a-02-SUMMARY.md
 
 @world/ability_engine.py
+@world/ability_registry.py
 @world/zone_scaling.py
 @typeclasses/objects.py
 @typeclasses/mobs.py
@@ -110,6 +112,10 @@ ABILITIES = {
     }, ...
 }
 ```
+NOTE: scaling_primary uses DOMAIN names ("combat", "subterfuge", etc.), NOT stat names.
+The DOMAIN_TO_STAT mapping must be validated against actual ability_registry.py entries.
+Read world/ability_registry.py at execution time to confirm all domain values used in
+scaling_primary/scaling_secondary are covered by DOMAIN_TO_STAT.
 
 <!-- From existing: typeclasses/objects.py -->
 ```python
@@ -129,33 +135,54 @@ def _get_group_members(leader): ...
 <tasks>
 
 <task type="auto">
-  <name>Task 1: Create world/combat_engine.py with damage resolution, death handling, and corpse containers</name>
+  <name>Task 1: Create world/combat_engine.py with damage resolution, crit system, death handling, and corpse containers</name>
   <files>world/combat_engine.py, typeclasses/objects.py</files>
   <action>
 Create world/combat_engine.py implementing all combat resolution per D-19 through D-22, D-26, D-27.
+
+**DOMAIN_TO_STAT mapping (validate against ability_registry.py at execution time):**
+DOMAIN_TO_STAT dict at module level. Maps domain names used in ability scaling_primary/scaling_secondary
+to base stat names. IMPORTANT: Read world/ability_registry.py and confirm every unique scaling_primary
+value has a mapping entry. Current expected mapping:
+combat->strength, subterfuge->agility, naturalism->resonance, resonance->resonance,
+arcana->mana, diplomacy->presence, alchemy->acuity, tactics->acuity, engineering->acuity,
+remnance->mana. If any ability uses a domain not in this mapping, add it before proceeding.
+
+**Critical hit system (per D-20 -- "Crits for 1000+ at appropriate tiers are a design goal"):**
+roll_crit(attacker) -> (bool, float):
+- Base crit chance: 5% (0.05).
+- Acuity bonus: +0.2% per point of Acuity stat. E.g., Acuity 50 = 5% + 10% = 15% crit chance.
+- For mobs: use mob.db.crit_chance if set, else 3% flat (mobs don't scale with Acuity).
+- Roll random.random() < crit_chance.
+- Crit multiplier: 2.0x base. (Future: equipment/buffs can modify this.)
+- Return (is_crit: bool, multiplier: float). multiplier is 2.0 on crit, 1.0 on non-crit.
+- Record stat use: if attacker is character and crit lands, record_stat_use(attacker, "critical_hit").
 
 **Basic attack resolution (per D-19):**
 resolve_basic_attack(attacker, target, weapon=None) -> (bool, str, int):
 - Read weapon damage range from attacker equipment (or bare-hands fallback: 3-6 damage).
 - For characters: raw = randint(weapon_min, weapon_max) + (strength * 0.5). Element from weapon (default "physical").
 - For mobs: raw = randint(mob.db.ref_damage_min, mob.db.ref_damage_max). Element from mob.db.element or "physical".
+- Apply crit: is_crit, crit_mult = roll_crit(attacker). raw *= crit_mult.
 - Apply zone scaling: if attacker is mob, use get_mob_damage_for_player. If attacker is character, use get_player_damage_to_mob.
 - Apply resistance: apply_resistance(scaled, element, target).
 - Apply elite/boss scaling modifiers if target is mob with rarity elite/legendary.
 - Reduce target.ndb.hp by final damage. Clamp to 0.
 - Record stat use: if attacker is character, record_stat_use(attacker, "melee_hit"). If target is character, record_stat_use(target, "damage_taken").
 - Check miss chance: if target has "blind" effect on attacker, roll against miss_chance_increase.
+- Include "|y*CRITICAL*|n" in damage message if is_crit.
 - Return (True, damage_message, final_damage) or (False, miss_message, 0).
 
 **Ability damage resolution (per D-08, vault formula):**
 resolve_ability_damage(character, ability, target) -> (bool, str, int):
 - ability_base = ability["damage_base"] (add this field to ability registry entries)
-- primary_stat = character.db.base_stats.get(ability["scaling_primary"], 10) -- note: scaling_primary is a domain name, need to map domain->stat (combat->strength, subterfuge->agility, naturalism->resonance, resonance->resonance, arcana->mana, diplomacy->presence, alchemy->acuity, tactics->acuity, engineering->acuity, remnance->mana)
-- DOMAIN_TO_STAT mapping dict at module level.
-- secondary_stat from scaling_secondary mapped similarly.
+- primary_stat = character.db.base_stats.get(DOMAIN_TO_STAT.get(ability["scaling_primary"], "strength"), 10)
+- secondary_stat from scaling_secondary mapped similarly (0 if None).
 - raw = ability_base * (1 + primary * 0.02 + secondary * 0.01)
+- Apply crit: is_crit, crit_mult = roll_crit(character). raw *= crit_mult.
 - Apply zone scaling, resistance, elite/boss modifiers same as basic attack.
 - Apply status effects from ability if ability has "status_effect" field: call status_effects.apply_effect.
+- Include "|y*CRITICAL*|n" in message if is_crit.
 - Return (True, message, damage).
 
 **Heal resolution:**
@@ -222,9 +249,9 @@ spawn_corpse(mob, killer) -> CorpseContainer:
 _transition_corpse(corpse_id, new_phase): helper for delay callback.
   </action>
   <verify>
-    <automated>python -c "from world.combat_engine import resolve_basic_attack, resolve_ability_damage, handle_mob_death, spawn_corpse, DOMAIN_TO_STAT; from typeclasses.objects import CorpseContainer; print('OK')"</automated>
+    <automated>python -c "from world.combat_engine import resolve_basic_attack, resolve_ability_damage, handle_mob_death, spawn_corpse, DOMAIN_TO_STAT, roll_crit; from typeclasses.objects import CorpseContainer; print('OK')"</automated>
   </verify>
-  <done>combat_engine.py resolves basic attacks with zone scaling and resistance, resolves ability damage with stat-based formulas, handles mob/player death with corpse spawning. CorpseContainer typeclass has killer-locked loot phases with timed transitions. Elite/boss scaling applies vault-spec multipliers.</done>
+  <done>combat_engine.py resolves basic attacks and ability damage with zone scaling, resistance, and critical hits (Acuity-based crit chance, 2.0x multiplier per D-20). Handles mob/player death with corpse spawning. CorpseContainer typeclass has killer-locked loot phases with timed transitions. Elite/boss scaling applies vault-spec multipliers. DOMAIN_TO_STAT mapping validated against ability_registry.py.</done>
 </task>
 
 <task type="auto">
@@ -289,7 +316,7 @@ Replace each handler function. All handlers receive (character, ability, target)
 Each handler uses lazy imports to avoid circular dependencies (standard project pattern).
   </action>
   <verify>
-    <automated>python -c "from world.ability_engine import EFFECT_HANDLERS; [print(k, ':', 'stub' if 'stub' in (EFFECT_HANDLERS[k].__module__ or '') else 'wired') for k in EFFECT_HANDLERS]; print('OK')"</automated>
+    <automated>python -c "from world.ability_engine import EFFECT_HANDLERS, _handle_damage; import inspect; src = inspect.getsource(_handle_damage); assert 'stub' not in src.lower() and 'combat_engine' in src, 'Handler still a stub'; print('All handlers:', list(EFFECT_HANDLERS.keys())); print('OK')"</automated>
   </verify>
   <done>All 10 ability effect handlers dispatch to real combat resolution in combat_engine.py and status_effects.py. No stub text remains. Handlers return proper combat messages with damage numbers, effect applications, and heal amounts.</done>
 </task>
@@ -299,14 +326,16 @@ Each handler uses lazy imports to avoid circular dependencies (standard project 
 <verification>
 - resolve_basic_attack with a mock character/mob produces damage in expected range
 - resolve_ability_damage applies stat scaling correctly
+- Critical hits trigger based on Acuity stat; crit multiplier applies 2.0x damage
 - CorpseContainer.can_loot returns True for killer, False for others in locked phase
 - Elite mob damage uses 1.40x multiplier
-- ability_engine handlers no longer return "[stub]" text
+- ability_engine handlers no longer return "[stub]" text (verify via inspect.getsource)
 - Zone scaling functions are called (not bypassed) during damage resolution
+- DOMAIN_TO_STAT covers all domains used in ability_registry.py scaling_primary fields
 </verification>
 
 <success_criteria>
-Combat damage resolution integrates zone scaling (CMB-02), base stat formulas, and elemental resistance. Ability effect handlers wire to real combat (CMB-01). Corpse containers support killer-locked loot with group awareness (CMB-04). Elite/boss scaling matches vault spec per D-21.
+Combat damage resolution integrates zone scaling (CMB-02), base stat formulas, elemental resistance, and critical hits (D-20: Acuity-driven crit chance, 2.0x multiplier enabling 1000+ crits at appropriate tiers). Ability effect handlers wire to real combat (CMB-01). Corpse containers support killer-locked loot with group awareness (CMB-04). Elite/boss scaling matches vault spec per D-21.
 </success_criteria>
 
 <output>

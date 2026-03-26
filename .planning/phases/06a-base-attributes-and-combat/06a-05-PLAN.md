@@ -18,6 +18,7 @@ must_haves:
     - "Solo combat waits indefinitely; group combat has configurable timeout per D-18"
     - "Combat ends cleanly when all enemies die, all players flee, or all disconnect"
     - "Mid-combat join inserts new combatant at correct initiative position"
+    - "Charged abilities declare on turn, auto-attack during charge, fire when charge completes per D-10"
   artifacts:
     - path: "world/combat_script.py"
       provides: "CombatScript room-attached state machine"
@@ -42,7 +43,7 @@ must_haves:
 ---
 
 <objective>
-Build CombatScript — the room-attached Evennia Script that manages all combat state, drives initiative order, processes turns, and handles round progression.
+Build CombatScript -- the room-attached Evennia Script that manages all combat state, drives initiative order, processes turns, and handles round progression.
 
 Purpose: CombatScript is the orchestrator that ties together damage resolution, mob AI, status effects, and player input into a coherent turn-based combat flow. This is the central piece that makes combat playable.
 Output: world/combat_script.py with CombatScript class and start_combat/join_combat module-level functions.
@@ -116,10 +117,10 @@ class SoravelonScript(DefaultScript):
 <tasks>
 
 <task type="auto">
-  <name>Task 1: Create world/combat_script.py with CombatScript state machine</name>
+  <name>Task 1: Create world/combat_script.py with CombatScript lifecycle, state, and combatant management</name>
   <files>world/combat_script.py</files>
   <action>
-Create world/combat_script.py implementing the CombatScript per D-07, D-11, D-12, D-15, D-18, D-29, and research architecture.
+Create world/combat_script.py implementing CombatScript lifecycle and state per D-07, D-12, D-15.
 
 **CombatScript class (extends SoravelonScript):**
 
@@ -129,18 +130,18 @@ class CombatScript(SoravelonScript):
 ```
 
 **db attributes (persistent across reload):**
-- combatant_ids: list[int] — character/mob dbrefs in initiative order
+- combatant_ids: list[int] -- character/mob dbrefs in initiative order
 - round_number: int (starts at 1)
-- current_turn_index: int — index into combatant_ids
-- initiative_order: list[dict] — [{id, initiative_value}] sorted desc
-- is_group_combat: bool — True if any player is in a group
-- round_timeout: int — seconds, default 30, only used if is_group_combat
-- active_effects_db: dict — {combatant_id: [effect_list]} for reload survival (Pitfall 1)
+- current_turn_index: int -- index into combatant_ids
+- initiative_order: list[dict] -- [{id, initiative_value}] sorted desc
+- is_group_combat: bool -- True if any player is in a group
+- round_timeout: int -- seconds, default 30, only used if is_group_combat
+- active_effects_db: dict -- {combatant_id: [effect_list]} for reload survival (Pitfall 1)
 
 **ndb attributes (volatile, rebuilt at_start):**
-- turn_timer_id: int|None — delay() handle for timeout cancel
-- pending_charged: dict — {char_id: {ability_id, rounds_left}}
-- call_for_help_count: int — capped at 3
+- turn_timer_id: int|None -- delay() handle for timeout cancel
+- pending_charged: dict -- {char_id: {ability_id, rounds_left, target_id}}
+- call_for_help_count: int -- capped at 3
 
 **Lifecycle methods:**
 
@@ -156,9 +157,9 @@ at_start():
 - Re-add CombatCmdSet to all player combatants still connected.
 - If current turn is a mob, auto-process. If player, re-prompt.
 
-**Combat flow methods:**
+**Module-level functions:**
 
-start_combat(room, initiator, targets) -> CombatScript: (module-level function)
+start_combat(room, initiator, targets) -> CombatScript:
 - Check if room already has a CombatScript (if so, join existing).
 - Create CombatScript on room.
 - Compute initiative for all combatants via get_initiative().
@@ -169,12 +170,14 @@ start_combat(room, initiator, targets) -> CombatScript: (module-level function)
 - Check is_group_combat (any player in a group).
 - Begin first turn.
 
-join_combat(combat_script, newcomer) -> (bool, str): (module-level function)
+join_combat(combat_script, newcomer) -> (bool, str):
 - Compute initiative for newcomer.
 - Insert into initiative_order at correct position.
 - Update combatant_ids.
 - If player, add CombatCmdSet.
 - Set ndb references.
+
+**Combatant management:**
 
 add_combatant(self, combatant):
 - Internal method called by join_combat and start_combat.
@@ -185,6 +188,45 @@ remove_combatant(self, combatant):
 - Clean up ndb references.
 - If was current turn, advance to next.
 - If no enemies remain, end combat.
+
+**Helper methods:**
+
+get_player_combatants(self) -> list: Return list of player characters in combat.
+get_mob_combatants(self) -> list: Return list of mobs in combat.
+get_current_combatant(self) -> obj: Return the combatant whose turn it is.
+is_combatant(self, obj) -> bool: Check if obj is in this combat.
+
+**Combat end:**
+
+end_combat(self):
+- For each player combatant:
+  - Remove CombatCmdSet.
+  - clear_encounter_cooldowns.
+  - clear_all_effects.
+  - Reset ndb combat state (combat_handler = None, etc.).
+  - Clear pending_charged entries.
+- For each mob combatant:
+  - Reset ndb combat state.
+  - Clear cooldowns.
+- Cancel any active timers.
+- self.delete() -- remove script from room.
+
+**Auto-engage wiring (D-13):**
+- NOT in CombatScript itself. This is handled by room enter hooks (Character.at_after_move or mob patrol arrival).
+- When a player enters a room with aggressive mobs: check disposition, if aggressive, call start_combat.
+- is_hunter BFS aggro is deferred to Phase 6b (requires patrol tick integration and BFS pathfinding across multiple rooms; Plan 04 combat_ai.py focuses on in-combat mob behavior only).
+  </action>
+  <verify>
+    <automated>python -c "from world.combat_script import CombatScript, start_combat, join_combat; print('CombatScript:', CombatScript.__mro__[1].__name__); assert hasattr(CombatScript, 'at_script_creation'); assert hasattr(CombatScript, 'end_combat')"</automated>
+  </verify>
+  <done>CombatScript class with full lifecycle (at_script_creation, at_start), combatant management (add/remove/join), and clean end-of-combat teardown. Module-level start_combat and join_combat functions. State persists across server reload via db attributes.</done>
+</task>
+
+<task type="auto">
+  <name>Task 2: Implement turn processing, round management, and charged ability lifecycle</name>
+  <files>world/combat_script.py</files>
+  <action>
+Add turn processing and round management methods to CombatScript per D-07, D-09, D-10, D-11, D-15, D-18.
 
 **Turn management:**
 
@@ -201,6 +243,9 @@ _prompt_player_turn(self, character):
 - Compute actions_remaining from get_actions_per_turn minus effect penalties.
 - Set character.ndb.actions_remaining.
 - Set character.ndb.ability_used_this_turn = False.
+- Check pending_charged: if character has a pending charge, decrement rounds_left.
+  If rounds_left == 0: auto-fire the charged ability via use_ability, then clear from pending_charged.
+  Character still gets remaining actions (auto-attack during charge per D-10).
 - Build turn prompt: show available abilities (from character's loadout, filter cooldowns), show target.
 - Push combat_update via oob_publisher (per research OOB schema).
 - character.msg() with formatted turn prompt per D-16 (list abilities ready and on cooldown).
@@ -212,6 +257,8 @@ _process_mob_turn(self, mob):
 - Check death after each action.
 - Advance turn when mob actions complete.
 
+**Player action processing:**
+
 process_player_action(self, character, action_type, target=None, ability_id=None):
 - Called by combat commands (CmdAttack, CmdUseAbility, etc.).
 - Validate it's this character's turn.
@@ -219,53 +266,38 @@ process_player_action(self, character, action_type, target=None, ability_id=None
 - Execute action:
   - "basic_attack": resolve_basic_attack. Decrement actions_remaining. Record stat use.
   - "ability": use_ability via ability_engine. Set ability_used_this_turn = True per D-09.
+  - "charge": Declare a charged ability (per D-10). Validate ability has charge_turns > 0.
+    Store in ndb.pending_charged: {character.id: {"ability_id": ability_id, "rounds_left": ability["charge_turns"], "target_id": target.id if target else None}}.
+    Character continues with remaining basic attacks this turn (auto-attack during charge).
+    Message: "You begin channeling {ability_name}... ({rounds_left} rounds)".
+    On subsequent turns, _prompt_player_turn decrements and fires when ready.
+    Domain resource still generates normally during charge turns per D-10.
   - "flee": attempt flee (D-28). If rooted/stunned, fail. Speed check + skill check. On success, move to random adjacent exit, remove from combat.
   - "pass": end turn early.
 - Check death of target after each action.
 - If actions_remaining > 0 and not ability (abilities don't consume all actions): wait for next action.
 - If actions_remaining == 0: advance_turn.
 
+_auto_attack_timeout(self, character_id):
+- Called when group combat round timer expires per D-18.
+- Resolve one basic_attack on character's current target (auto-attack on timeout).
+- advance_turn.
+
 **Round management:**
 
 end_round(self):
 - For each combatant in initiative order:
-  - tick_effects(combatant) — DoTs deal damage, durations decrease.
-  - decrement_cooldowns(combatant) — ability cooldowns go down.
+  - tick_effects(combatant) -- DoTs deal damage, durations decrease.
+  - decrement_cooldowns(combatant) -- ability cooldowns go down.
   - Check death (DoT kills).
-  - Process charged abilities: if rounds_left on charge decrements to 0, auto-fire the charged ability.
 - Persist active_effects to db (active_effects_db) for reload survival per Pitfall 1.
 - Increment round_number.
 - Check if combat should end (no enemies, no players).
-
-end_combat(self):
-- For each player combatant:
-  - Remove CombatCmdSet.
-  - clear_encounter_cooldowns.
-  - clear_all_effects.
-  - Reset ndb combat state (combat_handler = None, etc.).
-  - Restore full HP/stamina (or not — depends on design. Keep current HP between encounters.)
-- For each mob combatant:
-  - Reset ndb combat state.
-  - Clear cooldowns.
-- Cancel any active timers.
-- self.delete() — remove script from room.
-
-**Helper methods:**
-
-get_player_combatants(self) -> list: Return list of player characters in combat.
-get_mob_combatants(self) -> list: Return list of mobs in combat.
-get_current_combatant(self) -> obj: Return the combatant whose turn it is.
-is_combatant(self, obj) -> bool: Check if obj is in this combat.
-
-**Auto-engage wiring (D-13):**
-- NOT in CombatScript itself. This is handled by room enter hooks (Character.at_after_move or mob patrol arrival).
-- When a player enters a room with aggressive mobs: check disposition, if aggressive, call start_combat.
-- is_hunter mobs handled separately via BFS pathfinding on patrol tick.
   </action>
   <verify>
-    <automated>python -c "from world.combat_script import CombatScript, start_combat, join_combat; print('CombatScript:', CombatScript.__mro__[1].__name__)"</automated>
+    <automated>python -c "from world.combat_script import CombatScript; cs = CombatScript.__new__(CombatScript); assert hasattr(cs, 'advance_turn'); assert hasattr(cs, 'process_player_action'); assert hasattr(cs, 'end_round'); print('Turn methods present')"</automated>
   </verify>
-  <done>CombatScript manages turn-based combat as a room-attached script. Initiative-ordered turns interleave players and mobs per D-15. Round end ticks effects and cooldowns per D-11. Solo combat waits indefinitely, group combat has configurable timeout per D-18. Combat state survives server reload via db persistence of critical state. Clean end-of-combat cleanup removes CmdSets and clears volatile state.</done>
+  <done>CombatScript manages turn-based combat with initiative-ordered interleaved turns per D-15. process_player_action handles basic_attack, ability, charge, flee, and pass action types. Charged abilities (D-10) declare on turn, store in pending_charged, auto-fire when charge completes, character auto-attacks during charge. Round end ticks effects and cooldowns per D-11. Solo combat waits indefinitely, group combat has configurable timeout with auto-attack per D-18. Combat state survives server reload.</done>
 </task>
 
 </tasks>
@@ -278,10 +310,12 @@ is_combatant(self, obj) -> bool: Check if obj is in this combat.
 - end_combat removes CombatCmdSet from all players
 - Group combat triggers round timer; solo combat does not
 - active_effects persist to db for reload survival
+- process_player_action accepts "charge" action_type and stores pending_charged
+- Charged ability fires after charge_turns rounds, character auto-attacks during charge
 </verification>
 
 <success_criteria>
-CombatScript orchestrates full turn-based combat flow. Initiative is fixed per encounter (D-07). Individual interleaved turns (D-15). Status effects tick at round end (D-11). Group timeout with auto-attack (D-18). Combat state survives server reload. Clean combat end removes all transient state. Integrates combat_engine, combat_ai, status_effects, and ability_engine.
+CombatScript orchestrates full turn-based combat flow. Initiative is fixed per encounter (D-07). Individual interleaved turns (D-15). Status effects tick at round end (D-11). Group timeout with auto-attack (D-18). Charged abilities declare, charge over rounds with auto-attack, and fire on completion (D-10). Combat state survives server reload. Clean combat end removes all transient state. Integrates combat_engine, combat_ai, status_effects, and ability_engine.
 </success_criteria>
 
 <output>
