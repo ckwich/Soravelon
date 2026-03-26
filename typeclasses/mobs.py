@@ -49,6 +49,7 @@ class SoravelonMob(DefaultCharacter):
         self.db.combat_enabled = True  # D-03: set False for invulnerable mobs (e.g., Caldenmere)
         self.db.triggers = []          # trigger list for trigger_engine
         self.db.tome_drop = None       # D-18: item_id of tome to drop on named mob death
+        self.db.spawn_record_id = None  # SpawnRecord FK for death → respawn lookup (D-06)
 
     def spawn_with_affixes(self, room):
         """Roll and apply affixes. Call after creation, not in at_object_creation."""
@@ -139,7 +140,7 @@ class SoravelonMob(DefaultCharacter):
         return get_mob_behavior(self, character)
 
     def at_death(self, killer=None):
-        """Clean up ndb on death, fire triggers, drop loot, schedule respawn."""
+        """Clean up ndb on death, fire triggers, drop loot, schedule respawn via SpawnRecord."""
         self.ndb.revealed_affixes = set()
         if hasattr(self.ndb, 'combat_scales'):
             self.ndb.combat_scales = {}
@@ -174,6 +175,18 @@ class SoravelonMob(DefaultCharacter):
             }
             create_item_from_template(tome_def, location=room)
 
+        # Named mob death: write WorldEventLog entry (D-05)
+        is_named = self.tags.get("mob_id", category="mob_id") is not None
+        if is_named and killer:
+            from world.models import WorldEventLog
+            WorldEventLog.objects.create(
+                event_type="named_mob_death",
+                zone_id=self.db.zone_id or "",
+                character_id=killer.id if killer else None,
+                description=f"{self.key} was slain by {killer.key}",
+                data={"named_id": self.db.named_id or self.key, "mob_key": self.key},
+            )
+
         # Write room state flags (D-24)
         if room:
             from world.room_state import add_room_flag
@@ -186,16 +199,10 @@ class SoravelonMob(DefaultCharacter):
                 add_room_flag(room, "fading_life")
 
             # Named/boss mob death
-            is_named = self.tags.get("mob_id", category="mob_id") is not None
             is_boss = self.db.rarity == "legendary"
             if is_named or is_boss:
                 add_room_flag(room, "power_vacuum")
 
-        # Schedule respawn from matching spawn_definition on the room
-        if room and room.db.spawn_definitions:
-            from world.mob_spawner import _schedule_respawn
-            mob_key = self.key
-            for spawn_def in room.db.spawn_definitions:
-                if spawn_def.get("mob") == mob_key:
-                    _schedule_respawn(spawn_def, room)
-                    break
+        # Schedule respawn via SpawnRecord (replaces callLater)
+        from world.mob_spawner import schedule_respawn_from_death
+        schedule_respawn_from_death(self)

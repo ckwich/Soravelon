@@ -64,6 +64,14 @@ def at_server_start():
         persistent=True,
     )
 
+    # Mob spawn ticker — processes due SpawnRecords every 60s (D-02)
+    TICKER_HANDLER.add(
+        interval=60,
+        callback="world.mob_spawner.spawn_tick",
+        idstring="spawn_tick",
+        persistent=True,
+    )
+
     # Recover any orphaned Layer 1 rooms from crash/restart
     from world.node_helpers import initialize_node_pool
     initialize_node_pool()
@@ -71,6 +79,10 @@ def at_server_start():
     # Load all area files from world/areas/ — rebuilds zone registry
     # and room spawn definitions fresh each restart (idempotent)
     _load_all_zones()
+
+    # Create SpawnRecord entries for all spawn_definitions (idempotent, D-07)
+    from world.mob_spawner import initialize_spawn_records
+    initialize_spawn_records()
 
 
 def _load_all_zones():

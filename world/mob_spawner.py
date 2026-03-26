@@ -10,26 +10,19 @@ Key call chain:
     → mob.initialize_for_spawn(room)   (affixes + combat stats)
     → _maybe_attach_patrol(mob, ...)   (PatrolScript if patrol def found)
 
-Respawn:
-  _schedule_respawn(spawn_def, room) — called from SoravelonMob.at_death()
-  NOT called during initial zone spawn. Fires a one-shot Twisted callLater.
+Respawn (SpawnRecord-backed, crash-safe):
+  schedule_respawn_from_death(mob) — called from SoravelonMob.at_death()
+  spawn_tick() — 60s global ticker processes due SpawnRecords
+  initialize_spawn_records() — called on server start after _load_all_zones()
 
-Decision refs: D-01 through D-31 in 03.1-CONTEXT.md
+Decision refs: D-01 through D-31 in 03.1-CONTEXT.md, D-01 through D-08 in 06b-CONTEXT.md
 """
 
 import random
+from datetime import timedelta
 
 import evennia
-
-
-# ---------------------------------------------------------------------------
-# Internal: reactor accessor (allows test patching without module-level import)
-# ---------------------------------------------------------------------------
-
-def _get_reactor():
-    """Return the Twisted reactor. Import is deferred to avoid module-level Twisted dep."""
-    from twisted.internet import reactor
-    return reactor
+from django.utils import timezone
 
 
 # ---------------------------------------------------------------------------
@@ -293,31 +286,196 @@ def _maybe_attach_patrol(mob, spawn_def, room):
 
 
 # ---------------------------------------------------------------------------
-# Respawn scheduling
+# SpawnRecord-backed respawn system (replaces Twisted callLater)
 # ---------------------------------------------------------------------------
 
-def _schedule_respawn(spawn_def, room):
+def initialize_spawn_records():
     """
-    Schedule a one-shot respawn via Twisted reactor.callLater.
+    Create SpawnRecord entries for all rooms with spawn_definitions.
 
-    Called from SoravelonMob.at_death() — NOT from initial spawn.
+    Called after _load_all_zones() on server start. Idempotent — existing
+    records are preserved across restarts (D-07).
 
-    Delay = respawn_minutes*60 ± respawn_variance*60, minimum 30 seconds.
-    Callback only spawns if current count < count_max (D-31).
-
-    Twisted import is deferred inside this function to avoid module-level dep.
+    New records get respawn_at=now() to trigger immediate first spawn via
+    spawn_tick(). Existing records keep their current state.
     """
-    base = spawn_def.get("respawn_minutes", 15) * 60
-    variance = spawn_def.get("respawn_variance", 5) * 60
-    delay = base + random.uniform(-variance, variance)
-    delay = max(delay, 30)  # minimum 30s floor
+    from world.models import SpawnRecord
 
-    def _do_respawn():
-        if _count_room_mobs(room, spawn_def) < spawn_def.get("count_max", 1):
-            if spawn_def.get("is_named"):
-                spawn_named_mob(spawn_def, room, is_respawn=True)
+    rooms = evennia.search_tag("zone_id", category="zone_id")
+    created = 0
+    for room in rooms:
+        if room.tags.get("zone_object", category="object_type"):
+            continue
+        spawn_defs = room.db.spawn_definitions
+        if not spawn_defs:
+            continue
+        for idx, sdef in enumerate(spawn_defs):
+            _, was_created = SpawnRecord.objects.get_or_create(
+                room_id=room.id,
+                spawn_index=idx,
+                defaults={
+                    "mob_template": sdef.get("mob", "unknown"),
+                    "active_mob_ids": [],
+                    "respawn_at": timezone.now(),
+                    "is_named": sdef.get("is_named", False),
+                    "named_id": sdef.get("mob", "") if sdef.get("is_named") else "",
+                },
+            )
+            if was_created:
+                created += 1
+
+    if created:
+        print(f"[mob_spawner] Created {created} new SpawnRecord(s)")
+
+
+def spawn_tick(*args, **kwargs):
+    """
+    Global 60s ticker callback. Processes all SpawnRecords with due respawns.
+
+    Queries SpawnRecord.objects.filter(respawn_at__lte=now, respawn_at__isnull=False)
+    and attempts to respawn mobs for each due record (D-02).
+    """
+    from world.models import SpawnRecord
+
+    now = timezone.now()
+    due_records = SpawnRecord.objects.filter(
+        respawn_at__lte=now, respawn_at__isnull=False
+    )
+
+    for record in due_records:
+        try:
+            _process_spawn_record(record)
+        except Exception as e:
+            print(f"[mob_spawner] Error processing SpawnRecord {record.id}: {e}")
+
+
+def _process_spawn_record(record):
+    """Process a single due SpawnRecord: resolve room, spawn mob, update record."""
+    # Resolve room
+    results = evennia.search_object(f"#{record.room_id}")
+    if not results:
+        print(f"[mob_spawner] Room #{record.room_id} not found, deleting SpawnRecord {record.id}")
+        record.delete()
+        return
+
+    room = results[0]
+    spawn_defs = room.db.spawn_definitions
+    if not spawn_defs or record.spawn_index >= len(spawn_defs):
+        print(f"[mob_spawner] spawn_definitions missing for record {record.id}, deleting")
+        record.delete()
+        return
+
+    spawn_def = spawn_defs[record.spawn_index]
+
+    # Check spawn condition
+    if not _evaluate_spawn_condition(spawn_def.get("spawn_condition"), room):
+        # Condition not met — reschedule for 5 minutes from now
+        record.respawn_at = timezone.now() + timedelta(minutes=5)
+        record.save()
+        return
+
+    # Spawn the mob(s)
+    is_named = spawn_def.get("is_named", False)
+    is_respawn = _is_respawn(record)
+
+    if is_named:
+        mob = spawn_named_mob(spawn_def, room, is_respawn=is_respawn)
+    else:
+        mob = spawn_single_mob(spawn_def, room)
+
+    if mob is None:
+        # Spawn failed (condition in spawn_named_mob)
+        record.respawn_at = timezone.now() + timedelta(minutes=5)
+        record.save()
+        return
+
+    # Link mob to SpawnRecord (D-06)
+    mob.db.spawn_record_id = record.id
+
+    # Update record
+    active_ids = list(record.active_mob_ids or [])
+    active_ids.append(mob.id)
+    record.active_mob_ids = active_ids
+    record.respawn_at = None
+    record.save()
+
+    # Named mob respawn announcement (D-05)
+    if is_named and is_respawn:
+        _announce_named_mob_respawn(record, room, spawn_def)
+
+
+def _is_respawn(record):
+    """Check if this is a respawn (not first spawn) by looking for prior deaths."""
+    from world.models import WorldEventLog
+
+    if not record.is_named:
+        return False
+
+    # For named mobs, check WorldEventLog for prior death
+    return WorldEventLog.objects.filter(
+        event_type="named_mob_death",
+        data__named_id=record.named_id,
+    ).exists()
+
+
+def _announce_named_mob_respawn(record, room, spawn_def):
+    """
+    Zone-wide echo when a named mob respawns (D-05).
+
+    Only fires if WorldEventLog has a prior death for this named mob.
+    Uses vague text per vault spec.
+    """
+    zone_id = room.db.zone_id
+    if not zone_id:
+        return
+
+    zone_rooms = evennia.search_tag(zone_id, category="zone_id")
+    for r in zone_rooms:
+        if r.tags.get("zone_object", category="object_type"):
+            continue
+        r.msg_contents("|ySomething stirs in the distance.|n")
+
+
+def schedule_respawn_from_death(mob):
+    """
+    Schedule a respawn via SpawnRecord after mob death (D-04).
+
+    Uses mob.db.spawn_record_id for direct lookup (D-06, avoids JSONField
+    __contains query that doesn't work in SQLite).
+
+    Removes mob.id from active_mob_ids. When all mobs in the slot are dead,
+    calculates delay and sets respawn_at.
+    """
+    from world.models import SpawnRecord
+
+    record_id = mob.db.spawn_record_id
+    if not record_id:
+        return
+
+    try:
+        record = SpawnRecord.objects.get(id=record_id)
+    except SpawnRecord.DoesNotExist:
+        return
+
+    # Remove this mob from active list (reassign, never mutate in place)
+    active_ids = [mid for mid in (record.active_mob_ids or []) if mid != mob.id]
+    record.active_mob_ids = active_ids
+
+    if not active_ids:
+        # All mobs in this slot are dead — schedule respawn
+        room = mob.location
+        if room and room.db.spawn_definitions:
+            spawn_defs = room.db.spawn_definitions
+            if record.spawn_index < len(spawn_defs):
+                spawn_def = spawn_defs[record.spawn_index]
+                base = spawn_def.get("respawn_minutes", 15)
+                variance = spawn_def.get("respawn_variance", 5)
+                delay_minutes = base + random.uniform(-variance, variance)
+                delay_minutes = max(delay_minutes, 1)  # minimum 1 minute
+                record.respawn_at = timezone.now() + timedelta(minutes=delay_minutes)
             else:
-                spawn_single_mob(spawn_def, room)
+                record.respawn_at = timezone.now() + timedelta(minutes=15)
+        else:
+            record.respawn_at = timezone.now() + timedelta(minutes=15)
 
-    reactor = _get_reactor()
-    reactor.callLater(delay, _do_respawn)
+    record.save()
