@@ -113,7 +113,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Design doc consolidation + guild_engine.py constants/computation + CharacterGuild model + migration
+- [x] 04-01-PLAN.md — Design doc consolidation + guild_engine.py constants/computation + CharacterGuild model + migration
 - [ ] 04-02-PLAN.md — join_guild/complete_induction mutation functions + test suite (test_guild_engine.py)
 
 ### Phase 5: Ancestry Engine and Ability System

@@ -54,11 +54,11 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 ### Domain & Guild System
 
-- [ ] **DOM-01**: 10 domains tracked with 0-100 scores and diminishing returns
-- [ ] **DOM-02**: Guild Tier Score computed as (primary × 0.66) + (secondary × 0.33)
-- [ ] **DOM-03**: Guild discovers player organically at Practiced proficiency (~30 domain score)
-- [ ] **DOM-04**: GTS tier labels provide non-numeric progression feedback to players
-- [ ] **DOM-05**: 10 domain mechanical fingerprints designed (distinct gameplay verb per domain)
+- [x] **DOM-01**: 10 domains tracked with 0-100 scores and diminishing returns
+- [x] **DOM-02**: Guild Tier Score computed as (primary × 0.66) + (secondary × 0.33)
+- [x] **DOM-03**: Guild discovers player organically at Practiced proficiency (~30 domain score)
+- [x] **DOM-04**: GTS tier labels provide non-numeric progression feedback to players
+- [x] **DOM-05**: 10 domain mechanical fingerprints designed (distinct gameplay verb per domain)
 
 ### Ability System
 
@@ -172,11 +172,11 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | BLD-04 | Phase 3 | Pending |
 | BLD-05 | Phase 3 | Pending |
 | BLD-06 | Phase 3 | Pending |
-| DOM-01 | Phase 4 | Pending |
-| DOM-02 | Phase 4 | Pending |
-| DOM-03 | Phase 4 | Pending |
-| DOM-04 | Phase 4 | Pending |
-| DOM-05 | Phase 4 | Pending |
+| DOM-01 | Phase 4 | Complete |
+| DOM-02 | Phase 4 | Complete |
+| DOM-03 | Phase 4 | Complete |
+| DOM-04 | Phase 4 | Complete |
+| DOM-05 | Phase 4 | Complete |
 | ANC-01 | Phase 5 | Pending |
 | ANC-02 | Phase 5 | Pending |
 | ANC-03 | Phase 5 | Pending |
