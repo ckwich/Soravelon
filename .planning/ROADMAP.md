@@ -114,7 +114,7 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md — Design doc consolidation + guild_engine.py constants/computation + CharacterGuild model + migration
-- [ ] 04-02-PLAN.md — join_guild/complete_induction mutation functions + test suite (test_guild_engine.py)
+- [x] 04-02-PLAN.md — join_guild/complete_induction mutation functions + test suite (test_guild_engine.py)
 
 ### Phase 5: Ancestry Engine and Ability System
 **Goal**: Players choose from 4 mechanically distinct ancestries at creation, and every one of 90 subclasses has a unique set of abilities across 4 tiers that express its domain-pair identity
