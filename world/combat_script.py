@@ -404,9 +404,8 @@ class CombatScript:
 
         # Cancel round timer if active
         if self.ndb.turn_timer_id is not None:
-            from evennia.utils.utils import delay
             try:
-                delay(0, None, do_persist=False)  # noop
+                self.ndb.turn_timer_id.cancel()
             except Exception:
                 pass
             self.ndb.turn_timer_id = None
