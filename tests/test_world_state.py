@@ -302,3 +302,97 @@ class TestDecayPausedOnline(EvenniaTest):
             decay_tick_all()
 
         self.assertEqual(self.char1.db.reputation_score, 50.0)
+
+
+# --- LLM Quest Data Collection Foundations ---
+
+
+class TestQuestlineChoicesInitialized(EvenniaTest):
+    """New character has questline_choices initialized as empty list."""
+
+    def test_questline_choices_initialized_empty(self):
+        """New character has questline_choices = [], not None."""
+        choices = self.char1.db.questline_choices
+        self.assertIsNotNone(choices)
+        self.assertEqual(choices, [])
+
+
+class TestActiveLlmQuestInitialized(EvenniaTest):
+    """New character has active_llm_quest_id initialized as None."""
+
+    def test_active_llm_quest_initialized_none(self):
+        """New character has active_llm_quest_id = None."""
+        self.assertIsNone(self.char1.db.active_llm_quest_id)
+
+
+class TestWorldEventLogCreation(EvenniaTest):
+    """log_world_event() creates a WorldEventLog record."""
+
+    def test_world_event_log_creation(self):
+        """log_world_event() creates a record with correct fields."""
+        from world.world_state import log_world_event
+        from world.models import WorldEventLog
+
+        log_world_event(
+            event_type="named_mob_kill",
+            description="Old Guardian was slain in Cantera Forest.",
+            zone_id="cantera_forest",
+            character_id=self.char1.id,
+            data={"mob_id": "old_guardian", "participants": 1},
+        )
+
+        record = WorldEventLog.objects.latest("occurred_at")
+        self.assertEqual(record.event_type, "named_mob_kill")
+        self.assertEqual(record.zone_id, "cantera_forest")
+        self.assertEqual(record.character_id, self.char1.id)
+        self.assertIn("mob_id", record.data)
+
+
+class TestWorldEventLogAllEventTypes(EvenniaTest):
+    """Each valid event_type string creates a record without error."""
+
+    def test_world_event_log_all_event_types(self):
+        """All expected event types can be stored."""
+        from world.world_state import log_world_event
+        from world.models import WorldEventLog
+
+        event_types = [
+            "named_mob_kill", "faction_shift", "node_activation",
+            "node_stabilized", "quest_consequence", "legacy_entry",
+            "llm_quest_outcome", "political_shift",
+        ]
+        for et in event_types:
+            log_world_event(
+                event_type=et,
+                description=f"Test event: {et}",
+            )
+
+        self.assertEqual(WorldEventLog.objects.count(), len(event_types))
+
+
+class TestContextPacketHasWorldEventSummary(EvenniaTest):
+    """Context packet contains world_event_summary key."""
+
+    def test_context_packet_has_world_event_summary(self):
+        """Context packet contains world_event_summary (may be None)."""
+        from world.world_state import get_character_context_packet
+
+        self.char1.db.ancestry = "human"
+        self.char1.db.primary_domain = None
+        self.char1.db.secondary_domain = None
+        self.char1.db.guild_id = None
+        self.char1.db.subclass_id = None
+        self.char1.db.backend_level = 1
+        self.char1.db.reputation_score = 0.0
+        self.char1.db.network_score = 0.0
+        self.char1.db.bond_score = 0.0
+        self.char1.db.legacy_score = 0.0
+        self.char1.db.attunement_score = 0.0
+        self.char1.db.companion_id = None
+        self.char1.db.companion_type = None
+        self.char1.db.companion_tier = None
+
+        packet = get_character_context_packet(self.char1)
+
+        self.assertIn("world_event_summary", packet)
+        self.assertIsNone(packet["world_event_summary"])

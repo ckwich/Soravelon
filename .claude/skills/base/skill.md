@@ -21,15 +21,17 @@ Evennia 6.0 | Python | Django ORM | Twisted
 
 ## Architecture (3 layers)
 - **Typeclasses** (`typeclasses/`) — Evennia entities (Character, Room, Object, Mob, Script) inheriting `Default*` via `ObjectParent` mixin
-- **World engines** (`world/`) — Stateless service modules (world_state, banking, inventory_engine, mob_affixes) called from typeclasses
+- **World engines** (`world/`) — Stateless service modules (world_state, banking, inventory_engine, mob_affixes, patrol_engine, flight_engine, oob_publisher) called from typeclasses
 - **Django models** (`world/models.py`) — Relational state: FactionStanding, ZoneAttunement, CharacterSkill, InventoryItem, BankAccount, etc.
 
 ## Structure
 - `typeclasses/` — Entity definitions (characters, rooms, objects, mobs, scripts)
 - `world/` — Game logic engines, Django models, loot tables, node system
+- `world/areas/` — Zone spec files (declarative Python DSL via AreaBuilder)
+- `world/scripts/` — Tick-driven scripts (node_script, patrol_script, flight_script)
 - `commands/` — Custom commands and cmdsets
 - `server/conf/` — Settings, lifecycle hooks, connection screens, parsers
-- `tests/` — unittest.TestCase test suite (9 files)
+- `tests/` — unittest.TestCase test suite (16 files)
 - `web/` — Django web frontend customization
 
 ## Critical Rules
@@ -43,6 +45,7 @@ Evennia 6.0 | Python | Django ORM | Twisted
 8. **Relational data in Django models** — faction standings, inventory, bank balances go in `world/models.py`, not `db.*`
 9. **Batch-fetch pattern** — collect IDs, single `filter(id__in=ids)`, build lookup dict to prevent N+1
 10. **Containers cannot nest** — `SoravelonContainer.can_accept()` rejects other containers
+11. **OOB messages go through `oob_publisher`** — never call `character.msg()` for OOB directly from game logic
 
 ---
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-03-25

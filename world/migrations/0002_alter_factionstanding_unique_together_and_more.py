@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("objects", "0015_soravelonobject_soravelonitem_soraveloncontainer_and_more"),
+        ("objects", "0013_defaultobject_alter_objectdb_id_defaultcharacter_and_more"),
         ("world", "0001_initial"),
     ]
 
