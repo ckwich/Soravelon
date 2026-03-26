@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-26T05:42:25.273Z"
+status: Ready to execute
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-03-26T05:55:20.978Z"
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 26
-  completed_plans: 20
+  completed_plans: 23
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 05 (ancestry-engine-and-ability-system) — EXECUTING
-Plan: 2 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -64,6 +64,8 @@ Plan: 2 of 5
 | Phase 04 P01 | 10 | 3 tasks | 4 files |
 | Phase 04 P02 | 28 | 2 tasks | 2 files |
 | Phase 05 P02 | 4 | 2 tasks | 4 files |
+| Phase 05 P04 | 4 | 2 tasks | 6 files |
+| Phase 05 P03 | 4 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -112,6 +114,12 @@ Recent decisions affecting current work:
 - [Phase 04]: Included missing 0003_worldeventlog migration to fix dependency chain for EvenniaTest DB setup
 - [Phase 05]: 14 stub abilities cover all 10 domains and 10 effect types; bladestorm chosen as signature stub subclass
 - [Phase 05]: Ironwright hook updated to no-companion weapons-mid-battle design per D-27
+- [Phase 05]: CmdJoinGuild uses full syntax (not interactive yield) for simplicity
+- [Phase 05]: Guild discovery sends RP-flavored message instead of system notification
+- [Phase 05]: CmdUseAbility uses progressive word matching then prefix search with disambiguation
+- [Phase 05]: Effect handlers are stubs returning descriptive text; Phase 6 wires real combat effects
+- [Phase 05]: Domain resource initialized at login (not just encounter start) for utility/social abilities
+- [Phase 05]: FINGERPRINTS has no resource_max; initialize_domain_resource defaults to 100
 
 ### Pending Todos
 
@@ -125,6 +133,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T05:42:25.270Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-26T05:55:20.975Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
