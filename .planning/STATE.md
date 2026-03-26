@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 05-05-PLAN.md
-last_updated: "2026-03-26T06:18:59.174Z"
+status: Ready to execute
+stopped_at: Completed 06a-02-PLAN.md
+last_updated: "2026-03-26T18:49:54.389Z"
 progress:
-  total_phases: 8
+  total_phases: 10
   completed_phases: 5
-  total_plans: 26
-  completed_plans: 24
+  total_plans: 33
+  completed_plans: 25
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 04 — domain-fingerprints-guild-engine
+**Current focus:** Phase 06a — base-attributes-and-combat
 
 ## Current Position
 
-Phase: 6
-Plan: Not started
+Phase: 06a (base-attributes-and-combat) — EXECUTING
+Plan: 2 of 7
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Plan: Not started
 | Phase 05 P04 | 4 | 2 tasks | 6 files |
 | Phase 05 P03 | 4 | 2 tasks | 2 files |
 | Phase 05 P05 | 9 | 2 tasks | 3 files |
+| Phase 06a P02 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Domain resource initialized at login (not just encounter start) for utility/social abilities
 - [Phase 05]: FINGERPRINTS has no resource_max; initialize_domain_resource defaults to 100
 - [Phase 05]: Patch lazy imports at source module (world.world_state, world.models) not at consumer module
+- [Phase 06a]: Compound duration defaults to 3 rounds; petrify gets +2 from extended_duration spec
+- [Phase 06a]: Immunity checked via both ndb.immunities (volatile) and db.immunities (persistent mob config)
 
 ### Pending Todos
 
@@ -135,6 +138,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T06:10:32.840Z
-Stopped at: Completed 05-05-PLAN.md
+Last session: 2026-03-26T18:49:54.386Z
+Stopped at: Completed 06a-02-PLAN.md
 Resume file: None

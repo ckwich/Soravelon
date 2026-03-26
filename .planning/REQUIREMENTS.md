@@ -71,7 +71,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 ### Combat
 
-- [ ] **CMB-01**: Combat system integrates ability effects with damage, status, and targeting
+- [x] **CMB-01**: Combat system integrates ability effects with damage, status, and targeting
 - [ ] **CMB-02**: Zone scaling applies per-player logarithmic factors during combat
 - [ ] **CMB-03**: Mob abilities fire based on weight, cooldown, and condition vocabulary
 - [ ] **CMB-04**: Group combat uses existing group engine for proximity and loot
@@ -188,7 +188,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | ABL-04 | Phase 5 | Complete |
 | ABL-05 | Phase 5 | Complete |
 | ABL-06 | Phase 5 | Complete |
-| CMB-01 | Phase 6 | Pending |
+| CMB-01 | Phase 6 | Complete |
 | CMB-02 | Phase 6 | Pending |
 | CMB-03 | Phase 6 | Pending |
 | CMB-04 | Phase 6 | Pending |

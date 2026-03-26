@@ -149,7 +149,7 @@ Plans:
 
 Plans:
 - [ ] 06a-01-PLAN.md — Base attributes: 7 stats, 70 descriptors, point-buy, stat growth, HP/stamina/action-budget derivation
-- [ ] 06a-02-PLAN.md — Status effects: stackable/non-stackable effects, compound matrix, tick logic
+- [x] 06a-02-PLAN.md — Status effects: stackable/non-stackable effects, compound matrix, tick logic
 - [ ] 06a-03-PLAN.md — Combat engine: damage resolution, ability handler wiring, corpse containers, death handling
 - [ ] 06a-04-PLAN.md — Combat AI: mob ability selection, targeting, condition vocabulary, scripted sequences
 - [ ] 06a-05-PLAN.md — CombatScript: room-attached turn manager, initiative, round progression, group timeout
