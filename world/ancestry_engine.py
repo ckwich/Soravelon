@@ -117,6 +117,10 @@ def set_ancestry(character, ancestry_id, coat=None):
     character.db.ancestry = ancestry_id
     _apply_starting_standings(character, ancestry_id)
 
+    # Apply ancestry skill seeds (D-20)
+    from world.skill_engine import apply_ancestry_skill_seeds
+    apply_ancestry_skill_seeds(character, ancestry_id, coat=coat)
+
     display_name = ANCESTRY_TRAITS[ancestry_id]["name"]
     if ancestry_id == "selvar" and coat:
         return True, f"Ancestry set to {display_name} ({coat} coat)."
