@@ -38,12 +38,12 @@ created: 2026-03-26
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 05-01-01 | 01 | 1 | ANC-01-04 | unit | `evennia test --settings settings tests/test_ancestry_engine.py` | W0 | pending |
+| 05-01-01 | 01 | 1 | ANC-01-04 | unit | `evennia test --settings settings tests/test_ancestry_engine.py` | Plan 05 (W3) | pending |
 | 05-01-02 | 01 | 1 | ANC-05 | unit | `evennia test --settings settings tests/test_mob_disposition.py` | Existing | pending |
-| 05-02-01 | 02 | 1 | ABL-01 | unit | `evennia test --settings settings tests/test_ability_engine.py::TestAbilityRegistry` | W0 | pending |
-| 05-02-02 | 02 | 1 | ABL-02 | unit | `evennia test --settings settings tests/test_ability_engine.py::TestUseAbility` | W0 | pending |
-| 05-02-03 | 02 | 1 | ABL-03, ABL-05 | unit | `evennia test --settings settings tests/test_ability_engine.py::TestTierGating` | W0 | pending |
-| 05-03-01 | 03 | 1 | D-21 | unit | `evennia test --settings settings tests/test_room_state.py` | W0 | pending |
+| 05-02-01 | 02 | 1 | ABL-01 | unit | `evennia test --settings settings tests/test_ability_engine.py::TestAbilityRegistry` | Plan 05 (W3) | pending |
+| 05-02-02 | 02 | 1 | ABL-02 | unit | `evennia test --settings settings tests/test_ability_engine.py::TestUseAbility` | Plan 05 (W3) | pending |
+| 05-02-03 | 02 | 1 | ABL-03, ABL-05 | unit | `evennia test --settings settings tests/test_ability_engine.py::TestTierGating` | Plan 05 (W3) | pending |
+| 05-03-01 | 03 | 1 | D-21 | unit | `evennia test --settings settings tests/test_room_state.py` | Plan 05 (W3) | pending |
 | 05-04-01 | 04 | 2 | D-17, D-25 | unit | `evennia test --settings settings tests/test_guild_engine.py` | Extend | pending |
 
 *Status: pending / green / red / flaky*
