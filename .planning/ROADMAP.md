@@ -165,7 +165,14 @@ Plans:
   2. Mob abilities fire based on weight and cooldown conditions during combat turns
   3. A general proficiency skill (e.g., Lockpicking) increases through passive use and deliberate practice independently of the domain system
   4. Ancestry skill seeds are applied via set_ancestry(); attunement skills track per-zone and per-creature progress
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 06b-01-PLAN.md — WorldEventLog fix + SpawnRecord model + migration + spawn_tick + death hook rewrite
+- [ ] 06b-02-PLAN.md — Skill definitions registry (21+ skills) + skill engine (accumulation, practice, training, discovery)
+- [ ] 06b-03-PLAN.md — Ancestry seed wiring + session flush integration + skill commands (CmdSkills/CmdPractice/CmdTrain)
+- [ ] 06b-04-PLAN.md — Combat AI extensions: casting time, missing conditions, is_hunter chase
+- [ ] 06b-05-PLAN.md — Test suite: test_spawn_record + test_skill_engine + test_combat_ai extensions
 
 ### Phase 6c: NPC Dialogue & Crafting
 **Goal**: NPC dialogue system with Standing-tier greetings, keyword topics, dynamic hints, ambient behavior; crafting framework with recipe registry, quality variance, and basic output for Cooking/Smithing/Alchemy
@@ -203,6 +210,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 4. Domain Fingerprints and Guild Engine | 0/2 | Not started | - |
 | 5. Ancestry Engine and Ability System | 0/5 | Not started | - |
 | 6a. Base Attributes & Combat System | 0/7 | Not started | - |
-| 6b. Spawn System, Skills & Mob AI | 0/TBD | Not started | - |
+| 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
 | 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
