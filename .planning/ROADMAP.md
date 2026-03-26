@@ -136,20 +136,42 @@ Plans:
 - [x] 05-04-PLAN.md — Commands (CmdSetAncestry, CmdJoinGuild, CmdDomains, CmdAbilities, CmdUseAbility) + guild discovery wiring + cmdset registration
 - [x] 05-05-PLAN.md — Test suite: test_ancestry_engine.py + test_ability_engine.py + test_room_state.py
 
-### Phase 6: Combat, Skills, and NPC Templates
-**Goal**: Players can engage in ability-driven combat against zone-scaled mobs, develop proficiency skills through use, and NPCs respond with world-state-aware dialogue
+### Phase 6a: Base Attributes & Combat System
+**Goal**: Character base attribute system (7 stats, point-buy, descriptor display, stat growth) and full turn-based combat (CombatScript, initiative, action budget, damage formula, status effects with compounds, corpse containers, flee)
 **Depends on**: Phase 5 (ability system must exist before combat can dispatch ability effects)
-**Requirements**: CMB-01, CMB-02, CMB-03, CMB-04, SKL-01, SKL-02, SKL-03, SKL-04, NPC-01, NPC-02, NPC-03
+**Requirements**: CMB-01, CMB-02, CMB-03, CMB-04
 **Success Criteria** (what must be TRUE):
   1. A player uses an ability in combat and the correct damage, status effect, or positional change resolves against a mob; zone-scaling logarithmic math applies to that mob's stats
-  2. Group combat correctly distributes loot using the existing group engine's loot modes; mob abilities fire based on weight and cooldown conditions
-  3. A general proficiency skill (e.g., Lockpicking) increases through use and a profession track (Cooking) progresses independently of the domain system
-  4. An NPC gives different dialogue to a player with high vs. low standing, or to a Kau'roran vs. a Human ancestry — the context packet drives the variation
+  2. Group combat correctly distributes loot using the existing group engine's loot modes
+  3. Status effect compounds (Burn+Wet=Steam, Poison+Slow=Venom Lag) trigger correctly in combat
+  4. Base attributes display as descriptors only (no numbers visible to players); attributes grow through action-specific use
+**Plans**: TBD
+
+### Phase 6b: Spawn System, Skills & Mob AI
+**Goal**: Mob spawn/respawn runtime with SpawnRecord model, mob ability AI with weighted priority selection, and full general proficiency + attunement skill system with discovery framework
+**Depends on**: Phase 6a (combat system required for mob abilities and spawn integration)
+**Requirements**: CMB-04, SKL-01, SKL-02, SKL-03, SKL-04
+**Success Criteria** (what must be TRUE):
+  1. Mobs respawn on timer after death via SpawnRecord + global ticker; named mobs announce to zone on respawn
+  2. Mob abilities fire based on weight and cooldown conditions during combat turns
+  3. A general proficiency skill (e.g., Lockpicking) increases through passive use and deliberate practice independently of the domain system
+  4. Ancestry skill seeds are applied via set_ancestry(); attunement skills track per-zone and per-creature progress
+**Plans**: TBD
+
+### Phase 6c: NPC Dialogue & Crafting
+**Goal**: NPC dialogue system with Standing-tier greetings, keyword topics, dynamic hints, ambient behavior; crafting framework with recipe registry, quality variance, and basic output for Cooking/Smithing/Alchemy
+**Depends on**: Phase 6b (skill system required for crafting proficiencies and trainer interactions)
+**Requirements**: NPC-01, NPC-02, NPC-03, SKL-03
+**Success Criteria** (what must be TRUE):
+  1. An NPC gives different dialogue to a player with high vs. low standing, or to a Kau'roran vs. a Human ancestry — the context packet drives the variation
+  2. Dynamic hints show relevant topics based on Standing tier, active quests, and world-state dimensions
+  3. Crafting a recipe with ingredients produces an item; quality varies based on skill level — higher skill = better results
+  4. Ambient NPC echoes fire on timer with variance, creating lived-in atmosphere
 **Plans**: TBD
 
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
-**Depends on**: Phase 3 (GUI builder required to author content), Phase 6 (combat and NPC systems required for meaningful play)
+**Depends on**: Phase 3 (GUI builder required to author content), Phase 6c (combat, NPC, and skill systems required for meaningful play)
 **Requirements**: CON-01, CON-02, CON-03, CON-04
 **Success Criteria** (what must be TRUE):
   1. A new player arrives in Vael's Crossing, can navigate to bank, guild, and services, and the city feels inhabited with NPCs and ambient content
@@ -161,7 +183,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b → 6c → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
