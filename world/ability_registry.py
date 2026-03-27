@@ -57,43 +57,7 @@ ABILITIES = {
     # ===================================================================
     # Non-combat / non-tactics domain stubs (kept from Phase 5a)
     # ===================================================================
-    "wild_mend": {
-        "id": "wild_mend",
-        "name": "Wild Mend",
-        "domain": "naturalism",
-        "tier": 1,
-        "resource_cost": 20,
-        "resource_type": "balance",
-        "cooldown": 3,
-        "charge_turns": 0,
-        "effect_type": "heal",
-        "scaling_primary": "naturalism",
-        "scaling_secondary": None,
-        "application_chance": 1.0,
-        "description": "[STUB - Phase 5b] Draw on natural balance to mend wounds.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
-    # pulse_attune and arcane_bolt stubs removed -- replaced by full Arcana/Resonance pools below
-    "reagent_toss": {
-        "id": "reagent_toss",
-        "name": "Reagent Toss",
-        "domain": "alchemy",
-        "tier": 1,
-        "resource_cost": 10,
-        "resource_type": "reagents",
-        "cooldown": 0,
-        "charge_turns": 0,
-        "effect_type": "dot",
-        "scaling_primary": "alchemy",
-        "scaling_secondary": None,
-        "application_chance": 0.9,
-        "description": "[STUB - Phase 5b] Toss a reactive compound that burns over time.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
+    # wild_mend, reagent_toss stubs removed -- replaced by full Naturalism/Alchemy pools below
     "deploy_turret": {
         "id": "deploy_turret",
         "name": "Deploy Turret",
@@ -130,24 +94,7 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": None,
     },
-    "venom_coat": {
-        "id": "venom_coat",
-        "name": "Venom Coat",
-        "domain": "alchemy",
-        "tier": 1,
-        "resource_cost": 15,
-        "resource_type": "reagents",
-        "cooldown": 2,
-        "charge_turns": 0,
-        "effect_type": "status",
-        "scaling_primary": "alchemy",
-        "scaling_secondary": None,
-        "application_chance": 0.75,
-        "description": "[STUB - Phase 5b] Coat weapon with venom to apply poison status.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
+    # venom_coat stub removed -- replaced by full Alchemy pool below
     # resonance_ward stub removed -- replaced by full Resonance pool below
     # ===================================================================
     # COMBAT DOMAIN POOL (15 abilities) -- resource_type: momentum
@@ -5163,6 +5110,1689 @@ ABILITIES = {
         },
         "subclass_id": "sealreader",
         "effect_params": {"damage_base": 230, "status_effect": "stun", "duration": 1, "magnitude": 2.0},
+    },
+
+    # ===================================================================
+    # NATURALISM DOMAIN POOL (15 abilities) -- resource_type: balance
+    # Fingerprint: CALIBRATE -- managed duality, Feral vs Calm spectrum
+    # Scaling: naturalism -> resonance
+    # Balance is a SPECTRUM: offensive abilities push Feral, defensive
+    # abilities push Calm. Both extremes weaken you differently.
+    # ===================================================================
+
+    # --- Naturalism Tier 1 (4 abilities) -- Basic nature effects ---
+    "thorn_lash": {
+        "id": "thorn_lash",
+        "name": "Thorn Lash",
+        "domain": "naturalism",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "balance",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Lash out with a whip of thorned vine. The simplest"
+            " expression of Verdance doctrine: the natural world"
+            " answers when you ask. Pushes toward Feral."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 35},
+    },
+    "wild_mend": {
+        "id": "wild_mend",
+        "name": "Wild Mend",
+        "domain": "naturalism",
+        "tier": 1,
+        "resource_cost": 15,
+        "resource_type": "balance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Draw upon living energy to close wounds. The forest"
+            " gives what it can spare. Healing effectiveness"
+            " increases near Calm. Pushes toward Calm."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"heal_base": 40},
+    },
+    "feral_strike": {
+        "id": "feral_strike",
+        "name": "Feral Strike",
+        "domain": "naturalism",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "balance",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Strike with the savagery of a cornered animal. Raw,"
+            " unrefined violence drawn from the wild self. Damage"
+            " increases near Feral. Pushes toward Feral."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 40},
+    },
+    "natures_ward": {
+        "id": "natures_ward",
+        "name": "Nature's Ward",
+        "domain": "naturalism",
+        "tier": 1,
+        "resource_cost": 15,
+        "resource_type": "balance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "A barrier of living energy wraps around you, absorbing"
+            " damage briefly. The natural world recognizes its own."
+            " Effectiveness increases near Calm. Pushes toward Calm."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "warding", "duration": 2, "magnitude": 0.12},
+    },
+
+    # --- Naturalism Tier 2 (4 abilities) -- Core spectrum management ---
+    "bramble_burst": {
+        "id": "bramble_burst",
+        "name": "Bramble Burst",
+        "domain": "naturalism",
+        "tier": 2,
+        "resource_cost": 15,
+        "resource_type": "balance",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Thorned vines erupt from the ground, raking everything"
+            " nearby. Applies poison on contact -- the natural"
+            " world's indifferent cruelty. Pushes toward Feral."
+        ),
+        "room_flag_written": "overgrown",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 55, "status_effect": "poison", "duration": 3, "magnitude": 8},
+    },
+    "soothe_the_wild": {
+        "id": "soothe_the_wild",
+        "name": "Soothe the Wild",
+        "domain": "naturalism",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "balance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Channel calm into living tissue. A sustained mend"
+            " that restores health over several rounds. More"
+            " effective near Calm -- the forest heals those who"
+            " are at peace. Pushes toward Calm."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"heal_base": 60},
+    },
+    "predator_instinct": {
+        "id": "predator_instinct",
+        "name": "Predator Instinct",
+        "domain": "naturalism",
+        "tier": 2,
+        "resource_cost": 18,
+        "resource_type": "balance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Embrace the predator within. Haste and heightened"
+            " reflexes for several rounds. Stronger near Feral."
+            " The duality of the Verdance path -- power at a"
+            " cost. Pushes toward Feral."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 2, "magnitude": 1.0},
+    },
+    "entangling_roots": {
+        "id": "entangling_roots",
+        "name": "Entangling Roots",
+        "domain": "naturalism",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "balance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Roots surge from beneath the earth to pin the target"
+            " in place. The natural world holds what the Verdance"
+            " commands. Neutral on the spectrum -- neither Feral"
+            " nor Calm, just control."
+        ),
+        "room_flag_written": "overgrown",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "root", "duration": 2, "magnitude": 1.0},
+    },
+
+    # --- Naturalism Tier 3 (4 abilities) -- Advanced nature, DoTs, compounds ---
+    "venombloom": {
+        "id": "venombloom",
+        "name": "Venombloom",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Conjure a bloom of toxic spores that cling to the"
+            " target. Sustained poison that worsens each round."
+            " The natural world does not distinguish between"
+            " healing and harming. Pushes toward Feral."
+        ),
+        "room_flag_written": "rotting",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+    },
+    "lifesurge": {
+        "id": "lifesurge",
+        "name": "Lifesurge",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "balance",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Flood a target with concentrated life energy. A"
+            " powerful burst heal that also grants brief damage"
+            " reduction. Dramatically stronger near Calm -- the"
+            " forest gives everything when you are at peace."
+            " Pushes hard toward Calm."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"heal_base": 100},
+    },
+    "rending_thorns": {
+        "id": "rending_thorns",
+        "name": "Rending Thorns",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Massive thorns erupt through the target, dealing heavy"
+            " damage and applying bleed. Nature's violence is not"
+            " cruel -- it is indifferent. Pushes toward Feral."
+        ),
+        "room_flag_written": "fading_life",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 90, "status_effect": "bleed", "duration": 3, "magnitude": 1},
+    },
+    "spore_cloud": {
+        "id": "spore_cloud",
+        "name": "Spore Cloud",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "balance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Release a cloud of choking spores that blankets the"
+            " area. All enemies are slowed and weakened as the"
+            " spores clog lungs and cloud vision. The forest"
+            " does not fight fair. Pushes toward Feral."
+        ),
+        "room_flag_written": "rotting",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "slow", "duration": 2, "magnitude": 1.0},
+    },
+
+    # --- Naturalism Tier 4 (3 abilities) -- Domain capstones ---
+    "primal_wrath": {
+        "id": "primal_wrath",
+        "name": "Primal Wrath",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Unleash the full fury of the wild. Massive damage"
+            " to all enemies as thorns, roots, and venom erupt"
+            " simultaneously. Applies poison and bleed. Only"
+            " available deep in Feral -- the cost of this power"
+            " is control. Requires Feral balance."
+        ),
+        "room_flag_written": "fading_life",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 180, "status_effect": "poison", "duration": 3, "magnitude": 10},
+    },
+    "ancient_restoration": {
+        "id": "ancient_restoration",
+        "name": "Ancient Restoration",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Channel the oldest living energy in the world. A"
+            " massive group heal that also removes one negative"
+            " status effect per ally. The Ancient Voice speaks"
+            " and the wounded rise. Requires Calm balance."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"heal_base": 200},
+    },
+    "natures_equilibrium": {
+        "id": "natures_equilibrium",
+        "name": "Nature's Equilibrium",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "balance",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Achieve perfect balance between Feral and Calm."
+            " For several rounds, all naturalism abilities deal"
+            " full damage AND full healing regardless of spectrum"
+            " position. The Verdance ideal: mastery is not"
+            " choosing a side. Requires neutral Balance."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5},
+    },
+
+    # ===================================================================
+    # NATURALISM-PRIMARY SUBCLASS SIGNATURES (18 abilities = 9 x 2)
+    # Each subclass gets a Tier 3 enhanced blend + Tier 4 defining ability
+    # ===================================================================
+
+    # --- Thornfist (naturalism + combat) ---
+    "thornfist_nature_fist": {
+        "id": "thornfist_nature_fist",
+        "name": "Nature Fist",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "balance",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "combat",
+        "application_chance": 0.90,
+        "description": (
+            "Drive a fist wrapped in living thorns into the target."
+            " Physical strike that applies poison on contact."
+            " Shapeshift-adjacent -- your body IS the weapon."
+            " Pushes toward Feral."
+        ),
+        "room_flag_written": "fading_life",
+        "attuned_variants": {},
+        "subclass_id": "thornfist",
+        "effect_params": {"damage_base": 85, "status_effect": "poison", "duration": 3, "magnitude": 8},
+    },
+    "thornfist_primal_shift": {
+        "id": "thornfist_primal_shift",
+        "name": "Primal Shift",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Temporarily transform into something between human"
+            " and predator. Massive stat buffs -- strength and"
+            " damage amplified, natural armor, every strike"
+            " applies nature DoTs. The Thornfist's defining"
+            " moment: the body becomes the forest itself."
+        ),
+        "room_flag_written": "fading_life",
+        "attuned_variants": {},
+        "subclass_id": "thornfist",
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 2.0},
+    },
+
+    # --- Rootstalker (naturalism + subterfuge) ---
+    "rootstalker_vine_ambush": {
+        "id": "rootstalker_vine_ambush",
+        "name": "Vine Ambush",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 0.85,
+        "description": (
+            "Vines erupt from concealment to ensnare and damage"
+            " the target. Stealth-delivered nature attack that"
+            " roots the target. The wilderness ghost strikes"
+            " through the terrain itself. Pushes toward Feral."
+        ),
+        "room_flag_written": "overgrown",
+        "attuned_variants": {},
+        "subclass_id": "rootstalker",
+        "effect_params": {"damage_base": 85, "status_effect": "root", "duration": 2, "magnitude": 1.0},
+    },
+    "rootstalker_one_with_wilds": {
+        "id": "rootstalker_one_with_wilds",
+        "name": "One With the Wilds",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "Merge with the natural environment. Sustained outdoor"
+            " stealth with evasion and a poison aura that damages"
+            " nearby enemies each round. Attacks do not break"
+            " concealment. The Rootstalker's defining state:"
+            " the wilderness moves through you."
+        ),
+        "room_flag_written": "overgrown",
+        "attuned_variants": {},
+        "subclass_id": "rootstalker",
+        "effect_params": {"buff_type": "evasion", "duration": 4, "magnitude": 0.3},
+    },
+
+    # --- Cantera (naturalism + resonance) ---
+    "cantera_ancient_grove": {
+        "id": "cantera_ancient_grove",
+        "name": "Ancient Grove",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "resonance",
+        "application_chance": 1.0,
+        "description": (
+            "Call upon the memory of ancient forests to heal and"
+            " strengthen. Node energy accelerates living magic."
+            " Heals the group and grants a damage reduction buff."
+            " Stronger in nature zones. Pushes toward Calm."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "cantera",
+        "effect_params": {"heal_base": 90},
+    },
+    "cantera_forest_memory": {
+        "id": "cantera_forest_memory",
+        "name": "Forest Memory",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "heal",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "resonance",
+        "application_chance": 1.0,
+        "description": (
+            "Channel the resonance of every forest that has ever"
+            " lived. Massive group heal amplified by the resonance"
+            " stat. Grants nature damage resistance and a buff"
+            " that persists for multiple rounds. The Cantera's"
+            " defining power: nature via old magic."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "cantera",
+        "effect_params": {"heal_base": 180},
+    },
+
+    # --- Stormcaller (naturalism + arcana) ---
+    "stormcaller_lightning_strike": {
+        "id": "stormcaller_lightning_strike",
+        "name": "Lightning Strike",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "arcana",
+        "application_chance": 0.90,
+        "description": (
+            "Call a bolt of lightning down on the target. Deals"
+            " heavy damage, applies wet status from driving rain,"
+            " and writes a charged flag to the room. Elemental"
+            " forces bent to will. Pushes toward Feral."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": "stormcaller",
+        "effect_params": {"damage_base": 95, "status_effect": "wet", "duration": 2, "magnitude": 1.0},
+    },
+    "stormcaller_storm_call": {
+        "id": "stormcaller_storm_call",
+        "name": "Storm Call",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "arcana",
+        "application_chance": 0.85,
+        "description": (
+            "Summon a devastating storm. Two rounds of gathering"
+            " wind, then catastrophic AoE damage. Every enemy"
+            " is struck by lightning and drenched. Applies burn"
+            " and wet simultaneously. The room becomes charged."
+            " The Stormcaller's ultimate: the sky itself answers."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": "stormcaller",
+        "effect_params": {"damage_base": 220, "status_effect": "burn", "duration": 3, "magnitude": 10},
+    },
+
+    # --- Greentongue (naturalism + diplomacy) ---
+    "greentongue_natures_voice": {
+        "id": "greentongue_natures_voice",
+        "name": "Nature's Voice",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.85,
+        "description": (
+            "Speak with the authority of the natural world. The"
+            " target's resolve weakens under the weight of something"
+            " older than civilization. Presence and nature blend"
+            " into a social weapon. Pushes toward Calm."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "greentongue",
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+    },
+    "greentongue_forest_decree": {
+        "id": "greentongue_forest_decree",
+        "name": "Forest Decree",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.75,
+        "description": (
+            "Issue a command that the living world enforces."
+            " All nature-aligned creatures and beasts in the room"
+            " are charmed. Non-natural enemies are weakened as"
+            " the forest itself turns hostile. Presence scaling"
+            " amplifies the reach. The Greentongue's voice."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "greentongue",
+        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.5},
+    },
+
+    # --- Rotweald (naturalism + alchemy) ---
+    "rotweald_rot_cloud": {
+        "id": "rotweald_rot_cloud",
+        "name": "Rot Cloud",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.85,
+        "description": (
+            "Release a cloud of organic decay that clings to"
+            " everything it touches. AoE poison and bleed as"
+            " flesh rots on contact. The dark side of nature --"
+            " decomposition weaponized. Pushes toward Feral."
+        ),
+        "room_flag_written": "rotting",
+        "attuned_variants": {},
+        "subclass_id": "rotweald",
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+    },
+    "rotweald_consuming_decay": {
+        "id": "rotweald_consuming_decay",
+        "name": "Consuming Decay",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.80,
+        "description": (
+            "Transform the room into a zone of sustained organic"
+            " decay. Every enemy receives poison and weaken each"
+            " round for the duration. The ground itself rots."
+            " The Rotweald's defining power: nature does not"
+            " always grow -- sometimes it consumes."
+        ),
+        "room_flag_written": "rotting",
+        "attuned_variants": {},
+        "subclass_id": "rotweald",
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+    },
+
+    # --- Wildcommand (naturalism + tactics) ---
+    "wildcommand_beast_rush": {
+        "id": "wildcommand_beast_rush",
+        "name": "Beast Rush",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "tactics",
+        "application_chance": 0.90,
+        "description": (
+            "Command local predators to assault the target. A"
+            " coordinated beast attack that deals heavy damage."
+            " Tactical knowledge expressed through animal"
+            " direction. Pushes toward Feral."
+        ),
+        "room_flag_written": "fading_life",
+        "attuned_variants": {},
+        "subclass_id": "wildcommand",
+        "effect_params": {"damage_base": 90},
+    },
+    "wildcommand_pack_alpha": {
+        "id": "wildcommand_pack_alpha",
+        "name": "Pack Alpha",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Summon a sustained beast companion that fights"
+            " alongside you with tactical intelligence. The beast"
+            " deals damage each round, grants allies a damage"
+            " bonus, and obeys complex orders. The Wildcommand's"
+            " defining power: the forest is your army."
+        ),
+        "room_flag_written": "fading_life",
+        "attuned_variants": {},
+        "subclass_id": "wildcommand",
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 1.5},
+    },
+
+    # --- Growthwright (naturalism + engineering) ---
+    "growthwright_living_barricade": {
+        "id": "growthwright_living_barricade",
+        "name": "Living Barricade",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "engineering",
+        "application_chance": 1.0,
+        "description": (
+            "Grow a wall of living wood that shields allies."
+            " Significant damage reduction for the group as"
+            " organic construction absorbs incoming force."
+            " The structure persists and regenerates."
+            " Pushes toward Calm."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "growthwright",
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.25},
+    },
+    "growthwright_grove_fortress": {
+        "id": "growthwright_grove_fortress",
+        "name": "Grove Fortress",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "engineering",
+        "application_chance": 1.0,
+        "description": (
+            "Grow a sustained living fortification that transforms"
+            " the battlefield. Heavy damage reduction for all"
+            " allies, enemies slowed inside the grove, and the"
+            " structure heals itself each round. The Growthwright's"
+            " defining power: you grow what others build."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "growthwright",
+        "effect_params": {"buff_type": "warding", "duration": 4, "magnitude": 0.35},
+    },
+
+    # --- Deeproot (naturalism + remnance) ---
+    "deeproot_deep_memory": {
+        "id": "deeproot_deep_memory",
+        "name": "Deep Memory",
+        "domain": "naturalism",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "balance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "remnance",
+        "application_chance": 1.0,
+        "description": (
+            "Tap into the memory stored in ancient root systems."
+            " Grants a damage and defense buff drawn from the"
+            " world's oldest living knowledge. Dragon-adjacent"
+            " nature power that should not exist. Pushes"
+            " toward Calm."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "deeproot",
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.2},
+    },
+    "deeproot_worldroot_pulse": {
+        "id": "deeproot_worldroot_pulse",
+        "name": "Worldroot Pulse",
+        "domain": "naturalism",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "balance",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "heal",
+        "scaling_primary": "naturalism",
+        "scaling_secondary": "remnance",
+        "application_chance": 1.0,
+        "description": (
+            "Pulse energy through the deepest root network in"
+            " the world. Massive group heal amplified by echoes"
+            " of ancient nature. Grants sustained regeneration"
+            " and a nature buff that persists for rounds. The"
+            " Deeproot's defining power: the world-memory in"
+            " old growth, made real."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "deeproot",
+        "effect_params": {"heal_base": 200},
+    },
+
+    # ===================================================================
+    # ALCHEMY DOMAIN POOL (15 abilities) -- resource_type: reagents
+    # Fingerprint: PREPARE -- preparation as combat philosophy
+    # Scaling: alchemy -> acuity
+    # Reagents are PRE-CRAFTED CONSUMABLES. Costs represent actual stock
+    # depletion. Running out mid-fight is a design-intended failure state.
+    # ===================================================================
+
+    # --- Alchemy Tier 1 (4 abilities) -- Basic compounds ---
+    "reagent_toss": {
+        "id": "reagent_toss",
+        "name": "Reagent Toss",
+        "domain": "alchemy",
+        "tier": 1,
+        "resource_cost": 5,
+        "resource_type": "reagents",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Hurl a basic reactive compound at the target. The"
+            " cheapest expenditure in the Thornwork arsenal --"
+            " but every reagent spent is a reagent gone. This"
+            " is the cost of preparation."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 35},
+    },
+    "acid_flask": {
+        "id": "acid_flask",
+        "name": "Acid Flask",
+        "domain": "alchemy",
+        "tier": 1,
+        "resource_cost": 8,
+        "resource_type": "reagents",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Lob a flask of concentrated acid. Burns on contact"
+            " and weakens armor. A staple of the Thornwork"
+            " brewer's kit -- reliable, efficient, finite."
+        ),
+        "room_flag_written": "caustic",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 40, "status_effect": "burn", "duration": 2, "magnitude": 7},
+    },
+    "smoke_screen": {
+        "id": "smoke_screen",
+        "name": "Smoke Screen",
+        "domain": "alchemy",
+        "tier": 1,
+        "resource_cost": 8,
+        "resource_type": "reagents",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Deploy a chemical smoke compound that blinds enemies"
+            " in the area. Visibility drops to nothing -- bought"
+            " with preparation, not magic."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "blind", "duration": 2, "magnitude": 1.0},
+    },
+    "venom_coat": {
+        "id": "venom_coat",
+        "name": "Venom Coat",
+        "domain": "alchemy",
+        "tier": 1,
+        "resource_cost": 7,
+        "resource_type": "reagents",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "status",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Coat your weapon with a prepared toxin. The next"
+            " several melee strikes apply poison. Pre-crafted"
+            " and precise -- the Thornwork way."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"status_effect": "poison", "duration": 3, "magnitude": 8},
+    },
+
+    # --- Alchemy Tier 2 (4 abilities) -- Core alchemy ---
+    "caustic_compound": {
+        "id": "caustic_compound",
+        "name": "Caustic Compound",
+        "domain": "alchemy",
+        "tier": 2,
+        "resource_cost": 12,
+        "resource_type": "reagents",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Apply a sustained-release chemical burn. The compound"
+            " eats through armor and flesh over multiple rounds."
+            " Acuity determines how precisely the mixture was"
+            " calibrated before the fight."
+        ),
+        "room_flag_written": "caustic",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"status_effect": "burn", "duration": 3, "magnitude": 8},
+    },
+    "concentrated_toxin": {
+        "id": "concentrated_toxin",
+        "name": "Concentrated Toxin",
+        "domain": "alchemy",
+        "tier": 2,
+        "resource_cost": 15,
+        "resource_type": "reagents",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Deliver a concentrated poison compound. Higher potency"
+            " than standard venom -- the result of careful"
+            " preparation. Stacks with existing poison effects."
+        ),
+        "room_flag_written": "poisoned_air",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+    },
+    "flashpowder": {
+        "id": "flashpowder",
+        "name": "Flashpowder",
+        "domain": "alchemy",
+        "tier": 2,
+        "resource_cost": 12,
+        "resource_type": "reagents",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Hurl a prepared flashpowder charge. The burst blinds"
+            " and staggers all enemies in the area. A single"
+            " handful buys precious seconds -- spend wisely."
+        ),
+        "room_flag_written": "burning",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "blind", "duration": 2, "magnitude": 1.0},
+    },
+    "strengthening_draught": {
+        "id": "strengthening_draught",
+        "name": "Strengthening Draught",
+        "domain": "alchemy",
+        "tier": 2,
+        "resource_cost": 15,
+        "resource_type": "reagents",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Drink a pre-prepared alchemical draught. Haste and"
+            " damage resistance for several rounds. The finest"
+            " preparation happens before the fight begins."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+    },
+
+    # --- Alchemy Tier 3 (4 abilities) -- Advanced compounds ---
+    "blistering_mixture": {
+        "id": "blistering_mixture",
+        "name": "Blistering Mixture",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "reagents",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Hurl a compound that burns and poisons simultaneously."
+            " Two status effects from a single prepared mixture."
+            " The Thornworker's craft: maximum effect from"
+            " minimum reagent expenditure."
+        ),
+        "room_flag_written": "burning",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 80, "status_effect": "burn", "duration": 3, "magnitude": 10},
+    },
+    "weakening_agent": {
+        "id": "weakening_agent",
+        "name": "Weakening Agent",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "reagents",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Deploy a chemical agent that saps physical strength."
+            " The target weakens significantly as the compound"
+            " enters their system. Preparation over improvisation."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+    },
+    "paralytic_compound": {
+        "id": "paralytic_compound",
+        "name": "Paralytic Compound",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "reagents",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.75,
+        "description": (
+            "Apply a nerve agent that locks muscles in place."
+            " The target is slowed and rooted as the paralytic"
+            " takes hold. Expensive to prepare, devastating"
+            " when it lands."
+        ),
+        "room_flag_written": "poisoned_air",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "slow", "duration": 3, "magnitude": 1.0},
+    },
+    "volatile_concoction": {
+        "id": "volatile_concoction",
+        "name": "Volatile Concoction",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "reagents",
+        "cooldown": 3,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Mix a volatile compound mid-combat and hurl it."
+            " One round to combine ingredients, then devastating"
+            " area damage. The complex mixture requires precision"
+            " -- acuity determines the blast radius."
+        ),
+        "room_flag_written": "burning",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 110},
+    },
+
+    # --- Alchemy Tier 4 (3 abilities) -- Domain capstones ---
+    "transmuters_masterwork": {
+        "id": "transmuters_masterwork",
+        "name": "Transmuter's Masterwork",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 35,
+        "resource_type": "reagents",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Deploy the Transmuter's finest creation. A compound"
+            " that applies poison, burn, and weaken simultaneously."
+            " The ceiling of alchemical craft -- three effects"
+            " from one prepared mixture. Devastating and finite."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 150, "status_effect": "poison", "duration": 4, "magnitude": 12},
+    },
+    "alchemists_perfection": {
+        "id": "alchemists_perfection",
+        "name": "Alchemist's Perfection",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 40,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "The masterwork compound. One round to combine the"
+            " rarest reagents, then a single devastating payload"
+            " that deals massive area damage and saturates the"
+            " room with persistent toxins. The Transmuter's"
+            " ultimate expression: chemistry as annihilation."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 220},
+    },
+    "reagent_mastery": {
+        "id": "reagent_mastery",
+        "name": "Reagent Mastery",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 30,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "The master alchemist's efficiency. For the duration,"
+            " all alchemy abilities cost half reagents and apply"
+            " double status effect stacks. The difference between"
+            " a brewer and a Transmuter: preparation mastery."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5},
+    },
+
+    # ===================================================================
+    # ALCHEMY-PRIMARY SUBCLASS SIGNATURES (18 abilities = 9 x 2)
+    # Each subclass gets a Tier 3 enhanced blend + Tier 4 defining ability
+    # ===================================================================
+
+    # --- Venomfang (alchemy + combat) ---
+    "venomfang_toxic_bite": {
+        "id": "venomfang_toxic_bite",
+        "name": "Toxic Bite",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 18,
+        "resource_type": "reagents",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "combat",
+        "application_chance": 0.90,
+        "description": (
+            "A melee strike with an envenomed blade that applies"
+            " both bleed and poison simultaneously. Highest melee"
+            " poison application rate in the game. The Venomfang"
+            " bleeds and poisons with every cut."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "venomfang",
+        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10},
+    },
+    "venomfang_apex_predator": {
+        "id": "venomfang_apex_predator",
+        "name": "Apex Predator",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 30,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Inject yourself with a combat stimulant that pushes"
+            " your body beyond its limits. For the duration,"
+            " every melee attack applies double poison stacks"
+            " and bleed simultaneously. The Venomfang's defining"
+            " moment: sustained chemical-fueled aggression."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "venomfang",
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 2.0},
+    },
+
+    # --- Nightshade (alchemy + subterfuge) ---
+    "nightshade_silent_toxin": {
+        "id": "nightshade_silent_toxin",
+        "name": "Silent Toxin",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 18,
+        "resource_type": "reagents",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 0.90,
+        "description": (
+            "Apply poison from concealment. The target does not"
+            " realize they have been dosed until the toxin takes"
+            " hold. Delivered from stealth without breaking"
+            " Vanish. Patient, precise, never seen."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "nightshade",
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 12},
+    },
+    "nightshade_midnight_bloom": {
+        "id": "nightshade_midnight_bloom",
+        "name": "Midnight Bloom",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 35,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 0.85,
+        "description": (
+            "Apply a delayed-onset toxin of devastating potency."
+            " The poison lies dormant for three rounds, then"
+            " blooms into massive damage. The target feels nothing"
+            " until it is too late. The Nightshade's defining"
+            " power: the kill that was decided before the fight."
+        ),
+        "room_flag_written": "poisoned_air",
+        "attuned_variants": {},
+        "subclass_id": "nightshade",
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+    },
+
+    # --- Mireweald (alchemy + naturalism) ---
+    "mireweald_swamp_rot": {
+        "id": "mireweald_swamp_rot",
+        "name": "Swamp Rot",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "reagents",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "naturalism",
+        "application_chance": 0.85,
+        "description": (
+            "Release a compound derived from swamp decay. Area"
+            " poison and slow as organic filth clogs and corrodes."
+            " The Mireweald approach: where Rotweald grows decay,"
+            " you distill and weaponize it."
+        ),
+        "room_flag_written": "rotting",
+        "attuned_variants": {},
+        "subclass_id": "mireweald",
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+    },
+    "mireweald_mire_zone": {
+        "id": "mireweald_mire_zone",
+        "name": "Mire Zone",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 40,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "naturalism",
+        "application_chance": 0.80,
+        "description": (
+            "Saturate the terrain with toxic organic compounds."
+            " The room becomes a mire -- every enemy takes"
+            " poison damage and is slowed each round. Sustained"
+            " terrain poisoning. The Mireweald's defining power:"
+            " the ground itself rejects your enemies."
+        ),
+        "room_flag_written": "rotting",
+        "attuned_variants": {},
+        "subclass_id": "mireweald",
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+    },
+
+    # --- Voidbrewer (alchemy + resonance) ---
+    "voidbrewer_resonant_compound": {
+        "id": "voidbrewer_resonant_compound",
+        "name": "Resonant Compound",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "reagents",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "resonance",
+        "application_chance": 0.85,
+        "description": (
+            "Deploy a compound that interacts with ambient node"
+            " energy. Poison amplified when room flags are present."
+            " Writes a resonant flag. The Voidbrewer creates"
+            " conditions that empower their own future attacks."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {
+            "resonant": {"extra_effect": "poison duration +2 rounds", "extra_cost": 5},
+        },
+        "subclass_id": "voidbrewer",
+        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10},
+    },
+    "voidbrewer_old_world_brew": {
+        "id": "voidbrewer_old_world_brew",
+        "name": "Old World Brew",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 40,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "resonance",
+        "application_chance": 0.85,
+        "description": (
+            "Combine reagents with old magic resonance. One round"
+            " to mix a compound that predates modern alchemy."
+            " Room flag amplified -- devastating in charged or"
+            " resonant rooms. The Voidbrewer's defining power:"
+            " alchemy that touches what the nodes remember."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {
+            "resonant": {"extra_effect": "damage +80%, all status durations +2", "extra_cost": 10},
+            "charged": {"extra_effect": "burn added, all enemies stunned 1 round", "extra_cost": 8},
+        },
+        "subclass_id": "voidbrewer",
+        "effect_params": {"damage_base": 160, "status_effect": "poison", "duration": 4, "magnitude": 12},
+    },
+
+    # --- Fumecaster (alchemy + arcana) ---
+    "fumecaster_poison_bolt": {
+        "id": "fumecaster_poison_bolt",
+        "name": "Poison Bolt",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 18,
+        "resource_type": "reagents",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "arcana",
+        "application_chance": 0.90,
+        "description": (
+            "Deliver an alchemical payload through a magical"
+            " vector. Ranged poison delivery that bypasses"
+            " melee range restrictions. Spell-delivered toxin"
+            " -- the Fumecaster's signature ranged attack."
+        ),
+        "room_flag_written": "poisoned_air",
+        "attuned_variants": {},
+        "subclass_id": "fumecaster",
+        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10},
+    },
+    "fumecaster_noxious_storm": {
+        "id": "fumecaster_noxious_storm",
+        "name": "Noxious Storm",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 40,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "arcana",
+        "application_chance": 0.85,
+        "description": (
+            "Conjure a storm of alchemical poison delivered"
+            " through arcane force. One round to prepare, then"
+            " AoE ranged poison and burn. Every enemy is hit"
+            " regardless of position. The Fumecaster's defining"
+            " power: melee toxins given devastating range."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "fumecaster",
+        "effect_params": {"damage_base": 180, "status_effect": "burn", "duration": 3, "magnitude": 10},
+    },
+
+    # --- Sweetpoison (alchemy + diplomacy) ---
+    "sweetpoison_honeyed_words": {
+        "id": "sweetpoison_honeyed_words",
+        "name": "Honeyed Words",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 18,
+        "resource_type": "reagents",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.85,
+        "description": (
+            "Engage the target socially while applying a contact"
+            " poison. Charm and poison delivered simultaneously."
+            " Social access as delivery mechanism -- the charming"
+            " poisoner's opening gambit."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "sweetpoison",
+        "effect_params": {"debuff_type": "charm", "duration": 1, "magnitude": 1.0},
+    },
+    "sweetpoison_killing_kindness": {
+        "id": "sweetpoison_killing_kindness",
+        "name": "Killing Kindness",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 35,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.80,
+        "description": (
+            "Charm the target into lowering their guard, then"
+            " apply a delayed lethal compound. The charmed target"
+            " takes no hostile action for one round while the"
+            " poison builds to critical levels. The Sweetpoison's"
+            " defining power: kindness that kills."
+        ),
+        "room_flag_written": "poisoned_air",
+        "attuned_variants": {},
+        "subclass_id": "sweetpoison",
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+    },
+
+    # --- Plaguecommand (alchemy + tactics) ---
+    "plaguecommand_gas_deployment": {
+        "id": "plaguecommand_gas_deployment",
+        "name": "Gas Deployment",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "reagents",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "tactics",
+        "application_chance": 0.85,
+        "description": (
+            "Deploy a tactical gas compound across the battlefield."
+            " Area poison and weaken as the chemical agent"
+            " saturates the space. Tactical toxicology -- area"
+            " denial through chemistry."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "plaguecommand",
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+    },
+    "plaguecommand_scorched_earth": {
+        "id": "plaguecommand_scorched_earth",
+        "name": "Scorched Earth",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "tactics",
+        "application_chance": 0.80,
+        "description": (
+            "Saturate the entire room with layered chemical"
+            " agents. Poison, burn, and slow applied to all"
+            " enemies each round for the duration. Massive area"
+            " denial that makes the room uninhabitable. The"
+            " Plaguecommand's defining power: tactical"
+            " toxicology at its absolute worst."
+        ),
+        "room_flag_written": "burning",
+        "attuned_variants": {},
+        "subclass_id": "plaguecommand",
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+    },
+
+    # --- Fumewright (alchemy + engineering) ---
+    "fumewright_gas_trap": {
+        "id": "fumewright_gas_trap",
+        "name": "Gas Trap",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "reagents",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "engineering",
+        "application_chance": 0.85,
+        "description": (
+            "Place a concealed chemical device that triggers when"
+            " an enemy acts. Deals damage and applies poison."
+            " Built with precision, armed with patience. The"
+            " Fumewright constructs what others merely toss."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "fumewright",
+        "effect_params": {"damage_base": 85, "status_effect": "poison", "duration": 3, "magnitude": 10},
+    },
+    "fumewright_chemical_engine": {
+        "id": "fumewright_chemical_engine",
+        "name": "Chemical Engine",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "engineering",
+        "application_chance": 0.90,
+        "description": (
+            "Construct a sustained chemical delivery device."
+            " One round to assemble, then the engine releases"
+            " toxins each round -- poison and burn to all"
+            " enemies in the room for the duration. The"
+            " Fumewright's defining power: a machine that"
+            " does the poisoning for you."
+        ),
+        "room_flag_written": "burning",
+        "attuned_variants": {},
+        "subclass_id": "fumewright",
+        "effect_params": {"damage_base": 160, "status_effect": "poison", "duration": 4, "magnitude": 12},
+    },
+
+    # --- Firstblight (alchemy + remnance) ---
+    "firstblight_ancient_venom": {
+        "id": "firstblight_ancient_venom",
+        "name": "Ancient Venom",
+        "domain": "alchemy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "reagents",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "remnance",
+        "application_chance": 0.90,
+        "description": (
+            "Apply a toxin derived from pre-curse knowledge."
+            " Higher poison ceiling than standard compounds --"
+            " this venom interacts with something the dragon"
+            " magic left behind. Ancient poison that modern"
+            " alchemy cannot replicate."
+        ),
+        "room_flag_written": "poisoned_air",
+        "attuned_variants": {},
+        "subclass_id": "firstblight",
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 12},
+    },
+    "firstblight_dragon_blight": {
+        "id": "firstblight_dragon_blight",
+        "name": "Dragon Blight",
+        "domain": "alchemy",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "reagents",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "alchemy",
+        "scaling_secondary": "remnance",
+        "application_chance": 0.85,
+        "description": (
+            "Unleash a toxin that should not exist in the modern"
+            " world. Dragon-adjacent alchemy that scales with"
+            " echoes. Massive sustained poison that worsens each"
+            " round. Weakens the target as the ancient compound"
+            " unravels their defenses. The Firstblight's defining"
+            " power: something old in the poison."
+        ),
+        "room_flag_written": "poisoned_air",
+        "attuned_variants": {},
+        "subclass_id": "firstblight",
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
     },
 }
 
