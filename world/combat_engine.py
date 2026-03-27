@@ -266,8 +266,9 @@ def resolve_ability_damage(character, ability, target):
     else:
         secondary_stat = 0
 
-    # Base damage from ability definition
-    ability_base = ability.get("damage_base", 15)
+    # Base damage from ability definition (prefer effect_params)
+    params = ability.get("effect_params", {})
+    ability_base = params.get("damage_base") or ability.get("damage_base", 15)
     raw = ability_base * (1 + primary_stat * 0.02 + secondary_stat * 0.01)
 
     # Critical hit
@@ -307,14 +308,15 @@ def resolve_ability_damage(character, ability, target):
     from world.base_attributes import record_stat_use
     record_stat_use(character, "melee_hit")
 
-    # Apply status effect from ability if specified
-    if ability.get("status_effect"):
+    # Apply status effect from ability if specified (prefer effect_params)
+    status_effect = params.get("status_effect") or ability.get("status_effect")
+    if status_effect:
         from world import status_effects
         status_effects.apply_effect(
             target,
-            ability["status_effect"],
-            ability.get("effect_duration", 3),
-            ability.get("effect_magnitude", 1.0),
+            status_effect,
+            params.get("duration") or ability.get("effect_duration", 3),
+            params.get("magnitude") or ability.get("effect_magnitude", 1.0),
             character.id,
         )
 

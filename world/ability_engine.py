@@ -31,9 +31,10 @@ def _handle_damage(character, ability, target):
 def _handle_dot(character, ability, target):
     """Apply a damage-over-time status effect to the target."""
     from world import status_effects
-    effect_type = ability.get("status_effect", "poison")
-    duration = ability.get("effect_duration", 3)
-    magnitude = ability.get("effect_magnitude", ability.get("damage_base", 8))
+    params = ability.get("effect_params", {})
+    effect_type = params.get("status_effect") or ability.get("status_effect", "poison")
+    duration = params.get("duration") or ability.get("effect_duration", 3)
+    magnitude = params.get("magnitude") or ability.get("effect_magnitude", ability.get("damage_base", 8))
     ok, msg = status_effects.apply_effect(
         target, effect_type, duration, magnitude, character.id
     )
@@ -44,9 +45,10 @@ def _handle_dot(character, ability, target):
 def _handle_buff(character, ability, target):
     """Apply a buff to the caster (self-buff)."""
     from world import status_effects
-    effect_type = ability.get("buff_type", "haste")
-    duration = ability.get("effect_duration", 3)
-    magnitude = ability.get("effect_magnitude", 1.0)
+    params = ability.get("effect_params", {})
+    effect_type = params.get("buff_type") or ability.get("buff_type", "haste")
+    duration = params.get("duration") or ability.get("effect_duration", 3)
+    magnitude = params.get("magnitude") or ability.get("effect_magnitude", 1.0)
     ok, msg = status_effects.apply_effect(
         character, effect_type, duration, magnitude, character.id
     )
@@ -57,9 +59,10 @@ def _handle_buff(character, ability, target):
 def _handle_debuff(character, ability, target):
     """Apply a debuff to the target."""
     from world import status_effects
-    effect_type = ability.get("debuff_type", "weaken")
-    duration = ability.get("effect_duration", 3)
-    magnitude = ability.get("effect_magnitude", 1.0)
+    params = ability.get("effect_params", {})
+    effect_type = params.get("debuff_type") or ability.get("debuff_type", "weaken")
+    duration = params.get("duration") or ability.get("effect_duration", 3)
+    magnitude = params.get("magnitude") or ability.get("effect_magnitude", 1.0)
     ok, msg = status_effects.apply_effect(
         target, effect_type, duration, magnitude, character.id
     )
@@ -70,7 +73,8 @@ def _handle_debuff(character, ability, target):
 
 def _handle_utility(character, ability, target):
     """Context-dependent utility effect."""
-    utility_action = ability.get("utility_action")
+    params = ability.get("effect_params", {})
+    utility_action = params.get("utility_action") or ability.get("utility_action")
     if utility_action == "flee_boost":
         from world import status_effects
         status_effects.apply_effect(
@@ -92,12 +96,15 @@ def _handle_utility(character, ability, target):
 def _handle_social(character, ability, target):
     """Apply charm or social influence to the target."""
     from world import status_effects
+    params = ability.get("effect_params", {})
     if target and target.db.base_stats is None:
         # Mob target: apply charm effect
+        duration = params.get("duration") or ability.get("effect_duration", 2)
+        magnitude = params.get("magnitude") or ability.get("effect_magnitude", 1.0)
         ok, msg = status_effects.apply_effect(
             target, "charm",
-            ability.get("effect_duration", 2),
-            ability.get("effect_magnitude", 1.0),
+            duration,
+            magnitude,
             character.id,
         )
     else:
@@ -111,10 +118,11 @@ def _handle_tactical(character, ability, target):
     """Apply tactical buff to group members or self."""
     from world import status_effects
     from world.base_attributes import record_stat_use
-    tactical_action = ability.get("tactical_action", "self_buff")
-    buff_type = ability.get("buff_type", "haste")
-    duration = ability.get("effect_duration", 3)
-    magnitude = ability.get("effect_magnitude", 1.0)
+    params = ability.get("effect_params", {})
+    tactical_action = params.get("tactical_action") or ability.get("tactical_action", "self_buff")
+    buff_type = params.get("buff_type") or ability.get("buff_type", "haste")
+    duration = params.get("duration") or ability.get("effect_duration", 3)
+    magnitude = params.get("magnitude") or ability.get("effect_magnitude", 1.0)
 
     if tactical_action == "group_buff":
         # Try to buff all group members
@@ -153,10 +161,11 @@ def _handle_heal(character, ability, target):
 def _handle_status(character, ability, target):
     """Apply a status effect with application chance roll."""
     from world import status_effects
-    effect_type = ability.get("status_effect", "slow")
+    params = ability.get("effect_params", {})
+    effect_type = params.get("status_effect") or ability.get("status_effect", "slow")
     chance = ability.get("application_chance", 1.0)
-    duration = ability.get("effect_duration", 3)
-    magnitude = ability.get("effect_magnitude", 1.0)
+    duration = params.get("duration") or ability.get("effect_duration", 3)
+    magnitude = params.get("magnitude") or ability.get("effect_magnitude", 1.0)
 
     if random.random() > chance:
         return (
