@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 06c-05-PLAN.md
-last_updated: "2026-03-27T03:25:52.510Z"
+status: Ready to execute
+stopped_at: Completed 05b-02-PLAN.md
+last_updated: "2026-03-27T19:54:02.801Z"
 progress:
-  total_phases: 10
+  total_phases: 11
   completed_phases: 8
-  total_plans: 43
-  completed_plans: 41
+  total_plans: 49
+  completed_plans: 42
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 06c — npc-dialogue-and-crafting
+**Current focus:** Phase 5b — ability-content-authoring
 
 ## Current Position
 
-Phase: 7
-Plan: Not started
+Phase: 5b (ability-content-authoring) — EXECUTING
+Plan: 2 of 6
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Plan: Not started
 | Phase 06c P02 | 3 | 2 tasks | 2 files |
 | Phase 06c P04 | 6 | 2 tasks | 4 files |
 | Phase 06c P05 | 10 | 2 tasks | 2 files |
+| Phase 05b P02 | 4min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -149,6 +150,7 @@ Recent decisions affecting current work:
 - [Phase 06c]: NPC lookup uses case-insensitive partial match (startswith) on npc_name db attr or key
 - [Phase 06c]: Patch lazy imports at source module for dialogue test mocking (world.mob_disposition, world.world_state)
 - [Phase 06c]: Statistical assertions (50+ iterations) for crafting quality variance tests to handle random.choices
+- [Phase 05b]: Subterfuge pool uses debuff stacking + chain damage payoffs; Diplomacy pool balances solo damage with group buff utility
 
 ### Pending Todos
 
@@ -162,6 +164,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T03:20:25.488Z
-Stopped at: Completed 06c-05-PLAN.md
+Last session: 2026-03-27T19:54:02.798Z
+Stopped at: Completed 05b-02-PLAN.md
 Resume file: None
