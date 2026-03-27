@@ -3335,7 +3335,7 @@ ABILITIES = {
         "room_flag_written": "arcane_residue",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 35},
+        "effect_params": {"damage_base": 35, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
     "frost_shard": {
         "id": "frost_shard",
@@ -3358,7 +3358,7 @@ ABILITIES = {
         "room_flag_written": "frozen",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 30, "status_effect": "slow", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"damage_base": 30, "status_effect": "wet", "effect_duration": 3, "effect_magnitude": 1},
     },
     "mana_shield": {
         "id": "mana_shield",
@@ -3404,7 +3404,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 40, "status_effect": "stun", "duration": 1, "magnitude": 1.0},
+        "effect_params": {"damage_base": 40, "status_effect": "shocked", "effect_duration": 2, "effect_magnitude": 1},
     },
 
     # --- Arcana Tier 2 (4 abilities) -- Core spellcasting, moderate mana ---
@@ -3429,7 +3429,7 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 65, "status_effect": "burn", "duration": 3, "magnitude": 1.0},
+        "effect_params": {"damage_base": 65, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1},
     },
     "ice_lance": {
         "id": "ice_lance",
@@ -3452,7 +3452,7 @@ ABILITIES = {
         "room_flag_written": "frozen",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 60, "status_effect": "slow", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"damage_base": 60, "status_effect": "wet", "effect_duration": 3, "effect_magnitude": 1},
     },
     "arcane_infusion": {
         "id": "arcane_infusion",
@@ -3498,7 +3498,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "drain", "duration": 3, "magnitude": 1.0},
+        "effect_params": {"debuff_type": "drain", "duration": 3, "magnitude": 1.0, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
 
     # --- Arcana Tier 3 (4 abilities) -- Advanced magic, high mana ---
@@ -3524,7 +3524,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 90, "status_effect": "burn", "duration": 3, "magnitude": 1.0},
+        "effect_params": {"damage_base": 90, "status_effect": "shocked", "effect_duration": 2, "effect_magnitude": 1},
     },
     "glacial_tomb": {
         "id": "glacial_tomb",
@@ -3547,7 +3547,7 @@ ABILITIES = {
         "room_flag_written": "frozen",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "root", "duration": 2, "magnitude": 1.5},
+        "effect_params": {"debuff_type": "root", "duration": 2, "magnitude": 1.5, "status_effect": "wet", "effect_duration": 3, "effect_magnitude": 1},
     },
     "conflagration": {
         "id": "conflagration",
@@ -3570,7 +3570,7 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"dot_type": "burn", "duration": 4, "damage_per_tick": 25, "magnitude": 1.5},
+        "effect_params": {"dot_type": "burn", "duration": 4, "damage_per_tick": 25, "magnitude": 1.5, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1},
     },
     "spellweave_barrier": {
         "id": "spellweave_barrier",
@@ -3620,7 +3620,7 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 200, "status_effect": "burn", "duration": 3, "magnitude": 2.0},
+        "effect_params": {"damage_base": 200, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1},
     },
     "absolute_zero": {
         "id": "absolute_zero",
@@ -3644,7 +3644,7 @@ ABILITIES = {
         "room_flag_written": "frozen",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 180, "status_effect": "root", "duration": 2, "magnitude": 2.0},
+        "effect_params": {"damage_base": 180, "status_effect": "wet", "effect_duration": 3, "effect_magnitude": 1},
     },
     "arcane_cataclysm": {
         "id": "arcane_cataclysm",
@@ -3668,7 +3668,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 250, "status_effect": "burn", "duration": 2, "magnitude": 2.0},
+        "effect_params": {"damage_base": 250, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1, "secondary_effects": ["wet", "shocked"]},
     },
 
     # ===================================================================
@@ -3699,7 +3699,7 @@ ABILITIES = {
         "room_flag_written": "arcane_residue",
         "attuned_variants": {},
         "subclass_id": "battlemage",
-        "effect_params": {"damage_base": 95},
+        "effect_params": {"damage_base": 95, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
     "battlemage_arcane_warrior": {
         "id": "battlemage_arcane_warrior",
@@ -3799,7 +3799,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": "stormweaver",
-        "effect_params": {"damage_base": 100, "status_effect": "wet", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"damage_base": 100, "status_effect": "shocked", "effect_duration": 2, "effect_magnitude": 1},
     },
     "stormweaver_tempest": {
         "id": "stormweaver_tempest",
@@ -3824,8 +3824,8 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": "stormweaver",
         "effect_params": {
-            "damage_base": 180, "status_effect": "burn", "duration": 3,
-            "magnitude": 1.5,
+            "damage_base": 180, "status_effect": "shocked", "effect_duration": 2,
+            "effect_magnitude": 1,
         },
     },
 
@@ -3876,7 +3876,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": "spellseeker",
-        "effect_params": {"damage_base": 200},
+        "effect_params": {"damage_base": 200, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
 
     # --- Enchantvoice (arcana + diplomacy) ---
@@ -3902,7 +3902,7 @@ ABILITIES = {
         "room_flag_written": "arcane_residue",
         "attuned_variants": {},
         "subclass_id": "enchantvoice",
-        "effect_params": {"damage_base": 80, "status_effect": "charm", "duration": 1, "magnitude": 1.0},
+        "effect_params": {"damage_base": 80, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
     "enchantvoice_voice_of_command": {
         "id": "enchantvoice_voice_of_command",
@@ -3927,7 +3927,7 @@ ABILITIES = {
         "room_flag_written": "arcane_residue",
         "attuned_variants": {},
         "subclass_id": "enchantvoice",
-        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.5},
+        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.5, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
 
     # --- Fusewright (arcana + alchemy) ---
@@ -3953,7 +3953,7 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": "fusewright",
-        "effect_params": {"dot_type": "burn", "duration": 4, "damage_per_tick": 20, "magnitude": 1.5},
+        "effect_params": {"dot_type": "burn", "duration": 4, "damage_per_tick": 20, "magnitude": 1.5, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1},
     },
     "fusewright_transmutation_burst": {
         "id": "fusewright_transmutation_burst",
@@ -3978,7 +3978,7 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": "fusewright",
-        "effect_params": {"damage_base": 160},
+        "effect_params": {"damage_base": 160, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1},
     },
 
     # --- Wardcaller (arcana + tactics) ---
@@ -4054,7 +4054,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": "runewright",
-        "effect_params": {"damage_base": 100, "status_effect": "burn", "duration": 3, "magnitude": 1.0},
+        "effect_params": {"damage_base": 100, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
     "runewright_masterwork_rune": {
         "id": "runewright_masterwork_rune",
@@ -4104,7 +4104,7 @@ ABILITIES = {
         "room_flag_written": "arcane_residue",
         "attuned_variants": {},
         "subclass_id": "voidscribe",
-        "effect_params": {"damage_base": 110},
+        "effect_params": {"damage_base": 110, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
     "voidscribe_firstform_casting": {
         "id": "voidscribe_firstform_casting",
@@ -4128,7 +4128,7 @@ ABILITIES = {
         "room_flag_written": "arcane_residue",
         "attuned_variants": {},
         "subclass_id": "voidscribe",
-        "effect_params": {"damage_base": 220, "status_effect": "weaken", "duration": 3, "magnitude": 0.3},
+        "effect_params": {"damage_base": 220, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
     },
 
     # ===================================================================
