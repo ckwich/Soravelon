@@ -80,7 +80,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 - [ ] **SKL-01**: General proficiency skills (0-100) with learn-by-use progression
 - [ ] **SKL-02**: 4 profession tracks: Cooking, Smithing, Alchemy, Scholarly Research
-- [ ] **SKL-03**: Animal Handling skill track (0-100) with Dragon Handling unlock at 100
+- [x] **SKL-03**: Animal Handling skill track (0-100) with Dragon Handling unlock at 100
 - [ ] **SKL-04**: Profession progression is independent of domain/guild system
 
 ### Ancestries
@@ -194,7 +194,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | CMB-04 | Phase 6 | Complete |
 | SKL-01 | Phase 6 | Pending |
 | SKL-02 | Phase 6 | Pending |
-| SKL-03 | Phase 6 | Pending |
+| SKL-03 | Phase 6 | Complete |
 | SKL-04 | Phase 6 | Pending |
 | NPC-01 | Phase 6 | Pending |
 | NPC-02 | Phase 6 | Pending |
