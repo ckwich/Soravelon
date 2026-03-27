@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05b-04-PLAN.md
-last_updated: "2026-03-27T20:11:17.868Z"
+stopped_at: Completed 05b-05-PLAN.md
+last_updated: "2026-03-27T20:21:02.424Z"
 progress:
   total_phases: 11
   completed_phases: 8
   total_plans: 49
-  completed_plans: 44
+  completed_plans: 45
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 5b (ability-content-authoring) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 
 ## Performance Metrics
 
@@ -78,6 +78,7 @@ Plan: 4 of 6
 | Phase 05b P02 | 4min | 2 tasks | 1 files |
 | Phase 05b P03 | 6min | 2 tasks | 1 files |
 | Phase 05b P04 | 317 | 2 tasks | 1 files |
+| Phase 05b P05 | 6min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -157,6 +158,7 @@ Recent decisions affecting current work:
 - [Phase 05b]: Resonance pool: all abilities have attuned_variants, T1=builders(0 cost), T2-T4=spenders(60-100)
 - [Phase 05b]: Sealwright Seal Break = highest single-target burst in Resonance guild (base 250, +80% resonant)
 - [Phase 05b]: Naturalism Balance costs 10-55 (spectrum shifts); Alchemy Reagent costs T1:5-8, T2:12-15, T3:18-25, T4:30-45 (finite stock)
+- [Phase 05b]: Engineering companion IS the domain identity; Remnance uses excavation language exclusively; Sealbreaker Curse Break is most dangerous ability (charge_turns=2, damage_base=250); runewright_forge key for Eng+Res subclass
 
 ### Pending Todos
 
@@ -170,6 +172,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T20:11:17.865Z
-Stopped at: Completed 05b-04-PLAN.md
+Last session: 2026-03-27T20:21:02.421Z
+Stopped at: Completed 05b-05-PLAN.md
 Resume file: None
