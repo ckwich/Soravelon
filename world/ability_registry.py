@@ -54,48 +54,7 @@ ABILITY_TIERS = {
 # ---------------------------------------------------------------------------
 
 ABILITIES = {
-    # ===================================================================
-    # Non-combat / non-tactics domain stubs (kept from Phase 5a)
-    # ===================================================================
-    # wild_mend, reagent_toss stubs removed -- replaced by full Naturalism/Alchemy pools below
-    "deploy_turret": {
-        "id": "deploy_turret",
-        "name": "Deploy Turret",
-        "domain": "engineering",
-        "tier": 1,
-        "resource_cost": 30,
-        "resource_type": "components",
-        "cooldown": 5,
-        "charge_turns": 1,
-        "effect_type": "damage",
-        "scaling_primary": "engineering",
-        "scaling_secondary": None,
-        "application_chance": 1.0,
-        "description": "[STUB - Phase 5b] Deploy a turret construct that fires automatically.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
-    "echo_probe": {
-        "id": "echo_probe",
-        "name": "Echo Probe",
-        "domain": "remnance",
-        "tier": 1,
-        "resource_cost": 15,
-        "resource_type": "echoes",
-        "cooldown": 1,
-        "charge_turns": 0,
-        "effect_type": "utility",
-        "scaling_primary": "remnance",
-        "scaling_secondary": None,
-        "application_chance": 1.0,
-        "description": "[STUB - Phase 5b] Probe echoes of past events for tactical insight.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
-    # venom_coat stub removed -- replaced by full Alchemy pool below
-    # resonance_ward stub removed -- replaced by full Resonance pool below
+    # (All Phase 5a stubs removed -- replaced by full domain pools below)
     # ===================================================================
     # COMBAT DOMAIN POOL (15 abilities) -- resource_type: momentum
     # Fingerprint: PRESS -- sustained aggression, always moving forward
@@ -6793,6 +6752,1750 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": "firstblight",
         "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+    },
+
+    # ===================================================================
+    # ENGINEERING DOMAIN POOL (15 abilities) -- resource_type: components
+    # Fingerprint: CONSTRUCT -- companion-centric, fuel decisions matter
+    # Scaling: engineering -> acuity
+    # Components are pre-crafted consumables. Costs: T1=10-15, T2=15-25,
+    # T3=20-35, T4=30-50.
+    # ===================================================================
+
+    # --- Engineering Tier 1 (4 abilities) -- Basic constructions, companion commands ---
+    "deploy_sentry": {
+        "id": "deploy_sentry",
+        "name": "Deploy Sentry",
+        "domain": "engineering",
+        "tier": 1,
+        "resource_cost": 12,
+        "resource_type": "components",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Command your companion to strike the target with its"
+            " primary weapon. The simplest expression of what you"
+            " built -- point it at something and let it work."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 35},
+    },
+    "reinforce_chassis": {
+        "id": "reinforce_chassis",
+        "name": "Reinforce Chassis",
+        "domain": "engineering",
+        "tier": 1,
+        "resource_cost": 15,
+        "resource_type": "components",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Bolt additional plating onto your companion mid-fight."
+            " Quick field repair that keeps the construct operational"
+            " when the hits start landing."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "damage_reduction", "value": 0.15, "duration": 3},
+    },
+    "construct_snare": {
+        "id": "construct_snare",
+        "name": "Construct Snare",
+        "domain": "engineering",
+        "tier": 1,
+        "resource_cost": 12,
+        "resource_type": "components",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Deploy a quick-assembly snare from pre-built components."
+            " Mechanical teeth clamp down on contact, rooting the"
+            " target in place."
+        ),
+        "room_flag_written": "trapped",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "root", "duration": 2},
+    },
+    "field_calibration": {
+        "id": "field_calibration",
+        "name": "Field Calibration",
+        "domain": "engineering",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "components",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "utility",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Quickly recalibrate your companion's targeting array."
+            " A moment of precision tuning that sharpens every"
+            " subsequent strike. Good engineers maintain their work."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "accuracy", "value": 0.15, "duration": 3},
+    },
+
+    # --- Engineering Tier 2 (4 abilities) -- Core engineering, devices + companion ---
+    "companion_intercept": {
+        "id": "companion_intercept",
+        "name": "Companion Intercept",
+        "domain": "engineering",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "components",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Direct your companion to interpose itself between an"
+            " ally and incoming damage. The construct absorbs the"
+            " blow -- that is what you built it for."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "damage_absorb", "value": 60, "duration": 2},
+    },
+    "deploy_shock_mine": {
+        "id": "deploy_shock_mine",
+        "name": "Deploy Shock Mine",
+        "domain": "engineering",
+        "tier": 2,
+        "resource_cost": 18,
+        "resource_type": "components",
+        "cooldown": 2,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Assemble and arm a shock mine from pre-built components."
+            " Requires a moment to calibrate the trigger mechanism."
+            " Detonates on contact with concussive force."
+        ),
+        "room_flag_written": "trapped",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 65},
+    },
+    "enhanced_fuel_injection": {
+        "id": "enhanced_fuel_injection",
+        "name": "Enhanced Fuel Injection",
+        "domain": "engineering",
+        "tier": 2,
+        "resource_cost": 22,
+        "resource_type": "components",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Feed enhanced fuel into your companion's drive system."
+            " The construct operates at amplified output -- faster,"
+            " harder, more dangerous. Alchemist-grade components"
+            " push it beyond baseline specifications."
+        ),
+        "room_flag_written": "mechanized",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "damage_bonus", "value": 0.25, "duration": 3},
+    },
+    "rivet_burst": {
+        "id": "rivet_burst",
+        "name": "Rivet Burst",
+        "domain": "engineering",
+        "tier": 2,
+        "resource_cost": 16,
+        "resource_type": "components",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Companion fires a burst of rivets at the target."
+            " Crude but effective -- prefabricated ammunition"
+            " that costs components but never misses at close range."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 55},
+    },
+
+    # --- Engineering Tier 3 (4 abilities) -- Advanced devices, complex constructs ---
+    "overcharge_protocol": {
+        "id": "overcharge_protocol",
+        "name": "Overcharge Protocol",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "components",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Push your companion beyond design limits. Overcharged"
+            " fuel floods the drive system -- output spikes but the"
+            " risk of temporary shutdown is real. The highest ceiling"
+            " in the game, for those willing to gamble on their own work."
+        ),
+        "room_flag_written": "mechanized",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "damage_bonus", "value": 0.40, "duration": 3},
+    },
+    "deploy_barrier_wall": {
+        "id": "deploy_barrier_wall",
+        "name": "Deploy Barrier Wall",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 28,
+        "resource_type": "components",
+        "cooldown": 5,
+        "charge_turns": 1,
+        "effect_type": "tactical",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Assemble a prefabricated barricade from heavy components."
+            " Requires a round to erect but creates lasting cover."
+            " The room becomes fortified -- everyone behind the wall"
+            " takes reduced damage."
+        ),
+        "room_flag_written": "fortified",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.20, "duration": 4},
+    },
+    "fragmentation_charge": {
+        "id": "fragmentation_charge",
+        "name": "Fragmentation Charge",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "components",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Companion launches a fragmentation charge that shatters"
+            " on impact. Shrapnel tears through the target and weakens"
+            " their armor. Expensive but devastating."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 95, "debuff_type": "weaken", "duration": 2},
+    },
+    "companion_overdrive": {
+        "id": "companion_overdrive",
+        "name": "Companion Overdrive",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 32,
+        "resource_type": "components",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Activate your companion's overdrive mode. Every system"
+            " runs hot -- attack speed doubles, sensor range extends,"
+            " and fuel burns at triple rate. The construct becomes"
+            " something fearsome for a brief window."
+        ),
+        "room_flag_written": "mechanized",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 2},
+    },
+
+    # --- Engineering Tier 4 (3 abilities) -- Domain capstones, masterwork ---
+    "masterwork_assembly": {
+        "id": "masterwork_assembly",
+        "name": "Masterwork Assembly",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Reconfigure your companion into its most lethal form."
+            " A full combat assembly that channels every component"
+            " into a single devastating payload. The Architect's"
+            " masterwork -- precision engineering expressed as violence."
+        ),
+        "room_flag_written": "mechanized",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 180},
+    },
+    "fortification_engine": {
+        "id": "fortification_engine",
+        "name": "Fortification Engine",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 40,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "tactical",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Deploy a self-sustaining fortification engine that"
+            " transforms the room into a defensive stronghold."
+            " Walls reinforce, cover materializes, and the companion"
+            " anchors the position. A masterwork of battlefield"
+            " engineering."
+        ),
+        "room_flag_written": "fortified",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.30, "duration": 5},
+    },
+    "total_recall_refit": {
+        "id": "total_recall_refit",
+        "name": "Total Recall Refit",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "components",
+        "cooldown": 8,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "engineering",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Recall your companion and rebuild it from salvaged parts"
+            " and fresh components. Full restoration of the construct"
+            " plus emergency field repairs on yourself. The mark of"
+            " a true Architect -- nothing stays broken."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"heal_base": 150, "companion_restore": True},
+    },
+
+    # ===================================================================
+    # ENGINEERING-PRIMARY SUBCLASS SIGNATURES (18 abilities = 9 x 2)
+    # Each subclass gets a Tier 3 enhanced blend + Tier 4 defining ability
+    # Companion chassis varies per subclass per soravelon-fingerprints.md
+    # ===================================================================
+
+    # --- Ironsmith (engineering + combat) -- Most combat-capable chassis ---
+    "ironsmith_assault_protocol": {
+        "id": "ironsmith_assault_protocol",
+        "name": "Assault Protocol",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 28,
+        "resource_type": "components",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Activate the companion's combat chassis burst mode."
+            " Advanced weaponry unleashes a concentrated salvo."
+            " The Ironsmith builds for war -- and their companion"
+            " fights like it."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "ironsmith",
+        "effect_params": {"damage_base": 100},
+    },
+    "ironsmith_ironforged_protocol": {
+        "id": "ironsmith_ironforged_protocol",
+        "name": "Ironforged Protocol",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "The companion enters sustained overdrive. Every weapon"
+            " system fires in sequence -- relentless, mechanical"
+            " aggression that mirrors the Ironblood doctrine."
+            " Enhanced attacks every round for the duration."
+            " The most sophisticated armament of any companion"
+            " in the game."
+        ),
+        "room_flag_written": "mechanized",
+        "attuned_variants": {},
+        "subclass_id": "ironsmith",
+        "effect_params": {"buff_type": "sustained_attack", "damage_per_round": 60, "duration": 4},
+    },
+
+    # --- Gearhand (engineering + subterfuge) -- Scout companion ---
+    "gearhand_scout_strike": {
+        "id": "gearhand_scout_strike",
+        "name": "Scout Strike",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "components",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "The scout companion strikes from an unexpected angle --"
+            " a mechanical backstab delivered with lock-picking"
+            " precision. The target never sees the small construct"
+            " until it is already inside their guard."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "gearhand",
+        "effect_params": {"damage_base": 90},
+    },
+    "gearhand_ghost_protocol": {
+        "id": "gearhand_ghost_protocol",
+        "name": "Ghost Protocol",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "Activate the scout companion's autonomous mode. The"
+            " construct operates independently -- silent, lethal,"
+            " striking from concealment every round. For the"
+            " duration, the Gearhand has a ghost in the machine."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "gearhand",
+        "effect_params": {"damage_per_round": 55, "duration": 4},
+    },
+
+    # --- Growsmith (engineering + naturalism) -- Living wood companion ---
+    "growsmith_bark_shield": {
+        "id": "growsmith_bark_shield",
+        "name": "Bark Shield",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "components",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "naturalism",
+        "application_chance": 1.0,
+        "description": (
+            "The living wood companion interposes its bark-armored"
+            " frame between an ally and harm. Damage meant for the"
+            " ally strikes the regenerating construct instead."
+            " The Growsmith's creation protects what it was grown for."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "growsmith",
+        "effect_params": {"buff_type": "damage_redirect", "absorb": 80, "duration": 3},
+    },
+    "growsmith_living_fortress": {
+        "id": "growsmith_living_fortress",
+        "name": "Living Fortress",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "tactical",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "naturalism",
+        "application_chance": 1.0,
+        "description": (
+            "The companion roots itself and becomes an immovable"
+            " living fortress. Bark hardens into stone-dense wood."
+            " Massive damage reduction radiates outward to all allies."
+            " The construct cannot move or attack -- it becomes the"
+            " room's defense. Regenerates HP every round."
+        ),
+        "room_flag_written": "fortified",
+        "attuned_variants": {},
+        "subclass_id": "growsmith",
+        "effect_params": {
+            "buff_type": "group_damage_reduction", "value": 0.35,
+            "duration": 4, "heal_per_round": 30,
+        },
+    },
+
+    # --- Runewright (engineering + resonance) -- Rune-slotted companion ---
+    "runewright_forge_rune_swap": {
+        "id": "runewright_forge_rune_swap",
+        "name": "Rune Swap",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 22,
+        "resource_type": "components",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "utility",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "resonance",
+        "application_chance": 1.0,
+        "description": (
+            "Hot-swap the companion's active rune configuration"
+            " mid-combat. Different runes produce entirely different"
+            " combat behavior -- the Runewright's companion is as"
+            " versatile as the runes they have crafted."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "resonant": {"bonus_effect": "resonance_stack", "stacks": 2},
+        },
+        "subclass_id": "runewright_forge",
+        "effect_params": {"buff_type": "companion_mode_change", "duration": 4},
+    },
+    "runewright_forge_full_rune_activation": {
+        "id": "runewright_forge_full_rune_activation",
+        "name": "Full Rune Activation",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "resonance",
+        "application_chance": 1.0,
+        "description": (
+            "Every rune slot fires simultaneously. The companion"
+            " channels all inscribed patterns in a single devastating"
+            " cascade of ancient energy. Damage plus debuff plus"
+            " buff in one action -- the Runewright's masterwork moment."
+        ),
+        "room_flag_written": "mechanized",
+        "attuned_variants": {
+            "resonant": {"damage_bonus": 0.25},
+            "ancient_presence": {"damage_bonus": 0.15},
+        },
+        "subclass_id": "runewright_forge",
+        "effect_params": {
+            "damage_base": 160, "debuff_type": "weaken",
+            "debuff_duration": 2, "buff_type": "haste", "buff_duration": 1,
+        },
+    },
+
+    # --- Sparkshaper (engineering + arcana) -- Magical device companion ---
+    "sparkshaper_arcane_payload": {
+        "id": "sparkshaper_arcane_payload",
+        "name": "Arcane Payload",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "components",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "arcana",
+        "application_chance": 1.0,
+        "description": (
+            "The enchanted companion delivers a magical payload --"
+            " arcane energy channeled through mechanical precision."
+            " Magic and machinery are the same thing approached"
+            " differently. The Sparkshaper understands both."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "sparkshaper",
+        "effect_params": {"damage_base": 90},
+    },
+    "sparkshaper_overload_device": {
+        "id": "sparkshaper_overload_device",
+        "name": "Overload Device",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "components",
+        "cooldown": 8,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "arcana",
+        "application_chance": 0.95,
+        "description": (
+            "The companion self-destructs in a massive detonation"
+            " of arcane energy. Devastating area damage as enchanted"
+            " components scatter in all directions. The construct"
+            " is destroyed -- but can be rebuilt. The Sparkshaper"
+            " builds things that end with a bang."
+        ),
+        "room_flag_written": "mechanized",
+        "attuned_variants": {},
+        "subclass_id": "sparkshaper",
+        "effect_params": {"damage_base": 220, "area": True, "companion_destroyed": True},
+    },
+
+    # --- Dealsmith (engineering + diplomacy) -- Consortium companion ---
+    "dealsmith_trade_advantage": {
+        "id": "dealsmith_trade_advantage",
+        "name": "Trade Advantage",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 22,
+        "resource_type": "components",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 1.0,
+        "description": (
+            "The consortium companion analyzes the battlefield"
+            " for economic advantage. Generates a resource efficiency"
+            " buff -- subsequent abilities cost less. The Dealsmith"
+            " sees combat as a transaction to be optimized."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "dealsmith",
+        "effect_params": {"buff_type": "resource_efficiency", "value": 0.25, "duration": 4},
+    },
+    "dealsmith_consortium_protocol": {
+        "id": "dealsmith_consortium_protocol",
+        "name": "Consortium Protocol",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 40,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "tactical",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 1.0,
+        "description": (
+            "The companion enters sustained resource generation mode."
+            " Every group member receives component recovery and"
+            " resource trickle. The Dealsmith makes combat profitable"
+            " for everyone -- every gift an investment."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "dealsmith",
+        "effect_params": {
+            "buff_type": "group_resource_regen", "value": 5,
+            "duration": 5,
+        },
+    },
+
+    # --- Siegewright (engineering + tactics) -- Heavy construct ---
+    "siegewright_siege_stance": {
+        "id": "siegewright_siege_stance",
+        "name": "Siege Stance",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 28,
+        "resource_type": "components",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "tactical",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "The heavy construct locks into siege stance, creating"
+            " a chokepoint. Enemies must get through the construct"
+            " to reach anyone behind it. Provides cover for the"
+            " entire group. Large, slow, devastating."
+        ),
+        "room_flag_written": "fortified",
+        "attuned_variants": {},
+        "subclass_id": "siegewright",
+        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.20, "duration": 3},
+    },
+    "siegewright_fortress_protocol": {
+        "id": "siegewright_fortress_protocol",
+        "name": "Fortress Protocol",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "components",
+        "cooldown": 7,
+        "charge_turns": 1,
+        "effect_type": "tactical",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "The heavy construct becomes a static fortress. Immobile"
+            " but nearly indestructible, radiating massive damage"
+            " reduction to all allies. The room transforms around it --"
+            " chokepoints form, cover materializes. How an entire"
+            " group fights changes when a Siegewright deploys."
+        ),
+        "room_flag_written": "fortified",
+        "attuned_variants": {},
+        "subclass_id": "siegewright",
+        "effect_params": {
+            "buff_type": "group_damage_reduction", "value": 0.35,
+            "duration": 5, "companion_immobile": True,
+        },
+    },
+
+    # --- Fumehand (engineering + alchemy) -- Chemical delivery companion ---
+    "fumehand_chemical_spray": {
+        "id": "fumehand_chemical_spray",
+        "name": "Chemical Spray",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "components",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.85,
+        "description": (
+            "The chemical delivery companion unleashes a spray of"
+            " corrosive compounds. Gas systems disperse the payload"
+            " across the room -- everything in range takes sustained"
+            " damage. The Fumehand's natural home of Enhanced Fuel."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "fumehand",
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 8},
+    },
+    "fumehand_overcharge_protocol": {
+        "id": "fumehand_overcharge_protocol",
+        "name": "Overcharge Protocol",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 48,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.90,
+        "description": (
+            "The companion enters full Overcharge. Enhanced Fuel"
+            " floods every system -- chemical output spikes to"
+            " catastrophic levels. Highest sustained output of any"
+            " chassis. Risk of shutdown is lower for the Fumehand"
+            " because this is what they built the thing for."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "fumehand",
+        "effect_params": {
+            "damage_base": 160, "status_effect": "poison",
+            "duration": 3, "magnitude": 10,
+        },
+    },
+
+    # --- Bucketborn (engineering + remnance) -- The accident, base-8 ---
+    "bucketborn_anomalous_function": {
+        "id": "bucketborn_anomalous_function",
+        "name": "Anomalous Function",
+        "domain": "engineering",
+        "tier": 3,
+        "resource_cost": 22,
+        "resource_type": "components",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "remnance",
+        "application_chance": 1.0,
+        "description": (
+            "The companion does something you did not design it to"
+            " do. The base-8 configuration produces an output that"
+            " is unpredictable but always beneficial -- damage or"
+            " healing or a buff, chosen by whatever logic the old"
+            " patterns follow. You built it. You do not fully"
+            " understand it. It works."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": "bucketborn",
+        "effect_params": {"damage_base": 85, "random_bonus": True},
+    },
+    "bucketborn_base8_resonance": {
+        "id": "bucketborn_base8_resonance",
+        "name": "Base-8 Resonance",
+        "domain": "engineering",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "components",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "engineering",
+        "scaling_secondary": "remnance",
+        "application_chance": 1.0,
+        "description": (
+            "The companion achieves impossible synchrony. Every"
+            " system aligns in a pattern that mirrors the old"
+            " infrastructure -- base-8 resonance that Gidget"
+            " never meant to teach anyone. Something goes"
+            " wonderfully, impossibly right. Massive damage"
+            " plus a unique ancient effect that rewrites what"
+            " the companion can do. Named for Bucket, who"
+            " understood without trying."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": "bucketborn",
+        "effect_params": {"damage_base": 200, "ancient_effect": True},
+    },
+
+    # ===================================================================
+    # REMNANCE DOMAIN POOL (15 abilities) -- resource_type: echoes
+    # Fingerprint: EXCAVATE -- accumulated knowledge as combat power
+    # Scaling: remnance -> mana
+    # Echoes build from abilities AND investigation bonus (+15 per lore
+    # fragment, +10 per ancient site, persists 3 encounters, stacks to 40).
+    # ===================================================================
+
+    # --- Remnance Tier 1 (4 abilities) -- Basic excavation, memory strikes ---
+    "memory_strike": {
+        "id": "memory_strike",
+        "name": "Memory Strike",
+        "domain": "remnance",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "echoes",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Strike with remembered force -- a blow that follows"
+            " a pattern your body should not know. The old knowledge"
+            " expresses itself through violence. Not a spell."
+            " Something older."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 35},
+    },
+    "echo_excavation": {
+        "id": "echo_excavation",
+        "name": "Echo Excavation",
+        "domain": "remnance",
+        "tier": 1,
+        "resource_cost": 12,
+        "resource_type": "echoes",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Excavate the echoes surrounding the target -- dig into"
+            " what they are and expose a weakness the world forgot."
+            " The target's defenses falter as old truth surfaces."
+        ),
+        "room_flag_written": "excavated",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 2, "magnitude": 0.10},
+    },
+    "ancient_recall": {
+        "id": "ancient_recall",
+        "name": "Ancient Recall",
+        "domain": "remnance",
+        "tier": 1,
+        "resource_cost": 15,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Remember how things were before the curse degraded"
+            " everything. For a moment, you operate with knowledge"
+            " that predates the modern world. Reflexes sharpen."
+            " Perception widens."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "accuracy", "value": 0.15, "duration": 3},
+    },
+    "fragment_pulse": {
+        "id": "fragment_pulse",
+        "name": "Fragment Pulse",
+        "domain": "remnance",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "echoes",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Release a pulse of fragmented ancient energy. Raw"
+            " knowledge made briefly physical -- it hits like a"
+            " remembered impact. Cheap, fast, reliable. The basic"
+            " tool of anyone who excavates the past."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 30},
+    },
+
+    # --- Remnance Tier 2 (4 abilities) -- Core remnance, investigation reward ---
+    "lore_drain": {
+        "id": "lore_drain",
+        "name": "Lore Drain",
+        "domain": "remnance",
+        "tier": 2,
+        "resource_cost": 18,
+        "resource_type": "echoes",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Drain knowledge from the target -- strip away their"
+            " understanding of their own capabilities. The target"
+            " weakens as you take what they know. Investigation"
+            " between fights makes this hit harder."
+        ),
+        "room_flag_written": "void_touched",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.12},
+    },
+    "excavate_truth": {
+        "id": "excavate_truth",
+        "name": "Excavate Truth",
+        "domain": "remnance",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "echoes",
+        "cooldown": 2,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Channel a moment to remember what this place truly was."
+            " Ancient power surges through the memory and strikes"
+            " the target. Charged -- because real excavation takes"
+            " time. The longer you study, the harder it hits."
+        ),
+        "room_flag_written": "excavated",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 70},
+    },
+    "echo_shield": {
+        "id": "echo_shield",
+        "name": "Echo Shield",
+        "domain": "remnance",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Wrap yourself in layered echoes of ancient wards --"
+            " protections that predate current magical understanding."
+            " Not a spell. A memory of safety from a time when"
+            " the world was not broken."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "damage_reduction", "value": 0.18, "duration": 3},
+    },
+    "forgotten_impact": {
+        "id": "forgotten_impact",
+        "name": "Forgotten Impact",
+        "domain": "remnance",
+        "tier": 2,
+        "resource_cost": 15,
+        "resource_type": "echoes",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Strike with the weight of something the world forgot."
+            " The blow carries more force than your body should"
+            " produce -- echoes of ancient violence remembered"
+            " in your muscles."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 60},
+    },
+
+    # --- Remnance Tier 3 (4 abilities) -- Advanced ancient knowledge ---
+    "void_excavation": {
+        "id": "void_excavation",
+        "name": "Void Excavation",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 28,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Excavate the void -- dig into the space where the"
+            " dragon curse erased what was. What comes back is"
+            " dangerous, formless, and devastating. Ancient"
+            " power from the gap between what is and what was."
+        ),
+        "room_flag_written": "void_touched",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 110},
+    },
+    "memory_corruption": {
+        "id": "memory_corruption",
+        "name": "Memory Corruption",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Corrupt the target's understanding of itself. Ancient"
+            " knowledge used as a weapon -- you remember what they"
+            " were supposed to be and break the connection. The"
+            " target loses coordination as its own patterns fragment."
+        ),
+        "room_flag_written": "corrupted_death",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "slow", "duration": 3},
+    },
+    "ancient_ward": {
+        "id": "ancient_ward",
+        "name": "Ancient Ward",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "echoes",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Invoke a ward from before the curse. Not a spell --"
+            " a pattern of protection that was standard a thousand"
+            " years ago and is now forgotten by everyone except"
+            " the Vaelborn. Substantial damage reduction."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "damage_reduction", "value": 0.25, "duration": 4},
+    },
+    "pre_curse_strike": {
+        "id": "pre_curse_strike",
+        "name": "Pre-Curse Strike",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "echoes",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Strike as they struck before the world broke. A combat"
+            " technique from the age of dragons -- precise, powerful,"
+            " carrying the weight of a civilization that no longer"
+            " exists. Knowledge of the ancient world is fuel."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 95},
+    },
+
+    # --- Remnance Tier 4 (3 abilities) -- Domain capstones, pre-curse power ---
+    "unbroken_memory": {
+        "id": "unbroken_memory",
+        "name": "Unbroken Memory",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "echoes",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Channel the unbroken memory of what the world was."
+            " Ancient power floods through you -- not magic, not"
+            " resonance, something that predates both. Devastating"
+            " damage that scales with accumulated echoes. The more"
+            " you have investigated, the harder this hits."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 180, "echo_scaling": True},
+    },
+    "curse_memory": {
+        "id": "curse_memory",
+        "name": "Curse Memory",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 40,
+        "resource_type": "echoes",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Force the target to remember the Dragon Curse -- the"
+            " moment everything broke. The target experiences a"
+            " fragment of world-ending power and falters. Massive"
+            " debuff that strips defenses and slows action."
+        ),
+        "room_flag_written": "corrupted_death",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {
+            "debuff_type": "weaken", "duration": 4, "magnitude": 0.20,
+            "secondary_debuff": "slow", "secondary_duration": 2,
+        },
+    },
+    "excavation_surge": {
+        "id": "excavation_surge",
+        "name": "Excavation Surge",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "echoes",
+        "cooldown": 8,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Surge with the accumulated power of everything you"
+            " have excavated. Every lore fragment, every ancient"
+            " site, every decoded truth -- it all converges into"
+            " a state of heightened ancient awareness. Massive"
+            " buff to all stats for the duration."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "all_stats", "value": 0.20, "duration": 4},
+    },
+
+    # ===================================================================
+    # REMNANCE-PRIMARY SUBCLASS SIGNATURES (18 abilities = 9 x 2)
+    # Each subclass gets a Tier 3 enhanced blend + Tier 4 defining ability
+    # The hidden domain -- knowledge as power, investigation as fuel
+    # ===================================================================
+
+    # --- Dragonkin (remnance + combat) -- Body changed by old power ---
+    "dragonkin_ancient_body": {
+        "id": "dragonkin_ancient_body",
+        "name": "Ancient Body",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Your body remembers what it was before the curse."
+            " Ancient physical enhancements surface -- strength,"
+            " speed, and resilience that should not be possible"
+            " for a mortal frame. The Dragonkin's body has been"
+            " changed by proximity to old power."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "dragonkin",
+        "effect_params": {
+            "buff_type": "stat_boost",
+            "stats": {"strength": 0.15, "endurance": 0.15},
+            "duration": 4,
+        },
+    },
+    "dragonkin_dragonform": {
+        "id": "dragonkin_dragonform",
+        "name": "Dragonform",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "echoes",
+        "cooldown": 8,
+        "charge_turns": 1,
+        "effect_type": "buff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Temporary transformation. Your body fully expresses"
+            " the ancient pattern written into it -- scaled skin,"
+            " enhanced musculature, senses that operate on a"
+            " different spectrum. For a brief window you are"
+            " something between human and dragon. The Dragonkin's"
+            " defining moment: proof that the old power is real."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": "dragonkin",
+        "effect_params": {
+            "buff_type": "stat_boost",
+            "stats": {"strength": 0.30, "endurance": 0.25, "agility": 0.15},
+            "duration": 4,
+        },
+    },
+
+    # --- Truthshadow (remnance + subterfuge) -- Knows things they shouldn't ---
+    "truthshadow_hidden_knowledge": {
+        "id": "truthshadow_hidden_knowledge",
+        "name": "Hidden Knowledge",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 22,
+        "resource_type": "echoes",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 0.90,
+        "description": (
+            "Reveal something the target does not want known."
+            " Forbidden information weaponized as a debuff --"
+            " the target recoils as you expose a truth they"
+            " thought buried. The Truthshadow sees what"
+            " others cannot and uses it without mercy."
+        ),
+        "room_flag_written": "excavated",
+        "attuned_variants": {},
+        "subclass_id": "truthshadow",
+        "effect_params": {"debuff_type": "blind", "duration": 2},
+    },
+    "truthshadow_truth_strike": {
+        "id": "truthshadow_truth_strike",
+        "name": "Truth Strike",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "echoes",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "A strike that carries the weight of truth -- damage"
+            " that ignores all defenses because it targets what"
+            " the enemy actually is, not what they appear to be."
+            " Scales with accumulated lore. The Truthshadow's"
+            " defining hit: knowledge that cuts deeper than steel."
+        ),
+        "room_flag_written": "void_touched",
+        "attuned_variants": {},
+        "subclass_id": "truthshadow",
+        "effect_params": {"damage_base": 180, "ignores_armor": True, "echo_scaling": True},
+    },
+
+    # --- Worldroot (remnance + naturalism) -- World's actual foundation ---
+    "worldroot_deep_nature": {
+        "id": "worldroot_deep_nature",
+        "name": "Deep Nature",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "naturalism",
+        "application_chance": 1.0,
+        "description": (
+            "Reach below nature into the world-memory beneath it."
+            " Healing rises from the foundation itself -- not"
+            " natural growth but the pattern that nature was"
+            " built on. Deeper than roots. Older than forests."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "worldroot",
+        "effect_params": {"heal_base": 90},
+    },
+    "worldroot_foundation_pulse": {
+        "id": "worldroot_foundation_pulse",
+        "name": "Foundation Pulse",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "echoes",
+        "cooldown": 7,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "naturalism",
+        "application_chance": 0.90,
+        "description": (
+            "Release a pulse from the world's foundation. Nature"
+            " and ancient power fuse -- area healing for allies,"
+            " devastating damage to enemies. The Worldroot's"
+            " defining moment: connected to something beneath"
+            " everything, where dragon lore and living magic"
+            " are the same thing."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": "worldroot",
+        "effect_params": {"damage_base": 160, "heal_allies": 80, "area": True},
+    },
+
+    # --- Sealbreaker (remnance + resonance) -- The most dangerous subclass ---
+    "sealbreaker_seal_probe": {
+        "id": "sealbreaker_seal_probe",
+        "name": "Seal Probe",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "echoes",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "resonance",
+        "application_chance": 1.0,
+        "description": (
+            "Probe the seals that hold the dragon curse in place."
+            " The resonance interaction produces dangerous energy --"
+            " damage that carries the weight of something that"
+            " should not be disturbed. Every probe weakens the"
+            " barrier a little more."
+        ),
+        "room_flag_written": "void_touched",
+        "attuned_variants": {
+            "resonant": {"damage_bonus": 0.20},
+        },
+        "subclass_id": "sealbreaker",
+        "effect_params": {"damage_base": 95},
+    },
+    "sealbreaker_curse_break": {
+        "id": "sealbreaker_curse_break",
+        "name": "Curse Break",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "echoes",
+        "cooldown": 8,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "resonance",
+        "application_chance": 0.85,
+        "description": (
+            "The most dangerous ability in the game. Two rounds"
+            " of channeling as you remember how the curse was made"
+            " and attempt to unmake a fragment of it. Massive"
+            " damage plus a unique world-altering resonance effect"
+            " that destabilizes the local area. The Circle of"
+            " Wizards hunts Sealbreakers specifically because"
+            " of this. Every use is a step toward something"
+            " irrevocable."
+        ),
+        "room_flag_written": "void_touched",
+        "attuned_variants": {
+            "resonant": {"damage_bonus": 0.30},
+            "ancient_presence": {"charge_reduction": 1},
+        },
+        "subclass_id": "sealbreaker",
+        "effect_params": {"damage_base": 250, "world_effect": True},
+    },
+
+    # --- Firstform (remnance + arcana) -- Pre-school spellforms ---
+    "firstform_ancient_spell": {
+        "id": "firstform_ancient_spell",
+        "name": "Ancient Spell",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "echoes",
+        "cooldown": 2,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "arcana",
+        "application_chance": 1.0,
+        "description": (
+            "Cast a spell in its original form -- before the schools"
+            " of magic categorized and diminished it. Pre-school"
+            " spellforms are raw, unfiltered, and carry power the"
+            " modern Arcane Guild has forgotten existed."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": "firstform",
+        "effect_params": {"damage_base": 100},
+    },
+    "firstform_firstcasting": {
+        "id": "firstform_firstcasting",
+        "name": "Firstcasting",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 48,
+        "resource_type": "echoes",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "arcana",
+        "application_chance": 1.0,
+        "description": (
+            "A spell that predates all magic schools. The Firstcasting"
+            " is not arcane, not resonant, not elemental -- it is"
+            " the original pattern from which all subsequent magic"
+            " was derived and degraded. Unique damage type that"
+            " interacts with nothing because nothing else is old"
+            " enough to interact with it. The Firstform's defining"
+            " power: dragon-origin spellcraft."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": "firstform",
+        "effect_params": {"damage_base": 200, "unique_damage_type": True},
+    },
+
+    # --- Ancientvoice (remnance + diplomacy) -- Authority of true history ---
+    "ancientvoice_voice_of_the_past": {
+        "id": "ancientvoice_voice_of_the_past",
+        "name": "Voice of the Past",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 22,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.85,
+        "description": (
+            "Speak with the authority of the world's true history."
+            " The target hears something they cannot deny -- a"
+            " truth so fundamental it undermines their will to"
+            " fight. Social pressure weaponized through ancient"
+            " knowledge."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "ancientvoice",
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.15},
+    },
+    "ancientvoice_decree_of_truth": {
+        "id": "ancientvoice_decree_of_truth",
+        "name": "Decree of Truth",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 48,
+        "resource_type": "echoes",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.80,
+        "description": (
+            "Decree the truth of what the world actually is. Every"
+            " enemy in the room hears it. AoE massive debuff that"
+            " strips courage and conviction. The Ancientvoice's"
+            " defining power: political leverage from forbidden"
+            " knowledge wielded as a weapon of absolute authority."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": "ancientvoice",
+        "effect_params": {
+            "debuff_type": "weaken", "duration": 4, "magnitude": 0.20,
+            "area": True, "secondary_debuff": "slow", "secondary_duration": 2,
+        },
+    },
+
+    # --- Rootpoison (remnance + alchemy) -- Dragon-origin alchemy ---
+    "rootpoison_dragon_venom": {
+        "id": "rootpoison_dragon_venom",
+        "name": "Dragon Venom",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "echoes",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.85,
+        "description": (
+            "Apply a poison that should not exist -- dragon-origin"
+            " venom remembered through deep excavation. Not learned"
+            " alchemy but something older, derived from pre-curse"
+            " knowledge of what substances once existed."
+        ),
+        "room_flag_written": "poisoned_air",
+        "attuned_variants": {},
+        "subclass_id": "rootpoison",
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+    },
+    "rootpoison_first_toxin": {
+        "id": "rootpoison_first_toxin",
+        "name": "First Toxin",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 48,
+        "resource_type": "echoes",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.80,
+        "description": (
+            "The first toxin. The original poison from which all"
+            " subsequent alchemy descended. It interacts with the"
+            " dragon curse itself -- targets poisoned by it are"
+            " weakened in ways modern compounds cannot achieve."
+            " The Rootpoison's defining power: a compound that"
+            " predates the Thornwork Guild entirely."
+        ),
+        "room_flag_written": "corrupted_death",
+        "attuned_variants": {},
+        "subclass_id": "rootpoison",
+        "effect_params": {
+            "status_effect": "poison", "duration": 5, "magnitude": 12,
+            "debuff_type": "weaken", "debuff_duration": 3, "debuff_magnitude": 0.15,
+        },
+    },
+
+    # --- Firstblade (remnance + tactics) -- Pre-curse combat doctrine ---
+    "firstblade_ancient_formation": {
+        "id": "firstblade_ancient_formation",
+        "name": "Ancient Formation",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "tactical",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Call a formation from pre-curse military doctrine."
+            " Your group moves in a pattern nobody has used in"
+            " a thousand years. Group tactical buff that improves"
+            " everyone's coordination -- old knowledge applied"
+            " to modern combat."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "firstblade",
+        "effect_params": {
+            "buff_type": "group_damage_bonus", "value": 0.15, "duration": 3,
+        },
+    },
+    "firstblade_forgotten_war": {
+        "id": "firstblade_forgotten_war",
+        "name": "Forgotten War",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 48,
+        "resource_type": "echoes",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Fight using the doctrine of a war everyone forgot."
+            " Pre-curse tactical knowledge expressed as a devastating"
+            " coordinated assault. Damage plus group buff in one"
+            " action -- the Firstblade remembers how armies"
+            " actually fought before the world broke."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {},
+        "subclass_id": "firstblade",
+        "effect_params": {
+            "damage_base": 150, "buff_type": "group_damage_bonus",
+            "buff_value": 0.12, "buff_duration": 3,
+        },
+    },
+
+    # --- Dragonwright (remnance + engineering) -- Dragon-made construction ---
+    "dragonwright_ancient_construct": {
+        "id": "dragonwright_ancient_construct",
+        "name": "Ancient Construct",
+        "domain": "remnance",
+        "tier": 3,
+        "resource_cost": 28,
+        "resource_type": "echoes",
+        "cooldown": 4,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "engineering",
+        "application_chance": 1.0,
+        "description": (
+            "Remember how to build something from dragon-made"
+            " knowledge fragments. A temporary construct assembles"
+            " from ancient patterns -- not your design, something"
+            " you excavated. It fights with the precision of"
+            " infrastructure that was meant to last forever."
+        ),
+        "room_flag_written": "mechanized",
+        "attuned_variants": {},
+        "subclass_id": "dragonwright",
+        "effect_params": {"damage_base": 90, "summon_duration": 3},
+    },
+    "dragonwright_drake_engine": {
+        "id": "dragonwright_drake_engine",
+        "name": "Drake Engine",
+        "domain": "remnance",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "echoes",
+        "cooldown": 8,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "remnance",
+        "scaling_secondary": "engineering",
+        "application_chance": 1.0,
+        "description": (
+            "Summon an ancient construct from fragmentary dragon"
+            " knowledge. Two rounds of channeling as patterns"
+            " older than human civilization assemble into something"
+            " that should not exist. The Drake Engine fights with"
+            " devastating precision for a brief window. The"
+            " Dragonwright's defining power: building with"
+            " knowledge from the world's architects."
+        ),
+        "room_flag_written": "ancient_presence",
+        "attuned_variants": {
+            "mechanized": {"damage_bonus": 0.20},
+        },
+        "subclass_id": "dragonwright",
+        "effect_params": {"damage_base": 220, "summon_duration": 4},
     },
 }
 
