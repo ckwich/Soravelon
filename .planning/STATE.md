@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06b-03-PLAN.md
-last_updated: "2026-03-26T23:50:23.092Z"
+stopped_at: Completed 06b-05-PLAN.md
+last_updated: "2026-03-27T00:11:37.687Z"
 progress:
   total_phases: 10
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 38
-  completed_plans: 35
+  completed_plans: 36
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 06b (spawn-system-skills-and-mob-ai) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Plan: 4 of 5
 | Phase 06b P02 | 3 | 2 tasks | 2 files |
 | Phase 06b P01 | 7 | 2 tasks | 5 files |
 | Phase 06b P03 | 4 | 2 tasks | 4 files |
+| Phase 06b P05 | 18 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -149,6 +150,8 @@ Recent decisions affecting current work:
 - [Phase 06b]: Named mob respawn detection via WorldEventLog query, zone-wide vague announcement text
 - [Phase 06b]: Skill accumulator flush piggybacks on existing 600s session_xp_safety_flush timer -- no new ticker
 - [Phase 06b]: Skill name resolution uses three-pass matching: exact, startswith, substring with disambiguation
+- [Phase 06b]: Patch Django model managers at world.models.X.objects for lazy-imported models in test files
+- [Phase 06b]: Fixed pre-existing test_condition_checked bug (missing abilities arg to _make_mob)
 
 ### Pending Todos
 
@@ -162,6 +165,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T23:50:23.089Z
-Stopped at: Completed 06b-03-PLAN.md
+Last session: 2026-03-27T00:11:37.683Z
+Stopped at: Completed 06b-05-PLAN.md
 Resume file: None
