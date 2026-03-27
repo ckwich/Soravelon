@@ -5079,8 +5079,14 @@ ABILITIES = {
     # NATURALISM DOMAIN POOL (15 abilities) -- resource_type: balance
     # Fingerprint: CALIBRATE -- managed duality, Feral vs Calm spectrum
     # Scaling: naturalism -> resonance
-    # Balance is a SPECTRUM: offensive abilities push Feral, defensive
-    # abilities push Calm. Both extremes weaken you differently.
+    # Balance is a PENDULUM POSITION (0=Feral, 100=Calm, 50=Neutral).
+    # resource_cost is always 0 -- Balance is not spent, only shifted.
+    # Offensive abilities (damage/dot/debuff) push toward Calm (+shift),
+    # powered by Feral position (balance_type: "feral").
+    # Defensive abilities (heal/buff) push toward Feral (-shift),
+    # powered by Calm position (balance_type: "calm").
+    # The pendulum: dealing damage makes your next heal stronger,
+    # healing makes your next damage stronger.
     # ===================================================================
 
     # --- Naturalism Tier 1 (4 abilities) -- Basic nature effects ---
@@ -5089,7 +5095,7 @@ ABILITIES = {
         "name": "Thorn Lash",
         "domain": "naturalism",
         "tier": 1,
-        "resource_cost": 10,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 0,
         "charge_turns": 0,
@@ -5100,19 +5106,20 @@ ABILITIES = {
         "description": (
             "Lash out with a whip of thorned vine. The simplest"
             " expression of Verdance doctrine: the natural world"
-            " answers when you ask. Pushes toward Feral."
+            " answers when you ask. Stronger when Feral -- calm"
+            " spent becomes fury delivered."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 35},
+        "effect_params": {"damage_base": 35, "balance_shift": 8, "balance_type": "feral"},
     },
     "wild_mend": {
         "id": "wild_mend",
         "name": "Wild Mend",
         "domain": "naturalism",
         "tier": 1,
-        "resource_cost": 15,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 3,
         "charge_turns": 0,
@@ -5121,21 +5128,21 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Draw upon living energy to close wounds. The forest"
-            " gives what it can spare. Healing effectiveness"
-            " increases near Calm. Pushes toward Calm."
+            "Draw upon living energy to close wounds. Drawing on"
+            " the aggression you've built, channeling it into"
+            " restoration. Stronger when Calm."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"heal_base": 40},
+        "effect_params": {"heal_base": 40, "balance_shift": -8, "balance_type": "calm"},
     },
     "feral_strike": {
         "id": "feral_strike",
         "name": "Feral Strike",
         "domain": "naturalism",
         "tier": 1,
-        "resource_cost": 10,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 0,
         "charge_turns": 0,
@@ -5144,21 +5151,21 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Strike with the savagery of a cornered animal. Raw,"
-            " unrefined violence drawn from the wild self. Damage"
-            " increases near Feral. Pushes toward Feral."
+            "Strike with the savagery of a cornered animal. The"
+            " blow is fueled by stored calm -- each heal you've"
+            " cast makes this hit harder."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 40},
+        "effect_params": {"damage_base": 40, "balance_shift": 8, "balance_type": "feral"},
     },
     "natures_ward": {
         "id": "natures_ward",
         "name": "Nature's Ward",
         "domain": "naturalism",
         "tier": 1,
-        "resource_cost": 15,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 4,
         "charge_turns": 0,
@@ -5169,12 +5176,12 @@ ABILITIES = {
         "description": (
             "A barrier of living energy wraps around you, absorbing"
             " damage briefly. The natural world recognizes its own."
-            " Effectiveness increases near Calm. Pushes toward Calm."
+            " Stronger when Calm -- serenity becomes shielding."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "warding", "duration": 2, "magnitude": 0.12},
+        "effect_params": {"buff_type": "warding", "duration": 2, "magnitude": 0.12, "balance_shift": -8, "balance_type": "calm"},
     },
 
     # --- Naturalism Tier 2 (4 abilities) -- Core spectrum management ---
@@ -5183,7 +5190,7 @@ ABILITIES = {
         "name": "Bramble Burst",
         "domain": "naturalism",
         "tier": 2,
-        "resource_cost": 15,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 1,
         "charge_turns": 0,
@@ -5193,20 +5200,21 @@ ABILITIES = {
         "application_chance": 0.85,
         "description": (
             "Thorned vines erupt from the ground, raking everything"
-            " nearby. Applies poison on contact -- the natural"
-            " world's indifferent cruelty. Pushes toward Feral."
+            " nearby. Applies poison on contact. The calm you've"
+            " stored converts to venom -- every heal builds the"
+            " next eruption."
         ),
         "room_flag_written": "overgrown",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 55, "status_effect": "poison", "duration": 3, "magnitude": 8},
+        "effect_params": {"damage_base": 55, "status_effect": "poison", "duration": 3, "magnitude": 8, "balance_shift": 10, "balance_type": "feral"},
     },
     "soothe_the_wild": {
         "id": "soothe_the_wild",
         "name": "Soothe the Wild",
         "domain": "naturalism",
         "tier": 2,
-        "resource_cost": 20,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 4,
         "charge_turns": 0,
@@ -5216,21 +5224,20 @@ ABILITIES = {
         "application_chance": 1.0,
         "description": (
             "Channel calm into living tissue. A sustained mend"
-            " that restores health over several rounds. More"
-            " effective near Calm -- the forest heals those who"
-            " are at peace. Pushes toward Calm."
+            " that draws on built-up aggression, converting feral"
+            " energy into restoration. Stronger when Calm."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"heal_base": 60},
+        "effect_params": {"heal_base": 60, "balance_shift": -10, "balance_type": "calm"},
     },
     "predator_instinct": {
         "id": "predator_instinct",
         "name": "Predator Instinct",
         "domain": "naturalism",
         "tier": 2,
-        "resource_cost": 18,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 4,
         "charge_turns": 0,
@@ -5240,21 +5247,21 @@ ABILITIES = {
         "application_chance": 1.0,
         "description": (
             "Embrace the predator within. Haste and heightened"
-            " reflexes for several rounds. Stronger near Feral."
-            " The duality of the Verdance path -- power at a"
-            " cost. Pushes toward Feral."
+            " reflexes for several rounds. Each defensive act"
+            " you've taken sharpens the predator's edge -- calm"
+            " becomes violence waiting to happen."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "haste", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"buff_type": "haste", "duration": 2, "magnitude": 1.0, "balance_shift": -10, "balance_type": "calm"},
     },
     "entangling_roots": {
         "id": "entangling_roots",
         "name": "Entangling Roots",
         "domain": "naturalism",
         "tier": 2,
-        "resource_cost": 20,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 3,
         "charge_turns": 0,
@@ -5265,13 +5272,13 @@ ABILITIES = {
         "description": (
             "Roots surge from beneath the earth to pin the target"
             " in place. The natural world holds what the Verdance"
-            " commands. Neutral on the spectrum -- neither Feral"
-            " nor Calm, just control."
+            " commands. Offensive control -- the wild reaching"
+            " up to drag prey down."
         ),
         "room_flag_written": "overgrown",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "root", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"debuff_type": "root", "duration": 2, "magnitude": 1.0, "balance_shift": 10, "balance_type": "feral"},
     },
 
     # --- Naturalism Tier 3 (4 abilities) -- Advanced nature, DoTs, compounds ---
@@ -5280,7 +5287,7 @@ ABILITIES = {
         "name": "Venombloom",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 2,
         "charge_turns": 0,
@@ -5291,20 +5298,20 @@ ABILITIES = {
         "description": (
             "Conjure a bloom of toxic spores that cling to the"
             " target. Sustained poison that worsens each round."
-            " The natural world does not distinguish between"
-            " healing and harming. Pushes toward Feral."
+            " Every mend you've channeled feeds the venom --"
+            " stored serenity becomes sustained cruelty."
         ),
         "room_flag_written": "rotting",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10, "balance_shift": 12, "balance_type": "feral"},
     },
     "lifesurge": {
         "id": "lifesurge",
         "name": "Lifesurge",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 30,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 5,
         "charge_turns": 0,
@@ -5315,21 +5322,20 @@ ABILITIES = {
         "description": (
             "Flood a target with concentrated life energy. A"
             " powerful burst heal that also grants brief damage"
-            " reduction. Dramatically stronger near Calm -- the"
-            " forest gives everything when you are at peace."
-            " Pushes hard toward Calm."
+            " reduction. The violence you've dealt feeds this"
+            " surge -- aggression transmuted into restoration."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"heal_base": 100},
+        "effect_params": {"heal_base": 100, "balance_shift": -12, "balance_type": "calm"},
     },
     "rending_thorns": {
         "id": "rending_thorns",
         "name": "Rending Thorns",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 2,
         "charge_turns": 0,
@@ -5339,20 +5345,21 @@ ABILITIES = {
         "application_chance": 0.85,
         "description": (
             "Massive thorns erupt through the target, dealing heavy"
-            " damage and applying bleed. Nature's violence is not"
-            " cruel -- it is indifferent. Pushes toward Feral."
+            " damage and applying bleed. Every ward and mend"
+            " you've cast sharpens these thorns -- peace stored"
+            " becomes violence unleashed."
         ),
         "room_flag_written": "fading_life",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 90, "status_effect": "bleed", "duration": 3, "magnitude": 1},
+        "effect_params": {"damage_base": 90, "status_effect": "bleed", "duration": 3, "magnitude": 1, "balance_shift": 12, "balance_type": "feral"},
     },
     "spore_cloud": {
         "id": "spore_cloud",
         "name": "Spore Cloud",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 30,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 4,
         "charge_turns": 0,
@@ -5362,14 +5369,14 @@ ABILITIES = {
         "application_chance": 0.80,
         "description": (
             "Release a cloud of choking spores that blankets the"
-            " area. All enemies are slowed and weakened as the"
-            " spores clog lungs and cloud vision. The forest"
-            " does not fight fair. Pushes toward Feral."
+            " area. All enemies are slowed and weakened. The"
+            " calm you've gathered fuels these spores -- serenity"
+            " weaponized into choking fog."
         ),
         "room_flag_written": "rotting",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "slow", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"debuff_type": "slow", "duration": 2, "magnitude": 1.0, "balance_shift": 12, "balance_type": "feral"},
     },
 
     # --- Naturalism Tier 4 (3 abilities) -- Domain capstones ---
@@ -5378,7 +5385,7 @@ ABILITIES = {
         "name": "Primal Wrath",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 0,
@@ -5389,21 +5396,21 @@ ABILITIES = {
         "description": (
             "Unleash the full fury of the wild. Massive damage"
             " to all enemies as thorns, roots, and venom erupt"
-            " simultaneously. Applies poison and bleed. Only"
-            " available deep in Feral -- the cost of this power"
-            " is control. Requires Feral balance."
+            " simultaneously. Applies poison and bleed. Every"
+            " calm act you've taken feeds this explosion --"
+            " serenity detonated into pure violence."
         ),
         "room_flag_written": "fading_life",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 180, "status_effect": "poison", "duration": 3, "magnitude": 10},
+        "effect_params": {"damage_base": 180, "status_effect": "poison", "duration": 3, "magnitude": 10, "balance_shift": 15, "balance_type": "feral"},
     },
     "ancient_restoration": {
         "id": "ancient_restoration",
         "name": "Ancient Restoration",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 0,
@@ -5414,20 +5421,21 @@ ABILITIES = {
         "description": (
             "Channel the oldest living energy in the world. A"
             " massive group heal that also removes one negative"
-            " status effect per ally. The Ancient Voice speaks"
-            " and the wounded rise. Requires Calm balance."
+            " status effect per ally. The fury you've unleashed"
+            " feeds this restoration -- aggression transmuted"
+            " into the deepest healing."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"heal_base": 200},
+        "effect_params": {"heal_base": 200, "balance_shift": -15, "balance_type": "calm"},
     },
     "natures_equilibrium": {
         "id": "natures_equilibrium",
         "name": "Nature's Equilibrium",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 45,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 5,
         "charge_turns": 0,
@@ -5440,12 +5448,12 @@ ABILITIES = {
             " For several rounds, all naturalism abilities deal"
             " full damage AND full healing regardless of spectrum"
             " position. The Verdance ideal: mastery is not"
-            " choosing a side. Requires neutral Balance."
+            " choosing a side. Requires Balance 40-60."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5},
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5, "balance_shift": 0, "balance_type": "calm"},
     },
 
     # ===================================================================
@@ -5459,7 +5467,7 @@ ABILITIES = {
         "name": "Nature Fist",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 20,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 1,
         "charge_turns": 0,
@@ -5471,19 +5479,19 @@ ABILITIES = {
             "Drive a fist wrapped in living thorns into the target."
             " Physical strike that applies poison on contact."
             " Shapeshift-adjacent -- your body IS the weapon."
-            " Pushes toward Feral."
+            " Calm stored becomes fury delivered."
         ),
         "room_flag_written": "fading_life",
         "attuned_variants": {},
         "subclass_id": "thornfist",
-        "effect_params": {"damage_base": 85, "status_effect": "poison", "duration": 3, "magnitude": 8},
+        "effect_params": {"damage_base": 85, "status_effect": "poison", "duration": 3, "magnitude": 8, "balance_shift": 12, "balance_type": "feral"},
     },
     "thornfist_primal_shift": {
         "id": "thornfist_primal_shift",
         "name": "Primal Shift",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 0,
@@ -5496,12 +5504,12 @@ ABILITIES = {
             " and predator. Massive stat buffs -- strength and"
             " damage amplified, natural armor, every strike"
             " applies nature DoTs. The Thornfist's defining"
-            " moment: the body becomes the forest itself."
+            " moment: serenity sacrificed to become the beast."
         ),
         "room_flag_written": "fading_life",
         "attuned_variants": {},
         "subclass_id": "thornfist",
-        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 2.0},
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 2.0, "balance_shift": -15, "balance_type": "calm"},
     },
 
     # --- Rootstalker (naturalism + subterfuge) ---
@@ -5510,7 +5518,7 @@ ABILITIES = {
         "name": "Vine Ambush",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 3,
         "charge_turns": 0,
@@ -5521,20 +5529,20 @@ ABILITIES = {
         "description": (
             "Vines erupt from concealment to ensnare and damage"
             " the target. Stealth-delivered nature attack that"
-            " roots the target. The wilderness ghost strikes"
-            " through the terrain itself. Pushes toward Feral."
+            " roots the target. The calm you've gathered feeds"
+            " the ambush -- patience becomes predation."
         ),
         "room_flag_written": "overgrown",
         "attuned_variants": {},
         "subclass_id": "rootstalker",
-        "effect_params": {"damage_base": 85, "status_effect": "root", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"damage_base": 85, "status_effect": "root", "duration": 2, "magnitude": 1.0, "balance_shift": 12, "balance_type": "feral"},
     },
     "rootstalker_one_with_wilds": {
         "id": "rootstalker_one_with_wilds",
         "name": "One With the Wilds",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 45,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 0,
@@ -5547,12 +5555,12 @@ ABILITIES = {
             " stealth with evasion and a poison aura that damages"
             " nearby enemies each round. Attacks do not break"
             " concealment. The Rootstalker's defining state:"
-            " the wilderness moves through you."
+            " aggression channeled into perfect stillness."
         ),
         "room_flag_written": "overgrown",
         "attuned_variants": {},
         "subclass_id": "rootstalker",
-        "effect_params": {"buff_type": "evasion", "duration": 4, "magnitude": 0.3},
+        "effect_params": {"buff_type": "evasion", "duration": 4, "magnitude": 0.3, "balance_shift": -15, "balance_type": "calm"},
     },
 
     # --- Cantera (naturalism + resonance) ---
@@ -5561,7 +5569,7 @@ ABILITIES = {
         "name": "Ancient Grove",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 4,
         "charge_turns": 0,
@@ -5572,20 +5580,20 @@ ABILITIES = {
         "description": (
             "Call upon the memory of ancient forests to heal and"
             " strengthen. Node energy accelerates living magic."
-            " Heals the group and grants a damage reduction buff."
-            " Stronger in nature zones. Pushes toward Calm."
+            " The violence you've dealt feeds this grove --"
+            " feral energy recycled into restoration."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "cantera",
-        "effect_params": {"heal_base": 90},
+        "effect_params": {"heal_base": 90, "balance_shift": -12, "balance_type": "calm"},
     },
     "cantera_forest_memory": {
         "id": "cantera_forest_memory",
         "name": "Forest Memory",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 55,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 1,
@@ -5596,14 +5604,14 @@ ABILITIES = {
         "description": (
             "Channel the resonance of every forest that has ever"
             " lived. Massive group heal amplified by the resonance"
-            " stat. Grants nature damage resistance and a buff"
-            " that persists for multiple rounds. The Cantera's"
-            " defining power: nature via old magic."
+            " stat. Every feral strike you've unleashed powers"
+            " this memory -- violence transmuted into the"
+            " deepest healing the old world can offer."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "cantera",
-        "effect_params": {"heal_base": 180},
+        "effect_params": {"heal_base": 180, "balance_shift": -15, "balance_type": "calm"},
     },
 
     # --- Stormcaller (naturalism + arcana) ---
@@ -5612,7 +5620,7 @@ ABILITIES = {
         "name": "Lightning Strike",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 2,
         "charge_turns": 0,
@@ -5622,21 +5630,21 @@ ABILITIES = {
         "application_chance": 0.90,
         "description": (
             "Call a bolt of lightning down on the target. Deals"
-            " heavy damage, applies wet status from driving rain,"
-            " and writes a charged flag to the room. Elemental"
-            " forces bent to will. Pushes toward Feral."
+            " heavy damage, applies wet status from driving rain."
+            " The calm you've gathered becomes the charge --"
+            " serenity discharged as lightning."
         ),
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": "stormcaller",
-        "effect_params": {"damage_base": 95, "status_effect": "wet", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"damage_base": 95, "status_effect": "wet", "duration": 2, "magnitude": 1.0, "balance_shift": 12, "balance_type": "feral"},
     },
     "stormcaller_storm_call": {
         "id": "stormcaller_storm_call",
         "name": "Storm Call",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 55,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 2,
@@ -5647,14 +5655,14 @@ ABILITIES = {
         "description": (
             "Summon a devastating storm. Two rounds of gathering"
             " wind, then catastrophic AoE damage. Every enemy"
-            " is struck by lightning and drenched. Applies burn"
-            " and wet simultaneously. The room becomes charged."
-            " The Stormcaller's ultimate: the sky itself answers."
+            " is struck by lightning and drenched. Every calm"
+            " act you've taken charges the sky -- serenity"
+            " becomes the storm."
         ),
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": "stormcaller",
-        "effect_params": {"damage_base": 220, "status_effect": "burn", "duration": 3, "magnitude": 10},
+        "effect_params": {"damage_base": 220, "status_effect": "burn", "duration": 3, "magnitude": 10, "balance_shift": 15, "balance_type": "feral"},
     },
 
     # --- Greentongue (naturalism + diplomacy) ---
@@ -5663,7 +5671,7 @@ ABILITIES = {
         "name": "Nature's Voice",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 3,
         "charge_turns": 0,
@@ -5674,20 +5682,20 @@ ABILITIES = {
         "description": (
             "Speak with the authority of the natural world. The"
             " target's resolve weakens under the weight of something"
-            " older than civilization. Presence and nature blend"
-            " into a social weapon. Pushes toward Calm."
+            " older than civilization. The calm you've gathered"
+            " gives the voice weight -- serenity weaponized."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "greentongue",
-        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2, "balance_shift": 12, "balance_type": "feral"},
     },
     "greentongue_forest_decree": {
         "id": "greentongue_forest_decree",
         "name": "Forest Decree",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 0,
@@ -5698,14 +5706,14 @@ ABILITIES = {
         "description": (
             "Issue a command that the living world enforces."
             " All nature-aligned creatures and beasts in the room"
-            " are charmed. Non-natural enemies are weakened as"
-            " the forest itself turns hostile. Presence scaling"
-            " amplifies the reach. The Greentongue's voice."
+            " are charmed. Non-natural enemies are weakened."
+            " Every calm act you've taken gives the decree"
+            " authority -- serenity becomes command."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "greentongue",
-        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.5},
+        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.5, "balance_shift": 15, "balance_type": "feral"},
     },
 
     # --- Rotweald (naturalism + alchemy) ---
@@ -5714,7 +5722,7 @@ ABILITIES = {
         "name": "Rot Cloud",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 3,
         "charge_turns": 0,
@@ -5725,20 +5733,20 @@ ABILITIES = {
         "description": (
             "Release a cloud of organic decay that clings to"
             " everything it touches. AoE poison and bleed as"
-            " flesh rots on contact. The dark side of nature --"
-            " decomposition weaponized. Pushes toward Feral."
+            " flesh rots on contact. The calm you've stored"
+            " ferments into decay -- serenity spoiled."
         ),
         "room_flag_written": "rotting",
         "attuned_variants": {},
         "subclass_id": "rotweald",
-        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10, "balance_shift": 12, "balance_type": "feral"},
     },
     "rotweald_consuming_decay": {
         "id": "rotweald_consuming_decay",
         "name": "Consuming Decay",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 55,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 0,
@@ -5749,14 +5757,14 @@ ABILITIES = {
         "description": (
             "Transform the room into a zone of sustained organic"
             " decay. Every enemy receives poison and weaken each"
-            " round for the duration. The ground itself rots."
-            " The Rotweald's defining power: nature does not"
-            " always grow -- sometimes it consumes."
+            " round. Every calm act you've taken feeds the rot --"
+            " the Rotweald's defining power: serenity composted"
+            " into consuming ruin."
         ),
         "room_flag_written": "rotting",
         "attuned_variants": {},
         "subclass_id": "rotweald",
-        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15, "balance_shift": 15, "balance_type": "feral"},
     },
 
     # --- Wildcommand (naturalism + tactics) ---
@@ -5765,7 +5773,7 @@ ABILITIES = {
         "name": "Beast Rush",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 3,
         "charge_turns": 0,
@@ -5776,20 +5784,20 @@ ABILITIES = {
         "description": (
             "Command local predators to assault the target. A"
             " coordinated beast attack that deals heavy damage."
-            " Tactical knowledge expressed through animal"
-            " direction. Pushes toward Feral."
+            " The calm you've gathered sharpens the command --"
+            " patience becomes coordinated violence."
         ),
         "room_flag_written": "fading_life",
         "attuned_variants": {},
         "subclass_id": "wildcommand",
-        "effect_params": {"damage_base": 90},
+        "effect_params": {"damage_base": 90, "balance_shift": 12, "balance_type": "feral"},
     },
     "wildcommand_pack_alpha": {
         "id": "wildcommand_pack_alpha",
         "name": "Pack Alpha",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 0,
@@ -5800,14 +5808,14 @@ ABILITIES = {
         "description": (
             "Summon a sustained beast companion that fights"
             " alongside you with tactical intelligence. The beast"
-            " deals damage each round, grants allies a damage"
-            " bonus, and obeys complex orders. The Wildcommand's"
-            " defining power: the forest is your army."
+            " deals damage each round and grants allies a damage"
+            " bonus. The Wildcommand's defining power: feral"
+            " energy channeled into tactical supremacy."
         ),
         "room_flag_written": "fading_life",
         "attuned_variants": {},
         "subclass_id": "wildcommand",
-        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 1.5},
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 1.5, "balance_shift": -15, "balance_type": "calm"},
     },
 
     # --- Growthwright (naturalism + engineering) ---
@@ -5816,7 +5824,7 @@ ABILITIES = {
         "name": "Living Barricade",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 4,
         "charge_turns": 0,
@@ -5828,20 +5836,20 @@ ABILITIES = {
             "Grow a wall of living wood that shields allies."
             " Significant damage reduction for the group as"
             " organic construction absorbs incoming force."
-            " The structure persists and regenerates."
-            " Pushes toward Calm."
+            " Feral energy channeled into structural growth --"
+            " aggression becomes architecture."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "growthwright",
-        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.25},
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.25, "balance_shift": -12, "balance_type": "calm"},
     },
     "growthwright_grove_fortress": {
         "id": "growthwright_grove_fortress",
         "name": "Grove Fortress",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 55,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 1,
@@ -5852,14 +5860,14 @@ ABILITIES = {
         "description": (
             "Grow a sustained living fortification that transforms"
             " the battlefield. Heavy damage reduction for all"
-            " allies, enemies slowed inside the grove, and the"
-            " structure heals itself each round. The Growthwright's"
-            " defining power: you grow what others build."
+            " allies, enemies slowed inside the grove. Every"
+            " feral act you've taken feeds the fortress --"
+            " violence transmuted into living walls."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "growthwright",
-        "effect_params": {"buff_type": "warding", "duration": 4, "magnitude": 0.35},
+        "effect_params": {"buff_type": "warding", "duration": 4, "magnitude": 0.35, "balance_shift": -15, "balance_type": "calm"},
     },
 
     # --- Deeproot (naturalism + remnance) ---
@@ -5868,7 +5876,7 @@ ABILITIES = {
         "name": "Deep Memory",
         "domain": "naturalism",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 4,
         "charge_turns": 0,
@@ -5879,21 +5887,21 @@ ABILITIES = {
         "description": (
             "Tap into the memory stored in ancient root systems."
             " Grants a damage and defense buff drawn from the"
-            " world's oldest living knowledge. Dragon-adjacent"
-            " nature power that should not exist. Pushes"
-            " toward Calm."
+            " world's oldest living knowledge. The violence"
+            " you've dealt feeds the roots -- aggression"
+            " recycled into deep wisdom."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "deeproot",
-        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.2},
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.2, "balance_shift": -12, "balance_type": "calm"},
     },
     "deeproot_worldroot_pulse": {
         "id": "deeproot_worldroot_pulse",
         "name": "Worldroot Pulse",
         "domain": "naturalism",
         "tier": 4,
-        "resource_cost": 55,
+        "resource_cost": 0,
         "resource_type": "balance",
         "cooldown": 6,
         "charge_turns": 1,
@@ -5904,15 +5912,14 @@ ABILITIES = {
         "description": (
             "Pulse energy through the deepest root network in"
             " the world. Massive group heal amplified by echoes"
-            " of ancient nature. Grants sustained regeneration"
-            " and a nature buff that persists for rounds. The"
-            " Deeproot's defining power: the world-memory in"
-            " old growth, made real."
+            " of ancient nature. Every feral strike you've"
+            " unleashed feeds this pulse -- violence transmuted"
+            " into the world's deepest restoration."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "deeproot",
-        "effect_params": {"heal_base": 200},
+        "effect_params": {"heal_base": 200, "balance_shift": -15, "balance_type": "calm"},
     },
 
     # ===================================================================
