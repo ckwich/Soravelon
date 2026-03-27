@@ -186,7 +186,7 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 06c-01-PLAN.md — Dialogue definitions + dialogue engine + KnownTopicRecord/CharacterRecipe models + migration
+- [x] 06c-01-PLAN.md — Dialogue definitions + dialogue engine + KnownTopicRecord/CharacterRecipe models + migration
 - [ ] 06c-02-PLAN.md — Crafting definitions registry + crafting engine
 - [ ] 06c-03-PLAN.md — AreaBuilder NPC extension (object creation, dialogue/ambient db attrs) + ambient ticker + open_dialogue handler
 - [ ] 06c-04-PLAN.md — Dialogue commands (talk/ask/say/tell/accept/decline) + crafting commands (cook/smith/brew/craft/recipes) + cmdset registration

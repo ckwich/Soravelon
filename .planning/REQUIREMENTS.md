@@ -100,9 +100,9 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 ### NPC System
 
-- [ ] **NPC-01**: NPC template system injects world-state variables into dialogue
-- [ ] **NPC-02**: NPCs respond differently based on character standing, ancestry, and reputation
-- [ ] **NPC-03**: Context packet feeds NPC templates (same interface as future LLM consumer)
+- [x] **NPC-01**: NPC template system injects world-state variables into dialogue
+- [x] **NPC-02**: NPCs respond differently based on character standing, ancestry, and reputation
+- [x] **NPC-03**: Context packet feeds NPC templates (same interface as future LLM consumer)
 
 ## v2 Requirements
 
@@ -196,9 +196,9 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | SKL-02 | Phase 6 | Complete |
 | SKL-03 | Phase 6 | Complete |
 | SKL-04 | Phase 6 | Complete |
-| NPC-01 | Phase 6 | Pending |
-| NPC-02 | Phase 6 | Pending |
-| NPC-03 | Phase 6 | Pending |
+| NPC-01 | Phase 6 | Complete |
+| NPC-02 | Phase 6 | Complete |
+| NPC-03 | Phase 6 | Complete |
 | CON-01 | Phase 7 | Pending |
 | CON-02 | Phase 7 | Pending |
 | CON-03 | Phase 7 | Pending |

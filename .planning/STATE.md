@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 06b-05-PLAN.md
-last_updated: "2026-03-27T00:16:25.376Z"
+status: Ready to execute
+stopped_at: Completed 06c-01-PLAN.md
+last_updated: "2026-03-27T02:54:58.968Z"
 progress:
   total_phases: 10
   completed_phases: 7
-  total_plans: 38
-  completed_plans: 36
+  total_plans: 43
+  completed_plans: 37
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 06b — spawn-system-skills-and-mob-ai
+**Current focus:** Phase 06c — npc-dialogue-and-crafting
 
 ## Current Position
 
-Phase: 06c
-Plan: Not started
+Phase: 06c (npc-dialogue-and-crafting) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Plan: Not started
 | Phase 06b P01 | 7 | 2 tasks | 5 files |
 | Phase 06b P03 | 4 | 2 tasks | 4 files |
 | Phase 06b P05 | 18 | 2 tasks | 3 files |
+| Phase 06c P01 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,10 @@ Recent decisions affecting current work:
 - [Phase 06b]: Skill name resolution uses three-pass matching: exact, startswith, substring with disambiguation
 - [Phase 06b]: Patch Django model managers at world.models.X.objects for lazy-imported models in test files
 - [Phase 06b]: Fixed pre-existing test_condition_checked bug (missing abilities arg to _make_mob)
+- [Phase 06c]: MAX_HINTS_DISPLAYED = 4 (balances info vs clutter)
+- [Phase 06c]: Global ambient NPC ticker (single callback) per D-10
+- [Phase 06c]: Context hash for hint re-surfacing uses MD5 truncated to 16 chars
+- [Phase 06c]: Migration 0006 hand-crafted to isolate from WorldEventLog drift
 
 ### Pending Todos
 
@@ -165,6 +170,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T00:11:37.683Z
-Stopped at: Completed 06b-05-PLAN.md
+Last session: 2026-03-27T02:54:58.965Z
+Stopped at: Completed 06c-01-PLAN.md
 Resume file: None
