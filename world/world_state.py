@@ -106,16 +106,19 @@ def decay_tick_all():
 
 # --- Attunement Dual Representation ---
 
-def update_zone_attunement(character, zone_id, score):
-    """Create or update a per-zone attunement record."""
+def update_zone_attunement(character, zone_id, delta):
+    """Add delta to a per-zone attunement score, clamped to 0-100."""
     from django.utils import timezone
 
-    clamped = max(0.0, min(100.0, float(score)))
-    ZoneAttunement.objects.update_or_create(
+    record, _ = ZoneAttunement.objects.get_or_create(
         character=character,
         zone_id=zone_id,
-        defaults={"score": clamped, "last_visited": timezone.now()},
+        defaults={"score": 0.0},
     )
+    new_score = max(0.0, min(100.0, record.score + float(delta)))
+    record.score = new_score
+    record.last_visited = timezone.now()
+    record.save()
 
 
 def recalculate_attunement_aggregate(character):
