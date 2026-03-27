@@ -56,6 +56,25 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdSkills())
         self.add(CmdPractice())
         self.add(CmdTrain())
+        # Dialogue commands
+        from commands.cmd_dialogue import (
+            CmdTalk, CmdAsk, CmdSay, CmdTell, CmdAccept, CmdDecline,
+        )
+        self.add(CmdTalk())
+        self.add(CmdAsk())
+        self.add(CmdSay())  # overrides Evennia default CmdSay
+        self.add(CmdTell())
+        self.add(CmdAccept())
+        self.add(CmdDecline())
+        # Crafting commands
+        from commands.cmd_crafting import (
+            CmdCook, CmdSmith, CmdBrew, CmdCraft, CmdRecipes,
+        )
+        self.add(CmdCook())
+        self.add(CmdSmith())
+        self.add(CmdBrew())
+        self.add(CmdCraft())
+        self.add(CmdRecipes())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 06c-03-PLAN.md
-last_updated: "2026-03-27T03:22:00.000Z"
+stopped_at: Completed 06c-04-PLAN.md
+last_updated: "2026-03-27T03:04:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 7
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 06a — base-attributes-and-combat
+**Current focus:** Phase 06c — npc-dialogue-and-crafting
 
 ## Current Position
 
-Phase: 06b
-Plan: Not started
+Phase: 06c
+Plan: 04 of 5 complete
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Plan: Not started
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
 | Phase 06c P02 | 3 | 2 tasks | 2 files |
+| Phase 06c P04 | 6 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -142,8 +143,9 @@ Recent decisions affecting current work:
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
 - [Phase 06c]: Quality gap thresholds: <0=flawed, <15=standard, <30=fine, <50=superior, 50+=masterwork; random variance +/-1 tier center-biased
 - [Phase 06c]: Crafting station check via room.tags.has(crafting_{station}, category=crafting_station)
-- [Phase 06c]: NPC objects use npc_id tag category for idempotent lookup (parallel to room_id pattern)
-- [Phase 06c]: NPC name defaults to npc_id title-cased with underscores replaced by spaces
+- [Phase 06c]: CmdSay overrides Evennia default with same key/aliases; broadcasts to room then extracts NPC keywords (cap 2 responders, sorted by Standing tier)
+- [Phase 06c]: Crafting uses evennia.utils.delay with ndb.crafting_in_progress flag; cancelled if character moves during delay
+- [Phase 06c]: NPC lookup uses case-insensitive partial match (startswith) on npc_name db attr or key
 
 ### Pending Todos
 
@@ -157,6 +159,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T03:22:00.000Z
-Stopped at: Completed 06c-03-PLAN.md
+Last session: 2026-03-27T03:04:00Z
+Stopped at: Completed 06c-04-PLAN.md
 Resume file: None
