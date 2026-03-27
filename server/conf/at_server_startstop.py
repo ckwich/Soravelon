@@ -72,6 +72,14 @@ def at_server_start():
         persistent=True,
     )
 
+    # NPC ambient idle echoes — fires every 15 seconds (NPC-01)
+    TICKER_HANDLER.add(
+        interval=15,
+        callback="world.dialogue_engine.ambient_npc_tick",
+        idstring="npc_ambient_tick",
+        persistent=True,
+    )
+
     # Recover any orphaned Layer 1 rooms from crash/restart
     from world.node_helpers import initialize_node_pool
     initialize_node_pool()
