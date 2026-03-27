@@ -38,6 +38,7 @@ NON_STACKABLE_EFFECTS = {
     "slow": {"action_budget_penalty": 1},
     "root": {"prevents_flee": True},
     "blind": {"miss_chance_increase": 0.25},
+    "shocked": {"action_budget_penalty": 1},
     "stun": {"skip_turn": True},
     "charm": {"skip_turn": True, "no_hostile_action": True},
     "haste": {"action_budget_bonus": 1},
@@ -81,6 +82,15 @@ _BASE_COMPOUNDS = {
             "burst_damage_pct": 0.75,
             "action_budget_penalty": 1,
             "armor_reduction_duration": 2,
+        },
+    },
+    ("wet", "shocked"): {
+        "type": "consuming",
+        "result": "discharge",
+        "effect": {
+            "burst_damage_pct": 0.75,
+            "action_penalty": -1,
+            "action_penalty_duration": 2,
         },
     },
 }
@@ -399,6 +409,12 @@ def tick_effects(target):
             # Subsequent ticks just maintain the armor reduction / action penalty
             pass
 
+        # Discharge burst damage (consuming compound: wet + shocked)
+        elif etype == "discharge":
+            # Burst damage is percentage-based, applied once on creation tick
+            # Subsequent ticks maintain the action penalty
+            pass
+
         # Decrement duration
         entry["duration"] -= 1
         if entry["duration"] <= 0:
@@ -454,6 +470,8 @@ def get_effect_modifiers(target):
 
         if etype == "slow":
             modifiers["action_budget_penalty"] += NON_STACKABLE_EFFECTS["slow"]["action_budget_penalty"]
+        elif etype == "shocked":
+            modifiers["action_budget_penalty"] += NON_STACKABLE_EFFECTS["shocked"]["action_budget_penalty"]
         elif etype == "root":
             modifiers["prevents_flee"] = True
         elif etype == "blind":
@@ -477,6 +495,9 @@ def get_effect_modifiers(target):
             modifiers["skip_turn"] = True
         elif etype == "steam":
             # Compound: action penalty
+            modifiers["action_budget_penalty"] += 1
+        elif etype == "discharge":
+            # Compound: action penalty (wet + shocked)
             modifiers["action_budget_penalty"] += 1
 
     return modifiers
