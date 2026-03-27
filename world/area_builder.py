@@ -297,6 +297,11 @@ class AreaBuilder:
         if not room_obj.db.lore_fragments:
             room_obj.db.lore_fragments = []
 
+        # Crafting station tags (NPC-02)
+        crafting_stations = kwargs.get("crafting_stations", [])
+        for station in crafting_stations:
+            room_obj.tags.add(f"crafting_{station}", category="crafting_station")
+
         room_obj.tags.add(self._zone_id, category="zone_id")
         room_obj.tags.add(room_id, category="room_id")
         room_obj.tags.add(room_type, category="room_type")
@@ -471,7 +476,16 @@ class AreaBuilder:
     # ------------------------------------------------------------------
 
     def npc(self, room, npc_id, **kwargs):
-        """Place an NPC definition on a room."""
+        """
+        Place an NPC definition on a room and create/update a SoravelonMob object.
+
+        Accepts optional ``dialogue`` and ``ambient`` dicts to configure NPC
+        dialogue and ambient idle/reactive echo data (NPC-01).  The NPC object
+        is a SoravelonMob with ``db.is_npc = True`` and ``db.combat_enabled = False``.
+
+        Backward-compatible: ``room.db.npc_definitions`` is always populated.
+        """
+        # --- 1. Populate room.db.npc_definitions (backward compat) ---------
         npc_def = {
             "npc_id": npc_id,
             "wander": kwargs.get("wander", False),
@@ -483,6 +497,59 @@ class AreaBuilder:
         current = list(room.db.npc_definitions or [])
         current.append(npc_def)
         room.db.npc_definitions = current
+
+        # --- 2. Create or retrieve the NPC SoravelonMob object -------------
+        from typeclasses.mobs import SoravelonMob
+
+        # Idempotent: search by npc_id tag within this zone
+        candidates = evennia.search_tag(npc_id, category="npc_id")
+        npc_obj = None
+        for candidate in candidates:
+            if (candidate.db.zone_id or "") == self._zone_id:
+                npc_obj = candidate
+                break
+
+        if not npc_obj:
+            npc_obj = create_object(
+                SoravelonMob,
+                key=kwargs.get("name", npc_id.replace("_", " ").title()),
+                location=room,
+            )
+        else:
+            npc_obj.location = room
+            npc_obj.key = kwargs.get("name", npc_id.replace("_", " ").title())
+
+        # Core NPC flags
+        npc_obj.db.is_npc = True
+        npc_obj.db.combat_enabled = False
+        npc_obj.db.zone_id = self._zone_id
+        npc_obj.db.faction = kwargs.get("faction")
+
+        # Tags for queryset filtering
+        npc_obj.tags.add(npc_id, category="npc_id")
+        npc_obj.tags.add(self._zone_id, category="zone_id")
+        npc_obj.tags.add("npc", category="character_type")
+        npc_obj.tags.add("npc", category="mob_type")
+
+        # --- 3. Dialogue data on db attributes (NPC-01) -------------------
+        dialogue = kwargs.get("dialogue", {})
+        npc_obj.db.dialogue_greeting_tiers = dialogue.get("greeting_tiers", {})
+        npc_obj.db.dialogue_topics = dialogue.get("topics", {})
+        npc_obj.db.dialogue_base_hints = dialogue.get("base_hints", [])
+        npc_obj.db.dialogue_tier_hints = dialogue.get("tier_hints", {})
+        npc_obj.db.dialogue_quest_hints = dialogue.get("quest_hints", {})
+        npc_obj.db.dialogue_network_hints = dialogue.get("network_hints", [])
+        npc_obj.db.dialogue_scholar_hints = dialogue.get("scholar_hints", [])
+        npc_obj.db.dialogue_warden_hints = dialogue.get("warden_hints", [])
+
+        # --- 4. Ambient data on db attributes (NPC-01) --------------------
+        ambient = kwargs.get("ambient", {})
+        npc_obj.db.ambient_idle_echoes = ambient.get("idle_echoes", [])
+        npc_obj.db.ambient_idle_interval = ambient.get("idle_interval", 60)
+        npc_obj.db.ambient_idle_variance = ambient.get("idle_variance", 30)
+        npc_obj.db.ambient_reactive_echoes = ambient.get("reactive_echoes", {})
+
+        return npc_obj
 
     # ------------------------------------------------------------------
     # item()
