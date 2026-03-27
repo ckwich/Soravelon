@@ -201,7 +201,15 @@ Plans:
   2. All 90 subclasses have 2 signature abilities each (Tier 3 + Tier 4) that mechanically distinguish the subclass
   3. Ability definitions pass structural validation: every ability has all required fields from the ability data model, resource costs match guild resource types, scaling stats are valid
   4. DOMAIN_ABILITIES and SUBCLASS_SIGNATURES derived lookups in ability_registry.py return correct abilities for every guild/subclass combination
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 05b-01-PLAN.md — Combat + Tactics domain pair (30 pool + 36 signatures)
+- [ ] 05b-02-PLAN.md — Subterfuge + Diplomacy domain pair (30 pool + 36 signatures)
+- [ ] 05b-03-PLAN.md — Arcana + Resonance domain pair (30 pool + 36 signatures)
+- [ ] 05b-04-PLAN.md — Naturalism + Alchemy domain pair (30 pool + 36 signatures)
+- [ ] 05b-05-PLAN.md — Engineering + Remnance domain pair (30 pool + 36 signatures)
+- [ ] 05b-06-PLAN.md — Structural validation of complete 330-ability registry
 
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
@@ -230,5 +238,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6a. Base Attributes & Combat System | 0/7 | Not started | - |
 | 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
 | 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
-| 5b. Ability Content Authoring (INSERTED) | 0/TBD | Not started | - |
-| 7. Milestone 1 Content | 0/TBD | Not started | - |
+| 5b. Ability Content Authoring (INSERTED) | 0/6 | Not started | - |
+| 7. Milestone 1 Content | 0/6 | Not started | - |
