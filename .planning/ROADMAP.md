@@ -183,7 +183,14 @@ Plans:
   2. Dynamic hints show relevant topics based on Standing tier, active quests, and world-state dimensions
   3. Crafting a recipe with ingredients produces an item; quality varies based on skill level — higher skill = better results
   4. Ambient NPC echoes fire on timer with variance, creating lived-in atmosphere
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 06c-01-PLAN.md — Dialogue definitions + dialogue engine + KnownTopicRecord/CharacterRecipe models + migration
+- [ ] 06c-02-PLAN.md — Crafting definitions registry + crafting engine
+- [ ] 06c-03-PLAN.md — AreaBuilder NPC extension (object creation, dialogue/ambient db attrs) + ambient ticker + open_dialogue handler
+- [ ] 06c-04-PLAN.md — Dialogue commands (talk/ask/say/tell/accept/decline) + crafting commands (cook/smith/brew/craft/recipes) + cmdset registration
+- [ ] 06c-05-PLAN.md — Test suite: test_dialogue.py (NPC-01/02/03, hints, extraction) + test_crafting.py (quality, discovery, registry)
 
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
@@ -211,5 +218,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 5. Ancestry Engine and Ability System | 0/5 | Not started | - |
 | 6a. Base Attributes & Combat System | 0/7 | Not started | - |
 | 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
-| 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
+| 6c. NPC Dialogue & Crafting | 0/5 | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
