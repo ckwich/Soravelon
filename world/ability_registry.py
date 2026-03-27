@@ -75,42 +75,7 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": None,
     },
-    "pulse_attune": {
-        "id": "pulse_attune",
-        "name": "Pulse Attune",
-        "domain": "resonance",
-        "tier": 1,
-        "resource_cost": 10,
-        "resource_type": "resonance",
-        "cooldown": 0,
-        "charge_turns": 0,
-        "effect_type": "buff",
-        "scaling_primary": "resonance",
-        "scaling_secondary": None,
-        "application_chance": 1.0,
-        "description": "[STUB - Phase 5b] Attune to environmental resonance for combat edge.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
-    "arcane_bolt": {
-        "id": "arcane_bolt",
-        "name": "Arcane Bolt",
-        "domain": "arcana",
-        "tier": 1,
-        "resource_cost": 25,
-        "resource_type": "mana",
-        "cooldown": 0,
-        "charge_turns": 0,
-        "effect_type": "damage",
-        "scaling_primary": "arcana",
-        "scaling_secondary": None,
-        "application_chance": 1.0,
-        "description": "[STUB - Phase 5b] Focused arcane energy bolt.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
+    # pulse_attune and arcane_bolt stubs removed -- replaced by full Arcana/Resonance pools below
     "reagent_toss": {
         "id": "reagent_toss",
         "name": "Reagent Toss",
@@ -183,24 +148,7 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": None,
     },
-    "resonance_ward": {
-        "id": "resonance_ward",
-        "name": "Resonance Ward",
-        "domain": "resonance",
-        "tier": 1,
-        "resource_cost": 20,
-        "resource_type": "resonance",
-        "cooldown": 4,
-        "charge_turns": 0,
-        "effect_type": "buff",
-        "scaling_primary": "resonance",
-        "scaling_secondary": None,
-        "application_chance": 1.0,
-        "description": "[STUB - Phase 5b] Attune a protective ward against incoming damage.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
+    # resonance_ward stub removed -- replaced by full Resonance pool below
     # ===================================================================
     # COMBAT DOMAIN POOL (15 abilities) -- resource_type: momentum
     # Fingerprint: PRESS -- sustained aggression, always moving forward
@@ -3446,6 +3394,1775 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": "truthwarden",
         "effect_params": {"damage_base": 180, "status_effect": "weaken", "duration": 3, "magnitude": 0.2},
+    },
+
+    # ===================================================================
+    # ARCANA DOMAIN POOL (15 abilities) -- resource_type: mana
+    # Fingerprint: RATION -- cross-encounter mana management
+    # Scaling: arcana -> mana stat
+    # Elements: fire, ice, lightning, arcane. Caster domain: many charged.
+    # ===================================================================
+
+    # --- Arcana Tier 1 (4 abilities) -- Basic spells, measured force ---
+    "arcane_bolt": {
+        "id": "arcane_bolt",
+        "name": "Arcane Bolt",
+        "domain": "arcana",
+        "tier": 1,
+        "resource_cost": 15,
+        "resource_type": "mana",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "A focused lance of raw arcane force. The simplest spell"
+            " in the Arcane curriculum -- and the one that teaches"
+            " mana discipline. Every bolt is a choice to spend."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 35},
+    },
+    "frost_shard": {
+        "id": "frost_shard",
+        "name": "Frost Shard",
+        "domain": "arcana",
+        "tier": 1,
+        "resource_cost": 18,
+        "resource_type": "mana",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Conjure a spike of crystallized cold and hurl it."
+            " Targets struck feel the chill seep into their joints"
+            " -- movements slow, reactions dull."
+        ),
+        "room_flag_written": "frozen",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 30, "status_effect": "slow", "duration": 2, "magnitude": 1.0},
+    },
+    "mana_shield": {
+        "id": "mana_shield",
+        "name": "Mana Shield",
+        "domain": "arcana",
+        "tier": 1,
+        "resource_cost": 20,
+        "resource_type": "mana",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Weave a thin barrier of condensed mana around yourself."
+            " It absorbs incoming damage briefly -- a mage's first"
+            " lesson in survival is not to be where the sword lands."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "warding", "duration": 2, "magnitude": 0.15},
+    },
+    "spark_jolt": {
+        "id": "spark_jolt",
+        "name": "Spark Jolt",
+        "domain": "arcana",
+        "tier": 1,
+        "resource_cost": 20,
+        "resource_type": "mana",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.75,
+        "description": (
+            "Release a sharp crack of lightning from your fingertips."
+            " The jolt disrupts the target's muscles briefly. Cheap"
+            " and fast -- the bread and butter of a mage under pressure."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 40, "status_effect": "stun", "duration": 1, "magnitude": 1.0},
+    },
+
+    # --- Arcana Tier 2 (4 abilities) -- Core spellcasting, moderate mana ---
+    "fireball": {
+        "id": "fireball",
+        "name": "Fireball",
+        "domain": "arcana",
+        "tier": 2,
+        "resource_cost": 30,
+        "resource_type": "mana",
+        "cooldown": 2,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Gather mana into a roiling sphere of flame and release"
+            " it. The explosion scorches everything nearby. A"
+            " channeled classic -- the reason mages earn their keep."
+        ),
+        "room_flag_written": "scorched",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 65, "status_effect": "burn", "duration": 3, "magnitude": 1.0},
+    },
+    "ice_lance": {
+        "id": "ice_lance",
+        "name": "Ice Lance",
+        "domain": "arcana",
+        "tier": 2,
+        "resource_cost": 25,
+        "resource_type": "mana",
+        "cooldown": 1,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Channel cold into a spiraling lance of ice. The impact"
+            " pierces and the frost lingers. Slower targets take"
+            " the full brunt -- ice rewards patience."
+        ),
+        "room_flag_written": "frozen",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 60, "status_effect": "slow", "duration": 2, "magnitude": 1.0},
+    },
+    "arcane_infusion": {
+        "id": "arcane_infusion",
+        "name": "Arcane Infusion",
+        "domain": "arcana",
+        "tier": 2,
+        "resource_cost": 25,
+        "resource_type": "mana",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Infuse yourself with raw magical energy. Your next"
+            " several abilities hit harder and cost less -- the"
+            " investment pays forward across the encounter."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+    },
+    "mana_drain": {
+        "id": "mana_drain",
+        "name": "Mana Drain",
+        "domain": "arcana",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "mana",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Reach into the target's magical reserves and tear away"
+            " a portion. What you take you keep. Against mundane"
+            " foes, the spell weakens their resistance instead."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "drain", "duration": 3, "magnitude": 1.0},
+    },
+
+    # --- Arcana Tier 3 (4 abilities) -- Advanced magic, high mana ---
+    "chain_lightning": {
+        "id": "chain_lightning",
+        "name": "Chain Lightning",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 40,
+        "resource_type": "mana",
+        "cooldown": 3,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Call down a bolt that leaps from target to target."
+            " Each arc carries burn and the air itself becomes"
+            " charged. The spell every mage dreams of casting"
+            " and every mage fears the cost of."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 90, "status_effect": "burn", "duration": 3, "magnitude": 1.0},
+    },
+    "glacial_tomb": {
+        "id": "glacial_tomb",
+        "name": "Glacial Tomb",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 45,
+        "resource_type": "mana",
+        "cooldown": 4,
+        "charge_turns": 1,
+        "effect_type": "debuff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.75,
+        "description": (
+            "Encase a target in a prison of solid ice. The cold"
+            " seeps inward, rooting them in place and weakening"
+            " their resolve. Breaking free costs them everything."
+        ),
+        "room_flag_written": "frozen",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "root", "duration": 2, "magnitude": 1.5},
+    },
+    "conflagration": {
+        "id": "conflagration",
+        "name": "Conflagration",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 45,
+        "resource_type": "mana",
+        "cooldown": 3,
+        "charge_turns": 1,
+        "effect_type": "dot",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Set the air itself alight. A sustained burning that"
+            " scorches every enemy in the area. The flames persist"
+            " after the spell ends -- mana spent, damage ongoing."
+        ),
+        "room_flag_written": "scorched",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"dot_type": "burn", "duration": 4, "damage_per_tick": 25, "magnitude": 1.5},
+    },
+    "spellweave_barrier": {
+        "id": "spellweave_barrier",
+        "name": "Spellweave Barrier",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 40,
+        "resource_type": "mana",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Weave a lattice of interlocking spell strands around"
+            " yourself or an ally. The barrier absorbs significant"
+            " damage before shattering. Expensive -- but survival"
+            " has no budget."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.25},
+    },
+
+    # --- Arcana Tier 4 (3 abilities) -- Domain capstones, devastating ---
+    "meteor_strike": {
+        "id": "meteor_strike",
+        "name": "Meteor Strike",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 65,
+        "resource_type": "mana",
+        "cooldown": 6,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Call down a fragment of concentrated elemental force"
+            " from the sky. The impact obliterates and the blast"
+            " leaves the ground scorched for rounds after. The"
+            " spell that ends encounters -- and mana reserves."
+        ),
+        "room_flag_written": "scorched",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 200, "status_effect": "burn", "duration": 3, "magnitude": 2.0},
+    },
+    "absolute_zero": {
+        "id": "absolute_zero",
+        "name": "Absolute Zero",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 60,
+        "resource_type": "mana",
+        "cooldown": 6,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Drain all heat from an area in a single catastrophic"
+            " instant. Everything freezes -- movement, thought,"
+            " intention. Survivors are rooted and weakened."
+            " The coldest expression of magical mastery."
+        ),
+        "room_flag_written": "frozen",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 180, "status_effect": "root", "duration": 2, "magnitude": 2.0},
+    },
+    "arcane_cataclysm": {
+        "id": "arcane_cataclysm",
+        "name": "Arcane Cataclysm",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 70,
+        "resource_type": "mana",
+        "cooldown": 7,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Release all elements simultaneously in a single,"
+            " devastating convergence. Fire, ice, and lightning"
+            " tear through every enemy in the room. The most"
+            " expensive spell in the Arcane curriculum. Worth it."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 250, "status_effect": "burn", "duration": 2, "magnitude": 2.0},
+    },
+
+    # ===================================================================
+    # ARCANA-PRIMARY SUBCLASS SIGNATURES (18 abilities = 9 x 2)
+    # Each subclass gets T3 + T4 signature abilities
+    # ===================================================================
+
+    # --- Battlemage (arcana + combat) ---
+    "battlemage_mana_strike": {
+        "id": "battlemage_mana_strike",
+        "name": "Mana Strike",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "mana",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Channel mana directly through your weapon arm. The"
+            " blow lands with both physical and magical force."
+            " Strength and Mana scale the damage equally -- the"
+            " Battlemage's answer to running out of spells."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "battlemage",
+        "effect_params": {"damage_base": 95},
+    },
+    "battlemage_arcane_warrior": {
+        "id": "battlemage_arcane_warrior",
+        "name": "Arcane Warrior",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "mana",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Suffuse your body with mana until flesh and spell are"
+            " one. For several rounds every physical strike carries"
+            " arcane damage. The Battlemage ideal -- there is no"
+            " line between fighter and mage."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "battlemage",
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 1.5},
+    },
+
+    # --- Mistveil (arcana + subterfuge) ---
+    "mistveil_mist_shroud": {
+        "id": "mistveil_mist_shroud",
+        "name": "Mist Shroud",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 35,
+        "resource_type": "mana",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "Wrap yourself in a cloak of enchanted mist. Unlike"
+            " physical stealth this concealment is magical -- it"
+            " bends light and muffles sound through spellwork."
+            " Detection methods that find Vanish cannot find this."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": "mistveil",
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.3},
+    },
+    "mistveil_phantom_form": {
+        "id": "mistveil_phantom_form",
+        "name": "Phantom Form",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "mana",
+        "cooldown": 7,
+        "charge_turns": 1,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "Dissolve into a sustained state of magical invisibility."
+            " You can cast spells while incorporeal. Enemies strike"
+            " through you. The Mistveil's defining gift -- present"
+            " but untouchable."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "mistveil",
+        "effect_params": {"buff_type": "warding", "duration": 4, "magnitude": 0.4},
+    },
+
+    # --- Stormweaver (arcana + naturalism) ---
+    "stormweaver_chain_storm": {
+        "id": "stormweaver_chain_storm",
+        "name": "Chain Storm",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 40,
+        "resource_type": "mana",
+        "cooldown": 3,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "naturalism",
+        "application_chance": 0.85,
+        "description": (
+            "Weave lightning through natural conduits -- trees,"
+            " water, living roots. Each arc chains to the nearest"
+            " target. In natural zones the conductivity is perfect"
+            " and every enemy feels it."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": "stormweaver",
+        "effect_params": {"damage_base": 100, "status_effect": "wet", "duration": 2, "magnitude": 1.0},
+    },
+    "stormweaver_tempest": {
+        "id": "stormweaver_tempest",
+        "name": "Tempest",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 65,
+        "resource_type": "mana",
+        "cooldown": 7,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "naturalism",
+        "application_chance": 0.90,
+        "description": (
+            "Call down a full elemental storm. Wind tears through"
+            " the area, lightning strikes indiscriminately, and"
+            " rain soaks everything. The Stormweaver's masterwork"
+            " -- nature and arcana fused into devastation."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": "stormweaver",
+        "effect_params": {
+            "damage_base": 180, "status_effect": "burn", "duration": 3,
+            "magnitude": 1.5,
+        },
+    },
+
+    # --- Spellseeker (arcana + resonance) ---
+    "spellseeker_node_tap": {
+        "id": "spellseeker_node_tap",
+        "name": "Node Tap",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "mana",
+        "cooldown": 4,
+        "charge_turns": 1,
+        "effect_type": "utility",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "resonance",
+        "application_chance": 1.0,
+        "description": (
+            "Tap into ambient resonance to restore mana. The old"
+            " patterns hold energy the Spellseeker has learned to"
+            " siphon. Spend a little, recover more -- the mage who"
+            " studies nodes never truly runs dry."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {},
+        "subclass_id": "spellseeker",
+        "effect_params": {"mana_restored": 40},
+    },
+    "spellseeker_arcane_resonance": {
+        "id": "spellseeker_arcane_resonance",
+        "name": "Arcane Resonance",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "mana",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "resonance",
+        "application_chance": 1.0,
+        "description": (
+            "Unleash a blast that harmonizes arcane force with the"
+            " room's resonant frequency. In places where old magic"
+            " lingers the damage is catastrophic. The Spellseeker's"
+            " proof that old and new magic are one thing."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": "spellseeker",
+        "effect_params": {"damage_base": 200},
+    },
+
+    # --- Enchantvoice (arcana + diplomacy) ---
+    "enchantvoice_binding_word": {
+        "id": "enchantvoice_binding_word",
+        "name": "Binding Word",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 35,
+        "resource_type": "mana",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.80,
+        "description": (
+            "Speak a word charged with magical authority. It strikes"
+            " the target's mind and body simultaneously -- damage"
+            " from the impact, charm from the compulsion. Words"
+            " have weight when an Enchantvoice speaks them."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "enchantvoice",
+        "effect_params": {"damage_base": 80, "status_effect": "charm", "duration": 1, "magnitude": 1.0},
+    },
+    "enchantvoice_voice_of_command": {
+        "id": "enchantvoice_voice_of_command",
+        "name": "Voice of Command",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "mana",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "debuff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.75,
+        "description": (
+            "Release a word of absolute command that reverberates"
+            " through every enemy in the room. Presence and mana"
+            " weave together into irresistible compulsion. The"
+            " Enchantvoice's masterwork -- when you speak, the"
+            " world listens."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "enchantvoice",
+        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.5},
+    },
+
+    # --- Fusewright (arcana + alchemy) ---
+    "fusewright_volatile_mixture": {
+        "id": "fusewright_volatile_mixture",
+        "name": "Volatile Mixture",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 35,
+        "resource_type": "mana",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.85,
+        "description": (
+            "Ignite an alchemical compound with magical force."
+            " The resulting reaction burns and poisons simultaneously"
+            " -- chemistry and spellcraft fused into a persistent"
+            " wound the body cannot easily mend."
+        ),
+        "room_flag_written": "scorched",
+        "attuned_variants": {},
+        "subclass_id": "fusewright",
+        "effect_params": {"dot_type": "burn", "duration": 4, "damage_per_tick": 20, "magnitude": 1.5},
+    },
+    "fusewright_transmutation_burst": {
+        "id": "fusewright_transmutation_burst",
+        "name": "Transmutation Burst",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "mana",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "alchemy",
+        "application_chance": 1.0,
+        "description": (
+            "Convert all active DoT effects on the target into"
+            " a single massive burst of transmuted energy. Every"
+            " burn, poison, and bleed stack detonates at once."
+            " The Fusewright's philosophy: patience creates"
+            " the biggest explosion."
+        ),
+        "room_flag_written": "scorched",
+        "attuned_variants": {},
+        "subclass_id": "fusewright",
+        "effect_params": {"damage_base": 160},
+    },
+
+    # --- Wardcaller (arcana + tactics) ---
+    "wardcaller_ward_zone": {
+        "id": "wardcaller_ward_zone",
+        "name": "Ward Zone",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 40,
+        "resource_type": "mana",
+        "cooldown": 5,
+        "charge_turns": 1,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Lay down a ward that reduces damage for all allies"
+            " in the room. The ward persists for several rounds"
+            " -- precise placement over raw power. The Wardcaller"
+            " controls where the fight happens."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "wardcaller",
+        "effect_params": {"buff_type": "warding", "duration": 4, "magnitude": 0.2},
+    },
+    "wardcaller_arcane_fortress": {
+        "id": "wardcaller_arcane_fortress",
+        "name": "Arcane Fortress",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 60,
+        "resource_type": "mana",
+        "cooldown": 7,
+        "charge_turns": 2,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Erect a sustained dome of interlocking wards. Allies"
+            " inside take reduced damage while enemies inside take"
+            " a persistent debuff. The Wardcaller's masterwork --"
+            " the battlefield itself becomes your weapon."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "wardcaller",
+        "effect_params": {"buff_type": "warding", "duration": 5, "magnitude": 0.3},
+    },
+
+    # --- Runewright (arcana + engineering) ---
+    "runewright_rune_trap": {
+        "id": "runewright_rune_trap",
+        "name": "Rune Trap",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 35,
+        "resource_type": "mana",
+        "cooldown": 4,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "engineering",
+        "application_chance": 0.85,
+        "description": (
+            "Inscribe a rune that detonates when triggered. The"
+            " blast applies burn and weaken -- magical engineering"
+            " at its finest. Set it and wait. The trap does not"
+            " care about patience."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {},
+        "subclass_id": "runewright",
+        "effect_params": {"damage_base": 100, "status_effect": "burn", "duration": 3, "magnitude": 1.0},
+    },
+    "runewright_masterwork_rune": {
+        "id": "runewright_masterwork_rune",
+        "name": "Masterwork Rune",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "mana",
+        "cooldown": 7,
+        "charge_turns": 2,
+        "effect_type": "buff",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "engineering",
+        "application_chance": 1.0,
+        "description": (
+            "Inscribe a permanent rune of power onto yourself or"
+            " an ally. The enchantment persists until dispelled --"
+            " not rounds, not minutes, until something breaks it."
+            " The Runewright builds things that last."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "runewright",
+        "effect_params": {"buff_type": "haste", "duration": 6, "magnitude": 1.5},
+    },
+
+    # --- Voidscribe (arcana + remnance) ---
+    "voidscribe_void_bolt": {
+        "id": "voidscribe_void_bolt",
+        "name": "Void Bolt",
+        "domain": "arcana",
+        "tier": 3,
+        "resource_cost": 40,
+        "resource_type": "mana",
+        "cooldown": 2,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "remnance",
+        "application_chance": 1.0,
+        "description": (
+            "Cast a bolt of pre-cursor energy that bypasses magical"
+            " resistance entirely. This spell predates modern"
+            " protective wards -- it strikes at something deeper."
+            " The Circle of Wizards does not approve."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "voidscribe",
+        "effect_params": {"damage_base": 110},
+    },
+    "voidscribe_firstform_casting": {
+        "id": "voidscribe_firstform_casting",
+        "name": "Firstform Casting",
+        "domain": "arcana",
+        "tier": 4,
+        "resource_cost": 65,
+        "resource_type": "mana",
+        "cooldown": 7,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "arcana",
+        "scaling_secondary": "remnance",
+        "application_chance": 0.90,
+        "description": (
+            "Cast using an ancient spellform that predates the"
+            " ten schools entirely. The damage is catastrophic"
+            " and applies a unique debuff -- the target's magical"
+            " resistance inverts. The Voidscribe's forbidden art."
+        ),
+        "room_flag_written": "arcane_residue",
+        "attuned_variants": {},
+        "subclass_id": "voidscribe",
+        "effect_params": {"damage_base": 220, "status_effect": "weaken", "duration": 3, "magnitude": 0.3},
+    },
+
+    # ===================================================================
+    # RESONANCE DOMAIN POOL (15 abilities) -- resource_type: resonance
+    # Fingerprint: ATTUNE -- builder/spender, in-combat decay, env reading
+    # Scaling: resonance -> resonance stat
+    # Builder abilities generate +15-20 resonance. Spenders cost 60-100.
+    # Decay: -10 per round during combat.
+    # ALL resonance abilities have attuned_variants populated.
+    # ===================================================================
+
+    # --- Resonance Tier 1 (4 abilities) -- Builders and basic effects ---
+    "resonant_strike": {
+        "id": "resonant_strike",
+        "name": "Resonant Strike",
+        "domain": "resonance",
+        "tier": 1,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Strike with old-magic-infused force. The blow deals"
+            " damage and builds resonance. The foundation of every"
+            " Resonance practitioner's rhythm -- build toward the"
+            " moment that matters."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "charged": {"extra_effect": "arc to second target for 50% damage", "extra_cost": 10},
+            "resonant": {"extra_effect": "arc to ALL enemies for 30% damage", "extra_cost": 15},
+            "fading_life": {"extra_effect": "apply Root for 2 rounds", "extra_cost": 10},
+            "ancient_ground": {"extra_effect": "+25% damage", "extra_cost": 5},
+        },
+        "subclass_id": None,
+        "effect_params": {"damage_base": 30, "resonance_generated": 15},
+    },
+    "attunement_pulse": {
+        "id": "attunement_pulse",
+        "name": "Attunement Pulse",
+        "domain": "resonance",
+        "tier": 1,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Send a pulse of resonant energy outward. Deals light"
+            " damage and attunes you further to the environment."
+            " A builder -- the pulse is the question, the room's"
+            " response is the answer."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "charged": {"extra_effect": "pulse stuns for 1 round", "extra_cost": 15},
+            "ancient_ground": {"extra_effect": "+20 resonance generated", "extra_cost": 5},
+        },
+        "subclass_id": None,
+        "effect_params": {"damage_base": 25, "resonance_generated": 20},
+    },
+    "echo_ward": {
+        "id": "echo_ward",
+        "name": "Echo Ward",
+        "domain": "resonance",
+        "tier": 1,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Attune a protective echo around yourself. The ward"
+            " absorbs incoming damage briefly while building"
+            " resonance. Defense and rhythm in a single motion."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "resonant": {"extra_effect": "ward extends to all allies", "extra_cost": 15},
+            "ancient_ground": {"extra_effect": "ward duration +2 rounds", "extra_cost": 5},
+        },
+        "subclass_id": None,
+        "effect_params": {"buff_type": "warding", "duration": 2, "magnitude": 0.15, "resonance_generated": 15},
+    },
+    "pattern_read": {
+        "id": "pattern_read",
+        "name": "Pattern Read",
+        "domain": "resonance",
+        "tier": 1,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Read the target's defensive patterns through resonant"
+            " perception. Weaknesses become visible -- their guard"
+            " drops where you predicted it would. Builds resonance"
+            " while exposing the enemy."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "corrupted_death": {"extra_effect": "free resonance stack on next ability", "extra_cost": 0},
+            "void_touched": {"extra_effect": "debuff duration +2 rounds", "extra_cost": 10},
+        },
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 2, "magnitude": 0.1, "resonance_generated": 15},
+    },
+
+    # --- Resonance Tier 2 (4 abilities) -- Core attunement, mix of builders/spenders ---
+    "harmonic_blast": {
+        "id": "harmonic_blast",
+        "name": "Harmonic Blast",
+        "domain": "resonance",
+        "tier": 2,
+        "resource_cost": 60,
+        "resource_type": "resonance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Spend accumulated resonance in a focused blast of"
+            " harmonic energy. The payoff for patient building --"
+            " damage scales with how long you held the tension."
+            " The spender that defines Resonance combat."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {
+            "charged": {"extra_effect": "blast chains to a second target for 75% damage", "extra_cost": 15},
+            "resonant": {"extra_effect": "blast hits ALL enemies at 60% damage", "extra_cost": 20},
+            "node_critical": {"extra_effect": "spend threshold lowered to 40", "extra_cost": 0},
+        },
+        "subclass_id": None,
+        "effect_params": {"damage_base": 70},
+    },
+    "dissonance_wave": {
+        "id": "dissonance_wave",
+        "name": "Dissonance Wave",
+        "domain": "resonance",
+        "tier": 2,
+        "resource_cost": 60,
+        "resource_type": "resonance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Release a wave of discordant resonance that disrupts"
+            " enemy defenses. The disharmony weakens and slows --"
+            " their rhythm breaks where yours holds steady."
+        ),
+        "room_flag_written": "disrupted",
+        "attuned_variants": {
+            "resonant": {"extra_effect": "wave hits ALL enemies", "extra_cost": 15},
+            "charged": {"extra_effect": "also applies stun for 1 round", "extra_cost": 20},
+        },
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.15},
+    },
+    "resonant_charge": {
+        "id": "resonant_charge",
+        "name": "Resonant Charge",
+        "domain": "resonance",
+        "tier": 2,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 1,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Channel resonant energy through a focused charge."
+            " The brief cast time builds significant resonance"
+            " while dealing moderate damage. The bridge between"
+            " T1 builders and T2 spenders."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "ancient_ground": {"extra_effect": "+30% damage and +10 resonance", "extra_cost": 5},
+            "fading_life": {"extra_effect": "apply Bleed for 3 rounds", "extra_cost": 10},
+        },
+        "subclass_id": None,
+        "effect_params": {"damage_base": 55, "resonance_generated": 20},
+    },
+    "echo_mend": {
+        "id": "echo_mend",
+        "name": "Echo Mend",
+        "domain": "resonance",
+        "tier": 2,
+        "resource_cost": 60,
+        "resource_type": "resonance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Channel resonance into restorative echoes. The old"
+            " patterns remember wholeness -- your body follows."
+            " A spender that heals rather than harms. Resonance"
+            " practitioners heal by remembering what was intact."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "fading_life": {"extra_effect": "heal also removes 1 DoT effect", "extra_cost": 10},
+            "ancient_ground": {"extra_effect": "+50% healing", "extra_cost": 10},
+        },
+        "subclass_id": None,
+        "effect_params": {"heal_amount": 60},
+    },
+
+    # --- Resonance Tier 3 (4 abilities) -- Advanced attunement, powerful spenders ---
+    "cascade_burst": {
+        "id": "cascade_burst",
+        "name": "Cascade Burst",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 80,
+        "resource_type": "resonance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Release resonance in a cascading detonation that"
+            " ripples outward. Each wave hits harder than the"
+            " last. Burns everything it touches. The advanced"
+            " spender -- raw resonance converted to destruction."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {
+            "charged": {"extra_effect": "cascade adds a fourth wave for +40% total damage", "extra_cost": 15},
+            "resonant": {"extra_effect": "each wave hits all enemies", "extra_cost": 20},
+            "node_critical": {"extra_effect": "spend threshold lowered to 60", "extra_cost": 0},
+        },
+        "subclass_id": None,
+        "effect_params": {"damage_base": 110, "status_effect": "burn", "duration": 3, "magnitude": 1.0},
+    },
+    "harmonic_shield": {
+        "id": "harmonic_shield",
+        "name": "Harmonic Shield",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 80,
+        "resource_type": "resonance",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Attune a powerful harmonic barrier around yourself"
+            " and nearby allies. The shield resonates with"
+            " incoming damage, reducing it significantly. Spending"
+            " a full buildup on protection -- a choice only"
+            " discipline can afford."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "resonant": {"extra_effect": "shield reflects 20% damage back to attackers", "extra_cost": 15},
+            "ancient_ground": {"extra_effect": "shield duration +3 rounds", "extra_cost": 10},
+        },
+        "subclass_id": None,
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.25},
+    },
+    "deep_attunement": {
+        "id": "deep_attunement",
+        "name": "Deep Attunement",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 5,
+        "charge_turns": 1,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Enter a state of deep environmental attunement."
+            " For several rounds all resonance generation is"
+            " doubled and decay is halved. The Resonant player's"
+            " answer to a long fight -- invest now, dominate later."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "resonant": {"extra_effect": "also grants haste for duration", "extra_cost": 10},
+            "ancient_ground": {"extra_effect": "attunement also restores 30 resonance", "extra_cost": 5},
+        },
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 1.0, "resonance_generated": 15},
+    },
+    "disruption_spike": {
+        "id": "disruption_spike",
+        "name": "Disruption Spike",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 80,
+        "resource_type": "resonance",
+        "cooldown": 4,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Drive a spike of dissonant energy into the target."
+            " The disruption stuns and deals heavy damage. Charged"
+            " cast for focused impact -- precision spending."
+        ),
+        "room_flag_written": "disrupted",
+        "attuned_variants": {
+            "charged": {"extra_effect": "stun duration +1 round", "extra_cost": 15},
+            "corrupted_death": {"extra_effect": "spike also applies weaken 3 rounds", "extra_cost": 10},
+        },
+        "subclass_id": None,
+        "effect_params": {"damage_base": 100, "status_effect": "stun", "duration": 1, "magnitude": 1.5},
+    },
+
+    # --- Resonance Tier 4 (3 abilities) -- Domain capstones, full resource spenders ---
+    "resonance_detonation": {
+        "id": "resonance_detonation",
+        "name": "Resonance Detonation",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Detonate your entire resonance pool in one cataclysmic"
+            " release. Damage scales with resonance spent -- at"
+            " full 100, nothing in the room survives unscathed."
+            " The payoff for perfect resource discipline."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {
+            "charged": {"extra_effect": "detonation chains to adjacent rooms", "extra_cost": 0},
+            "resonant": {"extra_effect": "damage +50% and applies burn 3 rounds", "extra_cost": 0},
+            "node_critical": {"extra_effect": "detonation costs only 80 resonance", "extra_cost": 0},
+        },
+        "subclass_id": None,
+        "effect_params": {"damage_base": 200},
+    },
+    "harmonic_convergence": {
+        "id": "harmonic_convergence",
+        "name": "Harmonic Convergence",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 7,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Channel all resonance into a sustained convergence"
+            " of harmonic force. The two-round channel amplifies"
+            " damage exponentially. Everything in the room takes"
+            " massive damage and is stunned. The ultimate expression"
+            " of patient power."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "resonant": {"extra_effect": "convergence leaves resonant field for 3 rounds", "extra_cost": 0},
+            "ancient_ground": {"extra_effect": "stun duration +1 round", "extra_cost": 0},
+            "corrupted_death": {"extra_effect": "enemies take 50% more damage from all sources for 2 rounds", "extra_cost": 0},
+        },
+        "subclass_id": None,
+        "effect_params": {"damage_base": 250, "status_effect": "stun", "duration": 1, "magnitude": 2.0},
+    },
+    "world_echo": {
+        "id": "world_echo",
+        "name": "World Echo",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 7,
+        "charge_turns": 1,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Echo the world's original pattern -- before the curse,"
+            " before the breaking. For a brief time everything in"
+            " the room reverts toward wholeness. Allies heal, enemies"
+            " weaken, and the old magic remembers what it was."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "resonant": {"extra_effect": "echo sustains for +3 additional rounds", "extra_cost": 0},
+            "ancient_ground": {"extra_effect": "healing doubled for all allies", "extra_cost": 0},
+            "fading_life": {"extra_effect": "also removes all DoT effects from allies", "extra_cost": 0},
+        },
+        "subclass_id": None,
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.35},
+    },
+
+    # ===================================================================
+    # RESONANCE-PRIMARY SUBCLASS SIGNATURES (18 abilities = 9 x 2)
+    # Each subclass gets T3 + T4 signature abilities
+    # ALL signatures have attuned_variants matching subclass flags
+    # ===================================================================
+
+    # --- Runebreaker (resonance + combat) ---
+    "runebreaker_resonant_blow": {
+        "id": "runebreaker_resonant_blow",
+        "name": "Resonant Blow",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Channel old magic through a physical strike that"
+            " leaves reality slightly wrong where it lands."
+            " Builds resonance AND writes charged to the room."
+            " The Runebreaker's signature: hit things until"
+            " the world breaks."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {
+            "charged": {"extra_effect": "strike deals +50% damage and stuns for 1 round", "extra_cost": 15},
+            "resonant": {"extra_effect": "strike arcs to all enemies for 40% damage", "extra_cost": 20},
+        },
+        "subclass_id": "runebreaker",
+        "effect_params": {"damage_base": 85, "resonance_generated": 20},
+    },
+    "runebreaker_node_burst": {
+        "id": "runebreaker_node_burst",
+        "name": "Node Burst",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Detonate all accumulated resonance in a physical"
+            " shockwave centered on your weapon. Every enemy in"
+            " the room takes massive damage. In a charged room"
+            " the detonation is catastrophic. The Runebreaker's"
+            " answer to everything: hit harder."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {
+            "charged": {"extra_effect": "damage +75% in charged rooms", "extra_cost": 0},
+            "resonant": {"extra_effect": "burst also applies burn 3 rounds to all targets", "extra_cost": 0},
+        },
+        "subclass_id": "runebreaker",
+        "effect_params": {"damage_base": 220},
+    },
+
+    # --- Greymantle (resonance + subterfuge) ---
+    "greymantle_shadow_attunement": {
+        "id": "greymantle_shadow_attunement",
+        "name": "Shadow Attunement",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "Attune to the world's blind spots -- places where"
+            " old magic creates shadows in perception. You become"
+            " undetectable to magical senses while building resonance."
+            " The Greymantle moves where the world cannot see."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "shadow_marked": {"extra_effect": "also grants physical stealth for duration", "extra_cost": 10},
+            "scouted": {"extra_effect": "next attack from attunement deals +80% damage", "extra_cost": 15},
+        },
+        "subclass_id": "greymantle",
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.25, "resonance_generated": 20},
+    },
+    "greymantle_veil_of_silence": {
+        "id": "greymantle_veil_of_silence",
+        "name": "Veil of Silence",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 7,
+        "charge_turns": 1,
+        "effect_type": "debuff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 0.85,
+        "description": (
+            "Wrap the area in a veil of resonant silence. Enemies"
+            " cannot detect you AND take a persistent debuff aura."
+            " You move unseen while they stumble. The Greymantle's"
+            " masterwork: the world forgets you exist."
+        ),
+        "room_flag_written": "disrupted",
+        "attuned_variants": {
+            "shadow_marked": {"extra_effect": "veil also applies blind to all enemies", "extra_cost": 0},
+            "scouted": {"extra_effect": "first strike from veil auto-crits", "extra_cost": 0},
+        },
+        "subclass_id": "greymantle",
+        "effect_params": {"debuff_type": "slow", "duration": 4, "magnitude": 1.5},
+    },
+
+    # --- Thornweald (resonance + naturalism) ---
+    "thornweald_nature_echo": {
+        "id": "thornweald_nature_echo",
+        "name": "Nature Echo",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "naturalism",
+        "application_chance": 0.85,
+        "description": (
+            "Channel old magic through living roots. The target"
+            " takes persistent nature damage while you heal from"
+            " the exchange. The Thornweald's duality: every wound"
+            " you inflict mends one of your own."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "fading_life": {"extra_effect": "DoT also applies Bleed for duration", "extra_cost": 10},
+            "living_wood": {"extra_effect": "self-heal doubled", "extra_cost": 10},
+        },
+        "subclass_id": "thornweald",
+        "effect_params": {"dot_type": "poison", "duration": 4, "damage_per_tick": 18, "magnitude": 1.0, "resonance_generated": 15},
+    },
+    "thornweald_ancient_growth": {
+        "id": "thornweald_ancient_growth",
+        "name": "Ancient Growth",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 7,
+        "charge_turns": 1,
+        "effect_type": "dot",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "naturalism",
+        "application_chance": 0.90,
+        "description": (
+            "Call forth ancient growth that remembers the world"
+            " before the curse. Thorns erupt beneath every enemy,"
+            " dealing sustained damage while a healing canopy"
+            " shelters allies. The Thornweald's masterwork:"
+            " the forest as weapon and sanctuary."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "fading_life": {"extra_effect": "DoT damage +50% and applies Root", "extra_cost": 0},
+            "living_wood": {"extra_effect": "healing zone persists 2 extra rounds", "extra_cost": 0},
+        },
+        "subclass_id": "thornweald",
+        "effect_params": {"dot_type": "poison", "duration": 5, "damage_per_tick": 30, "magnitude": 2.0},
+    },
+
+    # --- Sealwright (resonance + arcana) ---
+    "sealwright_focused_blast": {
+        "id": "sealwright_focused_blast",
+        "name": "Focused Blast",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 60,
+        "resource_type": "resonance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "arcana",
+        "application_chance": 1.0,
+        "description": (
+            "Focus resonant and arcane energy into a single"
+            " devastating blast. Highest single-target burst"
+            " in the Resonance toolkit. In charged rooms the"
+            " damage becomes something else entirely."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {
+            "charged": {"extra_effect": "damage +60% in charged rooms", "extra_cost": 15},
+            "resonant": {"extra_effect": "blast also hits second target for 50% damage", "extra_cost": 15},
+        },
+        "subclass_id": "sealwright",
+        "effect_params": {"damage_base": 120},
+    },
+    "sealwright_seal_break": {
+        "id": "sealwright_seal_break",
+        "name": "Seal Break",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "arcana",
+        "application_chance": 1.0,
+        "description": (
+            "Break the seal between old and new magic in a single"
+            " cataclysmic release. The highest single-target damage"
+            " in the entire Resonance guild. In resonant rooms the"
+            " blast tears through resistance entirely. The Sealwright's"
+            " proof that power has no limits -- only costs."
+        ),
+        "room_flag_written": "charged",
+        "attuned_variants": {
+            "charged": {"extra_effect": "damage +40% and target takes +25% damage for 3 rounds", "extra_cost": 0},
+            "resonant": {"extra_effect": "damage +80% -- highest burst in the game", "extra_cost": 0},
+        },
+        "subclass_id": "sealwright",
+        "effect_params": {"damage_base": 250},
+    },
+
+    # --- Lorekeeper (resonance + diplomacy) ---
+    "lorekeeper_ancient_insight": {
+        "id": "lorekeeper_ancient_insight",
+        "name": "Ancient Insight",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 60,
+        "resource_type": "resonance",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 1.0,
+        "description": (
+            "Channel ancient knowledge into a group buff. Allies"
+            " gain combat advantage from lore fragments you have"
+            " decoded. The more you know, the more dangerous"
+            " everyone around you becomes."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "ancient_ground": {"extra_effect": "buff magnitude doubled on ancient ground", "extra_cost": 10},
+            "ancient_presence": {"extra_effect": "also grants faction Standing bonus to group", "extra_cost": 15},
+        },
+        "subclass_id": "lorekeeper",
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 1.0},
+    },
+    "lorekeeper_lorewarden": {
+        "id": "lorekeeper_lorewarden",
+        "name": "Lorewarden",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 7,
+        "charge_turns": 1,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 1.0,
+        "description": (
+            "Become a sustained aura of ancient knowledge. Allies"
+            " near you receive continuous combat bonuses and"
+            " accelerated Standing gain. The Lorekeeper's defining"
+            " power is not destruction -- it is making everyone"
+            " around them extraordinary."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "ancient_ground": {"extra_effect": "aura radius expands, duration +3 rounds", "extra_cost": 0},
+            "ancient_presence": {"extra_effect": "allies also gain +20% damage for duration", "extra_cost": 0},
+        },
+        "subclass_id": "lorekeeper",
+        "effect_params": {"buff_type": "haste", "duration": 5, "magnitude": 1.5},
+    },
+
+    # --- Corroder (resonance + alchemy) ---
+    "corroder_resonant_acid": {
+        "id": "corroder_resonant_acid",
+        "name": "Resonant Acid",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "dot",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.85,
+        "description": (
+            "Infuse an alchemical acid with resonant energy. The"
+            " compound burns through defenses while building your"
+            " resonance pool. Old magic makes the chemistry worse"
+            " -- worse for them."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "toxic_air": {"extra_effect": "acid also applies poison 3 stacks", "extra_cost": 10},
+            "poisoned_air": {"extra_effect": "DoT damage +40% in poisoned rooms", "extra_cost": 10},
+        },
+        "subclass_id": "corroder",
+        "effect_params": {"dot_type": "burn", "duration": 4, "damage_per_tick": 22, "magnitude": 1.0, "resonance_generated": 15},
+    },
+    "corroder_old_corruption": {
+        "id": "corroder_old_corruption",
+        "name": "Old Corruption",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "dot",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.90,
+        "description": (
+            "Release a corruption that predates alchemy itself."
+            " The toxin interacts with old magic in the air,"
+            " amplifying in poisoned rooms to devastating effect."
+            " The Corroder's masterwork: chemistry from before"
+            " the world forgot what chemistry could do."
+        ),
+        "room_flag_written": "disrupted",
+        "attuned_variants": {
+            "poisoned_air": {"extra_effect": "DoT damage doubled and applies weaken 3 rounds", "extra_cost": 0},
+            "toxic_air": {"extra_effect": "corruption spreads to all enemies in room", "extra_cost": 0},
+        },
+        "subclass_id": "corroder",
+        "effect_params": {"dot_type": "poison", "duration": 5, "damage_per_tick": 35, "magnitude": 2.0},
+    },
+
+    # --- Nodecaller (resonance + tactics) ---
+    "nodecaller_node_pulse": {
+        "id": "nodecaller_node_pulse",
+        "name": "Node Pulse",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 60,
+        "resource_type": "resonance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "tactics",
+        "application_chance": 0.85,
+        "description": (
+            "Pulse resonant energy that deliberately writes the"
+            " resonant flag to the room. The pulse damages enemies"
+            " and creates tactical terrain for your team. The"
+            " Nodecaller controls the battlefield's resonant state."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "fortified": {"extra_effect": "pulse also applies weaken to all enemies", "extra_cost": 10},
+            "resonant": {"extra_effect": "damage +50% in already resonant rooms", "extra_cost": 10},
+        },
+        "subclass_id": "nodecaller",
+        "effect_params": {"damage_base": 90},
+    },
+    "nodecaller_node_storm": {
+        "id": "nodecaller_node_storm",
+        "name": "Node Storm",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 7,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "tactics",
+        "application_chance": 0.90,
+        "description": (
+            "Create a sustained node storm that writes resonant"
+            " to the room and deals AoE damage each round. The"
+            " storm persists for several rounds. The Nodecaller's"
+            " masterwork: the node event IS the weapon."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "fortified": {"extra_effect": "allies gain damage reduction for storm duration", "extra_cost": 0},
+            "resonant": {"extra_effect": "storm damage +40% per round in resonant rooms", "extra_cost": 0},
+        },
+        "subclass_id": "nodecaller",
+        "effect_params": {"damage_base": 160, "status_effect": "burn", "duration": 4, "magnitude": 1.5},
+    },
+
+    # --- Arcanist (resonance + engineering) ---
+    "arcanist_pattern_decode": {
+        "id": "arcanist_pattern_decode",
+        "name": "Pattern Decode",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 0,
+        "resource_type": "resonance",
+        "cooldown": 4,
+        "charge_turns": 1,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "engineering",
+        "application_chance": 1.0,
+        "description": (
+            "Decode the ancient patterns present in the room to"
+            " reveal tactical advantage. Grants a significant"
+            " combat buff from infrastructure understanding."
+            " The Arcanist reads what others walk past."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {
+            "ancient_presence": {"extra_effect": "decode also reveals enemy weaknesses (weaken 3 rounds)", "extra_cost": 10},
+        },
+        "subclass_id": "arcanist",
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 1.0, "resonance_generated": 20},
+    },
+    "arcanist_infrastructure_tap": {
+        "id": "arcanist_infrastructure_tap",
+        "name": "Infrastructure Tap",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 7,
+        "charge_turns": 2,
+        "effect_type": "buff",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "engineering",
+        "application_chance": 1.0,
+        "description": (
+            "Tap directly into pre-curse infrastructure buried"
+            " beneath the surface. The old systems respond with"
+            " power that should not be available. Allies gain"
+            " massive buffs, enemies are disrupted. The Arcanist's"
+            " defining discovery: the infrastructure still works."
+        ),
+        "room_flag_written": "resonant",
+        "attuned_variants": {
+            "ancient_presence": {"extra_effect": "buffs doubled and tap restores 50 resonance", "extra_cost": 0},
+        },
+        "subclass_id": "arcanist",
+        "effect_params": {"buff_type": "haste", "duration": 5, "magnitude": 2.0},
+    },
+
+    # --- Sealreader (resonance + remnance) ---
+    "sealreader_void_touch": {
+        "id": "sealreader_void_touch",
+        "name": "Void Touch",
+        "domain": "resonance",
+        "tier": 3,
+        "resource_cost": 60,
+        "resource_type": "resonance",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "remnance",
+        "application_chance": 0.85,
+        "description": (
+            "Touch the target with resonance drawn from the void"
+            " between what is and what was. Damage bypasses"
+            " resistance and applies a unique debuff -- reality"
+            " itself disagrees with the target's existence."
+        ),
+        "room_flag_written": "disrupted",
+        "attuned_variants": {
+            "void_touched": {"extra_effect": "damage +60% and debuff duration doubled", "extra_cost": 15},
+            "corrupted_death": {"extra_effect": "touch also drains 2 stacks per round", "extra_cost": 10},
+        },
+        "subclass_id": "sealreader",
+        "effect_params": {"damage_base": 100, "status_effect": "drain", "duration": 3, "magnitude": 1.0},
+    },
+    "sealreader_truth_unbound": {
+        "id": "sealreader_truth_unbound",
+        "name": "Truth Unbound",
+        "domain": "resonance",
+        "tier": 4,
+        "resource_cost": 100,
+        "resource_type": "resonance",
+        "cooldown": 7,
+        "charge_turns": 2,
+        "effect_type": "damage",
+        "scaling_primary": "resonance",
+        "scaling_secondary": "remnance",
+        "application_chance": 0.85,
+        "description": (
+            "Speak a truth the Dragon Curse was designed to hide."
+            " Reality convulses. Every enemy in the room takes"
+            " catastrophic damage and is stunned. The Circle of"
+            " Wizards would kill to suppress this ability. The"
+            " Sealreader's most dangerous power: the truth."
+        ),
+        "room_flag_written": "disrupted",
+        "attuned_variants": {
+            "corrupted_death": {"extra_effect": "truth resonates -- damage +100% in corrupted rooms", "extra_cost": 0},
+            "void_touched": {"extra_effect": "stun duration +2 rounds, enemies cannot be healed", "extra_cost": 0},
+        },
+        "subclass_id": "sealreader",
+        "effect_params": {"damage_base": 230, "status_effect": "stun", "duration": 1, "magnitude": 2.0},
     },
 }
 
