@@ -291,6 +291,10 @@ def _check_ability_access(character, ability_id):
     if not ability:
         return False, "Unknown ability."
 
+    # Mobs use db.abilities list — skip CharacterAbility unlock check
+    if character.db.abilities:
+        return True, ""
+
     # Check CharacterAbility model for unlock (ABL-03)
     from world.models import CharacterAbility
     if not CharacterAbility.objects.filter(
