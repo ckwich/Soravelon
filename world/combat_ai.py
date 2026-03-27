@@ -317,7 +317,7 @@ def check_scripted_sequence(mob, combat_handler):
         mob.ndb.fired_sequence_triggers = set()
     fired = mob.ndb.fired_sequence_triggers
 
-    current_round = getattr(combat_handler.ndb, "round_number", 1) if combat_handler else 1
+    current_round = (combat_handler.db.round_number or 1) if combat_handler else 1
     mob_hp = getattr(mob.ndb, "hp", 0)
     mob_hp_max = mob.db.hp_max or 1
     hp_pct = (mob_hp / mob_hp_max) * 100.0
