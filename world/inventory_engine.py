@@ -166,7 +166,7 @@ def pick_up(character, item, container=None):
     is_keyring = isinstance(item, SoravelonKeyringItem)
 
     # Move item to character
-    item.location = character
+    item.move_to(character, quiet=True)
 
     # Create InventoryItem record
     record, _ = _get_or_create_inventory_record(
@@ -224,7 +224,7 @@ def drop_item(character, item, quantity=None):
         return True, f"You drop {quantity} {item.key}."
 
     # Full drop
-    item.location = character.location
+    item.move_to(character.location, quiet=True)
     _delete_inventory_record(character, item)
 
     return True, f"You drop the {item.key}."
