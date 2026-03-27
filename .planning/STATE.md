@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 06c-01-PLAN.md
-last_updated: "2026-03-27T02:54:58.968Z"
+status: Ready to plan
+stopped_at: Completed 06c-02-PLAN.md
+last_updated: "2026-03-27T02:54:02.833Z"
 progress:
   total_phases: 10
   completed_phases: 7
-  total_plans: 43
-  completed_plans: 37
+  total_plans: 34
+  completed_plans: 32
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 06c — npc-dialogue-and-crafting
+**Current focus:** Phase 06a — base-attributes-and-combat
 
 ## Current Position
 
-Phase: 06c (npc-dialogue-and-crafting) — EXECUTING
-Plan: 2 of 5
+Phase: 06b
+Plan: Not started
 
 ## Performance Metrics
 
@@ -72,11 +72,7 @@ Plan: 2 of 5
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
-| Phase 06b P02 | 3 | 2 tasks | 2 files |
-| Phase 06b P01 | 7 | 2 tasks | 5 files |
-| Phase 06b P03 | 4 | 2 tasks | 4 files |
-| Phase 06b P05 | 18 | 2 tasks | 3 files |
-| Phase 06c P01 | 4 | 2 tasks | 4 files |
+| Phase 06c P02 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -144,19 +140,8 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
-- [Phase 06b]: Skill system fully independent of domain/guild system (SKL-04)
-- [Phase 06b]: Trainer bonus stored as ndb volatile -- consumed on next practice, lost on disconnect
-- [Phase 06b]: Discovery check fires only on threshold crossings (25/50/75/90/100) to avoid per-use DB queries
-- [Phase 06b]: SpawnRecord uses mob.db.spawn_record_id for direct FK lookup on death (avoids JSONField __contains)
-- [Phase 06b]: Named mob respawn detection via WorldEventLog query, zone-wide vague announcement text
-- [Phase 06b]: Skill accumulator flush piggybacks on existing 600s session_xp_safety_flush timer -- no new ticker
-- [Phase 06b]: Skill name resolution uses three-pass matching: exact, startswith, substring with disambiguation
-- [Phase 06b]: Patch Django model managers at world.models.X.objects for lazy-imported models in test files
-- [Phase 06b]: Fixed pre-existing test_condition_checked bug (missing abilities arg to _make_mob)
-- [Phase 06c]: MAX_HINTS_DISPLAYED = 4 (balances info vs clutter)
-- [Phase 06c]: Global ambient NPC ticker (single callback) per D-10
-- [Phase 06c]: Context hash for hint re-surfacing uses MD5 truncated to 16 chars
-- [Phase 06c]: Migration 0006 hand-crafted to isolate from WorldEventLog drift
+- [Phase 06c]: Quality gap thresholds: <0=flawed, <15=standard, <30=fine, <50=superior, 50+=masterwork; random variance +/-1 tier center-biased
+- [Phase 06c]: Crafting station check via room.tags.has(crafting_{station}, category=crafting_station)
 
 ### Pending Todos
 
@@ -170,6 +155,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T02:54:58.965Z
-Stopped at: Completed 06c-01-PLAN.md
+Last session: 2026-03-27T02:54:02.829Z
+Stopped at: Completed 06c-02-PLAN.md
 Resume file: None
