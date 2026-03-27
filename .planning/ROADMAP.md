@@ -206,7 +206,7 @@ Plans:
 Plans:
 - [ ] 05b-01-PLAN.md — Combat + Tactics domain pair (30 pool + 36 signatures)
 - [x] 05b-02-PLAN.md — Subterfuge + Diplomacy domain pair (30 pool + 36 signatures)
-- [ ] 05b-03-PLAN.md — Arcana + Resonance domain pair (30 pool + 36 signatures)
+- [x] 05b-03-PLAN.md — Arcana + Resonance domain pair (30 pool + 36 signatures)
 - [ ] 05b-04-PLAN.md — Naturalism + Alchemy domain pair (30 pool + 36 signatures)
 - [ ] 05b-05-PLAN.md — Engineering + Remnance domain pair (30 pool + 36 signatures)
 - [ ] 05b-06-PLAN.md — Structural validation of complete 330-ability registry
