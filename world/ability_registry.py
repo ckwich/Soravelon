@@ -1683,16 +1683,18 @@ ABILITIES = {
     # ===================================================================
     # SUBTERFUGE DOMAIN POOL (15 abilities) -- resource_type: focus
     # Fingerprint: READ -- timing, pattern recognition, patience rewarded
+    # Focus: combo points (0-5 cap). Builders generate 1 on hit. Spenders consume 1-5.
+    # Miss resets Focus to 0. Skipping a Subterfuge turn resets Focus to 0.
     # Scaling: subterfuge -> agility
     # ===================================================================
 
-    # --- Subterfuge Tier 1 (4 abilities) -- Reads, opening strikes, debuffs ---
+    # --- Subterfuge Tier 1 (4 abilities) -- Builders + 1 cheap spender ---
     "expose_weakness": {
         "id": "expose_weakness",
         "name": "Expose Weakness",
         "domain": "subterfuge",
         "tier": 1,
-        "resource_cost": 10,
+        "resource_cost": 0,
         "resource_type": "focus",
         "cooldown": 0,
         "charge_turns": 0,
@@ -1701,21 +1703,21 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.85,
         "description": (
-            "Read the target's guard and exploit the gap. A precise"
-            " strike that leaves the target exposed -- the opening"
-            " move of every Veilcraft chain."
+            "Read the target's stance and exploit the gap. A precise"
+            " strike that leaves the target exposed and generates"
+            " Focus -- the opening move of every Veilcraft chain."
         ),
         "room_flag_written": "exposed",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "weaken", "duration": 2, "magnitude": 0.1},
+        "effect_params": {"debuff_type": "weaken", "duration": 2, "magnitude": 0.1, "is_builder": True},
     },
     "probing_strike": {
         "id": "probing_strike",
         "name": "Probing Strike",
         "domain": "subterfuge",
         "tier": 1,
-        "resource_cost": 10,
+        "resource_cost": 0,
         "resource_type": "focus",
         "cooldown": 0,
         "charge_turns": 0,
@@ -1724,21 +1726,21 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "A quick testing strike that reads the target's rhythm."
-            " Deals light damage and builds Focus -- the patient"
-            " opening before the chain begins."
+            "A quick testing strike that reads the target's patterns."
+            " Deals light damage and generates Focus on hit -- the"
+            " patient opening before the combo chain begins."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 30},
+        "effect_params": {"damage_base": 30, "is_builder": True},
     },
     "shadow_step": {
         "id": "shadow_step",
         "name": "Shadow Step",
         "domain": "subterfuge",
         "tier": 1,
-        "resource_cost": 12,
+        "resource_cost": 0,
         "resource_type": "focus",
         "cooldown": 2,
         "charge_turns": 0,
@@ -1748,20 +1750,20 @@ ABILITIES = {
         "application_chance": 1.0,
         "description": (
             "Slip into the target's peripheral vision. Grants a"
-            " brief evasion bonus -- you are harder to hit when"
-            " you are already reading their next move."
+            " brief evasion bonus and generates Focus -- you are"
+            " harder to hit when already building your combo chain."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "evasion", "duration": 2, "magnitude": 0.15},
+        "effect_params": {"buff_type": "evasion", "duration": 2, "magnitude": 0.15, "is_builder": True},
     },
     "nerve_strike": {
         "id": "nerve_strike",
         "name": "Nerve Strike",
         "domain": "subterfuge",
         "tier": 1,
-        "resource_cost": 15,
+        "resource_cost": 1,
         "resource_type": "focus",
         "cooldown": 3,
         "charge_turns": 0,
@@ -1770,9 +1772,9 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.80,
         "description": (
-            "Target a nerve cluster identified through careful"
-            " observation. The target's movements slow -- pain"
-            " and confusion buy you time."
+            "Spend 1 Focus to target a nerve cluster identified"
+            " through careful observation. The target's movements"
+            " slow -- pain and confusion buy you time."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
@@ -1780,13 +1782,13 @@ ABILITIES = {
         "effect_params": {"debuff_type": "slow", "duration": 2, "magnitude": 1.0},
     },
 
-    # --- Subterfuge Tier 2 (4 abilities) -- Core combo abilities ---
+    # --- Subterfuge Tier 2 (4 abilities) -- Builders + low spenders ---
     "exploit_opening": {
         "id": "exploit_opening",
         "name": "Exploit Opening",
         "domain": "subterfuge",
         "tier": 2,
-        "resource_cost": 15,
+        "resource_cost": 0,
         "resource_type": "focus",
         "cooldown": 1,
         "charge_turns": 0,
@@ -1795,21 +1797,21 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Strike during the guard window your patience revealed."
-            " Deals bonus damage when the target is already debuffed."
-            " The reward for reading correctly."
+            "Strike the gap your combo chain revealed. Deals bonus"
+            " damage when the target is already debuffed and generates"
+            " Focus on hit. The reward for building patiently."
         ),
         "room_flag_written": "exposed",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 55},
+        "effect_params": {"damage_base": 55, "is_builder": True},
     },
     "calculated_wound": {
         "id": "calculated_wound",
         "name": "Calculated Wound",
         "domain": "subterfuge",
         "tier": 2,
-        "resource_cost": 18,
+        "resource_cost": 1,
         "resource_type": "focus",
         "cooldown": 2,
         "charge_turns": 0,
@@ -1818,9 +1820,9 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.85,
         "description": (
-            "Place a precise cut that bleeds freely. Not brute force"
-            " -- surgical accuracy. The wound worsens as the target"
-            " moves, punishing aggression."
+            "Spend 1 Focus to place a precise cut that bleeds freely."
+            " Not brute force -- surgical accuracy. The wound worsens"
+            " as the target moves, punishing aggression."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
@@ -1832,7 +1834,7 @@ ABILITIES = {
         "name": "Feint and Punish",
         "domain": "subterfuge",
         "tier": 2,
-        "resource_cost": 15,
+        "resource_cost": 0,
         "resource_type": "focus",
         "cooldown": 1,
         "charge_turns": 0,
@@ -1842,20 +1844,20 @@ ABILITIES = {
         "application_chance": 1.0,
         "description": (
             "Draw the target's guard one direction and strike the"
-            " other. The feint itself is the weapon -- their"
-            " correction exposes them further."
+            " other. Generates Focus on hit -- their correction"
+            " fuels your next move."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 60},
+        "effect_params": {"damage_base": 60, "is_builder": True},
     },
     "apply_pressure": {
         "id": "apply_pressure",
         "name": "Apply Pressure",
         "domain": "subterfuge",
         "tier": 2,
-        "resource_cost": 20,
+        "resource_cost": 2,
         "resource_type": "focus",
         "cooldown": 3,
         "charge_turns": 0,
@@ -1864,9 +1866,9 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.80,
         "description": (
-            "Stack accumulated reads into sustained pressure. The"
-            " target weakens under the weight of knowing you have"
-            " seen every opening they offer."
+            "Spend 2 Focus to stack accumulated pressure. The target"
+            " weakens under the weight of knowing you have seen"
+            " every opening they offer."
         ),
         "room_flag_written": "exposed",
         "attuned_variants": {},
@@ -1874,13 +1876,13 @@ ABILITIES = {
         "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.15},
     },
 
-    # --- Subterfuge Tier 3 (4 abilities) -- Advanced debuffs, chain abilities ---
+    # --- Subterfuge Tier 3 (4 abilities) -- Mid-cost spenders, some gradient ---
     "blinding_dust": {
         "id": "blinding_dust",
         "name": "Blinding Dust",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 2,
         "resource_type": "focus",
         "cooldown": 4,
         "charge_turns": 0,
@@ -1889,9 +1891,9 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.80,
         "description": (
-            "Throw a handful of prepared dust into the target's eyes."
-            " Blinded enemies miss more often and cannot read your"
-            " movements. The world goes dark for them."
+            "Spend 2 Focus to throw prepared dust into the target's"
+            " eyes. Blinded enemies miss more often and cannot read"
+            " your movements. The world goes dark for them."
         ),
         "room_flag_written": "scouted",
         "attuned_variants": {},
@@ -1903,7 +1905,7 @@ ABILITIES = {
         "name": "Shadow Chain",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 3,
         "resource_type": "focus",
         "cooldown": 2,
         "charge_turns": 0,
@@ -1912,21 +1914,21 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "A rapid sequence of strikes that each build on the"
-            " last. Each hit in the chain deals escalating damage."
-            " The reward for long, disciplined timing windows."
+            "Spend all available Focus on a rapid sequence of strikes"
+            " that each build on the last. Damage escalates with"
+            " Focus spent -- the reward for disciplined building."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 90},
+        "effect_params": {"damage_base": 90, "consumes_all_focus": True},
     },
     "crippling_poison": {
         "id": "crippling_poison",
         "name": "Crippling Poison",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 30,
+        "resource_cost": 3,
         "resource_type": "focus",
         "cooldown": 4,
         "charge_turns": 0,
@@ -1935,9 +1937,9 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.85,
         "description": (
-            "Apply a fast-acting toxin to the target through a"
-            " concealed blade. The poison weakens and slows --"
-            " two debuffs delivered in a single read."
+            "Spend 3 Focus to apply a fast-acting toxin through a"
+            " concealed blade. The poison weakens and slows -- two"
+            " debuffs delivered in a single precise strike."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
@@ -1949,7 +1951,7 @@ ABILITIES = {
         "name": "Vanishing Strike",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 30,
+        "resource_cost": 3,
         "resource_type": "focus",
         "cooldown": 3,
         "charge_turns": 0,
@@ -1958,9 +1960,9 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Strike and immediately slip from sight. Deals heavy"
-            " damage and grants a brief evasion buff. The target"
-            " recoils from a blade they never saw retract."
+            "Spend 3 Focus to strike and immediately slip from sight."
+            " Deals heavy damage and grants a brief evasion buff."
+            " The target recoils from a blade they never saw retract."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
@@ -1968,13 +1970,13 @@ ABILITIES = {
         "effect_params": {"damage_base": 100},
     },
 
-    # --- Subterfuge Tier 4 (3 abilities) -- Domain capstones ---
+    # --- Subterfuge Tier 4 (3 abilities) -- Big spenders, capstones ---
     "death_of_a_thousand_reads": {
         "id": "death_of_a_thousand_reads",
         "name": "Death of a Thousand Reads",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 45,
+        "resource_cost": 5,
         "resource_type": "focus",
         "cooldown": 5,
         "charge_turns": 0,
@@ -1983,22 +1985,22 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Every weakness you have catalogued resolves into a"
-            " single devastating chain. Damage scales with debuffs"
-            " active on the target. The patient reward -- a kill"
-            " built from observation, not brute force."
+            "Consume all Focus to resolve every catalogued weakness"
+            " into a single devastating chain. Damage scales with"
+            " Focus spent and debuffs active on the target. The"
+            " patient reward -- a kill built from discipline."
         ),
         "room_flag_written": "exposed",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 180},
+        "effect_params": {"damage_base": 180, "consumes_all_focus": True},
     },
     "perfect_read": {
         "id": "perfect_read",
         "name": "Perfect Read",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 4,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2007,10 +2009,10 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.90,
         "description": (
-            "You see everything. The target's rhythm, guard, and"
-            " intent laid bare. Applies blind and weaken simultaneously"
-            " -- the target's confidence collapses as they realize"
-            " you have read every move they will ever make."
+            "Spend 4 Focus. You see everything. The target's stance"
+            " and intent laid bare. Applies blind and weaken"
+            " simultaneously -- the target's confidence collapses"
+            " as they realize you have read every move."
         ),
         "room_flag_written": "exposed",
         "attuned_variants": {},
@@ -2022,7 +2024,7 @@ ABILITIES = {
         "name": "Phantom Execution",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 55,
+        "resource_cost": 5,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2031,15 +2033,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "The Unseen's ultimate expression. A single lethal"
-            " strike that arrives from nowhere. Guaranteed critical"
-            " against blinded or weakened targets. The culmination"
-            " of a Veilcraft master's patience."
+            "Consume all Focus for the Unseen's ultimate expression."
+            " A single lethal strike that arrives from nowhere."
+            " Damage scales with Focus spent. Guaranteed critical"
+            " against blinded or weakened targets."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 220},
+        "effect_params": {"damage_base": 220, "consumes_all_focus": True},
     },
 
     # ===================================================================
@@ -2053,7 +2055,7 @@ ABILITIES = {
         "name": "Ambush Strike",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 3,
         "resource_type": "focus",
         "cooldown": 3,
         "charge_turns": 0,
@@ -2062,9 +2064,9 @@ ABILITIES = {
         "scaling_secondary": "combat",
         "application_chance": 1.0,
         "description": (
-            "Erupt from concealment with overwhelming force. No"
-            " finesse -- raw violence delivered from an unexpected"
-            " angle. Deals massive bonus damage from stealth."
+            "Spend 3 Focus to erupt from concealment with overwhelming"
+            " force. No finesse -- raw violence delivered from an"
+            " unexpected angle. Deals massive bonus damage from stealth."
             " The Grimwarden method: patience followed by brutality."
         ),
         "room_flag_written": "shadow_marked",
@@ -2077,7 +2079,7 @@ ABILITIES = {
         "name": "Death from Shadows",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 5,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2086,15 +2088,15 @@ ABILITIES = {
         "scaling_secondary": "combat",
         "application_chance": 1.0,
         "description": (
-            "The execution strike. If the target is below 30 percent"
-            " health, this is a guaranteed kill. Above that threshold,"
-            " it deals devastating damage and applies bleed. Stealth"
-            " re-entry resets all cooldowns. The brutal assassin."
+            "Consume all Focus for the execution strike. If the target"
+            " is below 30 percent health, this is a guaranteed kill."
+            " Above that, devastating damage and bleed. Damage scales"
+            " with Focus spent. The brutal assassin."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "grimwarden",
-        "effect_params": {"damage_base": 200, "status_effect": "bleed", "duration": 3, "magnitude": 1},
+        "effect_params": {"damage_base": 200, "status_effect": "bleed", "duration": 3, "magnitude": 1, "consumes_all_focus": True},
     },
 
     # --- Hollowstep (subterfuge + naturalism) ---
@@ -2103,7 +2105,7 @@ ABILITIES = {
         "name": "Terrain Trap",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 2,
         "resource_type": "focus",
         "cooldown": 4,
         "charge_turns": 0,
@@ -2112,9 +2114,10 @@ ABILITIES = {
         "scaling_secondary": "naturalism",
         "application_chance": 0.85,
         "description": (
-            "Use the natural terrain against the target. Roots erupt"
-            " from concealed positions, dealing damage and pinning"
-            " the target in place. The wilderness itself is your weapon."
+            "Spend 2 Focus to use the natural terrain against the"
+            " target. Roots erupt from concealed positions, dealing"
+            " damage and pinning the target in place. The wilderness"
+            " itself is your weapon."
         ),
         "room_flag_written": "living_wood",
         "attuned_variants": {},
@@ -2126,7 +2129,7 @@ ABILITIES = {
         "name": "Wilderness Ghost",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 40,
+        "resource_cost": 4,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2135,10 +2138,10 @@ ABILITIES = {
         "scaling_secondary": "naturalism",
         "application_chance": 1.0,
         "description": (
-            "Become one with the wilderness. Sustained outdoor stealth"
-            " with heightened evasion. Attacks from this state deal"
-            " bonus damage and do not break concealment. The ghost"
-            " that tracks, vanishes, and uses terrain as a weapon."
+            "Spend 4 Focus to become one with the wilderness. Sustained"
+            " outdoor stealth with heightened evasion. Attacks from"
+            " this state deal bonus damage and do not break concealment."
+            " The ghost that tracks, vanishes, and strikes unseen."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
@@ -2152,7 +2155,7 @@ ABILITIES = {
         "name": "Read Intent",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 20,
+        "resource_cost": 2,
         "resource_type": "focus",
         "cooldown": 3,
         "charge_turns": 0,
@@ -2161,10 +2164,10 @@ ABILITIES = {
         "scaling_secondary": "resonance",
         "application_chance": 0.90,
         "description": (
-            "Read the target's magical signature to predict their"
-            " next action. The target's next ability is telegraphed"
-            " to all allies. Grants evasion against the predicted"
-            " attack. Knowledge is the Veilreader's weapon."
+            "Spend 2 Focus to read the target's magical signature"
+            " and predict their next action. The target's next ability"
+            " is telegraphed to all allies. Grants evasion against the"
+            " predicted attack. Knowledge is the Veilreader's weapon."
         ),
         "room_flag_written": "scouted",
         "attuned_variants": {},
@@ -2176,7 +2179,7 @@ ABILITIES = {
         "name": "Precognition Field",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 45,
+        "resource_cost": 5,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2185,15 +2188,15 @@ ABILITIES = {
         "scaling_secondary": "resonance",
         "application_chance": 1.0,
         "description": (
-            "Extend your ability to read magical signatures to"
-            " the entire group. All allies gain enhanced dodge"
-            " for several rounds. The Veilreader sees every"
-            " blow before it lands -- and shares the vision."
+            "Consume all Focus to extend precognitive sight to the"
+            " entire group. All allies gain enhanced dodge scaled"
+            " to Focus spent. The Veilreader sees every blow before"
+            " it lands -- and shares the vision."
         ),
         "room_flag_written": "scouted",
         "attuned_variants": {},
         "subclass_id": "veilreader",
-        "effect_params": {"buff_type": "evasion", "duration": 3, "magnitude": 0.25},
+        "effect_params": {"buff_type": "evasion", "duration": 3, "magnitude": 0.25, "consumes_all_focus": True},
     },
 
     # --- Nullshadow (subterfuge + arcana) ---
@@ -2202,7 +2205,7 @@ ABILITIES = {
         "name": "Shadow Spell",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 2,
         "resource_type": "focus",
         "cooldown": 2,
         "charge_turns": 0,
@@ -2211,9 +2214,9 @@ ABILITIES = {
         "scaling_secondary": "arcana",
         "application_chance": 1.0,
         "description": (
-            "Cast a spell wrapped in shadow. Deals magical damage"
-            " from stealth without breaking concealment. The target"
-            " never sees the source. Magic that arrives unseen."
+            "Spend 2 Focus to cast a spell wrapped in shadow. Deals"
+            " magical damage from stealth without breaking concealment."
+            " The target never sees the source. Magic that arrives unseen."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
@@ -2225,7 +2228,7 @@ ABILITIES = {
         "name": "Void Cloak",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 5,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2234,10 +2237,10 @@ ABILITIES = {
         "scaling_secondary": "arcana",
         "application_chance": 1.0,
         "description": (
-            "Wrap yourself in a cloak of magical shadow. For the"
-            " duration, all abilities can be used from stealth"
-            " without breaking it. The Nullshadow's defining"
-            " power -- invisible spellcasting."
+            "Spend 5 Focus to wrap yourself in a cloak of magical"
+            " shadow. For the duration, all abilities can be used"
+            " from stealth without breaking it. The Nullshadow's"
+            " defining power -- invisible spellcasting."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
@@ -2251,7 +2254,7 @@ ABILITIES = {
         "name": "Intelligence Leak",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 20,
+        "resource_cost": 2,
         "resource_type": "focus",
         "cooldown": 3,
         "charge_turns": 0,
@@ -2260,10 +2263,10 @@ ABILITIES = {
         "scaling_secondary": "diplomacy",
         "application_chance": 0.85,
         "description": (
-            "Feed false information to the target through social"
-            " manipulation. The target's next ability has reduced"
-            " effectiveness. Information warfare at its purest --"
-            " the fight was lost before it started."
+            "Spend 2 Focus to feed false information to the target"
+            " through social manipulation. The target's next ability"
+            " has reduced effectiveness. Information warfare at its"
+            " purest -- the fight was lost before it started."
         ),
         "room_flag_written": "exposed",
         "attuned_variants": {},
@@ -2275,7 +2278,7 @@ ABILITIES = {
         "name": "Double Agent",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 45,
+        "resource_cost": 4,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2284,9 +2287,9 @@ ABILITIES = {
         "scaling_secondary": "diplomacy",
         "application_chance": 0.85,
         "description": (
-            "Redirect an enemy's buff to your allies through"
-            " social infiltration. The target loses their active"
-            " buff and your group gains it instead. The Tally"
+            "Spend 4 Focus to redirect an enemy's buff to your allies"
+            " through social infiltration. The target loses their"
+            " active buff and your group gains it instead. The Tally"
             " Agent's defining sideways mechanic."
         ),
         "room_flag_written": "exposed",
@@ -2301,7 +2304,7 @@ ABILITIES = {
         "name": "Concentrated Venom",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 3,
         "resource_type": "focus",
         "cooldown": 3,
         "charge_turns": 0,
@@ -2310,10 +2313,10 @@ ABILITIES = {
         "scaling_secondary": "alchemy",
         "application_chance": 0.90,
         "description": (
-            "Apply a concentrated toxin during Vanish. The poison"
-            " is delivered before the target even knows you are"
-            " there. Higher ceiling than standard poison -- the"
-            " Blackthorn's patient precision."
+            "Spend 3 Focus to apply a concentrated toxin from"
+            " concealment. The poison is delivered before the target"
+            " even knows you are there. Higher ceiling than standard"
+            " poison -- the Blackthorn's patient precision."
         ),
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
@@ -2325,7 +2328,7 @@ ABILITIES = {
         "name": "Lethal Dose",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 50,
+        "resource_cost": 5,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2334,15 +2337,15 @@ ABILITIES = {
         "scaling_secondary": "alchemy",
         "application_chance": 0.90,
         "description": (
-            "The highest single-target poison ceiling in the game."
-            " A precisely measured lethal compound applied from"
-            " stealth. Damage scales with existing poison stacks"
-            " on the target. Patient. Precise. Never seen."
+            "Consume all Focus for the highest single-target poison"
+            " ceiling in the game. Damage scales with Focus spent"
+            " and existing poison stacks on the target. Patient."
+            " Precise. Never seen."
         ),
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "blackthorn",
-        "effect_params": {"damage_base": 150, "status_effect": "poison", "duration": 4, "magnitude": 12},
+        "effect_params": {"damage_base": 150, "status_effect": "poison", "duration": 4, "magnitude": 12, "consumes_all_focus": True},
     },
 
     # --- Shadecommand (subterfuge + tactics) ---
@@ -2351,7 +2354,7 @@ ABILITIES = {
         "name": "Tactical Shadow",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 30,
+        "resource_cost": 3,
         "resource_type": "focus",
         "cooldown": 5,
         "charge_turns": 0,
@@ -2360,9 +2363,9 @@ ABILITIES = {
         "scaling_secondary": "tactics",
         "application_chance": 1.0,
         "description": (
-            "Extend your stealth to the entire group for one round."
-            " Special operations doctrine -- the whole team moves"
-            " as one shadow. Allies gain evasion."
+            "Spend 3 Focus to extend your stealth to the entire group"
+            " for one round. Special operations doctrine -- the whole"
+            " team moves as one shadow. Allies gain evasion."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
@@ -2374,7 +2377,7 @@ ABILITIES = {
         "name": "Black Operation",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 55,
+        "resource_cost": 5,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2383,15 +2386,15 @@ ABILITIES = {
         "scaling_secondary": "tactics",
         "application_chance": 1.0,
         "description": (
-            "Execute a coordinated strike from concealment. Group"
-            " stealth plus ambush bonus plus all enemy buffs stripped."
-            " The defining Shadecommand maneuver -- the operation"
-            " that no one saw coming or survived."
+            "Consume all Focus to execute a coordinated strike from"
+            " concealment. Group stealth plus ambush bonus plus all"
+            " enemy buffs stripped. Effect scales with Focus spent."
+            " The operation that no one saw coming or survived."
         ),
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "shadecommand",
-        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5},
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5, "consumes_all_focus": True},
     },
 
     # --- Lockjaw (subterfuge + engineering) ---
@@ -2400,7 +2403,7 @@ ABILITIES = {
         "name": "Mechanical Trap",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 25,
+        "resource_cost": 3,
         "resource_type": "focus",
         "cooldown": 4,
         "charge_turns": 0,
@@ -2409,9 +2412,10 @@ ABILITIES = {
         "scaling_secondary": "engineering",
         "application_chance": 0.85,
         "description": (
-            "Deploy a concealed mechanical device that triggers on"
-            " the next enemy action. Deals damage and roots the"
-            " target. Built with precision, placed with patience."
+            "Spend 3 Focus to deploy a concealed mechanical device"
+            " that triggers on the next enemy action. Deals damage"
+            " and roots the target. Built with precision, placed"
+            " with patience."
         ),
         "room_flag_written": "scouted",
         "attuned_variants": {},
@@ -2423,7 +2427,7 @@ ABILITIES = {
         "name": "Killbox",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 55,
+        "resource_cost": 5,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2432,15 +2436,15 @@ ABILITIES = {
         "scaling_secondary": "engineering",
         "application_chance": 0.90,
         "description": (
-            "Deploy multiple concealed traps in rapid succession."
-            " Each enemy that acts triggers a separate device."
-            " Deals escalating damage with each trigger. The room"
-            " becomes a death sentence for the unprepared."
+            "Consume all Focus to deploy multiple concealed traps in"
+            " rapid succession. Each enemy that acts triggers a"
+            " separate device. Damage escalates with Focus spent."
+            " The room becomes a death sentence for the unprepared."
         ),
         "room_flag_written": "scouted",
         "attuned_variants": {},
         "subclass_id": "lockjaw",
-        "effect_params": {"damage_base": 180},
+        "effect_params": {"damage_base": 180, "consumes_all_focus": True},
     },
 
     # --- Hollowseen (subterfuge + remnance) ---
@@ -2449,7 +2453,7 @@ ABILITIES = {
         "name": "Echo Sight",
         "domain": "subterfuge",
         "tier": 3,
-        "resource_cost": 20,
+        "resource_cost": 2,
         "resource_type": "focus",
         "cooldown": 3,
         "charge_turns": 0,
@@ -2458,9 +2462,9 @@ ABILITIES = {
         "scaling_secondary": "remnance",
         "application_chance": 0.90,
         "description": (
-            "See with impossible clarity. Reveal all hidden enemies"
-            " and room flags. Hidden targets are weakened by the"
-            " shock of being seen. Awareness that should not exist."
+            "Spend 2 Focus to see with impossible clarity. Reveal all"
+            " hidden enemies and room flags. Hidden targets are weakened"
+            " by the shock of being seen. Awareness that should not exist."
         ),
         "room_flag_written": "scouted",
         "attuned_variants": {},
@@ -2472,7 +2476,7 @@ ABILITIES = {
         "name": "Impossible Awareness",
         "domain": "subterfuge",
         "tier": 4,
-        "resource_cost": 45,
+        "resource_cost": 4,
         "resource_type": "focus",
         "cooldown": 6,
         "charge_turns": 0,
@@ -2481,9 +2485,9 @@ ABILITIES = {
         "scaling_secondary": "remnance",
         "application_chance": 1.0,
         "description": (
-            "Enter a state of preemptive awareness that defies"
-            " explanation. Automatically dodge the next several"
-            " attacks and counter each one. Echoes of ancient"
+            "Spend 4 Focus to enter a state of preemptive awareness"
+            " that defies explanation. Automatically dodge the next"
+            " several attacks and counter each one. Echoes of ancient"
             " knowledge fuel perception beyond mortal limits."
         ),
         "room_flag_written": "scouted",
