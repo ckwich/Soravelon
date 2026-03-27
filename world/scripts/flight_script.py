@@ -39,6 +39,37 @@ class FlightScript(SoravelonScript):
         self.db.fare_paid = False  # Pitfall 6: set True in book_flight(), not here
         self.tags.add("flight_script", category="script_type")
 
+    def at_start(self):
+        """
+        Called on creation AND on server reload. Resume or safely land.
+
+        If the script has persisted flight state (db.in_transit with legs),
+        resume from the current leg. Otherwise, if the character was mid-flight,
+        safely land them at the last known stop.
+        """
+        super().at_start()
+        character = self.obj
+        if not character or not character.pk:
+            self.stop()
+            return
+
+        if not self.db.in_transit:
+            return
+
+        # Server reloaded mid-flight — restore volatile flag
+        character.ndb.in_flight = True
+
+        legs = list(self.db.legs or [])
+        current = self.db.current_leg or 0
+
+        if current >= len(legs):
+            # Was at or past final stop — land immediately
+            self._arrive_final()
+            return
+
+        # Resume from current leg
+        self._begin_leg()
+
     def start_journey(self):
         """
         Called once by book_flight() after fare deduction.
