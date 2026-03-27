@@ -264,6 +264,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 35},
     },
     "break_guard": {
         "id": "break_guard",
@@ -285,6 +286,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'debuff_type': 'weaken', 'duration': 2, 'magnitude': 0.1},
     },
     "press_the_line": {
         "id": "press_the_line",
@@ -306,6 +308,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 30},
     },
     "iron_resolve": {
         "id": "iron_resolve",
@@ -327,6 +330,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'buff_type': 'warding', 'duration': 2, 'magnitude': 0.15},
     },
 
     # --- Combat Tier 2 (4 abilities) -- Core combat rhythm ---
@@ -350,6 +354,7 @@ ABILITIES = {
         "room_flag_written": "bloodied",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 50, 'status_effect': 'bleed', 'duration': 3, 'magnitude': 1},
     },
     "brutal_charge": {
         "id": "brutal_charge",
@@ -371,6 +376,7 @@ ABILITIES = {
         "room_flag_written": "shattered",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 60},
     },
     "shatter_bones": {
         "id": "shatter_bones",
@@ -392,6 +398,7 @@ ABILITIES = {
         "room_flag_written": "crushed",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'debuff_type': 'weaken', 'duration': 3, 'magnitude': 0.2},
     },
     "bloodhound_instinct": {
         "id": "bloodhound_instinct",
@@ -414,6 +421,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'buff_type': 'haste', 'duration': 3, 'magnitude': 1.0},
     },
 
     # --- Combat Tier 3 (4 abilities) -- Advanced strikes, compound effects ---
@@ -438,6 +446,7 @@ ABILITIES = {
         "room_flag_written": "bloodied",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 90, 'status_effect': 'bleed', 'duration': 3, 'magnitude': 1},
     },
     "pressure_break": {
         "id": "pressure_break",
@@ -460,6 +469,7 @@ ABILITIES = {
         "room_flag_written": "shattered",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 100},
     },
     "iron_tempest": {
         "id": "iron_tempest",
@@ -482,6 +492,7 @@ ABILITIES = {
         "room_flag_written": "shattered",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 100, 'status_effect': 'weaken', 'duration': 2, 'magnitude': 0.15},
     },
     "unyielding_advance": {
         "id": "unyielding_advance",
@@ -504,6 +515,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'buff_type': 'warding', 'duration': 3, 'magnitude': 0.2},
     },
 
     # --- Combat Tier 4 (3 abilities) -- Domain capstones ---
@@ -528,6 +540,7 @@ ABILITIES = {
         "room_flag_written": "devastated",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 200},
     },
     "break_the_world": {
         "id": "break_the_world",
@@ -551,6 +564,7 @@ ABILITIES = {
         "room_flag_written": "devastated",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 180, 'status_effect': 'weaken', 'duration': 3, 'magnitude': 0.2},
     },
     "ironblood_fury": {
         "id": "ironblood_fury",
@@ -574,6 +588,7 @@ ABILITIES = {
         "room_flag_written": "bloodied",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'buff_type': 'haste', 'duration': 4, 'magnitude': 1.5},
     },
 
     # ===================================================================
@@ -603,6 +618,7 @@ ABILITIES = {
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "duskblade",
+        "effect_params": {'damage_base': 90},
     },
     "duskblade_vanishing_edge": {
         "id": "duskblade_vanishing_edge",
@@ -626,6 +642,7 @@ ABILITIES = {
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "duskblade",
+        "effect_params": {'damage_base': 200},
     },
 
     # --- Thornguard (combat + naturalism) ---
@@ -650,6 +667,7 @@ ABILITIES = {
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "thornguard",
+        "effect_params": {'buff_type': 'warding', 'duration': 3, 'magnitude': 0.25},
     },
     "thornguard_ironroot_bastion": {
         "id": "thornguard_ironroot_bastion",
@@ -673,6 +691,7 @@ ABILITIES = {
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "thornguard",
+        "effect_params": {'buff_type': 'warding', 'duration': 4, 'magnitude': 0.4},
     },
 
     # --- Ruinborn (combat + resonance) ---
@@ -697,6 +716,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": "ruinborn",
+        "effect_params": {'damage_base': 80},
     },
     "ruinborn_node_burst": {
         "id": "ruinborn_node_burst",
@@ -720,6 +740,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": "ruinborn",
+        "effect_params": {'damage_base': 180},
     },
 
     # --- Spellbreaker (combat + arcana) ---
@@ -744,6 +765,7 @@ ABILITIES = {
         "room_flag_written": "disrupted",
         "attuned_variants": {},
         "subclass_id": "spellbreaker",
+        "effect_params": {'damage_base': 80, 'status_effect': 'silence', 'duration': 2, 'magnitude': 1.0},
     },
     "spellbreaker_null_field": {
         "id": "spellbreaker_null_field",
@@ -767,6 +789,7 @@ ABILITIES = {
         "room_flag_written": "disrupted",
         "attuned_variants": {},
         "subclass_id": "spellbreaker",
+        "effect_params": {'debuff_type': 'silence', 'duration': 3, 'magnitude': 1.0},
     },
 
     # --- Ironvoice (combat + diplomacy) ---
@@ -791,6 +814,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "ironvoice",
+        "effect_params": {'debuff_type': 'weaken', 'duration': 2, 'magnitude': 0.15},
     },
     "ironvoice_warcry": {
         "id": "ironvoice_warcry",
@@ -814,6 +838,7 @@ ABILITIES = {
         "room_flag_written": "intimidated",
         "attuned_variants": {},
         "subclass_id": "ironvoice",
+        "effect_params": {'debuff_type': 'weaken', 'duration': 3, 'magnitude': 0.25},
     },
 
     # --- Ashfang (combat + alchemy) ---
@@ -838,6 +863,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "ashfang",
+        "effect_params": {'damage_base': 85, 'status_effect': 'poison', 'duration': 3, 'magnitude': 8},
     },
     "ashfang_blood_frenzy": {
         "id": "ashfang_blood_frenzy",
@@ -861,6 +887,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "ashfang",
+        "effect_params": {'buff_type': 'haste', 'duration': 4, 'magnitude': 1.5},
     },
 
     # --- Vanguard (combat + tactics) ---
@@ -886,6 +913,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": "vanguard",
+        "effect_params": {'tactical_action': 'group_buff', 'buff_type': 'warding', 'duration': 2, 'magnitude': 0.2},
     },
     "vanguard_formation_break": {
         "id": "vanguard_formation_break",
@@ -909,6 +937,7 @@ ABILITIES = {
         "room_flag_written": "shattered",
         "attuned_variants": {},
         "subclass_id": "vanguard",
+        "effect_params": {'damage_base': 160, 'status_effect': 'weaken', 'duration': 2, 'magnitude': 0.15},
     },
 
     # --- Ironwright (combat + engineering) ---
@@ -933,6 +962,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "ironwright",
+        "effect_params": {'damage_base': 95},
     },
     "ironwright_masterwork_edge": {
         "id": "ironwright_masterwork_edge",
@@ -956,6 +986,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "ironwright",
+        "effect_params": {'damage_base': 180, 'status_effect': 'bleed', 'duration': 3, 'magnitude': 1},
     },
 
     # --- Dragonblooded (combat + remnance) ---
@@ -981,6 +1012,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "dragonblooded",
+        "effect_params": {'buff_type': 'warding', 'duration': 3, 'magnitude': 0.3},
     },
     "dragonblooded_dragonfire_strike": {
         "id": "dragonblooded_dragonfire_strike",
@@ -1004,6 +1036,7 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": "dragonblooded",
+        "effect_params": {'damage_base': 200, 'status_effect': 'burn', 'duration': 3, 'magnitude': 12},
     },
 
     # ===================================================================
@@ -1034,6 +1067,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'buff_type': 'haste', 'duration': 2, 'magnitude': 1.0},
     },
     "direct_strike": {
         "id": "direct_strike",
@@ -1056,6 +1090,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 35},
     },
     "battlefield_assessment": {
         "id": "battlefield_assessment",
@@ -1078,6 +1113,7 @@ ABILITIES = {
         "room_flag_written": "scouted",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'utility_action': 'reveal'},
     },
     "ordered_retreat": {
         "id": "ordered_retreat",
@@ -1101,6 +1137,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'tactical_action': 'group_disengage'},
     },
 
     # --- Tactics Tier 2 (4 abilities) -- Core battlefield control ---
@@ -1125,6 +1162,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'debuff_type': 'weaken', 'duration': 3, 'magnitude': 0.15},
     },
     "coordinated_assault": {
         "id": "coordinated_assault",
@@ -1147,6 +1185,7 @@ ABILITIES = {
         "room_flag_written": "scouted",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'tactical_action': 'mark_target', 'duration': 2},
     },
     "suppressive_command": {
         "id": "suppressive_command",
@@ -1169,6 +1208,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'debuff_type': 'slow', 'duration': 2, 'magnitude': 1.0},
     },
     "strategic_withdrawal": {
         "id": "strategic_withdrawal",
@@ -1191,6 +1231,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'buff_type': 'warding', 'duration': 2, 'magnitude': 0.15},
     },
 
     # --- Tactics Tier 3 (4 abilities) -- Advanced coordination ---
@@ -1217,6 +1258,7 @@ ABILITIES = {
         "room_flag_written": "shattered",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 90, 'status_effect': 'weaken', 'duration': 2, 'magnitude': 0.1},
     },
     "defensive_formation": {
         "id": "defensive_formation",
@@ -1240,6 +1282,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'buff_type': 'warding', 'duration': 3, 'magnitude': 0.25},
     },
     "precision_strike_order": {
         "id": "precision_strike_order",
@@ -1263,6 +1306,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'damage_base': 100},
     },
     "deny_ground": {
         "id": "deny_ground",
@@ -1285,6 +1329,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'debuff_type': 'root', 'duration': 2, 'magnitude': 1.0},
     },
 
     # --- Tactics Tier 4 (3 abilities) -- Domain capstones ---
@@ -1311,6 +1356,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'buff_type': 'haste', 'duration': 2, 'magnitude': 1.5},
     },
     "break_their_will": {
         "id": "break_their_will",
@@ -1334,6 +1380,7 @@ ABILITIES = {
         "room_flag_written": "intimidated",
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'debuff_type': 'weaken', 'duration': 3, 'magnitude': 0.25},
     },
     "commanders_gambit": {
         "id": "commanders_gambit",
@@ -1357,6 +1404,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
+        "effect_params": {'tactical_action': 'sacrifice_actions', 'bonus_actions': 2},
     },
 
     # ===================================================================
@@ -1386,6 +1434,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": "warbringer",
+        "effect_params": {'damage_base': 85},
     },
     "warbringer_warfront": {
         "id": "warbringer_warfront",
@@ -1409,6 +1458,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": "warbringer",
+        "effect_params": {'buff_type': 'warding', 'duration': 4, 'magnitude': 0.25},
     },
 
     # --- Greycommand (tactics + subterfuge) ---
@@ -1434,6 +1484,7 @@ ABILITIES = {
         "room_flag_written": "scouted",
         "attuned_variants": {},
         "subclass_id": "greycommand",
+        "effect_params": {'utility_action': 'reveal'},
     },
     "greycommand_shadow_operation": {
         "id": "greycommand_shadow_operation",
@@ -1457,6 +1508,7 @@ ABILITIES = {
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "greycommand",
+        "effect_params": {'buff_type': 'haste', 'duration': 1, 'magnitude': 2.0},
     },
 
     # --- Wildtactician (tactics + naturalism) ---
@@ -1482,6 +1534,7 @@ ABILITIES = {
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "wildtactician",
+        "effect_params": {'debuff_type': 'root', 'duration': 2, 'magnitude': 1.0},
     },
     "wildtactician_beast_assault": {
         "id": "wildtactician_beast_assault",
@@ -1505,6 +1558,7 @@ ABILITIES = {
         "room_flag_written": "fading_life",
         "attuned_variants": {},
         "subclass_id": "wildtactician",
+        "effect_params": {'damage_base': 160},
     },
 
     # --- Nodewarden (tactics + resonance) ---
@@ -1530,6 +1584,7 @@ ABILITIES = {
         "room_flag_written": "resonant",
         "attuned_variants": {},
         "subclass_id": "nodewarden",
+        "effect_params": {'tactical_action': 'group_buff', 'buff_type': 'haste', 'duration': 2, 'magnitude': 1.0},
     },
     "nodewarden_node_weaponization": {
         "id": "nodewarden_node_weaponization",
@@ -1553,6 +1608,7 @@ ABILITIES = {
         "room_flag_written": "charged",
         "attuned_variants": {},
         "subclass_id": "nodewarden",
+        "effect_params": {'damage_base': 180},
     },
 
     # --- Siegecaller (tactics + arcana) ---
@@ -1578,6 +1634,7 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": "siegecaller",
+        "effect_params": {'damage_base': 90},
     },
     "siegecaller_siege_spell": {
         "id": "siegecaller_siege_spell",
@@ -1601,6 +1658,7 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": "siegecaller",
+        "effect_params": {'damage_base': 250},
     },
 
     # --- Warlord (tactics + diplomacy) ---
@@ -1626,6 +1684,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "warlord",
+        "effect_params": {'buff_type': 'haste', 'duration': 3, 'magnitude': 1.5},
     },
     "warlord_sovereign_command": {
         "id": "warlord_sovereign_command",
@@ -1649,6 +1708,7 @@ ABILITIES = {
         "room_flag_written": "intimidated",
         "attuned_variants": {},
         "subclass_id": "warlord",
+        "effect_params": {'debuff_type': 'charm', 'duration': 1, 'magnitude': 1.0},
     },
 
     # --- Siegemaster (tactics + alchemy) ---
@@ -1673,6 +1733,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "siegemaster",
+        "effect_params": {'status_effect': 'poison', 'duration': 4, 'magnitude': 10},
     },
     "siegemaster_plague_zone": {
         "id": "siegemaster_plague_zone",
@@ -1696,6 +1757,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "siegemaster",
+        "effect_params": {'status_effect': 'poison', 'duration': 5, 'magnitude': 15},
     },
 
     # --- Fieldwright (tactics + engineering) ---
@@ -1721,6 +1783,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": "fieldwright",
+        "effect_params": {'buff_type': 'warding', 'duration': 3, 'magnitude': 0.25},
     },
     "fieldwright_field_fortress": {
         "id": "fieldwright_field_fortress",
@@ -1745,6 +1808,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": "fieldwright",
+        "effect_params": {'buff_type': 'warding', 'duration': 4, 'magnitude': 0.35},
     },
 
     # --- Oathbreaker (tactics + remnance) ---
@@ -1770,6 +1834,7 @@ ABILITIES = {
         "room_flag_written": "ancient_ground",
         "attuned_variants": {},
         "subclass_id": "oathbreaker",
+        "effect_params": {'buff_type': 'warding', 'duration': 3, 'magnitude': 0.2},
     },
     "oathbreaker_forgotten_doctrine": {
         "id": "oathbreaker_forgotten_doctrine",
@@ -1794,6 +1859,7 @@ ABILITIES = {
         "room_flag_written": "ancient_ground",
         "attuned_variants": {},
         "subclass_id": "oathbreaker",
+        "effect_params": {'buff_type': 'haste', 'duration': 3, 'magnitude': 1.5},
     },
 }
 
