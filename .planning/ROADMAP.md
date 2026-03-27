@@ -211,9 +211,20 @@ Plans:
 - [x] 05b-05-PLAN.md — Engineering + Remnance domain pair (30 pool + 36 signatures)
 - [x] 05b-06-PLAN.md — Structural validation of complete 330-ability registry
 
+### Phase 5c: Ability Polish & Resource Engine (INSERTED)
+**Goal**: Fix ~18 redundant/obsolete abilities so every ability is attractive in an 8-slot loadout, and implement all 10 domain resource systems in the ability engine so combat mechanically differentiates every domain
+**Depends on**: Phase 5b (all 330 abilities authored), Phase 6a (combat engine exists)
+**Requirements**: ABL-04
+**Success Criteria** (what must be TRUE):
+  1. Zero obsolete abilities — no ability is strictly worse than another ability at the same or higher tier within its domain; every ability brings something unique to a loadout
+  2. All 10 domain resource systems are implemented in ability_engine.py: Focus combo points, Balance pendulum, Influence reputation-pool, Momentum build-on-hit, Command ally-scaling, Mana cross-encounter pool, Resonance builder/spender with decay, Echoes investigation-bonus, Reagents finite stock, Components finite stock
+  3. Resource-specific ability behaviors work: Focus builders generate points on hit (miss resets), Balance shifts on ability use and scales damage/healing, Resonance decays -10/round during combat
+  4. Typed resource variants for Engineering (component types) and Alchemy (reagent types) have data-layer support (variant fields on abilities) even if the gathering/inventory system is deferred
+**Plans**: TBD
+
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
-**Depends on**: Phase 3 (GUI builder required to author content), Phase 5b (abilities must be authored), Phase 6c (combat, NPC, and skill systems required for meaningful play)
+**Depends on**: Phase 3 (GUI builder required to author content), Phase 5c (abilities polished and resource engines built), Phase 6c (combat, NPC, and skill systems required for meaningful play)
 **Requirements**: CON-01, CON-02, CON-03, CON-04
 **Success Criteria** (what must be TRUE):
   1. A new player arrives in Vael's Crossing, can navigate to bank, guild, and services, and the city feels inhabited with NPCs and ambient content
@@ -225,7 +236,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b → 6c → 5b → 7
+Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b → 6c → 5b → 5c → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -238,5 +249,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6a. Base Attributes & Combat System | 0/7 | Not started | - |
 | 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
 | 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
-| 5b. Ability Content Authoring (INSERTED) | 0/6 | Complete    | 2026-03-27 |
-| 7. Milestone 1 Content | 0/6 | Not started | - |
+| 5b. Ability Content Authoring (INSERTED) | 6/6 | Complete | 2026-03-27 |
+| 5c. Ability Polish & Resource Engine (INSERTED) | 0/TBD | Not started | - |
+| 7. Milestone 1 Content | 0/TBD | Not started | - |
