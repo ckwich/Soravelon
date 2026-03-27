@@ -188,9 +188,9 @@ Plans:
 Plans:
 - [x] 06c-01-PLAN.md — Dialogue definitions + dialogue engine + KnownTopicRecord/CharacterRecipe models + migration
 - [x] 06c-02-PLAN.md — Crafting definitions registry + crafting engine
-- [ ] 06c-03-PLAN.md — AreaBuilder NPC extension (object creation, dialogue/ambient db attrs) + ambient ticker + open_dialogue handler
+- [x] 06c-03-PLAN.md — AreaBuilder NPC extension (object creation, dialogue/ambient db attrs) + ambient ticker + open_dialogue handler
 - [x] 06c-04-PLAN.md — Dialogue commands (talk/ask/say/tell/accept/decline) + crafting commands (cook/smith/brew/craft/recipes) + cmdset registration
-- [ ] 06c-05-PLAN.md — Test suite: test_dialogue.py (NPC-01/02/03, hints, extraction) + test_crafting.py (quality, discovery, registry)
+- [x] 06c-05-PLAN.md — Test suite: test_dialogue.py (NPC-01/02/03, hints, extraction) + test_crafting.py (quality, discovery, registry)
 
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
