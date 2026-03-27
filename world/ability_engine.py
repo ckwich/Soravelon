@@ -141,19 +141,6 @@ def _handle_tactical(character, ability, target):
     return f"{character.key} deploys {ability['name']}."
 
 
-def _handle_compound_trigger(character, ability, target):
-    """Check and trigger compound effects on the target."""
-    from world.status_effects import check_compound_triggers
-    compounds = check_compound_triggers(target)
-    ability_name = ability["name"]
-    if compounds:
-        triggered = ", ".join(compounds)
-        return (
-            f"{character.key} triggers {ability_name}! "
-            f"Compound effects: {triggered}!"
-        )
-    return f"{character.key} triggers {ability_name}, but no compounds activate."
-
 
 def _handle_heal(character, ability, target):
     """Resolve healing via combat_engine."""
@@ -193,7 +180,6 @@ EFFECT_HANDLERS = {
     "utility": _handle_utility,
     "social": _handle_social,
     "tactical": _handle_tactical,
-    "compound_trigger": _handle_compound_trigger,
     "heal": _handle_heal,
     "status": _handle_status,
 }
