@@ -130,6 +130,9 @@ class Character(ObjectParent, DefaultCharacter):
         # push_node_event, push_flight_progress, push_combat_update, push_quest_update
         # are event-driven — not pushed on login unless those states are active
 
+        # Dialogue state (NPC quest offers — cleared on room change per Pitfall 4)
+        self.ndb.pending_quest_offer = None
+
         # Ability system volatile state (D-12, D-13)
         self.ndb.ability_cooldowns = {}
         self.ndb.ancestry_ability_used = False
@@ -204,6 +207,14 @@ class Character(ObjectParent, DefaultCharacter):
                     handler = self.ndb.combat_handler
                     if handler and not handler.is_combatant(mob):
                         join_combat(handler, mob)
+
+        # Clear stale quest offers on room change (Pitfall 4)
+        self.ndb.pending_quest_offer = None
+
+        # Fire NPC reactive echo for player entering the room
+        if self.location:
+            from world.dialogue_engine import fire_npc_reactive_echo
+            fire_npc_reactive_echo(self.location, "player_enters")
 
         # Resonance Sense passive (D-22)
         if self.db.guild_id and self.location:
