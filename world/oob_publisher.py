@@ -253,8 +253,8 @@ def push_map_update(character):
     candidates = evennia.search_tag(zone_id, category="zone_id")
     rooms_data = []
     for r in candidates:
-        # Filter: only SoravelonRoom instances (Pitfall 3)
-        if not r.db_typeclass_path or not r.db_typeclass_path.endswith("rooms.SoravelonRoom"):
+        # Filter: only room typeclasses (Pitfall 3 — avoids exits/zone objects/mobs)
+        if not r.db_typeclass_path or "rooms." not in r.db_typeclass_path:
             continue
 
         room_id = r.tags.get(category="room_id")
