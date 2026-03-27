@@ -192,9 +192,20 @@ Plans:
 - [x] 06c-04-PLAN.md — Dialogue commands (talk/ask/say/tell/accept/decline) + crafting commands (cook/smith/brew/craft/recipes) + cmdset registration
 - [x] 06c-05-PLAN.md — Test suite: test_dialogue.py (NPC-01/02/03, hints, extraction) + test_crafting.py (quality, discovery, registry)
 
+### Phase 5b: Ability Content Authoring (INSERTED)
+**Goal**: Author all 330 ability definitions (150 domain + 180 subclass signatures) through collaborative guild-by-guild review — Claude proposes, user reviews/revises, repeat for all 10 domains
+**Depends on**: Phase 5 (ability framework must exist), Phase 6a (combat engine must exist to validate effect types)
+**Requirements**: ABL-04
+**Success Criteria** (what must be TRUE):
+  1. All 10 domains have 15 abilities each (3-4 per tier) with concrete damage values, resource costs, cooldowns, and effect types — not stubs
+  2. All 90 subclasses have 2 signature abilities each (Tier 3 + Tier 4) that mechanically distinguish the subclass
+  3. Ability definitions pass structural validation: every ability has all required fields from the ability data model, resource costs match guild resource types, scaling stats are valid
+  4. DOMAIN_ABILITIES and SUBCLASS_SIGNATURES derived lookups in ability_registry.py return correct abilities for every guild/subclass combination
+**Plans**: TBD
+
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
-**Depends on**: Phase 3 (GUI builder required to author content), Phase 6c (combat, NPC, and skill systems required for meaningful play)
+**Depends on**: Phase 3 (GUI builder required to author content), Phase 5b (abilities must be authored), Phase 6c (combat, NPC, and skill systems required for meaningful play)
 **Requirements**: CON-01, CON-02, CON-03, CON-04
 **Success Criteria** (what must be TRUE):
   1. A new player arrives in Vael's Crossing, can navigate to bank, guild, and services, and the city feels inhabited with NPCs and ambient content
@@ -206,7 +217,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b → 6c → 7
+Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b → 6c → 5b → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -218,5 +229,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 5. Ancestry Engine and Ability System | 0/5 | Not started | - |
 | 6a. Base Attributes & Combat System | 0/7 | Not started | - |
 | 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
-| 6c. NPC Dialogue & Crafting | 0/5 | Not started | - |
+| 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
+| 5b. Ability Content Authoring (INSERTED) | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
