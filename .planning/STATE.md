@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 06c-02-PLAN.md
-last_updated: "2026-03-27T02:54:02.833Z"
+stopped_at: Completed 06c-03-PLAN.md
+last_updated: "2026-03-27T03:22:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 7
   total_plans: 34
-  completed_plans: 32
+  completed_plans: 33
 ---
 
 # Project State
@@ -142,6 +142,8 @@ Recent decisions affecting current work:
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
 - [Phase 06c]: Quality gap thresholds: <0=flawed, <15=standard, <30=fine, <50=superior, 50+=masterwork; random variance +/-1 tier center-biased
 - [Phase 06c]: Crafting station check via room.tags.has(crafting_{station}, category=crafting_station)
+- [Phase 06c]: NPC objects use npc_id tag category for idempotent lookup (parallel to room_id pattern)
+- [Phase 06c]: NPC name defaults to npc_id title-cased with underscores replaced by spaces
 
 ### Pending Todos
 
@@ -155,6 +157,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T02:54:02.829Z
-Stopped at: Completed 06c-02-PLAN.md
+Last session: 2026-03-27T03:22:00.000Z
+Stopped at: Completed 06c-03-PLAN.md
 Resume file: None
