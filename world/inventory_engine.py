@@ -339,7 +339,8 @@ def get_inventory_display_data(character):
     from world.inventory_helpers import get_carry_state
 
     BASE_CAPACITY = 10
-    strength = getattr(character.db, 'strength', 10) or 10
+    base_stats = character.db.base_stats or {}
+    strength = base_stats.get("strength", 10) or 10
     carry_capacity = BASE_CAPACITY + (strength * 5)
 
     records = InventoryItem.objects.filter(
