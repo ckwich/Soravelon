@@ -405,7 +405,7 @@ def ambient_npc_tick():
     from evennia.utils.search import search_tag
 
     # Find all objects tagged as NPCs
-    npc_objects = search_tag("npc", category="object_type")
+    npc_objects = search_tag("npc", category="character_type")
 
     now = time.time()
 
