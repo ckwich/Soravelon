@@ -238,5 +238,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6a. Base Attributes & Combat System | 0/7 | Not started | - |
 | 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
 | 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
-| 5b. Ability Content Authoring (INSERTED) | 0/6 | Not started | - |
+| 5b. Ability Content Authoring (INSERTED) | 0/6 | Complete    | 2026-03-27 |
 | 7. Milestone 1 Content | 0/6 | Not started | - |
