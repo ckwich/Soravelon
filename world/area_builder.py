@@ -421,9 +421,16 @@ class AreaBuilder:
             "sequence": kwargs.get("sequence", []),
         }
 
-        # Copy current list, append, assign back (SaverDict pattern)
+        # Idempotent: update existing definition for same mob template, or append
         current = list(room.db.spawn_definitions or [])
-        current.append(spawn_def)
+        replaced = False
+        for i, existing in enumerate(current):
+            if existing.get("mob") == mob:
+                current[i] = spawn_def
+                replaced = True
+                break
+        if not replaced:
+            current.append(spawn_def)
         room.db.spawn_definitions = current
 
         # Warn about unverified mob template
@@ -495,7 +502,14 @@ class AreaBuilder:
         }
 
         current = list(room.db.npc_definitions or [])
-        current.append(npc_def)
+        replaced = False
+        for i, existing in enumerate(current):
+            if existing.get("npc_id") == npc_id:
+                current[i] = npc_def
+                replaced = True
+                break
+        if not replaced:
+            current.append(npc_def)
         room.db.npc_definitions = current
 
         # --- 2. Create or retrieve the NPC SoravelonMob object -------------
@@ -573,7 +587,14 @@ class AreaBuilder:
             )
         item_def = {"item_id": item_id, **kwargs}
         current = list(self._zone_obj.db.item_definitions or [])
-        current.append(item_def)
+        replaced = False
+        for i, existing in enumerate(current):
+            if existing.get("item_id") == item_id:
+                current[i] = item_def
+                replaced = True
+                break
+        if not replaced:
+            current.append(item_def)
         self._zone_obj.db.item_definitions = current
         return self
 
@@ -850,7 +871,14 @@ class AreaBuilder:
         # kwargs.get("level_range") intentionally not stored
 
         current = list(self._zone_obj.db.quest_definitions or [])
-        current.append(quest_def)
+        replaced = False
+        for i, existing in enumerate(current):
+            if existing.get("quest_id") == quest_id:
+                current[i] = quest_def
+                replaced = True
+                break
+        if not replaced:
+            current.append(quest_def)
         self._zone_obj.db.quest_definitions = current
 
     # ------------------------------------------------------------------
@@ -873,7 +901,14 @@ class AreaBuilder:
         }
 
         current = list(self._zone_obj.db.material_definitions or [])
-        current.append(material_def)
+        replaced = False
+        for i, existing in enumerate(current):
+            if existing.get("material") == material:
+                current[i] = material_def
+                replaced = True
+                break
+        if not replaced:
+            current.append(material_def)
         self._zone_obj.db.material_definitions = current
 
     # ------------------------------------------------------------------
@@ -891,7 +926,14 @@ class AreaBuilder:
         }
 
         current = list(room.db.lore_fragments or [])
-        current.append(frag_def)
+        replaced = False
+        for i, existing in enumerate(current):
+            if existing.get("fragment_id") == fragment_id:
+                current[i] = frag_def
+                replaced = True
+                break
+        if not replaced:
+            current.append(frag_def)
         room.db.lore_fragments = current
 
     # ------------------------------------------------------------------
