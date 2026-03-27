@@ -57,24 +57,6 @@ ABILITIES = {
     # ===================================================================
     # Non-combat / non-tactics domain stubs (kept from Phase 5a)
     # ===================================================================
-    "shadow_read": {
-        "id": "shadow_read",
-        "name": "Shadow Read",
-        "domain": "subterfuge",
-        "tier": 1,
-        "resource_cost": 10,
-        "resource_type": "focus",
-        "cooldown": 2,
-        "charge_turns": 0,
-        "effect_type": "debuff",
-        "scaling_primary": "subterfuge",
-        "scaling_secondary": None,
-        "application_chance": 0.85,
-        "description": "[STUB - Phase 5b] Read enemy defenses to expose weakness.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
     "wild_mend": {
         "id": "wild_mend",
         "name": "Wild Mend",
@@ -125,24 +107,6 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": "[STUB - Phase 5b] Focused arcane energy bolt.",
-        "room_flag_written": None,
-        "attuned_variants": {},
-        "subclass_id": None,
-    },
-    "diplomatic_leverage": {
-        "id": "diplomatic_leverage",
-        "name": "Diplomatic Leverage",
-        "domain": "diplomacy",
-        "tier": 1,
-        "resource_cost": 15,
-        "resource_type": "influence",
-        "cooldown": 2,
-        "charge_turns": 0,
-        "effect_type": "social",
-        "scaling_primary": "diplomacy",
-        "scaling_secondary": None,
-        "application_chance": 0.9,
-        "description": "[STUB - Phase 5b] Use leverage to shift encounter dynamics.",
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
@@ -1860,6 +1824,1628 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": "oathbreaker",
         "effect_params": {'buff_type': 'haste', 'duration': 3, 'magnitude': 1.5},
+    },
+
+    # ===================================================================
+    # SUBTERFUGE DOMAIN POOL (15 abilities) -- resource_type: focus
+    # Fingerprint: READ -- timing, pattern recognition, patience rewarded
+    # Scaling: subterfuge -> agility
+    # ===================================================================
+
+    # --- Subterfuge Tier 1 (4 abilities) -- Reads, opening strikes, debuffs ---
+    "expose_weakness": {
+        "id": "expose_weakness",
+        "name": "Expose Weakness",
+        "domain": "subterfuge",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "focus",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Read the target's guard and exploit the gap. A precise"
+            " strike that leaves the target exposed -- the opening"
+            " move of every Veilcraft chain."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 2, "magnitude": 0.1},
+    },
+    "probing_strike": {
+        "id": "probing_strike",
+        "name": "Probing Strike",
+        "domain": "subterfuge",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "focus",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "A quick testing strike that reads the target's rhythm."
+            " Deals light damage and builds Focus -- the patient"
+            " opening before the chain begins."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 30},
+    },
+    "shadow_step": {
+        "id": "shadow_step",
+        "name": "Shadow Step",
+        "domain": "subterfuge",
+        "tier": 1,
+        "resource_cost": 12,
+        "resource_type": "focus",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Slip into the target's peripheral vision. Grants a"
+            " brief evasion bonus -- you are harder to hit when"
+            " you are already reading their next move."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "evasion", "duration": 2, "magnitude": 0.15},
+    },
+    "nerve_strike": {
+        "id": "nerve_strike",
+        "name": "Nerve Strike",
+        "domain": "subterfuge",
+        "tier": 1,
+        "resource_cost": 15,
+        "resource_type": "focus",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Target a nerve cluster identified through careful"
+            " observation. The target's movements slow -- pain"
+            " and confusion buy you time."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "slow", "duration": 2, "magnitude": 1.0},
+    },
+
+    # --- Subterfuge Tier 2 (4 abilities) -- Core combo abilities ---
+    "exploit_opening": {
+        "id": "exploit_opening",
+        "name": "Exploit Opening",
+        "domain": "subterfuge",
+        "tier": 2,
+        "resource_cost": 15,
+        "resource_type": "focus",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Strike during the guard window your patience revealed."
+            " Deals bonus damage when the target is already debuffed."
+            " The reward for reading correctly."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 55},
+    },
+    "calculated_wound": {
+        "id": "calculated_wound",
+        "name": "Calculated Wound",
+        "domain": "subterfuge",
+        "tier": 2,
+        "resource_cost": 18,
+        "resource_type": "focus",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Place a precise cut that bleeds freely. Not brute force"
+            " -- surgical accuracy. The wound worsens as the target"
+            " moves, punishing aggression."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 50, "status_effect": "bleed", "duration": 3, "magnitude": 1},
+    },
+    "feint_and_punish": {
+        "id": "feint_and_punish",
+        "name": "Feint and Punish",
+        "domain": "subterfuge",
+        "tier": 2,
+        "resource_cost": 15,
+        "resource_type": "focus",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Draw the target's guard one direction and strike the"
+            " other. The feint itself is the weapon -- their"
+            " correction exposes them further."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 60},
+    },
+    "apply_pressure": {
+        "id": "apply_pressure",
+        "name": "Apply Pressure",
+        "domain": "subterfuge",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "focus",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Stack accumulated reads into sustained pressure. The"
+            " target weakens under the weight of knowing you have"
+            " seen every opening they offer."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.15},
+    },
+
+    # --- Subterfuge Tier 3 (4 abilities) -- Advanced debuffs, chain abilities ---
+    "blinding_dust": {
+        "id": "blinding_dust",
+        "name": "Blinding Dust",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "focus",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Throw a handful of prepared dust into the target's eyes."
+            " Blinded enemies miss more often and cannot read your"
+            " movements. The world goes dark for them."
+        ),
+        "room_flag_written": "scouted",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "blind", "duration": 2, "magnitude": 1.0},
+    },
+    "shadow_chain": {
+        "id": "shadow_chain",
+        "name": "Shadow Chain",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "focus",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "A rapid sequence of strikes that each build on the"
+            " last. Each hit in the chain deals escalating damage."
+            " The reward for long, disciplined timing windows."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 90},
+    },
+    "crippling_poison": {
+        "id": "crippling_poison",
+        "name": "Crippling Poison",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "focus",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Apply a fast-acting toxin to the target through a"
+            " concealed blade. The poison weakens and slows --"
+            " two debuffs delivered in a single read."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "poison", "duration": 3, "magnitude": 8},
+    },
+    "vanishing_strike": {
+        "id": "vanishing_strike",
+        "name": "Vanishing Strike",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "focus",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Strike and immediately slip from sight. Deals heavy"
+            " damage and grants a brief evasion buff. The target"
+            " recoils from a blade they never saw retract."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 100},
+    },
+
+    # --- Subterfuge Tier 4 (3 abilities) -- Domain capstones ---
+    "death_of_a_thousand_reads": {
+        "id": "death_of_a_thousand_reads",
+        "name": "Death of a Thousand Reads",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "focus",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Every weakness you have catalogued resolves into a"
+            " single devastating chain. Damage scales with debuffs"
+            " active on the target. The patient reward -- a kill"
+            " built from observation, not brute force."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 180},
+    },
+    "perfect_read": {
+        "id": "perfect_read",
+        "name": "Perfect Read",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "You see everything. The target's rhythm, guard, and"
+            " intent laid bare. Applies blind and weaken simultaneously"
+            " -- the target's confidence collapses as they realize"
+            " you have read every move they will ever make."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "blind", "duration": 3, "magnitude": 1.5},
+    },
+    "phantom_execution": {
+        "id": "phantom_execution",
+        "name": "Phantom Execution",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "The Unseen's ultimate expression. A single lethal"
+            " strike that arrives from nowhere. Guaranteed critical"
+            " against blinded or weakened targets. The culmination"
+            " of a Veilcraft master's patience."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 220},
+    },
+
+    # ===================================================================
+    # SUBTERFUGE-PRIMARY SUBCLASS SIGNATURES (18 abilities = 9 x 2)
+    # Each subclass gets a Tier 3 enhanced blend + Tier 4 defining ability
+    # ===================================================================
+
+    # --- Grimwarden (subterfuge + combat) ---
+    "grimwarden_ambush_strike": {
+        "id": "grimwarden_ambush_strike",
+        "name": "Ambush Strike",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "focus",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "Erupt from concealment with overwhelming force. No"
+            " finesse -- raw violence delivered from an unexpected"
+            " angle. Deals massive bonus damage from stealth."
+            " The Grimwarden method: patience followed by brutality."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "grimwarden",
+        "effect_params": {"damage_base": 110},
+    },
+    "grimwarden_death_from_shadows": {
+        "id": "grimwarden_death_from_shadows",
+        "name": "Death from Shadows",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "combat",
+        "application_chance": 1.0,
+        "description": (
+            "The execution strike. If the target is below 30 percent"
+            " health, this is a guaranteed kill. Above that threshold,"
+            " it deals devastating damage and applies bleed. Stealth"
+            " re-entry resets all cooldowns. The brutal assassin."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "grimwarden",
+        "effect_params": {"damage_base": 200, "status_effect": "bleed", "duration": 3, "magnitude": 1},
+    },
+
+    # --- Hollowstep (subterfuge + naturalism) ---
+    "hollowstep_terrain_trap": {
+        "id": "hollowstep_terrain_trap",
+        "name": "Terrain Trap",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "focus",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "naturalism",
+        "application_chance": 0.85,
+        "description": (
+            "Use the natural terrain against the target. Roots erupt"
+            " from concealed positions, dealing damage and pinning"
+            " the target in place. The wilderness itself is your weapon."
+        ),
+        "room_flag_written": "living_wood",
+        "attuned_variants": {},
+        "subclass_id": "hollowstep",
+        "effect_params": {"damage_base": 80, "status_effect": "root", "duration": 2, "magnitude": 1.0},
+    },
+    "hollowstep_wilderness_ghost": {
+        "id": "hollowstep_wilderness_ghost",
+        "name": "Wilderness Ghost",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 40,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "naturalism",
+        "application_chance": 1.0,
+        "description": (
+            "Become one with the wilderness. Sustained outdoor stealth"
+            " with heightened evasion. Attacks from this state deal"
+            " bonus damage and do not break concealment. The ghost"
+            " that tracks, vanishes, and uses terrain as a weapon."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "hollowstep",
+        "effect_params": {"buff_type": "evasion", "duration": 4, "magnitude": 0.3},
+    },
+
+    # --- Veilreader (subterfuge + resonance) ---
+    "veilreader_read_intent": {
+        "id": "veilreader_read_intent",
+        "name": "Read Intent",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "focus",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "resonance",
+        "application_chance": 0.90,
+        "description": (
+            "Read the target's magical signature to predict their"
+            " next action. The target's next ability is telegraphed"
+            " to all allies. Grants evasion against the predicted"
+            " attack. Knowledge is the Veilreader's weapon."
+        ),
+        "room_flag_written": "scouted",
+        "attuned_variants": {},
+        "subclass_id": "veilreader",
+        "effect_params": {"debuff_type": "weaken", "duration": 2, "magnitude": 0.15},
+    },
+    "veilreader_precognition_field": {
+        "id": "veilreader_precognition_field",
+        "name": "Precognition Field",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "resonance",
+        "application_chance": 1.0,
+        "description": (
+            "Extend your ability to read magical signatures to"
+            " the entire group. All allies gain enhanced dodge"
+            " for several rounds. The Veilreader sees every"
+            " blow before it lands -- and shares the vision."
+        ),
+        "room_flag_written": "scouted",
+        "attuned_variants": {},
+        "subclass_id": "veilreader",
+        "effect_params": {"buff_type": "evasion", "duration": 3, "magnitude": 0.25},
+    },
+
+    # --- Nullshadow (subterfuge + arcana) ---
+    "nullshadow_shadow_spell": {
+        "id": "nullshadow_shadow_spell",
+        "name": "Shadow Spell",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "focus",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "arcana",
+        "application_chance": 1.0,
+        "description": (
+            "Cast a spell wrapped in shadow. Deals magical damage"
+            " from stealth without breaking concealment. The target"
+            " never sees the source. Magic that arrives unseen."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "nullshadow",
+        "effect_params": {"damage_base": 90},
+    },
+    "nullshadow_void_cloak": {
+        "id": "nullshadow_void_cloak",
+        "name": "Void Cloak",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "arcana",
+        "application_chance": 1.0,
+        "description": (
+            "Wrap yourself in a cloak of magical shadow. For the"
+            " duration, all abilities can be used from stealth"
+            " without breaking it. The Nullshadow's defining"
+            " power -- invisible spellcasting."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "nullshadow",
+        "effect_params": {"buff_type": "stealth", "duration": 4, "magnitude": 1.0},
+    },
+
+    # --- Tally Agent (subterfuge + diplomacy) ---
+    "tally_agent_intelligence_leak": {
+        "id": "tally_agent_intelligence_leak",
+        "name": "Intelligence Leak",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "focus",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.85,
+        "description": (
+            "Feed false information to the target through social"
+            " manipulation. The target's next ability has reduced"
+            " effectiveness. Information warfare at its purest --"
+            " the fight was lost before it started."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": "tally_agent",
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+    },
+    "tally_agent_double_agent": {
+        "id": "tally_agent_double_agent",
+        "name": "Double Agent",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "diplomacy",
+        "application_chance": 0.85,
+        "description": (
+            "Redirect an enemy's buff to your allies through"
+            " social infiltration. The target loses their active"
+            " buff and your group gains it instead. The Tally"
+            " Agent's defining sideways mechanic."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": "tally_agent",
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+    },
+
+    # --- Blackthorn (subterfuge + alchemy) ---
+    "blackthorn_concentrated_venom": {
+        "id": "blackthorn_concentrated_venom",
+        "name": "Concentrated Venom",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "focus",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.90,
+        "description": (
+            "Apply a concentrated toxin during Vanish. The poison"
+            " is delivered before the target even knows you are"
+            " there. Higher ceiling than standard poison -- the"
+            " Blackthorn's patient precision."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "blackthorn",
+        "effect_params": {"damage_base": 60, "status_effect": "poison", "duration": 4, "magnitude": 10},
+    },
+    "blackthorn_lethal_dose": {
+        "id": "blackthorn_lethal_dose",
+        "name": "Lethal Dose",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.90,
+        "description": (
+            "The highest single-target poison ceiling in the game."
+            " A precisely measured lethal compound applied from"
+            " stealth. Damage scales with existing poison stacks"
+            " on the target. Patient. Precise. Never seen."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "blackthorn",
+        "effect_params": {"damage_base": 150, "status_effect": "poison", "duration": 4, "magnitude": 12},
+    },
+
+    # --- Shadecommand (subterfuge + tactics) ---
+    "shadecommand_tactical_shadow": {
+        "id": "shadecommand_tactical_shadow",
+        "name": "Tactical Shadow",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "focus",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Extend your stealth to the entire group for one round."
+            " Special operations doctrine -- the whole team moves"
+            " as one shadow. Allies gain evasion."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "shadecommand",
+        "effect_params": {"buff_type": "evasion", "duration": 2, "magnitude": 0.2},
+    },
+    "shadecommand_black_operation": {
+        "id": "shadecommand_black_operation",
+        "name": "Black Operation",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Execute a coordinated strike from concealment. Group"
+            " stealth plus ambush bonus plus all enemy buffs stripped."
+            " The defining Shadecommand maneuver -- the operation"
+            " that no one saw coming or survived."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": "shadecommand",
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5},
+    },
+
+    # --- Lockjaw (subterfuge + engineering) ---
+    "lockjaw_mechanical_trap": {
+        "id": "lockjaw_mechanical_trap",
+        "name": "Mechanical Trap",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "focus",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "engineering",
+        "application_chance": 0.85,
+        "description": (
+            "Deploy a concealed mechanical device that triggers on"
+            " the next enemy action. Deals damage and roots the"
+            " target. Built with precision, placed with patience."
+        ),
+        "room_flag_written": "scouted",
+        "attuned_variants": {},
+        "subclass_id": "lockjaw",
+        "effect_params": {"damage_base": 85, "status_effect": "root", "duration": 2, "magnitude": 1.0},
+    },
+    "lockjaw_killbox": {
+        "id": "lockjaw_killbox",
+        "name": "Killbox",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "engineering",
+        "application_chance": 0.90,
+        "description": (
+            "Deploy multiple concealed traps in rapid succession."
+            " Each enemy that acts triggers a separate device."
+            " Deals escalating damage with each trigger. The room"
+            " becomes a death sentence for the unprepared."
+        ),
+        "room_flag_written": "scouted",
+        "attuned_variants": {},
+        "subclass_id": "lockjaw",
+        "effect_params": {"damage_base": 180},
+    },
+
+    # --- Hollowseen (subterfuge + remnance) ---
+    "hollowseen_echo_sight": {
+        "id": "hollowseen_echo_sight",
+        "name": "Echo Sight",
+        "domain": "subterfuge",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "focus",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "remnance",
+        "application_chance": 0.90,
+        "description": (
+            "See with impossible clarity. Reveal all hidden enemies"
+            " and room flags. Hidden targets are weakened by the"
+            " shock of being seen. Awareness that should not exist."
+        ),
+        "room_flag_written": "scouted",
+        "attuned_variants": {},
+        "subclass_id": "hollowseen",
+        "effect_params": {"debuff_type": "weaken", "duration": 2, "magnitude": 0.15},
+    },
+    "hollowseen_impossible_awareness": {
+        "id": "hollowseen_impossible_awareness",
+        "name": "Impossible Awareness",
+        "domain": "subterfuge",
+        "tier": 4,
+        "resource_cost": 45,
+        "resource_type": "focus",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": "remnance",
+        "application_chance": 1.0,
+        "description": (
+            "Enter a state of preemptive awareness that defies"
+            " explanation. Automatically dodge the next several"
+            " attacks and counter each one. Echoes of ancient"
+            " knowledge fuel perception beyond mortal limits."
+        ),
+        "room_flag_written": "scouted",
+        "attuned_variants": {},
+        "subclass_id": "hollowseen",
+        "effect_params": {"buff_type": "evasion", "duration": 4, "magnitude": 0.4},
+    },
+
+    # ===================================================================
+    # DIPLOMACY DOMAIN POOL (15 abilities) -- resource_type: influence
+    # Fingerprint: LEVERAGE -- converting relationships into power
+    # Scaling: diplomacy -> presence
+    # ===================================================================
+
+    # --- Diplomacy Tier 1 (4 abilities) -- Social leverage, basic effects ---
+    "compel_attention": {
+        "id": "compel_attention",
+        "name": "Compel Attention",
+        "domain": "diplomacy",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "influence",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Demand the target's attention with a word. Their focus"
+            " shifts to you -- weakened resolve makes them slower"
+            " to act. The opening play of every Accord negotiation."
+        ),
+        "room_flag_written": "intimidated",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 2, "magnitude": 0.1},
+    },
+    "sharp_rebuke": {
+        "id": "sharp_rebuke",
+        "name": "Sharp Rebuke",
+        "domain": "diplomacy",
+        "tier": 1,
+        "resource_cost": 10,
+        "resource_type": "influence",
+        "cooldown": 0,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "A cutting remark delivered with authority. Words that"
+            " wound. Presence-scaled damage that bypasses armor."
+            " Every door opens from the inside."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 30},
+    },
+    "bolster_resolve": {
+        "id": "bolster_resolve",
+        "name": "Bolster Resolve",
+        "domain": "diplomacy",
+        "tier": 1,
+        "resource_cost": 15,
+        "resource_type": "influence",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Speak a word of encouragement that steadies an ally's"
+            " nerve. Grants a brief damage reduction buff. Solo,"
+            " the effect applies to self -- conviction is personal."
+        ),
+        "room_flag_written": "inspired",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "warding", "duration": 2, "magnitude": 0.1},
+    },
+    "decree_of_hesitation": {
+        "id": "decree_of_hesitation",
+        "name": "Decree of Hesitation",
+        "domain": "diplomacy",
+        "tier": 1,
+        "resource_cost": 15,
+        "resource_type": "influence",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Issue a command that makes the target hesitate. The"
+            " authority in your voice creates doubt -- the target"
+            " slows, their next action delayed."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "slow", "duration": 2, "magnitude": 1.0},
+    },
+
+    # --- Diplomacy Tier 2 (4 abilities) -- Core social combat ---
+    "leveraged_demand": {
+        "id": "leveraged_demand",
+        "name": "Leveraged Demand",
+        "domain": "diplomacy",
+        "tier": 2,
+        "resource_cost": 15,
+        "resource_type": "influence",
+        "cooldown": 1,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Convert accumulated influence into direct pressure."
+            " Words backed by political weight that deal real"
+            " damage. Presence amplifies the impact."
+        ),
+        "room_flag_written": "intimidated",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 55},
+    },
+    "inspire_courage": {
+        "id": "inspire_courage",
+        "name": "Inspire Courage",
+        "domain": "diplomacy",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "influence",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Rally an ally with words that ignite courage. Grants"
+            " haste for several rounds. In a group, the effect is"
+            " amplified. Solo, your own conviction drives you forward."
+        ),
+        "room_flag_written": "inspired",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 2, "magnitude": 1.0},
+    },
+    "undermine_confidence": {
+        "id": "undermine_confidence",
+        "name": "Undermine Confidence",
+        "domain": "diplomacy",
+        "tier": 2,
+        "resource_cost": 18,
+        "resource_type": "influence",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 0.80,
+        "description": (
+            "Identify and exploit the target's insecurities through"
+            " calculated speech. Weakens the target's damage output"
+            " as self-doubt creeps into their actions."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.15},
+    },
+    "words_of_authority": {
+        "id": "words_of_authority",
+        "name": "Words of Authority",
+        "domain": "diplomacy",
+        "tier": 2,
+        "resource_cost": 20,
+        "resource_type": "influence",
+        "cooldown": 3,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Deliver a pronouncement that carries the weight of"
+            " earned authority. The charged delivery amplifies"
+            " impact. Words that leave bruises."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 70},
+    },
+
+    # --- Diplomacy Tier 3 (4 abilities) -- Advanced manipulation ---
+    "commanding_presence": {
+        "id": "commanding_presence",
+        "name": "Commanding Presence",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "influence",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Project an aura of undeniable authority. All enemies"
+            " in the room are weakened as your presence overwhelms"
+            " their resolve. The Arbiter's judgment made manifest."
+        ),
+        "room_flag_written": "intimidated",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+    },
+    "charm_offensive": {
+        "id": "charm_offensive",
+        "name": "Charm Offensive",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 35,
+        "resource_type": "influence",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 0.75,
+        "description": (
+            "Overwhelm the target with persuasive force. The charmed"
+            " target cannot take hostile actions for a brief moment."
+            " Not magic -- sheer force of personality."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "charm", "duration": 1, "magnitude": 1.0},
+    },
+    "rally_the_fallen": {
+        "id": "rally_the_fallen",
+        "name": "Rally the Fallen",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 30,
+        "resource_type": "influence",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Speak words that lift allies from despair. Grants haste"
+            " and damage reduction to the entire group. The effect"
+            " scales with party size. The voice that turns a rout"
+            " into a rally."
+        ),
+        "room_flag_written": "inspired",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+    },
+    "social_execution": {
+        "id": "social_execution",
+        "name": "Social Execution",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "influence",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Deliver a devastating verbal assault that strips the"
+            " target's morale. Deals heavy presence-scaled damage."
+            " Words sharper than any blade."
+        ),
+        "room_flag_written": "intimidated",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 95},
+    },
+
+    # --- Diplomacy Tier 4 (3 abilities) -- Domain capstones ---
+    "voice_of_the_realm": {
+        "id": "voice_of_the_realm",
+        "name": "Voice of the Realm",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 0.85,
+        "description": (
+            "Speak with the full weight of every relationship"
+            " you have cultivated. AoE charm that forces all"
+            " enemies to hesitate. Damage scales with your"
+            " faction Standing. The ultimate leverage."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.5},
+    },
+    "absolute_authority": {
+        "id": "absolute_authority",
+        "name": "Absolute Authority",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "A pronouncement that carries the force of absolute"
+            " conviction. Charged delivery for maximum impact."
+            " Deals devastating presence-scaled damage to all"
+            " enemies. The Voice of the Realm made weapon."
+        ),
+        "room_flag_written": "intimidated",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"damage_base": 200},
+    },
+    "morale_collapse": {
+        "id": "morale_collapse",
+        "name": "Morale Collapse",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": None,
+        "application_chance": 0.90,
+        "description": (
+            "Break the enemy's will to fight with a single"
+            " declaration. All enemies are weakened and slowed."
+            " The Accord's ultimate social weapon -- a fight"
+            " ended by words, not blades."
+        ),
+        "room_flag_written": "intimidated",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.25},
+    },
+
+    # ===================================================================
+    # DIPLOMACY-PRIMARY SUBCLASS SIGNATURES (18 abilities = 9 x 2)
+    # Each subclass gets a Tier 3 enhanced blend + Tier 4 defining ability
+    # ===================================================================
+
+    # --- Civicguard (diplomacy + combat) ---
+    "civicguard_iron_diplomacy": {
+        "id": "civicguard_iron_diplomacy",
+        "name": "Iron Diplomacy",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "influence",
+        "cooldown": 2,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "combat",
+        "application_chance": 0.85,
+        "description": (
+            "Intimidate the target with demonstrated combat prowess."
+            " Your strength makes your words heavier. Presence and"
+            " strength both scale the debuff. The diplomat with teeth."
+        ),
+        "room_flag_written": "intimidated",
+        "attuned_variants": {},
+        "subclass_id": "civicguard",
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+    },
+    "civicguard_violent_persuasion": {
+        "id": "civicguard_violent_persuasion",
+        "name": "Violent Persuasion",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "influence",
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "combat",
+        "application_chance": 0.85,
+        "description": (
+            "A devastating strike punctuated by a spoken threat."
+            " Deals heavy damage and applies charm. The unique"
+            " Civicguard hybrid -- violence and persuasion in"
+            " the same breath. The target obeys or bleeds."
+        ),
+        "room_flag_written": "intimidated",
+        "attuned_variants": {},
+        "subclass_id": "civicguard",
+        "effect_params": {"damage_base": 160, "status_effect": "charm", "duration": 1, "magnitude": 1.0},
+    },
+
+    # --- Shadowbroker (diplomacy + subterfuge) ---
+    "shadowbroker_information_trade": {
+        "id": "shadowbroker_information_trade",
+        "name": "Information Trade",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "influence",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "Trade intelligence for advantage. Reveals enemy"
+            " weaknesses and grants an ally a damage bonus."
+            " Information is currency -- and you are the bank."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": "shadowbroker",
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+    },
+    "shadowbroker_network_collapse": {
+        "id": "shadowbroker_network_collapse",
+        "name": "Network Collapse",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 0.90,
+        "description": (
+            "Burn your accumulated intelligence network for a"
+            " devastating social attack. Massive debuff that scales"
+            " with your faction Standing. Every relationship you"
+            " built becomes a weapon. Nobody knows who you work for."
+        ),
+        "room_flag_written": "exposed",
+        "attuned_variants": {},
+        "subclass_id": "shadowbroker",
+        "effect_params": {"debuff_type": "weaken", "duration": 4, "magnitude": 0.3},
+    },
+
+    # --- Wayfinder (diplomacy + naturalism) ---
+    "wayfinder_empathic_bond": {
+        "id": "wayfinder_empathic_bond",
+        "name": "Empathic Bond",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "influence",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "naturalism",
+        "application_chance": 1.0,
+        "description": (
+            "Open an empathic connection with an ally. Heals wounds"
+            " and grants a brief damage reduction buff. Presence"
+            " and naturalism combine -- empathy made manifest."
+        ),
+        "room_flag_written": "inspired",
+        "attuned_variants": {},
+        "subclass_id": "wayfinder",
+        "effect_params": {"damage_base": 80, "buff_type": "warding", "duration": 2, "magnitude": 0.15},
+    },
+    "wayfinder_heart_of_the_wild": {
+        "id": "wayfinder_heart_of_the_wild",
+        "name": "Heart of the Wild",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "naturalism",
+        "application_chance": 1.0,
+        "description": (
+            "Channel the empathic bond through nature itself."
+            " Group heal that also grants damage reduction."
+            " Bond dimension amplifies the effect. The Wayfinder"
+            " who understands what every living thing needs."
+        ),
+        "room_flag_written": "inspired",
+        "attuned_variants": {},
+        "subclass_id": "wayfinder",
+        "effect_params": {"damage_base": 150, "buff_type": "warding", "duration": 3, "magnitude": 0.2},
+    },
+
+    # --- Spiritvoice (diplomacy + resonance) ---
+    "spiritvoice_resonant_word": {
+        "id": "spiritvoice_resonant_word",
+        "name": "Resonant Word",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "influence",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "resonance",
+        "application_chance": 0.85,
+        "description": (
+            "Speak a word that resonates with old magic. The debuff"
+            " is amplified by resonance -- your voice carries weight"
+            " that should not be possible. Words that leave echoes."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": "spiritvoice",
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+    },
+    "spiritvoice_voice_of_ages": {
+        "id": "spiritvoice_voice_of_ages",
+        "name": "Voice of Ages",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "resonance",
+        "application_chance": 0.80,
+        "description": (
+            "Channel old magic through your voice. An AoE charm"
+            " that affects all enemies. Resonance and presence"
+            " both amplify the effect. The Spiritvoice's defining"
+            " power -- words that carry more weight than they should."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": "spiritvoice",
+        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.5},
+    },
+
+    # --- Highcourt (diplomacy + arcana) ---
+    "highcourt_enchant_word": {
+        "id": "highcourt_enchant_word",
+        "name": "Enchant Word",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "influence",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "arcana",
+        "application_chance": 0.85,
+        "description": (
+            "Weave a subtle enchantment into your words. The target"
+            " is charmed -- not through force of personality alone"
+            " but through literal magic carried in speech."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": "highcourt",
+        "effect_params": {"debuff_type": "charm", "duration": 2, "magnitude": 1.0},
+    },
+    "highcourt_sovereign_presence": {
+        "id": "highcourt_sovereign_presence",
+        "name": "Sovereign Presence",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "arcana",
+        "application_chance": 0.80,
+        "description": (
+            "Project an aura of magical authority that passively"
+            " weakens all enemies each round. Sustained effect."
+            " The mage who never had to fight because nobody"
+            " wanted them to stop talking."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": "highcourt",
+        "effect_params": {"debuff_type": "weaken", "duration": 4, "magnitude": 0.25},
+    },
+
+    # --- Silkpoison (diplomacy + alchemy) ---
+    "silkpoison_poisoned_word": {
+        "id": "silkpoison_poisoned_word",
+        "name": "Poisoned Word",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 20,
+        "resource_type": "influence",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.85,
+        "description": (
+            "Deliver poison through social proximity. A handshake,"
+            " a whispered word, a shared drink. The target never"
+            " sees the delivery mechanism. Subtle threat made real."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "silkpoison",
+        "effect_params": {"damage_base": 60, "status_effect": "poison", "duration": 3, "magnitude": 8},
+    },
+    "silkpoison_fatal_courtesy": {
+        "id": "silkpoison_fatal_courtesy",
+        "name": "Fatal Courtesy",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "alchemy",
+        "application_chance": 0.90,
+        "description": (
+            "A delayed poison of extraordinary potency applied"
+            " through social interaction. The target feels nothing"
+            " for two rounds, then the full dose hits. Undetectable"
+            " until it is too late. The most dangerous dinner guest."
+        ),
+        "room_flag_written": "toxic_air",
+        "attuned_variants": {},
+        "subclass_id": "silkpoison",
+        "effect_params": {"damage_base": 100, "status_effect": "poison", "duration": 4, "magnitude": 12},
+    },
+
+    # --- Bannerspeaker (diplomacy + tactics) ---
+    "bannerspeaker_rallying_banner": {
+        "id": "bannerspeaker_rallying_banner",
+        "name": "Rallying Banner",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "influence",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Raise a rallying standard that inspires the entire"
+            " group. Grants haste and damage reduction. Effect"
+            " scales with party size. The voice behind every"
+            " military campaign."
+        ),
+        "room_flag_written": "inspired",
+        "attuned_variants": {},
+        "subclass_id": "bannerspeaker",
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+    },
+    "bannerspeaker_morale_surge": {
+        "id": "bannerspeaker_morale_surge",
+        "name": "Morale Surge",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "tactics",
+        "application_chance": 1.0,
+        "description": (
+            "Unleash an overwhelming wave of morale. All allies"
+            " gain haste plus a significant damage bonus. The"
+            " Bannerspeaker's defining power -- turning armies"
+            " with words. Military faction Standing amplifies."
+        ),
+        "room_flag_written": "inspired",
+        "attuned_variants": {},
+        "subclass_id": "bannerspeaker",
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5},
+    },
+
+    # --- Dealwright (diplomacy + engineering) ---
+    "dealwright_contractual_obligation": {
+        "id": "dealwright_contractual_obligation",
+        "name": "Contractual Obligation",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "influence",
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "engineering",
+        "application_chance": 0.85,
+        "description": (
+            "Impose an obligation the target cannot ignore. The"
+            " debuff strengthens each time the target acts --"
+            " every action they take tightens the contract."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": "dealwright",
+        "effect_params": {"debuff_type": "weaken", "duration": 4, "magnitude": 0.15},
+    },
+    "dealwright_binding_deal": {
+        "id": "dealwright_binding_deal",
+        "name": "Binding Deal",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 50,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "engineering",
+        "application_chance": 0.85,
+        "description": (
+            "Forge a binding contract that constrains the target."
+            " Root plus weaken -- the target is held by an"
+            " obligation they cannot break. Every gift was an"
+            " investment. Every investment comes due."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": "dealwright",
+        "effect_params": {"debuff_type": "root", "duration": 3, "magnitude": 1.0},
+    },
+
+    # --- Truthwarden (diplomacy + remnance) ---
+    "truthwarden_forbidden_knowledge": {
+        "id": "truthwarden_forbidden_knowledge",
+        "name": "Forbidden Knowledge",
+        "domain": "diplomacy",
+        "tier": 3,
+        "resource_cost": 25,
+        "resource_type": "influence",
+        "cooldown": 3,
+        "charge_turns": 0,
+        "effect_type": "debuff",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "remnance",
+        "application_chance": 0.85,
+        "description": (
+            "Speak a truth the target cannot bear. Knowledge of"
+            " the world's actual history weaponized. The debuff"
+            " is unique -- a psychic wound from forbidden truth."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": "truthwarden",
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+    },
+    "truthwarden_truth_revealed": {
+        "id": "truthwarden_truth_revealed",
+        "name": "Truth Revealed",
+        "domain": "diplomacy",
+        "tier": 4,
+        "resource_cost": 55,
+        "resource_type": "influence",
+        "cooldown": 6,
+        "charge_turns": 1,
+        "effect_type": "damage",
+        "scaling_primary": "diplomacy",
+        "scaling_secondary": "remnance",
+        "application_chance": 0.90,
+        "description": (
+            "Reveal a truth so fundamental it damages the target's"
+            " sense of reality. Massive damage plus weaken. Echoes"
+            " amplify the effect. The Truthwarden's defining power"
+            " -- what you know can destroy."
+        ),
+        "room_flag_written": "ordered",
+        "attuned_variants": {},
+        "subclass_id": "truthwarden",
+        "effect_params": {"damage_base": 180, "status_effect": "weaken", "duration": 3, "magnitude": 0.2},
     },
 }
 
