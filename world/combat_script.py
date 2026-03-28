@@ -446,6 +446,14 @@ class CombatScript:
             record_stat_use(character, "combat")
             character.ndb.actions_remaining = max(0, (character.ndb.actions_remaining or 1) - 1)
 
+            # Track for Command resource ally-action build
+            ally_counts = dict(getattr(self.ndb, "ally_action_count", None) or {})
+            for cid in (self.db.combatant_ids or []):
+                if cid != character.id:
+                    key = str(cid)
+                    ally_counts[key] = ally_counts.get(key, 0) + 1
+            self.ndb.ally_action_count = ally_counts
+
             if check_death(target):
                 if _is_mob(target):
                     death_msg = handle_mob_death(target, character)
@@ -469,6 +477,14 @@ class CombatScript:
             if self.obj:
                 self.obj.msg_contents(msg, exclude=[character])
             character.ndb.ability_used_this_turn = True
+
+            # Track for Command resource ally-action build
+            ally_counts = dict(getattr(self.ndb, "ally_action_count", None) or {})
+            for cid in (self.db.combatant_ids or []):
+                if cid != character.id:
+                    key = str(cid)
+                    ally_counts[key] = ally_counts.get(key, 0) + 1
+            self.ndb.ally_action_count = ally_counts
             # Abilities consume all remaining actions per D-09
             character.ndb.actions_remaining = 0
             if target and check_death(target):
@@ -597,8 +613,11 @@ class CombatScript:
         checks for DoT kills, persists effects to db, increments round number.
         """
         from world.status_effects import tick_effects
-        from world.ability_engine import decrement_cooldowns
+        from world.ability_engine import decrement_cooldowns, on_round_end_resources
         from world.combat_engine import check_death, handle_mob_death, handle_player_death
+
+        # Reset ally action counter for Command resource tracking
+        self.ndb.ally_action_count = {}
 
         dead = []
         for combatant in self._resolve_combatants():
@@ -608,6 +627,8 @@ class CombatScript:
             tick_effects(combatant)
             # Decrement cooldowns
             decrement_cooldowns(combatant)
+            # Per-round resource hooks (Resonance decay, Focus skip reset, Command ally build)
+            on_round_end_resources(combatant, self)
             # Check for DoT kills
             if check_death(combatant):
                 dead.append(combatant)
@@ -704,7 +725,7 @@ class CombatScript:
         Removes CombatCmdSet from players, clears encounter cooldowns,
         clears all effects, resets ndb combat state.
         """
-        from world.ability_engine import clear_encounter_cooldowns
+        from world.ability_engine import clear_encounter_cooldowns, on_encounter_end_resources
         from world.status_effects import clear_all_effects
 
         for combatant in self._resolve_combatants():
@@ -715,6 +736,7 @@ class CombatScript:
                 _remove_combat_cmdset(combatant)
                 clear_encounter_cooldowns(combatant)
                 clear_all_effects(combatant)
+                on_encounter_end_resources(combatant)
 
             combatant.ndb.combat_handler = None
             combatant.ndb.actions_remaining = 0
