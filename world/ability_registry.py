@@ -115,18 +115,20 @@ ABILITIES = {
         "resource_type": "momentum",
         "cooldown": 0,
         "charge_turns": 0,
-        "effect_type": "damage",
+        "effect_type": "debuff",
         "scaling_primary": "combat",
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Step into the opponent's space with a quick thrust."
-            " Momentum builds fastest when you refuse to give ground."
+            "A quick thrust that hobbles the target's footwork."
+            " The only T1 Combat debuff -- control-focused loadouts"
+            " start here. Momentum builds fastest when you dictate"
+            " the pace."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {'damage_base': 30},
+        "effect_params": {"debuff_type": "slow", "duration": 2, "magnitude": 0.8},
     },
     "iron_resolve": {
         "id": "iron_resolve",
@@ -1993,7 +1995,7 @@ ABILITIES = {
         "room_flag_written": "exposed",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 180, "consumes_all_focus": True},
+        "effect_params": {"damage_base": 180, "consumes_all_focus": True, "is_multi_hit": True, "hit_count": 5, "damage_per_hit": 40},
     },
     "perfect_read": {
         "id": "perfect_read",
@@ -3328,14 +3330,14 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "A focused lance of raw arcane force. The simplest spell"
-            " in the Arcane curriculum -- and the one that teaches"
-            " mana discipline. Every bolt is a choice to spend."
+            "A bolt of pure arcane force that bypasses all elemental"
+            " defenses. Lower damage than flashier spells, but nothing"
+            " resists it. The answer when the enemy is warded."
         ),
         "room_flag_written": "arcane_residue",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 35, "status_effect": "weaken", "effect_duration": 2, "effect_magnitude": 0.1},
+        "effect_params": {"damage_base": 28, "piercing": True},
     },
     "frost_shard": {
         "id": "frost_shard",
@@ -3346,19 +3348,20 @@ ABILITIES = {
         "resource_type": "mana",
         "cooldown": 1,
         "charge_turns": 0,
-        "effect_type": "damage",
+        "effect_type": "status",
         "scaling_primary": "arcana",
         "scaling_secondary": None,
         "application_chance": 0.80,
         "description": (
-            "Conjure a spike of crystallized cold and hurl it."
+            "A shard of crystallized cold that chills and slows."
             " Targets struck feel the chill seep into their joints"
-            " -- movements slow, reactions dull."
+            " -- movements slow, reactions dull. The T1 crowd control"
+            " option for Arcana practitioners."
         ),
         "room_flag_written": "frozen",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 30, "status_effect": "wet", "effect_duration": 3, "effect_magnitude": 1},
+        "effect_params": {"status_effect": "slow", "duration": 2, "magnitude": 0.7, "damage_base": 20},
     },
     "mana_shield": {
         "id": "mana_shield",
@@ -3612,15 +3615,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Call down a fragment of concentrated elemental force"
-            " from the sky. The impact obliterates and the blast"
-            " leaves the ground scorched for rounds after. The"
-            " spell that ends encounters -- and mana reserves."
+            "A massive fireball that scorches all enemies in the area."
+            " The blast obliterates groups and leaves the ground"
+            " scorched for rounds after. The spell that ends"
+            " encounters -- and mana reserves."
         ),
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 200, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1},
+        "effect_params": {"damage_base": 200, "aoe": True, "aoe_damage_base": 120, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1},
     },
     "absolute_zero": {
         "id": "absolute_zero",
@@ -3631,20 +3634,20 @@ ABILITIES = {
         "resource_type": "mana",
         "cooldown": 6,
         "charge_turns": 2,
-        "effect_type": "damage",
+        "effect_type": "status",
         "scaling_primary": "arcana",
         "scaling_secondary": None,
         "application_chance": 0.85,
         "description": (
-            "Drain all heat from an area in a single catastrophic"
-            " instant. Everything freezes -- movement, thought,"
-            " intention. Survivors are rooted and weakened."
-            " The coldest expression of magical mastery."
+            "Encases the target in absolute cold, freezing them solid."
+            " Movement, thought, intention -- all cease. Survivors"
+            " emerge weakened and disoriented. The coldest expression"
+            " of magical mastery. Unique niche: hard crowd control."
         ),
         "room_flag_written": "frozen",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 180, "status_effect": "wet", "effect_duration": 3, "effect_magnitude": 1},
+        "effect_params": {"status_effect": "frozen", "duration": 3, "magnitude": 1.0, "damage_base": 140},
     },
     "arcane_cataclysm": {
         "id": "arcane_cataclysm",
@@ -4294,9 +4297,10 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.80,
         "description": (
-            "Release a wave of discordant resonance that disrupts"
-            " enemy defenses. The disharmony weakens and slows --"
+            "A discordant pulse that weakens all nearby foes."
+            " The disharmony disrupts every enemy in range --"
             " their rhythm breaks where yours holds steady."
+            " The AoE debuff spender for Resonance."
         ),
         "room_flag_written": "disrupted",
         "attuned_variants": {
@@ -4304,7 +4308,7 @@ ABILITIES = {
             "charged": {"extra_effect": "also applies stun for 1 round", "extra_cost": 20},
         },
         "subclass_id": None,
-        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.15},
+        "effect_params": {"aoe": True, "debuff_type": "weaken", "debuff_duration": 2, "duration": 3, "magnitude": 0.15},
     },
     "resonant_charge": {
         "id": "resonant_charge",
@@ -4347,10 +4351,10 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Channel resonance into restorative echoes. The old"
-            " patterns remember wholeness -- your body follows."
-            " A spender that heals rather than harms. Resonance"
-            " practitioners heal by remembering what was intact."
+            "Resonant frequencies mend wounds over several rounds."
+            " The old patterns remember wholeness -- your body"
+            " follows, healing steadily. Sustained recovery for"
+            " those who build resonance patiently."
         ),
         "room_flag_written": None,
         "attuned_variants": {
@@ -4358,7 +4362,7 @@ ABILITIES = {
             "ancient_ground": {"extra_effect": "+50% healing", "extra_cost": 10},
         },
         "subclass_id": None,
-        "effect_params": {"heal_amount": 60},
+        "effect_params": {"heal_amount": 60, "heal_over_time": True, "hot_duration": 3},
     },
 
     # --- Resonance Tier 3 (4 abilities) -- Advanced attunement, powerful spenders ---
@@ -4404,19 +4408,19 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Attune a powerful harmonic barrier around yourself"
-            " and nearby allies. The shield resonates with"
-            " incoming damage, reducing it significantly. Spending"
-            " a full buildup on protection -- a choice only"
-            " discipline can afford."
+            "A resonant barrier that reflects a quarter of incoming"
+            " damage back at attackers. The shield resonates with"
+            " every blow, punishing aggression. Spending a full"
+            " buildup on retaliation -- a choice only discipline"
+            " can afford."
         ),
         "room_flag_written": "resonant",
         "attuned_variants": {
-            "resonant": {"extra_effect": "shield reflects 20% damage back to attackers", "extra_cost": 15},
+            "resonant": {"extra_effect": "reflect percent increased to 40%", "extra_cost": 15},
             "ancient_ground": {"extra_effect": "shield duration +3 rounds", "extra_cost": 10},
         },
         "subclass_id": None,
-        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.25},
+        "effect_params": {"buff_type": "warding", "duration": 3, "magnitude": 0.25, "reflect_damage": True, "reflect_percent": 0.25},
     },
     "deep_attunement": {
         "id": "deep_attunement",
@@ -5104,15 +5108,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Lash out with a whip of thorned vine. The simplest"
-            " expression of Verdance doctrine: the natural world"
-            " answers when you ask. Stronger when Feral -- calm"
-            " spent becomes fury delivered."
+            "Barbed thorns tear flesh, leaving a persistent wound."
+            " The simplest expression of Verdance doctrine: the"
+            " natural world answers when you ask. Unique niche:"
+            " T1 bleed DoT applicator."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 35, "balance_shift": 8, "balance_type": "feral"},
+        "effect_params": {"damage_base": 35, "bleed": True, "bleed_duration": 3, "bleed_damage": 8, "balance_shift": 8, "balance_type": "feral"},
     },
     "wild_mend": {
         "id": "wild_mend",
@@ -5199,15 +5203,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.85,
         "description": (
-            "Thorned vines erupt from the ground, raking everything"
-            " nearby. Applies poison on contact. The calm you've"
-            " stored converts to venom -- every heal builds the"
-            " next eruption."
+            "Thorny vines erupt around you, lashing all nearby"
+            " enemies. The calm you've stored converts to fury"
+            " -- every heal builds the next eruption. The T2 AoE"
+            " feral damage option for Naturalism."
         ),
         "room_flag_written": "overgrown",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 55, "status_effect": "poison", "duration": 3, "magnitude": 8, "balance_shift": 10, "balance_type": "feral"},
+        "effect_params": {"damage_base": 55, "aoe": True, "status_effect": "poison", "duration": 3, "magnitude": 8, "balance_shift": 10, "balance_type": "feral"},
     },
     "soothe_the_wild": {
         "id": "soothe_the_wild",
@@ -5992,14 +5996,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.80,
         "description": (
-            "Deploy a chemical smoke compound that blinds enemies"
-            " in the area. Visibility drops to nothing -- bought"
-            " with preparation, not magic."
+            "Hurl a smoke bomb that blinds all nearby enemies."
+            " Visibility drops to nothing for everyone in range"
+            " -- bought with preparation, not magic. Unique niche:"
+            " AoE blind for area denial."
         ),
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "blind", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"aoe": True, "miss_chance_increase": 0.3, "duration": 2, "debuff_type": "blind", "magnitude": 1.0},
     },
     "venom_coat": {
         "id": "venom_coat",
@@ -6015,14 +6020,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 0.85,
         "description": (
-            "Coat your weapon with a prepared toxin. The next"
-            " several melee strikes apply poison. Pre-crafted"
-            " and precise -- the Thornwork way."
+            "Coat your weapon with fast-acting venom that enhances"
+            " your next strike. Pre-crafted and precise -- the"
+            " Thornwork prep-then-strike philosophy. Unique niche:"
+            " attack buff that adds poison to your next hit."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"status_effect": "poison", "duration": 3, "magnitude": 8},
+        "effect_params": {"applies_to_next_attack": True, "bonus_poison_damage": 15, "status_effect": "poison", "duration": 3, "magnitude": 8},
     },
 
     # --- Alchemy Tier 2 (4 abilities) -- Core alchemy ---
@@ -6928,15 +6934,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Feed enhanced fuel into your companion's drive system."
-            " The construct operates at amplified output -- faster,"
-            " harder, more dangerous. Alchemist-grade components"
-            " push it beyond baseline specifications."
+            "Recycle waste heat from your companion to partially"
+            " refund component costs. The construct's efficiency"
+            " improves -- less waste, more output per component."
+            " Unique niche: resource efficiency for sustained fights."
         ),
         "room_flag_written": "mechanized",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "damage_bonus", "value": 0.25, "duration": 3},
+        "effect_params": {"buff_type": "damage_bonus", "value": 0.25, "duration": 3, "resource_refund": True, "refund_percent": 0.5},
     },
     "rivet_burst": {
         "id": "rivet_burst",
@@ -7716,15 +7722,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Release a pulse of fragmented ancient energy. Raw"
-            " knowledge made briefly physical -- it hits like a"
-            " remembered impact. Cheap, fast, reliable. The basic"
-            " tool of anyone who excavates the past."
+            "Release a pulse of excavated memories that builds"
+            " Echoes. Raw knowledge made briefly physical -- it"
+            " hits light but generates significant echo resonance."
+            " The T1 echo builder for sustained Remnance play."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 30},
+        "effect_params": {"damage_base": 30, "echoes_generated": 5},
     },
 
     # --- Remnance Tier 2 (4 abilities) -- Core remnance, investigation reward ---
@@ -7814,15 +7820,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Strike with the weight of something the world forgot."
-            " The blow carries more force than your body should"
-            " produce -- echoes of ancient violence remembered"
-            " in your muscles."
+            "Channel the weight of forgotten ages through your"
+            " strike, bypassing all defenses. The blow carries"
+            " more force than your body should produce -- echoes"
+            " of ancient violence that ignore armor entirely."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 60},
+        "effect_params": {"damage_base": 60, "ignores_armor": True},
     },
 
     # --- Remnance Tier 3 (4 abilities) -- Advanced ancient knowledge ---
@@ -7912,15 +7918,15 @@ ABILITIES = {
         "scaling_secondary": None,
         "application_chance": 1.0,
         "description": (
-            "Strike as they struck before the world broke. A combat"
-            " technique from the age of dragons -- precise, powerful,"
-            " carrying the weight of a civilization that no longer"
-            " exists. Knowledge of the ancient world is fuel."
+            "Invoke a curse from the age before language, weakening"
+            " the target's resolve. A combat technique from the age"
+            " of dragons -- precise, powerful, carrying the weight"
+            " of a civilization that no longer exists. Damage + weaken."
         ),
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 95},
+        "effect_params": {"damage_base": 110, "status_effect": "weaken", "status_duration": 2, "status_magnitude": 0.7},
     },
 
     # --- Remnance Tier 4 (3 abilities) -- Domain capstones, pre-curse power ---
