@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 05b-06-PLAN.md
-last_updated: "2026-03-27T20:25:01.612Z"
+stopped_at: Completed 5c-01-PLAN.md
+last_updated: "2026-03-28T01:07:52.770Z"
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 8
-  total_plans: 49
-  completed_plans: 46
+  total_plans: 52
+  completed_plans: 47
 ---
 
 # Project State
@@ -80,6 +80,7 @@ Plan: Not started
 | Phase 05b P04 | 317 | 2 tasks | 1 files |
 | Phase 05b P05 | 6min | 2 tasks | 1 files |
 | Phase 05b P06 | 1 | 1 tasks | 0 files |
+| Phase 05c P01 | 4 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -161,6 +162,7 @@ Recent decisions affecting current work:
 - [Phase 05b]: Naturalism Balance costs 10-55 (spectrum shifts); Alchemy Reagent costs T1:5-8, T2:12-15, T3:18-25, T4:30-45 (finite stock)
 - [Phase 05b]: Engineering companion IS the domain identity; Remnance uses excavation language exclusively; Sealbreaker Curse Break is most dangerous ability (charge_turns=2, damage_base=250); runewright_forge key for Eng+Res subclass
 - [Phase 05b]: No fixes required -- all 330 abilities passed all 10 structural validation checks on first run
+- [Phase 05c]: 17 redundant abilities redesigned with unique mechanics (piercing, AoE, multi-hit, bleed, reflection, CC) -- no damage number bumps
 
 ### Pending Todos
 
@@ -174,6 +176,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T20:24:24.723Z
-Stopped at: Completed 05b-06-PLAN.md
+Last session: 2026-03-28T01:07:52.765Z
+Stopped at: Completed 5c-01-PLAN.md
 Resume file: None
