@@ -220,7 +220,12 @@ Plans:
   2. All 10 domain resource systems are implemented in ability_engine.py: Focus combo points, Balance pendulum, Influence reputation-pool, Momentum build-on-hit, Command ally-scaling, Mana cross-encounter pool, Resonance builder/spender with decay, Echoes investigation-bonus, Reagents finite stock, Components finite stock
   3. Resource-specific ability behaviors work: Focus builders generate points on hit (miss resets), Balance shifts on ability use and scales damage/healing, Resonance decays -10/round during combat
   4. Typed resource variants for Engineering (component types) and Alchemy (reagent types) have data-layer support (variant fields on abilities) even if the gathering/inventory system is deferred
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 5c-01-PLAN.md — Redesign ~18 redundant abilities with unique mechanics (loadout differentiation)
+- [ ] 5c-02-PLAN.md — Resource handler dispatch table (10 handlers) + type-aware init + combat lifecycle hooks
+- [ ] 5c-03-PLAN.md — Test suite: resource system tests (10 types) + ability redundancy validation
 
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
@@ -250,5 +255,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
 | 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
 | 5b. Ability Content Authoring (INSERTED) | 6/6 | Complete | 2026-03-27 |
-| 5c. Ability Polish & Resource Engine (INSERTED) | 0/TBD | Not started | - |
+| 5c. Ability Polish & Resource Engine (INSERTED) | 0/3 | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
