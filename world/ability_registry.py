@@ -23,7 +23,6 @@ EFFECT_TYPES = (
     "buff",
     "debuff",
     "utility",
-    "social",
     "tactical",
     "heal",
     "status",
