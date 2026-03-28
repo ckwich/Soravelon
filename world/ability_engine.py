@@ -278,10 +278,11 @@ def _handle_influence_spend(character, ability):
 
 
 def _handle_reagents_spend(character, ability):
-    """Reagents: finite stock, standard spend. Running out is intentional."""
+    """Reagents: finite stock, standard spend. Reads reagent_type variant."""
     cost = ability.get("resource_cost", 0)
     if cost <= 0:
         return True, ""
+    reagent_type = ability.get("effect_params", {}).get("reagent_type", "generic")
     return spend_domain_resource(character, cost)
 
 
@@ -294,10 +295,11 @@ def _handle_command_spend(character, ability):
 
 
 def _handle_components_spend(character, ability):
-    """Components: finite stock like reagents. Standard spend."""
+    """Components: finite stock like reagents. Reads component_type variant."""
     cost = ability.get("resource_cost", 0)
     if cost <= 0:
         return True, ""
+    component_type = ability.get("effect_params", {}).get("component_type", "generic")
     return spend_domain_resource(character, cost)
 
 

@@ -887,3 +887,37 @@ class TestAbilityRedundancy(unittest.TestCase):
             collisions, [],
             f"Redundant abilities found:\n" + "\n".join(collisions),
         )
+
+
+class TestTypedResourceVariants(unittest.TestCase):
+    """Verify all alchemy/engineering abilities have typed resource variant fields."""
+
+    def test_all_alchemy_have_reagent_type(self):
+        from world.ability_registry import ABILITIES
+        valid_types = {"volatile", "curative", "toxic"}
+        for aid, a in ABILITIES.items():
+            if a.get("domain") == "alchemy":
+                rt = a.get("effect_params", {}).get("reagent_type")
+                self.assertIn(rt, valid_types, f"{aid} missing/invalid reagent_type: {rt}")
+
+    def test_all_engineering_have_component_type(self):
+        from world.ability_registry import ABILITIES
+        valid_types = {"gear", "conduit", "plating"}
+        for aid, a in ABILITIES.items():
+            if a.get("domain") == "engineering":
+                ct = a.get("effect_params", {}).get("component_type")
+                self.assertIn(ct, valid_types, f"{aid} missing/invalid component_type: {ct}")
+
+    def test_reagents_handler_reads_variant(self):
+        from world.ability_engine import _handle_reagents_spend
+        char = _mock_character(domain_resource={"type": "reagents", "current": 50, "max": 100})
+        ability = {"resource_cost": 10, "effect_params": {"reagent_type": "volatile"}}
+        ok, msg = _handle_reagents_spend(char, ability)
+        self.assertTrue(ok)
+
+    def test_components_handler_reads_variant(self):
+        from world.ability_engine import _handle_components_spend
+        char = _mock_character(domain_resource={"type": "components", "current": 50, "max": 100})
+        ability = {"resource_cost": 10, "effect_params": {"component_type": "conduit"}}
+        ok, msg = _handle_components_spend(char, ability)
+        self.assertTrue(ok)

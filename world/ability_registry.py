@@ -5956,7 +5956,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 35},
+        "effect_params": {"damage_base": 35, "reagent_type": "volatile"},
     },
     "acid_flask": {
         "id": "acid_flask",
@@ -5979,7 +5979,7 @@ ABILITIES = {
         "room_flag_written": "caustic",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 40, "status_effect": "burn", "duration": 2, "magnitude": 7},
+        "effect_params": {"damage_base": 40, "status_effect": "burn", "duration": 2, "magnitude": 7, "reagent_type": "volatile"},
     },
     "smoke_screen": {
         "id": "smoke_screen",
@@ -6003,7 +6003,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"aoe": True, "miss_chance_increase": 0.3, "duration": 2, "debuff_type": "blind", "magnitude": 1.0},
+        "effect_params": {"aoe": True, "miss_chance_increase": 0.3, "duration": 2, "debuff_type": "blind", "magnitude": 1.0, "reagent_type": "toxic"},
     },
     "venom_coat": {
         "id": "venom_coat",
@@ -6027,7 +6027,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"applies_to_next_attack": True, "bonus_poison_damage": 15, "status_effect": "poison", "duration": 3, "magnitude": 8},
+        "effect_params": {"applies_to_next_attack": True, "bonus_poison_damage": 15, "status_effect": "poison", "duration": 3, "magnitude": 8, "reagent_type": "toxic"},
     },
 
     # --- Alchemy Tier 2 (4 abilities) -- Core alchemy ---
@@ -6053,7 +6053,7 @@ ABILITIES = {
         "room_flag_written": "caustic",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"status_effect": "burn", "duration": 3, "magnitude": 8},
+        "effect_params": {"status_effect": "burn", "duration": 3, "magnitude": 8, "reagent_type": "volatile"},
     },
     "concentrated_toxin": {
         "id": "concentrated_toxin",
@@ -6076,7 +6076,7 @@ ABILITIES = {
         "room_flag_written": "poisoned_air",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10, "reagent_type": "volatile"},
     },
     "flashpowder": {
         "id": "flashpowder",
@@ -6099,7 +6099,7 @@ ABILITIES = {
         "room_flag_written": "burning",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "blind", "duration": 2, "magnitude": 1.0},
+        "effect_params": {"debuff_type": "blind", "duration": 2, "magnitude": 1.0, "reagent_type": "toxic"},
     },
     "strengthening_draught": {
         "id": "strengthening_draught",
@@ -6122,7 +6122,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0, "reagent_type": "curative"},
     },
 
     # --- Alchemy Tier 3 (4 abilities) -- Advanced compounds ---
@@ -6148,7 +6148,7 @@ ABILITIES = {
         "room_flag_written": "burning",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 80, "status_effect": "burn", "duration": 3, "magnitude": 10},
+        "effect_params": {"damage_base": 80, "status_effect": "burn", "duration": 3, "magnitude": 10, "reagent_type": "volatile"},
     },
     "weakening_agent": {
         "id": "weakening_agent",
@@ -6171,7 +6171,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2},
+        "effect_params": {"debuff_type": "weaken", "duration": 3, "magnitude": 0.2, "reagent_type": "toxic"},
     },
     "paralytic_compound": {
         "id": "paralytic_compound",
@@ -6195,7 +6195,7 @@ ABILITIES = {
         "room_flag_written": "poisoned_air",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "slow", "duration": 3, "magnitude": 1.0},
+        "effect_params": {"debuff_type": "slow", "duration": 3, "magnitude": 1.0, "reagent_type": "toxic"},
     },
     "volatile_concoction": {
         "id": "volatile_concoction",
@@ -6219,7 +6219,7 @@ ABILITIES = {
         "room_flag_written": "burning",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 110},
+        "effect_params": {"damage_base": 110, "reagent_type": "volatile"},
     },
 
     # --- Alchemy Tier 4 (3 abilities) -- Domain capstones ---
@@ -6245,7 +6245,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 150, "status_effect": "poison", "duration": 4, "magnitude": 12},
+        "effect_params": {"damage_base": 150, "status_effect": "poison", "duration": 4, "magnitude": 12, "reagent_type": "volatile"},
     },
     "alchemists_perfection": {
         "id": "alchemists_perfection",
@@ -6270,7 +6270,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 220},
+        "effect_params": {"damage_base": 220, "reagent_type": "volatile"},
     },
     "reagent_mastery": {
         "id": "reagent_mastery",
@@ -6294,7 +6294,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5},
+        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5, "reagent_type": "curative"},
     },
 
     # ===================================================================
@@ -6325,7 +6325,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "venomfang",
-        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10},
+        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10, "reagent_type": "volatile"},
     },
     "venomfang_apex_predator": {
         "id": "venomfang_apex_predator",
@@ -6350,7 +6350,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "venomfang",
-        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 2.0},
+        "effect_params": {"buff_type": "haste", "duration": 4, "magnitude": 2.0, "reagent_type": "curative"},
     },
 
     # --- Nightshade (alchemy + subterfuge) ---
@@ -6376,7 +6376,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "nightshade",
-        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 12},
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 12, "reagent_type": "toxic"},
     },
     "nightshade_midnight_bloom": {
         "id": "nightshade_midnight_bloom",
@@ -6401,7 +6401,7 @@ ABILITIES = {
         "room_flag_written": "poisoned_air",
         "attuned_variants": {},
         "subclass_id": "nightshade",
-        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15, "reagent_type": "toxic"},
     },
 
     # --- Mireweald (alchemy + naturalism) ---
@@ -6427,7 +6427,7 @@ ABILITIES = {
         "room_flag_written": "rotting",
         "attuned_variants": {},
         "subclass_id": "mireweald",
-        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10, "reagent_type": "volatile"},
     },
     "mireweald_mire_zone": {
         "id": "mireweald_mire_zone",
@@ -6452,7 +6452,7 @@ ABILITIES = {
         "room_flag_written": "rotting",
         "attuned_variants": {},
         "subclass_id": "mireweald",
-        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15, "reagent_type": "volatile"},
     },
 
     # --- Voidbrewer (alchemy + resonance) ---
@@ -6480,7 +6480,7 @@ ABILITIES = {
             "resonant": {"extra_effect": "poison duration +2 rounds", "extra_cost": 5},
         },
         "subclass_id": "voidbrewer",
-        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10},
+        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10, "reagent_type": "volatile"},
     },
     "voidbrewer_old_world_brew": {
         "id": "voidbrewer_old_world_brew",
@@ -6508,7 +6508,7 @@ ABILITIES = {
             "charged": {"extra_effect": "burn added, all enemies stunned 1 round", "extra_cost": 8},
         },
         "subclass_id": "voidbrewer",
-        "effect_params": {"damage_base": 160, "status_effect": "poison", "duration": 4, "magnitude": 12},
+        "effect_params": {"damage_base": 160, "status_effect": "poison", "duration": 4, "magnitude": 12, "reagent_type": "volatile"},
     },
 
     # --- Fumecaster (alchemy + arcana) ---
@@ -6534,7 +6534,7 @@ ABILITIES = {
         "room_flag_written": "poisoned_air",
         "attuned_variants": {},
         "subclass_id": "fumecaster",
-        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10},
+        "effect_params": {"damage_base": 80, "status_effect": "poison", "duration": 3, "magnitude": 10, "reagent_type": "volatile"},
     },
     "fumecaster_noxious_storm": {
         "id": "fumecaster_noxious_storm",
@@ -6559,7 +6559,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "fumecaster",
-        "effect_params": {"damage_base": 180, "status_effect": "burn", "duration": 3, "magnitude": 10},
+        "effect_params": {"damage_base": 180, "status_effect": "burn", "duration": 3, "magnitude": 10, "reagent_type": "volatile"},
     },
 
     # --- Sweetpoison (alchemy + diplomacy) ---
@@ -6585,7 +6585,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "sweetpoison",
-        "effect_params": {"debuff_type": "charm", "duration": 1, "magnitude": 1.0},
+        "effect_params": {"debuff_type": "charm", "duration": 1, "magnitude": 1.0, "reagent_type": "toxic"},
     },
     "sweetpoison_killing_kindness": {
         "id": "sweetpoison_killing_kindness",
@@ -6610,7 +6610,7 @@ ABILITIES = {
         "room_flag_written": "poisoned_air",
         "attuned_variants": {},
         "subclass_id": "sweetpoison",
-        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15, "reagent_type": "toxic"},
     },
 
     # --- Plaguecommand (alchemy + tactics) ---
@@ -6636,7 +6636,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "plaguecommand",
-        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10},
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 10, "reagent_type": "volatile"},
     },
     "plaguecommand_scorched_earth": {
         "id": "plaguecommand_scorched_earth",
@@ -6662,7 +6662,7 @@ ABILITIES = {
         "room_flag_written": "burning",
         "attuned_variants": {},
         "subclass_id": "plaguecommand",
-        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15, "reagent_type": "volatile"},
     },
 
     # --- Fumewright (alchemy + engineering) ---
@@ -6688,7 +6688,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "fumewright",
-        "effect_params": {"damage_base": 85, "status_effect": "poison", "duration": 3, "magnitude": 10},
+        "effect_params": {"damage_base": 85, "status_effect": "poison", "duration": 3, "magnitude": 10, "reagent_type": "volatile"},
     },
     "fumewright_chemical_engine": {
         "id": "fumewright_chemical_engine",
@@ -6714,7 +6714,7 @@ ABILITIES = {
         "room_flag_written": "burning",
         "attuned_variants": {},
         "subclass_id": "fumewright",
-        "effect_params": {"damage_base": 160, "status_effect": "poison", "duration": 4, "magnitude": 12},
+        "effect_params": {"damage_base": 160, "status_effect": "poison", "duration": 4, "magnitude": 12, "reagent_type": "volatile"},
     },
 
     # --- Firstblight (alchemy + remnance) ---
@@ -6741,7 +6741,7 @@ ABILITIES = {
         "room_flag_written": "poisoned_air",
         "attuned_variants": {},
         "subclass_id": "firstblight",
-        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 12},
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 12, "reagent_type": "volatile"},
     },
     "firstblight_dragon_blight": {
         "id": "firstblight_dragon_blight",
@@ -6767,7 +6767,7 @@ ABILITIES = {
         "room_flag_written": "poisoned_air",
         "attuned_variants": {},
         "subclass_id": "firstblight",
-        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15},
+        "effect_params": {"status_effect": "poison", "duration": 5, "magnitude": 15, "reagent_type": "volatile"},
     },
 
     # ===================================================================
@@ -6800,7 +6800,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 35},
+        "effect_params": {"damage_base": 35, "component_type": "gear"},
     },
     "reinforce_chassis": {
         "id": "reinforce_chassis",
@@ -6823,7 +6823,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "damage_reduction", "value": 0.15, "duration": 3},
+        "effect_params": {"buff_type": "damage_reduction", "value": 0.15, "duration": 3, "component_type": "plating"},
     },
     "construct_snare": {
         "id": "construct_snare",
@@ -6846,7 +6846,7 @@ ABILITIES = {
         "room_flag_written": "trapped",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"debuff_type": "root", "duration": 2},
+        "effect_params": {"debuff_type": "root", "duration": 2, "component_type": "conduit"},
     },
     "field_calibration": {
         "id": "field_calibration",
@@ -6869,7 +6869,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "accuracy", "value": 0.15, "duration": 3},
+        "effect_params": {"buff_type": "accuracy", "value": 0.15, "duration": 3, "component_type": "conduit"},
     },
 
     # --- Engineering Tier 2 (4 abilities) -- Core engineering, devices + companion ---
@@ -6894,7 +6894,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "damage_absorb", "value": 60, "duration": 2},
+        "effect_params": {"buff_type": "damage_absorb", "value": 60, "duration": 2, "component_type": "plating"},
     },
     "deploy_shock_mine": {
         "id": "deploy_shock_mine",
@@ -6917,7 +6917,7 @@ ABILITIES = {
         "room_flag_written": "trapped",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 65},
+        "effect_params": {"damage_base": 65, "component_type": "gear"},
     },
     "enhanced_fuel_injection": {
         "id": "enhanced_fuel_injection",
@@ -6941,7 +6941,7 @@ ABILITIES = {
         "room_flag_written": "mechanized",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "damage_bonus", "value": 0.25, "duration": 3, "resource_refund": True, "refund_percent": 0.5},
+        "effect_params": {"buff_type": "damage_bonus", "value": 0.25, "duration": 3, "resource_refund": True, "refund_percent": 0.5, "component_type": "conduit"},
     },
     "rivet_burst": {
         "id": "rivet_burst",
@@ -6964,7 +6964,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 55},
+        "effect_params": {"damage_base": 55, "component_type": "gear"},
     },
 
     # --- Engineering Tier 3 (4 abilities) -- Advanced devices, complex constructs ---
@@ -6990,7 +6990,7 @@ ABILITIES = {
         "room_flag_written": "mechanized",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "damage_bonus", "value": 0.40, "duration": 3},
+        "effect_params": {"buff_type": "damage_bonus", "value": 0.40, "duration": 3, "component_type": "plating"},
     },
     "deploy_barrier_wall": {
         "id": "deploy_barrier_wall",
@@ -7014,7 +7014,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.20, "duration": 4},
+        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.20, "duration": 4, "component_type": "plating"},
     },
     "fragmentation_charge": {
         "id": "fragmentation_charge",
@@ -7037,7 +7037,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 95, "debuff_type": "weaken", "duration": 2},
+        "effect_params": {"damage_base": 95, "debuff_type": "weaken", "duration": 2, "component_type": "gear"},
     },
     "companion_overdrive": {
         "id": "companion_overdrive",
@@ -7061,7 +7061,7 @@ ABILITIES = {
         "room_flag_written": "mechanized",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "haste", "duration": 2},
+        "effect_params": {"buff_type": "haste", "duration": 2, "component_type": "gear"},
     },
 
     # --- Engineering Tier 4 (3 abilities) -- Domain capstones, masterwork ---
@@ -7087,7 +7087,7 @@ ABILITIES = {
         "room_flag_written": "mechanized",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"damage_base": 180},
+        "effect_params": {"damage_base": 180, "component_type": "gear"},
     },
     "fortification_engine": {
         "id": "fortification_engine",
@@ -7112,7 +7112,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.30, "duration": 5},
+        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.30, "duration": 5, "component_type": "plating"},
     },
     "total_recall_refit": {
         "id": "total_recall_refit",
@@ -7136,7 +7136,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"heal_base": 150, "companion_restore": True},
+        "effect_params": {"heal_base": 150, "companion_restore": True, "component_type": "plating"},
     },
 
     # ===================================================================
@@ -7168,7 +7168,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "ironsmith",
-        "effect_params": {"damage_base": 100},
+        "effect_params": {"damage_base": 100, "component_type": "gear"},
     },
     "ironsmith_ironforged_protocol": {
         "id": "ironsmith_ironforged_protocol",
@@ -7194,7 +7194,7 @@ ABILITIES = {
         "room_flag_written": "mechanized",
         "attuned_variants": {},
         "subclass_id": "ironsmith",
-        "effect_params": {"buff_type": "sustained_attack", "damage_per_round": 60, "duration": 4},
+        "effect_params": {"buff_type": "sustained_attack", "damage_per_round": 60, "duration": 4, "component_type": "gear"},
     },
 
     # --- Gearhand (engineering + subterfuge) -- Scout companion ---
@@ -7220,7 +7220,7 @@ ABILITIES = {
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "gearhand",
-        "effect_params": {"damage_base": 90},
+        "effect_params": {"damage_base": 90, "component_type": "gear"},
     },
     "gearhand_ghost_protocol": {
         "id": "gearhand_ghost_protocol",
@@ -7244,7 +7244,7 @@ ABILITIES = {
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "gearhand",
-        "effect_params": {"damage_per_round": 55, "duration": 4},
+        "effect_params": {"damage_per_round": 55, "duration": 4, "component_type": "gear"},
     },
 
     # --- Growsmith (engineering + naturalism) -- Living wood companion ---
@@ -7270,7 +7270,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "growsmith",
-        "effect_params": {"buff_type": "damage_redirect", "absorb": 80, "duration": 3},
+        "effect_params": {"buff_type": "damage_redirect", "absorb": 80, "duration": 3, "component_type": "plating"},
     },
     "growsmith_living_fortress": {
         "id": "growsmith_living_fortress",
@@ -7296,6 +7296,7 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": "growsmith",
         "effect_params": {
+            "component_type": "plating",
             "buff_type": "group_damage_reduction", "value": 0.35,
             "duration": 4, "heal_per_round": 30,
         },
@@ -7326,7 +7327,7 @@ ABILITIES = {
             "resonant": {"bonus_effect": "resonance_stack", "stacks": 2},
         },
         "subclass_id": "runewright_forge",
-        "effect_params": {"buff_type": "companion_mode_change", "duration": 4},
+        "effect_params": {"buff_type": "companion_mode_change", "duration": 4, "component_type": "conduit"},
     },
     "runewright_forge_full_rune_activation": {
         "id": "runewright_forge_full_rune_activation",
@@ -7354,6 +7355,7 @@ ABILITIES = {
         },
         "subclass_id": "runewright_forge",
         "effect_params": {
+            "component_type": "conduit",
             "damage_base": 160, "debuff_type": "weaken",
             "debuff_duration": 2, "buff_type": "haste", "buff_duration": 1,
         },
@@ -7382,7 +7384,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "sparkshaper",
-        "effect_params": {"damage_base": 90},
+        "effect_params": {"damage_base": 90, "component_type": "gear"},
     },
     "sparkshaper_overload_device": {
         "id": "sparkshaper_overload_device",
@@ -7407,7 +7409,7 @@ ABILITIES = {
         "room_flag_written": "mechanized",
         "attuned_variants": {},
         "subclass_id": "sparkshaper",
-        "effect_params": {"damage_base": 220, "area": True, "companion_destroyed": True},
+        "effect_params": {"damage_base": 220, "area": True, "companion_destroyed": True, "component_type": "gear"},
     },
 
     # --- Dealsmith (engineering + diplomacy) -- Consortium companion ---
@@ -7433,7 +7435,7 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "dealsmith",
-        "effect_params": {"buff_type": "resource_efficiency", "value": 0.25, "duration": 4},
+        "effect_params": {"buff_type": "resource_efficiency", "value": 0.25, "duration": 4, "component_type": "conduit"},
     },
     "dealsmith_consortium_protocol": {
         "id": "dealsmith_consortium_protocol",
@@ -7458,6 +7460,7 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": "dealsmith",
         "effect_params": {
+            "component_type": "conduit",
             "buff_type": "group_resource_regen", "value": 5,
             "duration": 5,
         },
@@ -7486,7 +7489,7 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": "siegewright",
-        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.20, "duration": 3},
+        "effect_params": {"buff_type": "group_damage_reduction", "value": 0.20, "duration": 3, "component_type": "plating"},
     },
     "siegewright_fortress_protocol": {
         "id": "siegewright_fortress_protocol",
@@ -7512,6 +7515,7 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": "siegewright",
         "effect_params": {
+            "component_type": "plating",
             "buff_type": "group_damage_reduction", "value": 0.35,
             "duration": 5, "companion_immobile": True,
         },
@@ -7540,7 +7544,7 @@ ABILITIES = {
         "room_flag_written": "toxic_air",
         "attuned_variants": {},
         "subclass_id": "fumehand",
-        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 8},
+        "effect_params": {"status_effect": "poison", "duration": 4, "magnitude": 8, "component_type": "conduit"},
     },
     "fumehand_overcharge_protocol": {
         "id": "fumehand_overcharge_protocol",
@@ -7566,6 +7570,7 @@ ABILITIES = {
         "attuned_variants": {},
         "subclass_id": "fumehand",
         "effect_params": {
+            "component_type": "conduit",
             "damage_base": 160, "status_effect": "poison",
             "duration": 3, "magnitude": 10,
         },
@@ -7596,7 +7601,7 @@ ABILITIES = {
         "room_flag_written": "ancient_presence",
         "attuned_variants": {},
         "subclass_id": "bucketborn",
-        "effect_params": {"damage_base": 85, "random_bonus": True},
+        "effect_params": {"damage_base": 85, "random_bonus": True, "component_type": "gear"},
     },
     "bucketborn_base8_resonance": {
         "id": "bucketborn_base8_resonance",
@@ -7624,7 +7629,7 @@ ABILITIES = {
         "room_flag_written": "ancient_presence",
         "attuned_variants": {},
         "subclass_id": "bucketborn",
-        "effect_params": {"damage_base": 200, "ancient_effect": True},
+        "effect_params": {"damage_base": 200, "ancient_effect": True, "component_type": "gear"},
     },
 
     # ===================================================================
