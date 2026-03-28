@@ -3,13 +3,18 @@ Tests for world/ability_registry.py and world/ability_engine.py.
 
 Covers ABL-01 (registry structure), ABL-02 (dispatch routing),
 ABL-03 (tier gating via CharacterAbility), ABL-05 (cooldowns),
-ABL-06 (resource management).
+ABL-06 (resource management), ABL-04 (resource systems).
 
 Uses unittest.TestCase + MagicMock -- pure logic with mocked ORM.
 """
+import os
 import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.conf.settings")
+django.setup()
 
 from world.ability_registry import (
     ABILITIES,
@@ -31,6 +36,9 @@ def _mock_character(
     ancestry_ability_used=False,
     guild_id=None,
     location=None,
+    echoes_investigation_bonus=None,
+    reagent_stock=None,
+    component_stock=None,
 ):
     """Create a MagicMock character with ndb/db for ability engine tests."""
     char = MagicMock()
@@ -38,8 +46,20 @@ def _mock_character(
         ability_cooldowns=ability_cooldowns if ability_cooldowns is not None else {},
         domain_resource=domain_resource,
         ancestry_ability_used=ancestry_ability_used,
+        active_effects=[],
+        ability_used_this_turn=False,
     )
-    char.db = SimpleNamespace(guild_id=guild_id)
+    char.db = SimpleNamespace(
+        guild_id=guild_id,
+        abilities=None,
+        echoes_investigation_bonus=echoes_investigation_bonus,
+        reagent_stock=reagent_stock,
+        component_stock=component_stock,
+        base_stats={"strength": 10, "agility": 10, "intellect": 10},
+        backend_level=10,
+        hp=100,
+        hp_max=100,
+    )
     char.location = location
     return char
 
@@ -86,9 +106,9 @@ class TestAbilityRegistryStructure(unittest.TestCase):
 
     def test_get_ability_returns_dict(self):
         """get_ability returns a dict for a known ability."""
-        result = get_ability("momentum_strike")
+        result = get_ability("crushing_advance")
         self.assertIsInstance(result, dict)
-        self.assertEqual(result["name"], "Momentum Strike")
+        self.assertEqual(result["name"], "Crushing Advance")
 
     def test_get_ability_unknown_returns_none(self):
         """get_ability returns None for unknown ability_id."""
@@ -109,9 +129,10 @@ class TestAbilityRegistryStructure(unittest.TestCase):
 class TestUseAbilityDispatch(unittest.TestCase):
     """use_ability dispatches to correct effect handler."""
 
+    @patch("world.combat_engine.resolve_ability_damage", return_value=(True, "Crushing Advance hits Goblin for 25 damage.", 25))
     @patch("world.models.CharacterAbility")
-    def test_dispatches_damage(self, mock_ca_cls):
-        """use_ability for momentum_strike returns success with ability name."""
+    def test_dispatches_damage(self, mock_ca_cls, mock_resolve):
+        """use_ability for crushing_advance returns success with ability name."""
         from world.ability_engine import use_ability
 
         mock_ca_cls.objects.filter.return_value.exists.return_value = True
@@ -122,10 +143,10 @@ class TestUseAbilityDispatch(unittest.TestCase):
         target = MagicMock()
         target.key = "Goblin"
 
-        ok, msg = use_ability(char, "momentum_strike", target=target)
+        ok, msg = use_ability(char, "crushing_advance", target=target)
 
         self.assertTrue(ok)
-        self.assertIn("Momentum Strike", msg)
+        self.assertIn("Crushing Advance", msg)
 
     @patch("world.models.CharacterAbility")
     def test_unknown_ability(self, mock_ca_cls):
@@ -148,7 +169,7 @@ class TestUseAbilityDispatch(unittest.TestCase):
         char = _mock_character(
             domain_resource={"type": "momentum", "current": 100, "max": 100},
         )
-        ok, msg = use_ability(char, "momentum_strike")
+        ok, msg = use_ability(char, "crushing_advance")
 
         self.assertFalse(ok)
         self.assertIn("not unlocked", msg.lower())
@@ -170,10 +191,10 @@ class TestCooldowns(unittest.TestCase):
         mock_ca_cls.objects.filter.return_value.exists.return_value = True
 
         char = _mock_character(
-            ability_cooldowns={"momentum_strike": 3},
+            ability_cooldowns={"crushing_advance": 3},
             domain_resource={"type": "momentum", "current": 100, "max": 100},
         )
-        ok, msg = use_ability(char, "momentum_strike")
+        ok, msg = use_ability(char, "crushing_advance")
 
         self.assertFalse(ok)
         self.assertIn("cooldown", msg.lower())
@@ -190,11 +211,11 @@ class TestCooldowns(unittest.TestCase):
         char = _mock_character(
             domain_resource={"type": "focus", "current": 100, "max": 100},
         )
-        # shadow_read has cooldown=2
-        ok, msg = use_ability(char, "shadow_read")
+        # shadow_step has cooldown=2
+        ok, msg = use_ability(char, "shadow_step")
 
         self.assertTrue(ok)
-        self.assertEqual(char.ndb.ability_cooldowns["shadow_read"], 2)
+        self.assertEqual(char.ndb.ability_cooldowns["shadow_step"], 2)
 
     def test_decrement_cooldowns(self):
         """decrement_cooldowns reduces all by 1, removes expired."""
@@ -267,7 +288,7 @@ class TestResourceManagement(unittest.TestCase):
         self.assertEqual(char.ndb.domain_resource["current"], 100)
 
     @patch("world.guild_engine.FINGERPRINTS", {
-        "combat": {"resource": "momentum", "resource_type": "combat_resource"},
+        "combat": {"resource_type": "momentum"},
     })
     @patch("world.guild_engine.GUILDS", {
         "ironblood": {"primary_domain": "combat"},
@@ -329,7 +350,540 @@ class TestAbilityTierGating(unittest.TestCase):
         char = _mock_character(
             domain_resource={"type": "momentum", "current": 100, "max": 100},
         )
-        ok, msg = use_ability(char, "bladestorm_sig1")
+        ok, msg = use_ability(char, "duskblade_shadow_strike")
 
         self.assertFalse(ok)
         self.assertIn("not unlocked", msg.lower())
+
+
+# ===========================================================================
+# ABL-04: Resource system tests (all 10 domain resources)
+# ===========================================================================
+
+
+class TestResourceInitialization(unittest.TestCase):
+    """Type-aware resource initialization for all 10 domain resource types."""
+
+    def _make_char_with_guild(self, guild_id, **db_extras):
+        char = _mock_character(guild_id=guild_id)
+        for key, val in db_extras.items():
+            setattr(char.db, key, val)
+        return char
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "combat": {"resource_type": "momentum"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "ironblood": {"primary_domain": "combat"},
+    })
+    def test_momentum_init(self):
+        """Momentum starts at 0 with max 100."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("ironblood")
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "momentum")
+        self.assertEqual(res["current"], 0)
+        self.assertEqual(res["max"], 100)
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "subterfuge": {"resource_type": "focus"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "shadowguild": {"primary_domain": "subterfuge"},
+    })
+    def test_focus_init(self):
+        """Focus starts at 0 with max 5 (combo points)."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("shadowguild")
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "focus")
+        self.assertEqual(res["current"], 0)
+        self.assertEqual(res["max"], 5)
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "naturalism": {"resource_type": "balance"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "wildheart": {"primary_domain": "naturalism"},
+    })
+    def test_balance_init(self):
+        """Balance starts at 50 (center) with max 100."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("wildheart")
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "balance")
+        self.assertEqual(res["current"], 50)
+        self.assertEqual(res["max"], 100)
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "resonance_domain": {"resource_type": "resonance"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "resonator": {"primary_domain": "resonance_domain"},
+    })
+    def test_resonance_init(self):
+        """Resonance starts at 0 with max 100."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("resonator")
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "resonance")
+        self.assertEqual(res["current"], 0)
+        self.assertEqual(res["max"], 100)
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "arcana": {"resource_type": "mana", "resource_max": 200},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "arcanist": {"primary_domain": "arcana"},
+    })
+    def test_mana_init(self):
+        """Mana starts full (current == max)."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("arcanist")
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "mana")
+        self.assertEqual(res["current"], res["max"])
+        self.assertEqual(res["max"], 200)
+
+    @patch("world.world_state.get_dimension_score", return_value=60)
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "diplomacy": {"resource_type": "influence"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "diplomat": {"primary_domain": "diplomacy"},
+    })
+    def test_influence_init_from_reputation(self, mock_dim):
+        """Influence pool = 20 + reputation * 0.5. Rep=60 -> pool=50."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("diplomat")
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "influence")
+        self.assertEqual(res["current"], 50)
+        self.assertEqual(res["max"], 50)
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "alchemy": {"resource_type": "reagents"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "alchemist": {"primary_domain": "alchemy"},
+    })
+    def test_reagents_init(self):
+        """Reagents start from db.reagent_stock or default 50."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("alchemist", reagent_stock=35)
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "reagents")
+        self.assertEqual(res["current"], 35)
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "engineering": {"resource_type": "components"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "engineer": {"primary_domain": "engineering"},
+    })
+    def test_components_init(self):
+        """Components start from db.component_stock or default 50."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("engineer", component_stock=40)
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "components")
+        self.assertEqual(res["current"], 40)
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "tactics": {"resource_type": "command"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "tactician": {"primary_domain": "tactics"},
+    })
+    def test_command_init(self):
+        """Command starts at 0 with max 100."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild("tactician")
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "command")
+        self.assertEqual(res["current"], 0)
+        self.assertEqual(res["max"], 100)
+
+    @patch("world.guild_engine.FINGERPRINTS", {
+        "remnance": {"resource_type": "echoes"},
+    })
+    @patch("world.guild_engine.GUILDS", {
+        "remnant": {"primary_domain": "remnance"},
+    })
+    def test_echoes_init_with_bonus(self):
+        """Echoes start at investigation bonus amount if present."""
+        from world.ability_engine import initialize_domain_resource
+        char = self._make_char_with_guild(
+            "remnant",
+            echoes_investigation_bonus={"amount": 20, "encounters_remaining": 2},
+        )
+        initialize_domain_resource(char)
+        res = char.ndb.domain_resource
+        self.assertEqual(res["type"], "echoes")
+        self.assertEqual(res["current"], 20)
+        self.assertEqual(res["max"], 100)
+
+
+class TestFocusResource(unittest.TestCase):
+    """Focus combo point system: cap 5, builders +1, miss resets, skip resets."""
+
+    def _focus_char(self, current=0):
+        return _mock_character(
+            domain_resource={"type": "focus", "current": current, "max": 5},
+        )
+
+    def test_focus_builder_adds_one(self):
+        """Focus builder adds 1 combo point on success."""
+        from world.ability_engine import _post_ability_resource_hook
+        char = self._focus_char(current=2)
+        ability = {"effect_params": {"is_builder": True}}
+        _post_ability_resource_hook(char, ability, result=True)
+        self.assertEqual(char.ndb.domain_resource["current"], 3)
+
+    def test_focus_builder_caps_at_five(self):
+        """Focus builder does not exceed max 5."""
+        from world.ability_engine import _post_ability_resource_hook
+        char = self._focus_char(current=5)
+        ability = {"effect_params": {"is_builder": True}}
+        _post_ability_resource_hook(char, ability, result=True)
+        self.assertEqual(char.ndb.domain_resource["current"], 5)
+
+    def test_focus_spender_deducts(self):
+        """Focus spender deducts cost from current."""
+        from world.ability_engine import _handle_focus_spend
+        char = self._focus_char(current=3)
+        ability = {"resource_cost": 2, "effect_params": {}}
+        ok, msg = _handle_focus_spend(char, ability)
+        self.assertTrue(ok)
+        self.assertEqual(char.ndb.domain_resource["current"], 1)
+
+    def test_focus_insufficient(self):
+        """Spending more Focus than available fails."""
+        from world.ability_engine import _handle_focus_spend
+        char = self._focus_char(current=1)
+        ability = {"resource_cost": 3, "effect_params": {}}
+        ok, msg = _handle_focus_spend(char, ability)
+        self.assertFalse(ok)
+        self.assertIn("Insufficient Focus", msg)
+
+    def test_focus_miss_resets(self):
+        """handle_focus_miss resets Focus to 0."""
+        from world.ability_engine import handle_focus_miss
+        char = self._focus_char(current=4)
+        handle_focus_miss(char)
+        self.assertEqual(char.ndb.domain_resource["current"], 0)
+
+    def test_focus_skip_turn_resets(self):
+        """Skipping turn (no ability used) resets Focus to 0."""
+        from world.ability_engine import on_round_end_resources
+        char = self._focus_char(current=3)
+        char.ndb.ability_used_this_turn = False
+        combat_handler = MagicMock()
+        on_round_end_resources(char, combat_handler)
+        self.assertEqual(char.ndb.domain_resource["current"], 0)
+
+
+class TestBalanceResource(unittest.TestCase):
+    """Balance pendulum: 0=Feral, 100=Calm, 50=start. Shift, not spend."""
+
+    def _balance_char(self, current=50):
+        return _mock_character(
+            domain_resource={"type": "balance", "current": current, "max": 100},
+        )
+
+    def test_balance_shift_toward_feral(self):
+        """Negative shift moves toward Feral (0)."""
+        from world.ability_engine import _handle_balance_spend
+        char = self._balance_char(current=50)
+        ability = {"effect_params": {"balance_shift": -20}}
+        _handle_balance_spend(char, ability)
+        self.assertEqual(char.ndb.domain_resource["current"], 30)
+
+    def test_balance_shift_toward_calm(self):
+        """Positive shift moves toward Calm (100)."""
+        from world.ability_engine import _handle_balance_spend
+        char = self._balance_char(current=50)
+        ability = {"effect_params": {"balance_shift": 20}}
+        _handle_balance_spend(char, ability)
+        self.assertEqual(char.ndb.domain_resource["current"], 70)
+
+    def test_balance_clamp_min(self):
+        """Balance cannot go below 0."""
+        from world.ability_engine import _handle_balance_spend
+        char = self._balance_char(current=10)
+        ability = {"effect_params": {"balance_shift": -20}}
+        _handle_balance_spend(char, ability)
+        self.assertEqual(char.ndb.domain_resource["current"], 0)
+
+    def test_balance_clamp_max(self):
+        """Balance cannot go above 100."""
+        from world.ability_engine import _handle_balance_spend
+        char = self._balance_char(current=90)
+        ability = {"effect_params": {"balance_shift": 20}}
+        _handle_balance_spend(char, ability)
+        self.assertEqual(char.ndb.domain_resource["current"], 100)
+
+    def test_balance_modifier_feral(self):
+        """Feral modifier: position 0 = 1.5, position 50 = 1.0, position 100 = 0.5."""
+        from world.ability_engine import get_balance_modifier
+        # Position 0 (full feral)
+        char0 = self._balance_char(current=0)
+        self.assertAlmostEqual(get_balance_modifier(char0, "feral"), 1.5)
+        # Position 50 (center)
+        char50 = self._balance_char(current=50)
+        self.assertAlmostEqual(get_balance_modifier(char50, "feral"), 1.0)
+        # Position 100 (full calm)
+        char100 = self._balance_char(current=100)
+        self.assertAlmostEqual(get_balance_modifier(char100, "feral"), 0.5)
+
+
+class TestResonanceResource(unittest.TestCase):
+    """Resonance: builders generate, decay -10/round, spenders cost from pool."""
+
+    def _resonance_char(self, current=0):
+        return _mock_character(
+            domain_resource={"type": "resonance", "current": current, "max": 100},
+        )
+
+    def test_resonance_builder_generates(self):
+        """Resonance builder generates resonance_generated amount."""
+        from world.ability_engine import _post_ability_resource_hook
+        char = self._resonance_char(current=0)
+        ability = {"effect_params": {"resonance_generated": 20}}
+        _post_ability_resource_hook(char, ability, result=True)
+        self.assertEqual(char.ndb.domain_resource["current"], 20)
+
+    def test_decay_resonance(self):
+        """decay_resonance subtracts 10, floored at 0."""
+        from world.ability_engine import decay_resonance
+        char = self._resonance_char(current=30)
+        decay_resonance(char)
+        self.assertEqual(char.ndb.domain_resource["current"], 20)
+        # Decay below 10 floors at 0
+        char2 = self._resonance_char(current=5)
+        decay_resonance(char2)
+        self.assertEqual(char2.ndb.domain_resource["current"], 0)
+
+    def test_resonance_spender_costs(self):
+        """Spending resonance deducts from pool."""
+        from world.ability_engine import _handle_resonance_spend
+        char = self._resonance_char(current=80)
+        ability = {"resource_cost": 60, "effect_params": {}}
+        ok, msg = _handle_resonance_spend(char, ability)
+        self.assertTrue(ok)
+        self.assertEqual(char.ndb.domain_resource["current"], 20)
+
+
+class TestInfluenceResource(unittest.TestCase):
+    """Influence: reputation-fueled pool, no in-combat regen."""
+
+    def test_influence_init_from_reputation(self):
+        """Influence pool = 20 + reputation * 0.5."""
+        from world.ability_engine import initialize_domain_resource
+        with patch("world.guild_engine.GUILDS", {"diplomat": {"primary_domain": "diplomacy"}}), \
+             patch("world.guild_engine.FINGERPRINTS", {"diplomacy": {"resource_type": "influence"}}), \
+             patch("world.world_state.get_dimension_score", return_value=60):
+            char = _mock_character(guild_id="diplomat")
+            initialize_domain_resource(char)
+            self.assertEqual(char.ndb.domain_resource["current"], 50)
+
+    def test_influence_spend_no_regen(self):
+        """Spending Influence depletes; no regen hook restores it."""
+        from world.ability_engine import spend_domain_resource, on_round_end_resources
+        char = _mock_character(
+            domain_resource={"type": "influence", "current": 50, "max": 50},
+        )
+        ok, msg = spend_domain_resource(char, 20)
+        self.assertTrue(ok)
+        self.assertEqual(char.ndb.domain_resource["current"], 30)
+        # on_round_end should NOT restore influence
+        combat_handler = MagicMock()
+        on_round_end_resources(char, combat_handler)
+        self.assertEqual(char.ndb.domain_resource["current"], 30)
+
+
+class TestMomentumResource(unittest.TestCase):
+    """Momentum: builds on hit/damage, resets at encounter end."""
+
+    def _momentum_char(self, current=0):
+        return _mock_character(
+            domain_resource={"type": "momentum", "current": current, "max": 100},
+        )
+
+    def test_momentum_build_on_hit(self):
+        """build_momentum_on_damage adds to Momentum pool."""
+        from world.ability_engine import build_momentum_on_damage
+        char = self._momentum_char(current=20)
+        build_momentum_on_damage(char, 10)
+        self.assertEqual(char.ndb.domain_resource["current"], 30)
+
+    def test_momentum_cap(self):
+        """Momentum cannot exceed max 100."""
+        from world.ability_engine import build_momentum_on_damage
+        char = self._momentum_char(current=95)
+        build_momentum_on_damage(char, 10)
+        self.assertEqual(char.ndb.domain_resource["current"], 100)
+
+    def test_momentum_encounter_end_reset(self):
+        """Momentum resets to 0 at encounter end."""
+        from world.ability_engine import on_encounter_end_resources
+        char = self._momentum_char(current=50)
+        on_encounter_end_resources(char)
+        self.assertEqual(char.ndb.domain_resource["current"], 0)
+
+
+class TestFiniteResources(unittest.TestCase):
+    """Reagents and Components: finite stock, no regeneration."""
+
+    def test_reagents_deplete(self):
+        """Spending reagents reduces stock."""
+        from world.ability_engine import spend_domain_resource
+        char = _mock_character(
+            domain_resource={"type": "reagents", "current": 30, "max": 100},
+        )
+        ok, msg = spend_domain_resource(char, 15)
+        self.assertTrue(ok)
+        self.assertEqual(char.ndb.domain_resource["current"], 15)
+
+    def test_components_no_regen(self):
+        """Components do not regenerate on round end."""
+        from world.ability_engine import on_round_end_resources
+        char = _mock_character(
+            domain_resource={"type": "components", "current": 10, "max": 100},
+        )
+        combat_handler = MagicMock()
+        on_round_end_resources(char, combat_handler)
+        self.assertEqual(char.ndb.domain_resource["current"], 10)
+
+
+class TestCommandResource(unittest.TestCase):
+    """Command: builds from ally actions, solo rate 5/round."""
+
+    def test_command_build_with_allies(self):
+        """Command builds 10 per ally action."""
+        from world.ability_engine import _build_command_from_allies
+        char = _mock_character(
+            domain_resource={"type": "command", "current": 0, "max": 100},
+        )
+        combat_handler = MagicMock()
+        combat_handler.ndb = SimpleNamespace(
+            ally_action_count={str(char.id): 2},
+        )
+        _build_command_from_allies(char, combat_handler)
+        self.assertEqual(char.ndb.domain_resource["current"], 20)
+
+    def test_command_solo_rate(self):
+        """Without allies, Command builds at solo rate (5)."""
+        from world.ability_engine import _build_command_from_allies
+        char = _mock_character(
+            domain_resource={"type": "command", "current": 0, "max": 100},
+        )
+        combat_handler = MagicMock()
+        combat_handler.ndb = SimpleNamespace(ally_action_count={})
+        _build_command_from_allies(char, combat_handler)
+        self.assertEqual(char.ndb.domain_resource["current"], 5)
+
+
+class TestEchoesResource(unittest.TestCase):
+    """Echoes: builds from ability use, investigation bonus persistence."""
+
+    def test_echoes_build_on_ability(self):
+        """Ability use builds 5 echoes."""
+        from world.ability_engine import _post_ability_resource_hook
+        char = _mock_character(
+            domain_resource={"type": "echoes", "current": 10, "max": 100},
+        )
+        ability = {"effect_params": {}}
+        _post_ability_resource_hook(char, ability, result=True)
+        self.assertEqual(char.ndb.domain_resource["current"], 15)
+
+    def test_echoes_investigation_bonus_init(self):
+        """Investigation bonus sets starting echoes."""
+        from world.ability_engine import initialize_domain_resource
+        with patch("world.guild_engine.GUILDS", {"remnant": {"primary_domain": "remnance"}}), \
+             patch("world.guild_engine.FINGERPRINTS", {"remnance": {"resource_type": "echoes"}}):
+            char = _mock_character(guild_id="remnant")
+            char.db.echoes_investigation_bonus = {"amount": 30, "encounters_remaining": 2}
+            initialize_domain_resource(char)
+            self.assertEqual(char.ndb.domain_resource["current"], 30)
+
+    def test_echoes_bonus_decrements(self):
+        """Encounter end decrements encounters_remaining."""
+        from world.ability_engine import on_encounter_end_resources
+        char = _mock_character(
+            domain_resource={"type": "echoes", "current": 30, "max": 100},
+        )
+        char.db.echoes_investigation_bonus = {"amount": 30, "encounters_remaining": 2}
+        on_encounter_end_resources(char)
+        self.assertEqual(char.db.echoes_investigation_bonus["encounters_remaining"], 1)
+
+
+class TestFocusScaling(unittest.TestCase):
+    """consumes_all_focus scaling: different Focus amounts -> different results."""
+
+    def test_consumes_all_focus_clears_pool(self):
+        """consumes_all_focus sets Focus to 0 regardless of amount."""
+        from world.ability_engine import _post_ability_resource_hook
+        # With 5 Focus
+        char5 = _mock_character(
+            domain_resource={"type": "focus", "current": 5, "max": 5},
+        )
+        ability = {"effect_params": {"consumes_all_focus": True}}
+        _post_ability_resource_hook(char5, ability, result=True)
+        self.assertEqual(char5.ndb.domain_resource["current"], 0)
+        # With 1 Focus
+        char1 = _mock_character(
+            domain_resource={"type": "focus", "current": 1, "max": 5},
+        )
+        _post_ability_resource_hook(char1, ability, result=True)
+        self.assertEqual(char1.ndb.domain_resource["current"], 0)
+
+    def test_consumes_all_focus_requires_minimum_one(self):
+        """consumes_all_focus with 0 Focus fails pre-check when resource_cost > 0."""
+        from world.ability_engine import _handle_focus_spend
+        char = _mock_character(
+            domain_resource={"type": "focus", "current": 0, "max": 5},
+        )
+        # consumes_all_focus abilities have resource_cost > 0 in practice
+        ability = {"resource_cost": 1, "effect_params": {"consumes_all_focus": True}}
+        ok, msg = _handle_focus_spend(char, ability)
+        self.assertFalse(ok)
+        self.assertIn("No Focus", msg)
+
+
+class TestAbilityRedundancy(unittest.TestCase):
+    """Validate no two same-domain same-tier abilities are identical."""
+
+    def test_no_redundant_abilities_per_domain_tier(self):
+        """For each domain+tier, no two abilities have identical (effect_type, effect_params)."""
+        import json
+        from world.ability_registry import ABILITIES, DOMAIN_ABILITIES
+        collisions = []
+        for domain, tiers in DOMAIN_ABILITIES.items():
+            for tier, ability_ids in tiers.items():
+                seen = {}
+                for aid in ability_ids:
+                    ability = ABILITIES[aid]
+                    etype = ability["effect_type"]
+                    params = ability.get("effect_params", {})
+                    # Use JSON serialization for hashable key (handles nested dicts/lists)
+                    param_key = json.dumps(params, sort_keys=True) if isinstance(params, dict) else ""
+                    fingerprint = (etype, param_key)
+                    if fingerprint in seen:
+                        collisions.append(
+                            f"{domain} T{tier}: '{aid}' identical to '{seen[fingerprint]}'"
+                        )
+                    seen[fingerprint] = aid
+        self.assertEqual(
+            collisions, [],
+            f"Redundant abilities found:\n" + "\n".join(collisions),
+        )
