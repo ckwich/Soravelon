@@ -65,6 +65,9 @@ Skills document the game's major systems. Invoke via Skill tool when working in 
 | **Item Typeclasses** | SoravelonItem, Container, Equipment, KeyringItem | `.claude/skills/item-typeclasses/skill.md` |
 | **Group System** | Party invite, leadership, loot modes, proximity | `.claude/skills/group-system/skill.md` |
 | **Loot Tables** | Drop rates, rarity modifiers, material tiers | `.claude/skills/loot-tables/skill.md` |
+| **Skill Engine** | Skill progression, practice, trainers, discovery | `.claude/skills/skill-engine/skill.md` |
+| **Dialogue System** | NPC greetings, topics, hints, keyword extraction | `.claude/skills/dialogue-system/skill.md` |
+| **Crafting System** | Recipes, quality tiers, stations, ingredients | `.claude/skills/crafting-system/skill.md` |
 | **Area Builder** | Declarative zone DSL, rooms, exits, spawns, validation | `.claude/skills/area-builder/skill.md` |
 | **Flight System** | Dragon Courier flights, fare discounts, BFS routing | `.claude/skills/flight-system/skill.md` |
 | **Patrol System** | Mob patrols, BFS pathfinding, encounter checks | `.claude/skills/patrol-system/skill.md` |

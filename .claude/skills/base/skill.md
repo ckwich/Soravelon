@@ -31,7 +31,7 @@ Evennia 6.0 | Python | Django ORM | Twisted
 - `world/scripts/` — Tick-driven scripts (node_script, patrol_script, flight_script)
 - `commands/` — Custom commands and cmdsets
 - `server/conf/` — Settings, lifecycle hooks, connection screens, parsers
-- `tests/` — unittest.TestCase test suite (16 files)
+- `tests/` — unittest.TestCase test suite (35 files)
 - `web/` — Django web frontend customization
 
 ## Critical Rules
@@ -48,4 +48,4 @@ Evennia 6.0 | Python | Django ORM | Twisted
 11. **OOB messages go through `oob_publisher`** — never call `character.msg()` for OOB directly from game logic
 
 ---
-**Last Updated:** 2026-03-25
+**Last Updated:** 2026-03-27

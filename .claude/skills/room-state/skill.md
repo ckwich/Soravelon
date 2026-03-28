@@ -18,6 +18,7 @@ You are working on **the room state system** (`world/room_state.py`) — volatil
 ## Key Files
 - `world/room_state.py` — Flag vocabulary, lazy-decay engine, Sense priority/display text
 - `typeclasses/rooms.py` — `SoravelonRoom` hosts `ndb.room_state` dict
+- `world/ability_registry.py` — Abilities reference `room_flag_written` values that must exist in `FLAG_VOCABULARY`
 
 ## Key Concepts
 - **Volatile `ndb` storage:** All state lives in `room.ndb.room_state` dict with `flags` (name→rounds_remaining) and `last_updated` timestamp. No DB persistence — flags vanish on server restart
@@ -30,12 +31,15 @@ You are working on **the room state system** (`world/room_state.py`) — volatil
 
 ## Flag Categories
 - **Elemental:** charged, burning, frozen, toxic_air, resonant, void_touched
-- **Biological:** fading_life, blood_soaked, living_wood
+- **Biological:** fading_life, blood_soaked, living_wood, overgrown, rotting
+- **Chemical:** caustic, poisoned_air
 - **Tactical:** fortified, scouted, disrupted
 - **Environmental:** power_vacuum, unsettled, ancient_presence, still
-- **Subterfuge:** shadow_marked
+- **Subterfuge:** shadow_marked, exposed
+- **Social/Diplomacy:** intimidated, inspired, ordered
 - **Death:** predator_kill, corrupted_death
 - **Node:** node_critical (-1 persistent), node_calming
+- **Pending (referenced by abilities, need vocabulary entries):** bloodied, shattered, crushed, devastated, scorched, arcane_residue, ancient_ground, excavated, mechanized, trapped
 
 ## Critical Rules
 1. **Always use `FLAG_VOCABULARY` names** — `add_room_flag()` logs a warning and no-ops for unknown flags
@@ -43,10 +47,12 @@ You are working on **the room state system** (`world/room_state.py`) — volatil
 3. **Duration refresh takes the max** — `add_room_flag()` keeps the longer of existing vs new duration
 4. **No global ticker** — decay is lazy. Don't add a periodic callback for room state cleanup
 5. **`SENSE_DISPLAY` must cover all vocabulary entries** — every flag needs player-facing atmospheric text
+6. **Ability room flags must be in vocabulary** — `ability_registry.py` `room_flag_written` values are checked against `FLAG_VOCABULARY` at runtime; missing flags are silently dropped
 
 ## References
 - **Room typeclasses:** `typeclasses/rooms.py`
 - **Node system:** `world/scripts/node_script.py` — sets `node_critical` and `node_calming` flags
+- **Ability registry:** `world/ability_registry.py` — `room_flag_written` values per ability
 
 ---
-**Last Updated:** 2026-03-26
+**Last Updated:** 2026-03-27

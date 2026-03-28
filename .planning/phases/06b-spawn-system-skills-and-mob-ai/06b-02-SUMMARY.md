@@ -90,6 +90,15 @@ None - no external service configuration required.
 - Trainer registry empty — populated during content phase when NPCs are authored
 - Discovery triggers framework ready for content-phase lore entries
 
+## Self-Check: PASSED
+
+- [x] world/skill_definitions.py exists (92f8d06)
+- [x] world/skill_engine.py exists (5230359)
+- [x] Commit 75558a5 found (worktree, definitions)
+- [x] Commit 92f8d06 found (main, definitions)
+- [x] Commit 5230359 found (main, engine)
+- [x] Commit 574240a found (docs)
+
 ---
 *Phase: 06b-spawn-system-skills-and-mob-ai*
 *Completed: 2026-03-26*
