@@ -223,9 +223,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 5c-01-PLAN.md — Redesign ~18 redundant abilities with unique mechanics (loadout differentiation)
+- [x] 5c-01-PLAN.md — Redesign ~18 redundant abilities with unique mechanics (loadout differentiation)
 - [x] 5c-02-PLAN.md — Resource handler dispatch table (10 handlers) + type-aware init + combat lifecycle hooks
-- [ ] 5c-03-PLAN.md — Test suite: resource system tests (10 types) + ability redundancy validation
+- [x] 5c-03-PLAN.md — Test suite: resource system tests (10 types) + ability redundancy validation
 
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
