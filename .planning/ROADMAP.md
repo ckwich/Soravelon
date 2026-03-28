@@ -224,7 +224,7 @@ Plans:
 
 Plans:
 - [ ] 5c-01-PLAN.md — Redesign ~18 redundant abilities with unique mechanics (loadout differentiation)
-- [ ] 5c-02-PLAN.md — Resource handler dispatch table (10 handlers) + type-aware init + combat lifecycle hooks
+- [x] 5c-02-PLAN.md — Resource handler dispatch table (10 handlers) + type-aware init + combat lifecycle hooks
 - [ ] 5c-03-PLAN.md — Test suite: resource system tests (10 types) + ability redundancy validation
 
 ### Phase 7: Milestone 1 Content
@@ -255,5 +255,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
 | 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
 | 5b. Ability Content Authoring (INSERTED) | 6/6 | Complete | 2026-03-27 |
-| 5c. Ability Polish & Resource Engine (INSERTED) | 0/3 | Not started | - |
+| 5c. Ability Polish & Resource Engine (INSERTED) | 1/3 | In Progress|  |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
