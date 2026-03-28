@@ -220,6 +220,11 @@ def resolve_basic_attack(attacker, target, weapon=None):
         from world.base_attributes import record_stat_use
         record_stat_use(target, "damage_taken")
 
+    # Build Momentum for attacker on hit and target on damage taken (D-04)
+    from world.ability_engine import build_momentum_on_damage
+    build_momentum_on_damage(attacker, 10)
+    build_momentum_on_damage(target, 5)
+
     # Build message
     crit_tag = " |y*CRITICAL*|n" if is_crit else ""
     msg = (
@@ -250,6 +255,16 @@ def resolve_ability_damage(character, ability, target):
         (bool, str, int): (success, message, damage_dealt).
     """
     from world.zone_scaling import get_player_damage_to_mob, apply_resistance
+    from world.status_effects import get_effect_modifiers
+
+    # Check miss from blind/status effects (D-05: Focus resets on miss)
+    attacker_mods = get_effect_modifiers(character)
+    miss_chance = attacker_mods.get("miss_chance_increase", 0.0)
+    if miss_chance > 0 and random.random() < miss_chance:
+        from world.ability_engine import handle_focus_miss
+        handle_focus_miss(character)
+        ability_name = ability.get("name", "ability")
+        return (False, f"{character.key}'s {ability_name} misses!", 0)
 
     stats = character.db.base_stats or {}
 
@@ -270,6 +285,13 @@ def resolve_ability_damage(character, ability, target):
     params = ability.get("effect_params", {})
     ability_base = params.get("damage_base") or ability.get("damage_base", 15)
     raw = ability_base * (1 + primary_stat * 0.02 + secondary_stat * 0.01)
+
+    # Balance pendulum scaling (D-06)
+    balance_type = params.get("balance_type")
+    if balance_type:
+        from world.ability_engine import get_balance_modifier
+        balance_mod = get_balance_modifier(character, balance_type)
+        raw = int(raw * balance_mod)
 
     # Critical hit
     is_crit, crit_mult = roll_crit(character)
@@ -294,7 +316,6 @@ def resolve_ability_damage(character, ability, target):
         final = apply_elite_boss_scaling(final, mob_rarity, is_incoming=False)
 
     # Apply weaken from status effects
-    from world.status_effects import get_effect_modifiers
     target_mods = get_effect_modifiers(target)
     dmg_reduction = target_mods.get("damage_reduction", 0.0)
     if dmg_reduction > 0:
@@ -307,6 +328,10 @@ def resolve_ability_damage(character, ability, target):
     # Record stat use
     from world.base_attributes import record_stat_use
     record_stat_use(character, "melee_hit")
+
+    # Build Momentum for target on damage taken (D-04)
+    from world.ability_engine import build_momentum_on_damage
+    build_momentum_on_damage(target, 5)
 
     # Apply status effect from ability if specified (prefer effect_params)
     status_effect = params.get("status_effect") or ability.get("status_effect")
@@ -359,6 +384,14 @@ def resolve_heal(character, ability, target):
 
     heal_base = ability.get("heal_base", 20)
     heal_amount = int(heal_base * (1 + primary_stat * 0.015))
+
+    # Balance pendulum scaling for heals (D-06: Calm position boosts heals)
+    params = ability.get("effect_params", {})
+    balance_type = params.get("balance_type")
+    if balance_type:
+        from world.ability_engine import get_balance_modifier
+        balance_mod = get_balance_modifier(character, balance_type)
+        heal_amount = int(heal_amount * balance_mod)
 
     max_hp = derive_max_hp(target)
     current_hp = target.ndb.hp or 0

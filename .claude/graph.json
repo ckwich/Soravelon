@@ -1,0 +1,2737 @@
+{
+  "version": "1.0",
+  "meta": {
+    "generatedAt": "2026-03-28T00:41:47.240Z",
+    "gitHash": "f043d45",
+    "totalFiles": 145,
+    "totalEdges": 48
+  },
+  "files": {
+    "commands\\cmd_abilities.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 219,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\cmd_alias.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 125,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\cmd_ancestry.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 84,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\cmd_crafting.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 234,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\cmd_dialogue.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 450,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\cmd_domains.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 66,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\cmd_dynamic.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 52,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\cmd_fly.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 156,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\cmd_guild.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 157,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\combat_commands.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 267,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\command.py": {
+      "imports": [],
+      "importedBy": [
+        "commands\\cmd_abilities.py",
+        "commands\\cmd_alias.py",
+        "commands\\cmd_ancestry.py",
+        "commands\\cmd_crafting.py",
+        "commands\\cmd_dialogue.py",
+        "commands\\cmd_domains.py",
+        "commands\\cmd_dynamic.py",
+        "commands\\cmd_fly.py",
+        "commands\\cmd_guild.py",
+        "commands\\combat_commands.py",
+        "commands\\skill_commands.py"
+      ],
+      "exports": [],
+      "lines": 188,
+      "fanIn": 11,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 34,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\default_cmdsets.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 138,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\default_cmdsets.py"
+    },
+    "commands\\skill_commands.py": {
+      "imports": [
+        "commands\\command.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 374,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\cmd_abilities.py"
+    },
+    "commands\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "commands\\__init__.py"
+    },
+    "server\\conf\\at_initial_setup.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 20,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\at_initial_setup.py"
+    },
+    "server\\conf\\at_search.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 55,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\at_search.py"
+    },
+    "server\\conf\\at_server_startstop.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 280,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\at_server_startstop.py"
+    },
+    "server\\conf\\cmdparser.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 56,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\cmdparser.py"
+    },
+    "server\\conf\\connection_screens.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 41,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\connection_screens.py"
+    },
+    "server\\conf\\inlinefuncs.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 40,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\inlinefuncs.py"
+    },
+    "server\\conf\\inputfuncs.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 53,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\inputfuncs.py"
+    },
+    "server\\conf\\lockfuncs.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 31,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\lockfuncs.py"
+    },
+    "server\\conf\\mssp.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 106,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\mssp.py"
+    },
+    "server\\conf\\portal_services_plugins.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 25,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\portal_services_plugins.py"
+    },
+    "server\\conf\\secret_settings.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 18,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\secret_settings.py"
+    },
+    "server\\conf\\serversession.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 38,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\serversession.py"
+    },
+    "server\\conf\\server_services_plugins.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 25,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\server_services_plugins.py"
+    },
+    "server\\conf\\settings.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 56,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\settings.py"
+    },
+    "server\\conf\\web_plugins.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 42,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\web_plugins.py"
+    },
+    "server\\conf\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 2,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\conf\\__init__.py"
+    },
+    "server\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 2,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "server\\__init__.py"
+    },
+    "tests\\test_ability_engine.py": {
+      "imports": [
+        "world\\ability_registry.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 336,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_ability_engine.py"
+    },
+    "tests\\test_action_vocabulary.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 294,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_action_vocabulary.py"
+    },
+    "tests\\test_ancestry_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 209,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_ancestry_engine.py"
+    },
+    "tests\\test_area_builder.py": {
+      "imports": [
+        "world\\area_builder.py",
+        "world\\__init__.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1055,
+      "fanIn": 0,
+      "fanOut": 2,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "tests\\test_area_validator.py": {
+      "imports": [
+        "world\\area_validator.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 389,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "tests\\test_banking.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 383,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_banking.py"
+    },
+    "tests\\test_base_attributes.py": {
+      "imports": [
+        "world\\base_attributes.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 579,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_base_attributes.py"
+    },
+    "tests\\test_combat_ai.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 680,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_combat_ai.py"
+    },
+    "tests\\test_combat_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 358,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_combat_engine.py"
+    },
+    "tests\\test_combat_script.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 215,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_combat_script.py"
+    },
+    "tests\\test_command_preprocessor.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 308,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_command_preprocessor.py"
+    },
+    "tests\\test_crafting.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 347,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_crafting.py"
+    },
+    "tests\\test_dialogue.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 532,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_dialogue.py"
+    },
+    "tests\\test_flight_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 246,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_flight_engine.py"
+    },
+    "tests\\test_group_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 255,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_group_engine.py"
+    },
+    "tests\\test_guild_engine.py": {
+      "imports": [
+        "world\\guild_engine.py",
+        "world\\world_state.py",
+        "world\\models.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 571,
+      "fanIn": 0,
+      "fanOut": 3,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "tests\\test_guild_engine_mutations.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 22,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_guild_engine_mutations.py"
+    },
+    "tests\\test_inventory_engine.py": {
+      "imports": [
+        "world\\models.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 441,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "tests\\test_item_spawner.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 250,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_item_spawner.py"
+    },
+    "tests\\test_loot_tables.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 385,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_loot_tables.py"
+    },
+    "tests\\test_mob_affixes.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 294,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_mob_affixes.py"
+    },
+    "tests\\test_mob_disposition.py": {
+      "imports": [
+        "world\\models.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 383,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "tests\\test_mob_spawner.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 639,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_mob_spawner.py"
+    },
+    "tests\\test_node_system.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 428,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_node_system.py"
+    },
+    "tests\\test_oob_publisher.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 390,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_oob_publisher.py"
+    },
+    "tests\\test_patrol_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 290,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_patrol_engine.py"
+    },
+    "tests\\test_room_state.py": {
+      "imports": [
+        "world\\room_state.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 254,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_room_state.py"
+    },
+    "tests\\test_skill_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 522,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_skill_engine.py"
+    },
+    "tests\\test_spawn_record.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 369,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_spawn_record.py"
+    },
+    "tests\\test_status_effects.py": {
+      "imports": [
+        "world\\status_effects.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 565,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_status_effects.py"
+    },
+    "tests\\test_trigger_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 404,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_trigger_engine.py"
+    },
+    "tests\\test_typeclasses.py": {
+      "imports": [
+        "world\\models.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 284,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "tests\\test_world_state.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 399,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_world_state.py"
+    },
+    "tests\\test_zone_scaling.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 249,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_zone_scaling.py"
+    },
+    "tests\\test_zone_serializer.py": {
+      "imports": [
+        "world\\area_builder.py",
+        "world\\__init__.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 406,
+      "fanIn": 0,
+      "fanOut": 2,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "tests\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\__init__.py"
+    },
+    "typeclasses\\accounts.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 24,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\accounts.py"
+    },
+    "typeclasses\\channels.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 119,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\channels.py"
+    },
+    "typeclasses\\characters.py": {
+      "imports": [
+        "typeclasses\\objects.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 264,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\characters.py"
+    },
+    "typeclasses\\exits.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 100,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\exits.py"
+    },
+    "typeclasses\\mobs.py": {
+      "imports": [
+        "world\\mob_affix_roller.py",
+        "world\\mob_affixes.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 209,
+      "fanIn": 0,
+      "fanOut": 2,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\mobs.py"
+    },
+    "typeclasses\\objects.py": {
+      "imports": [],
+      "importedBy": [
+        "typeclasses\\characters.py",
+        "typeclasses\\rooms.py"
+      ],
+      "exports": [],
+      "lines": 224,
+      "fanIn": 2,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 7,
+      "cluster": "typeclasses\\characters.py"
+    },
+    "typeclasses\\rooms.py": {
+      "imports": [
+        "typeclasses\\objects.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 147,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\characters.py"
+    },
+    "typeclasses\\scripts.py": {
+      "imports": [],
+      "importedBy": [
+        "world\\scripts\\flight_script.py",
+        "world\\scripts\\patrol_script.py"
+      ],
+      "exports": [],
+      "lines": 47,
+      "fanIn": 2,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 7,
+      "cluster": "typeclasses\\scripts.py"
+    },
+    "typeclasses\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\__init__.py"
+    },
+    "web\\admin\\urls.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 21,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\admin\\urls.py"
+    },
+    "web\\admin\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\admin\\__init__.py"
+    },
+    "web\\api\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\api\\__init__.py"
+    },
+    "web\\urls.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 35,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\urls.py"
+    },
+    "web\\webclient\\urls.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 21,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\webclient\\urls.py"
+    },
+    "web\\webclient\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\webclient\\__init__.py"
+    },
+    "web\\website\\urls.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 21,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\website\\urls.py"
+    },
+    "web\\website\\views\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\website\\views\\__init__.py"
+    },
+    "web\\website\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\website\\__init__.py"
+    },
+    "web\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "web\\__init__.py"
+    },
+    "world\\ability_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 379,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\ability_engine.py"
+    },
+    "world\\ability_registry.py": {
+      "imports": [],
+      "importedBy": [
+        "tests\\test_ability_engine.py"
+      ],
+      "exports": [],
+      "lines": 8546,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "tests\\test_ability_engine.py"
+    },
+    "world\\action_vocabulary.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 346,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\action_vocabulary.py"
+    },
+    "world\\ancestry_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 163,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\ancestry_engine.py"
+    },
+    "world\\apps.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 7,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\apps.py"
+    },
+    "world\\areas\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\areas\\__init__.py"
+    },
+    "world\\area_builder.py": {
+      "imports": [
+        "world\\__init__.py",
+        "world\\area_validator.py"
+      ],
+      "importedBy": [
+        "tests\\test_area_builder.py",
+        "tests\\test_zone_serializer.py",
+        "world\\zone_serializer.py"
+      ],
+      "exports": [],
+      "lines": 1103,
+      "fanIn": 3,
+      "fanOut": 2,
+      "churn": 0,
+      "priority": 10,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "world\\area_validator.py": {
+      "imports": [],
+      "importedBy": [
+        "tests\\test_area_validator.py",
+        "world\\area_builder.py",
+        "world\\zone_serializer.py"
+      ],
+      "exports": [],
+      "lines": 156,
+      "fanIn": 3,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 10,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "world\\banking.py": {
+      "imports": [
+        "world\\models.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 292,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "world\\base_attributes.py": {
+      "imports": [],
+      "importedBy": [
+        "tests\\test_base_attributes.py"
+      ],
+      "exports": [],
+      "lines": 467,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "tests\\test_base_attributes.py"
+    },
+    "world\\combat_ai.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 697,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\combat_ai.py"
+    },
+    "world\\combat_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 554,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\combat_engine.py"
+    },
+    "world\\combat_script.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 999,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\combat_script.py"
+    },
+    "world\\command_preprocessor.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 179,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\command_preprocessor.py"
+    },
+    "world\\crafting_definitions.py": {
+      "imports": [],
+      "importedBy": [
+        "world\\crafting_engine.py"
+      ],
+      "exports": [],
+      "lines": 223,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "world\\crafting_definitions.py"
+    },
+    "world\\crafting_engine.py": {
+      "imports": [
+        "world\\crafting_definitions.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 346,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\crafting_definitions.py"
+    },
+    "world\\dialogue_definitions.py": {
+      "imports": [],
+      "importedBy": [
+        "world\\dialogue_engine.py"
+      ],
+      "exports": [],
+      "lines": 69,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "world\\dialogue_definitions.py"
+    },
+    "world\\dialogue_engine.py": {
+      "imports": [
+        "world\\dialogue_definitions.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 471,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\dialogue_definitions.py"
+    },
+    "world\\flight_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 132,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\flight_engine.py"
+    },
+    "world\\flight_registry.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 93,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\flight_registry.py"
+    },
+    "world\\group_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 299,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\group_engine.py"
+    },
+    "world\\guild_engine.py": {
+      "imports": [
+        "world\\world_state.py"
+      ],
+      "importedBy": [
+        "tests\\test_guild_engine.py"
+      ],
+      "exports": [],
+      "lines": 1694,
+      "fanIn": 1,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "world\\help_entries.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 59,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\help_entries.py"
+    },
+    "world\\inventory_engine.py": {
+      "imports": [
+        "world\\models.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 457,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "world\\inventory_helpers.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 72,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\inventory_helpers.py"
+    },
+    "world\\item_spawner.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 73,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\item_spawner.py"
+    },
+    "world\\loot_tables.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 189,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\loot_tables.py"
+    },
+    "world\\migrations\\0004_characterguild.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 74,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\migrations\\0004_characterguild.py"
+    },
+    "world\\migrations\\0005_characterability.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 59,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\migrations\\0005_characterability.py"
+    },
+    "world\\migrations\\0006_knowntopicrecord_characterrecipe.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 93,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\migrations\\0006_knowntopicrecord_characterrecipe.py"
+    },
+    "world\\migrations\\0006_spawnrecord.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 51,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\migrations\\0006_spawnrecord.py"
+    },
+    "world\\migrations\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\migrations\\__init__.py"
+    },
+    "world\\mob_affixes.py": {
+      "imports": [],
+      "importedBy": [
+        "typeclasses\\mobs.py",
+        "world\\mob_affix_roller.py"
+      ],
+      "exports": [],
+      "lines": 267,
+      "fanIn": 2,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 7,
+      "cluster": "typeclasses\\mobs.py"
+    },
+    "world\\mob_affix_roller.py": {
+      "imports": [
+        "world\\mob_affixes.py"
+      ],
+      "importedBy": [
+        "typeclasses\\mobs.py"
+      ],
+      "exports": [],
+      "lines": 165,
+      "fanIn": 1,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "typeclasses\\mobs.py"
+    },
+    "world\\mob_disposition.py": {
+      "imports": [
+        "world\\world_state.py"
+      ],
+      "importedBy": [
+        "world\\patrol_engine.py"
+      ],
+      "exports": [],
+      "lines": 158,
+      "fanIn": 1,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "world\\mob_spawner.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 482,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\mob_spawner.py"
+    },
+    "world\\models.py": {
+      "imports": [],
+      "importedBy": [
+        "tests\\test_guild_engine.py",
+        "tests\\test_inventory_engine.py",
+        "tests\\test_mob_disposition.py",
+        "tests\\test_typeclasses.py",
+        "world\\banking.py",
+        "world\\inventory_engine.py",
+        "world\\world_state.py"
+      ],
+      "exports": [],
+      "lines": 420,
+      "fanIn": 7,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 22,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "world\\named_mob_registry.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 35,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\named_mob_registry.py"
+    },
+    "world\\nodes\\node_effects.py": {
+      "imports": [],
+      "importedBy": [
+        "world\\scripts\\node_script.py"
+      ],
+      "exports": [],
+      "lines": 32,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "world\\nodes\\node_effects.py"
+    },
+    "world\\nodes\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\nodes\\__init__.py"
+    },
+    "world\\node_helpers.py": {
+      "imports": [],
+      "importedBy": [
+        "world\\scripts\\node_script.py"
+      ],
+      "exports": [],
+      "lines": 173,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "world\\nodes\\node_effects.py"
+    },
+    "world\\oob_publisher.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 420,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\oob_publisher.py"
+    },
+    "world\\patrol_engine.py": {
+      "imports": [
+        "world\\mob_disposition.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 162,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "world\\prototypes.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 91,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\prototypes.py"
+    },
+    "world\\room_state.py": {
+      "imports": [],
+      "importedBy": [
+        "tests\\test_room_state.py"
+      ],
+      "exports": [],
+      "lines": 410,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "tests\\test_room_state.py"
+    },
+    "world\\scripts\\flight_script.py": {
+      "imports": [
+        "typeclasses\\scripts.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 236,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\scripts.py"
+    },
+    "world\\scripts\\node_script.py": {
+      "imports": [
+        "world\\node_helpers.py",
+        "world\\nodes\\node_effects.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 198,
+      "fanIn": 0,
+      "fanOut": 2,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\nodes\\node_effects.py"
+    },
+    "world\\scripts\\patrol_script.py": {
+      "imports": [
+        "typeclasses\\scripts.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 135,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "typeclasses\\scripts.py"
+    },
+    "world\\scripts\\__init__.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\scripts\\__init__.py"
+    },
+    "world\\skill_definitions.py": {
+      "imports": [],
+      "importedBy": [
+        "world\\skill_engine.py"
+      ],
+      "exports": [],
+      "lines": 426,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "world\\skill_definitions.py"
+    },
+    "world\\skill_engine.py": {
+      "imports": [
+        "world\\skill_definitions.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 399,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\skill_definitions.py"
+    },
+    "world\\status_effects.py": {
+      "imports": [],
+      "importedBy": [
+        "tests\\test_status_effects.py"
+      ],
+      "exports": [],
+      "lines": 504,
+      "fanIn": 1,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 4,
+      "cluster": "tests\\test_status_effects.py"
+    },
+    "world\\trigger_engine.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 141,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\trigger_engine.py"
+    },
+    "world\\world_state.py": {
+      "imports": [
+        "world\\models.py"
+      ],
+      "importedBy": [
+        "tests\\test_guild_engine.py",
+        "world\\guild_engine.py",
+        "world\\mob_disposition.py"
+      ],
+      "exports": [],
+      "lines": 421,
+      "fanIn": 3,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 10,
+      "cluster": "tests\\test_guild_engine.py"
+    },
+    "world\\zone_object.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 66,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\zone_object.py"
+    },
+    "world\\zone_registry.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 36,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\zone_registry.py"
+    },
+    "world\\zone_scaling.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 138,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\zone_scaling.py"
+    },
+    "world\\zone_serializer.py": {
+      "imports": [
+        "world\\area_builder.py",
+        "world\\area_validator.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 221,
+      "fanIn": 0,
+      "fanOut": 2,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "world\\__init__.py": {
+      "imports": [],
+      "importedBy": [
+        "tests\\test_area_builder.py",
+        "tests\\test_zone_serializer.py",
+        "world\\area_builder.py"
+      ],
+      "exports": [],
+      "lines": 1,
+      "fanIn": 3,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 10,
+      "cluster": "tests\\test_area_builder.py"
+    }
+  },
+  "hubs": [
+    {
+      "path": "commands\\command.py",
+      "fanIn": 11,
+      "exports": []
+    },
+    {
+      "path": "world\\models.py",
+      "fanIn": 7,
+      "exports": []
+    },
+    {
+      "path": "world\\area_builder.py",
+      "fanIn": 3,
+      "exports": []
+    },
+    {
+      "path": "world\\area_validator.py",
+      "fanIn": 3,
+      "exports": []
+    },
+    {
+      "path": "world\\world_state.py",
+      "fanIn": 3,
+      "exports": []
+    },
+    {
+      "path": "world\\__init__.py",
+      "fanIn": 3,
+      "exports": []
+    },
+    {
+      "path": "typeclasses\\objects.py",
+      "fanIn": 2,
+      "exports": []
+    },
+    {
+      "path": "typeclasses\\scripts.py",
+      "fanIn": 2,
+      "exports": []
+    },
+    {
+      "path": "world\\mob_affixes.py",
+      "fanIn": 2,
+      "exports": []
+    },
+    {
+      "path": "world\\ability_registry.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\base_attributes.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\crafting_definitions.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\dialogue_definitions.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\guild_engine.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\mob_affix_roller.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\mob_disposition.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\nodes\\node_effects.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\node_helpers.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\room_state.py",
+      "fanIn": 1,
+      "exports": []
+    },
+    {
+      "path": "world\\skill_definitions.py",
+      "fanIn": 1,
+      "exports": []
+    }
+  ],
+  "clusters": [
+    {
+      "label": "commands\\cmd_abilities.py",
+      "size": 12,
+      "files": [
+        "commands\\cmd_abilities.py",
+        "commands\\command.py",
+        "commands\\cmd_alias.py",
+        "commands\\cmd_ancestry.py",
+        "commands\\cmd_crafting.py",
+        "commands\\cmd_dialogue.py",
+        "commands\\cmd_domains.py",
+        "commands\\cmd_dynamic.py",
+        "commands\\cmd_fly.py",
+        "commands\\cmd_guild.py",
+        "commands\\combat_commands.py",
+        "commands\\skill_commands.py"
+      ]
+    },
+    {
+      "label": "tests\\test_guild_engine.py",
+      "size": 11,
+      "files": [
+        "tests\\test_guild_engine.py",
+        "world\\guild_engine.py",
+        "world\\world_state.py",
+        "world\\models.py",
+        "world\\mob_disposition.py",
+        "tests\\test_inventory_engine.py",
+        "tests\\test_mob_disposition.py",
+        "tests\\test_typeclasses.py",
+        "world\\banking.py",
+        "world\\inventory_engine.py",
+        "world\\patrol_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_area_builder.py",
+      "size": 7,
+      "files": [
+        "tests\\test_area_builder.py",
+        "world\\area_builder.py",
+        "world\\__init__.py",
+        "tests\\test_zone_serializer.py",
+        "world\\area_validator.py",
+        "world\\zone_serializer.py",
+        "tests\\test_area_validator.py"
+      ]
+    },
+    {
+      "label": "typeclasses\\characters.py",
+      "size": 3,
+      "files": [
+        "typeclasses\\characters.py",
+        "typeclasses\\objects.py",
+        "typeclasses\\rooms.py"
+      ]
+    },
+    {
+      "label": "typeclasses\\mobs.py",
+      "size": 3,
+      "files": [
+        "typeclasses\\mobs.py",
+        "world\\mob_affix_roller.py",
+        "world\\mob_affixes.py"
+      ]
+    },
+    {
+      "label": "typeclasses\\scripts.py",
+      "size": 3,
+      "files": [
+        "typeclasses\\scripts.py",
+        "world\\scripts\\flight_script.py",
+        "world\\scripts\\patrol_script.py"
+      ]
+    },
+    {
+      "label": "world\\nodes\\node_effects.py",
+      "size": 3,
+      "files": [
+        "world\\nodes\\node_effects.py",
+        "world\\scripts\\node_script.py",
+        "world\\node_helpers.py"
+      ]
+    },
+    {
+      "label": "tests\\test_ability_engine.py",
+      "size": 2,
+      "files": [
+        "tests\\test_ability_engine.py",
+        "world\\ability_registry.py"
+      ]
+    },
+    {
+      "label": "tests\\test_base_attributes.py",
+      "size": 2,
+      "files": [
+        "tests\\test_base_attributes.py",
+        "world\\base_attributes.py"
+      ]
+    },
+    {
+      "label": "tests\\test_room_state.py",
+      "size": 2,
+      "files": [
+        "tests\\test_room_state.py",
+        "world\\room_state.py"
+      ]
+    },
+    {
+      "label": "tests\\test_status_effects.py",
+      "size": 2,
+      "files": [
+        "tests\\test_status_effects.py",
+        "world\\status_effects.py"
+      ]
+    },
+    {
+      "label": "world\\crafting_definitions.py",
+      "size": 2,
+      "files": [
+        "world\\crafting_definitions.py",
+        "world\\crafting_engine.py"
+      ]
+    },
+    {
+      "label": "world\\dialogue_definitions.py",
+      "size": 2,
+      "files": [
+        "world\\dialogue_definitions.py",
+        "world\\dialogue_engine.py"
+      ]
+    },
+    {
+      "label": "world\\skill_definitions.py",
+      "size": 2,
+      "files": [
+        "world\\skill_definitions.py",
+        "world\\skill_engine.py"
+      ]
+    },
+    {
+      "label": "commands\\default_cmdsets.py",
+      "size": 1,
+      "files": [
+        "commands\\default_cmdsets.py"
+      ]
+    },
+    {
+      "label": "commands\\__init__.py",
+      "size": 1,
+      "files": [
+        "commands\\__init__.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\at_initial_setup.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\at_initial_setup.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\at_search.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\at_search.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\at_server_startstop.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\at_server_startstop.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\cmdparser.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\cmdparser.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\connection_screens.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\connection_screens.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\inlinefuncs.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\inlinefuncs.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\inputfuncs.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\inputfuncs.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\lockfuncs.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\lockfuncs.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\mssp.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\mssp.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\portal_services_plugins.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\portal_services_plugins.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\secret_settings.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\secret_settings.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\serversession.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\serversession.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\server_services_plugins.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\server_services_plugins.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\settings.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\settings.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\web_plugins.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\web_plugins.py"
+      ]
+    },
+    {
+      "label": "server\\conf\\__init__.py",
+      "size": 1,
+      "files": [
+        "server\\conf\\__init__.py"
+      ]
+    },
+    {
+      "label": "server\\__init__.py",
+      "size": 1,
+      "files": [
+        "server\\__init__.py"
+      ]
+    },
+    {
+      "label": "tests\\test_action_vocabulary.py",
+      "size": 1,
+      "files": [
+        "tests\\test_action_vocabulary.py"
+      ]
+    },
+    {
+      "label": "tests\\test_ancestry_engine.py",
+      "size": 1,
+      "files": [
+        "tests\\test_ancestry_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_banking.py",
+      "size": 1,
+      "files": [
+        "tests\\test_banking.py"
+      ]
+    },
+    {
+      "label": "tests\\test_combat_ai.py",
+      "size": 1,
+      "files": [
+        "tests\\test_combat_ai.py"
+      ]
+    },
+    {
+      "label": "tests\\test_combat_engine.py",
+      "size": 1,
+      "files": [
+        "tests\\test_combat_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_combat_script.py",
+      "size": 1,
+      "files": [
+        "tests\\test_combat_script.py"
+      ]
+    },
+    {
+      "label": "tests\\test_command_preprocessor.py",
+      "size": 1,
+      "files": [
+        "tests\\test_command_preprocessor.py"
+      ]
+    },
+    {
+      "label": "tests\\test_crafting.py",
+      "size": 1,
+      "files": [
+        "tests\\test_crafting.py"
+      ]
+    },
+    {
+      "label": "tests\\test_dialogue.py",
+      "size": 1,
+      "files": [
+        "tests\\test_dialogue.py"
+      ]
+    },
+    {
+      "label": "tests\\test_flight_engine.py",
+      "size": 1,
+      "files": [
+        "tests\\test_flight_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_group_engine.py",
+      "size": 1,
+      "files": [
+        "tests\\test_group_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_guild_engine_mutations.py",
+      "size": 1,
+      "files": [
+        "tests\\test_guild_engine_mutations.py"
+      ]
+    },
+    {
+      "label": "tests\\test_item_spawner.py",
+      "size": 1,
+      "files": [
+        "tests\\test_item_spawner.py"
+      ]
+    },
+    {
+      "label": "tests\\test_loot_tables.py",
+      "size": 1,
+      "files": [
+        "tests\\test_loot_tables.py"
+      ]
+    },
+    {
+      "label": "tests\\test_mob_affixes.py",
+      "size": 1,
+      "files": [
+        "tests\\test_mob_affixes.py"
+      ]
+    },
+    {
+      "label": "tests\\test_mob_spawner.py",
+      "size": 1,
+      "files": [
+        "tests\\test_mob_spawner.py"
+      ]
+    },
+    {
+      "label": "tests\\test_node_system.py",
+      "size": 1,
+      "files": [
+        "tests\\test_node_system.py"
+      ]
+    },
+    {
+      "label": "tests\\test_oob_publisher.py",
+      "size": 1,
+      "files": [
+        "tests\\test_oob_publisher.py"
+      ]
+    },
+    {
+      "label": "tests\\test_patrol_engine.py",
+      "size": 1,
+      "files": [
+        "tests\\test_patrol_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_skill_engine.py",
+      "size": 1,
+      "files": [
+        "tests\\test_skill_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_spawn_record.py",
+      "size": 1,
+      "files": [
+        "tests\\test_spawn_record.py"
+      ]
+    },
+    {
+      "label": "tests\\test_trigger_engine.py",
+      "size": 1,
+      "files": [
+        "tests\\test_trigger_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_world_state.py",
+      "size": 1,
+      "files": [
+        "tests\\test_world_state.py"
+      ]
+    },
+    {
+      "label": "tests\\test_zone_scaling.py",
+      "size": 1,
+      "files": [
+        "tests\\test_zone_scaling.py"
+      ]
+    },
+    {
+      "label": "tests\\__init__.py",
+      "size": 1,
+      "files": [
+        "tests\\__init__.py"
+      ]
+    },
+    {
+      "label": "typeclasses\\accounts.py",
+      "size": 1,
+      "files": [
+        "typeclasses\\accounts.py"
+      ]
+    },
+    {
+      "label": "typeclasses\\channels.py",
+      "size": 1,
+      "files": [
+        "typeclasses\\channels.py"
+      ]
+    },
+    {
+      "label": "typeclasses\\exits.py",
+      "size": 1,
+      "files": [
+        "typeclasses\\exits.py"
+      ]
+    },
+    {
+      "label": "typeclasses\\__init__.py",
+      "size": 1,
+      "files": [
+        "typeclasses\\__init__.py"
+      ]
+    },
+    {
+      "label": "web\\admin\\urls.py",
+      "size": 1,
+      "files": [
+        "web\\admin\\urls.py"
+      ]
+    },
+    {
+      "label": "web\\admin\\__init__.py",
+      "size": 1,
+      "files": [
+        "web\\admin\\__init__.py"
+      ]
+    },
+    {
+      "label": "web\\api\\__init__.py",
+      "size": 1,
+      "files": [
+        "web\\api\\__init__.py"
+      ]
+    },
+    {
+      "label": "web\\urls.py",
+      "size": 1,
+      "files": [
+        "web\\urls.py"
+      ]
+    },
+    {
+      "label": "web\\webclient\\urls.py",
+      "size": 1,
+      "files": [
+        "web\\webclient\\urls.py"
+      ]
+    },
+    {
+      "label": "web\\webclient\\__init__.py",
+      "size": 1,
+      "files": [
+        "web\\webclient\\__init__.py"
+      ]
+    },
+    {
+      "label": "web\\website\\urls.py",
+      "size": 1,
+      "files": [
+        "web\\website\\urls.py"
+      ]
+    },
+    {
+      "label": "web\\website\\views\\__init__.py",
+      "size": 1,
+      "files": [
+        "web\\website\\views\\__init__.py"
+      ]
+    },
+    {
+      "label": "web\\website\\__init__.py",
+      "size": 1,
+      "files": [
+        "web\\website\\__init__.py"
+      ]
+    },
+    {
+      "label": "web\\__init__.py",
+      "size": 1,
+      "files": [
+        "web\\__init__.py"
+      ]
+    },
+    {
+      "label": "world\\ability_engine.py",
+      "size": 1,
+      "files": [
+        "world\\ability_engine.py"
+      ]
+    },
+    {
+      "label": "world\\action_vocabulary.py",
+      "size": 1,
+      "files": [
+        "world\\action_vocabulary.py"
+      ]
+    },
+    {
+      "label": "world\\ancestry_engine.py",
+      "size": 1,
+      "files": [
+        "world\\ancestry_engine.py"
+      ]
+    },
+    {
+      "label": "world\\apps.py",
+      "size": 1,
+      "files": [
+        "world\\apps.py"
+      ]
+    },
+    {
+      "label": "world\\areas\\__init__.py",
+      "size": 1,
+      "files": [
+        "world\\areas\\__init__.py"
+      ]
+    },
+    {
+      "label": "world\\combat_ai.py",
+      "size": 1,
+      "files": [
+        "world\\combat_ai.py"
+      ]
+    },
+    {
+      "label": "world\\combat_engine.py",
+      "size": 1,
+      "files": [
+        "world\\combat_engine.py"
+      ]
+    },
+    {
+      "label": "world\\combat_script.py",
+      "size": 1,
+      "files": [
+        "world\\combat_script.py"
+      ]
+    },
+    {
+      "label": "world\\command_preprocessor.py",
+      "size": 1,
+      "files": [
+        "world\\command_preprocessor.py"
+      ]
+    },
+    {
+      "label": "world\\flight_engine.py",
+      "size": 1,
+      "files": [
+        "world\\flight_engine.py"
+      ]
+    },
+    {
+      "label": "world\\flight_registry.py",
+      "size": 1,
+      "files": [
+        "world\\flight_registry.py"
+      ]
+    },
+    {
+      "label": "world\\group_engine.py",
+      "size": 1,
+      "files": [
+        "world\\group_engine.py"
+      ]
+    },
+    {
+      "label": "world\\help_entries.py",
+      "size": 1,
+      "files": [
+        "world\\help_entries.py"
+      ]
+    },
+    {
+      "label": "world\\inventory_helpers.py",
+      "size": 1,
+      "files": [
+        "world\\inventory_helpers.py"
+      ]
+    },
+    {
+      "label": "world\\item_spawner.py",
+      "size": 1,
+      "files": [
+        "world\\item_spawner.py"
+      ]
+    },
+    {
+      "label": "world\\loot_tables.py",
+      "size": 1,
+      "files": [
+        "world\\loot_tables.py"
+      ]
+    },
+    {
+      "label": "world\\migrations\\0004_characterguild.py",
+      "size": 1,
+      "files": [
+        "world\\migrations\\0004_characterguild.py"
+      ]
+    },
+    {
+      "label": "world\\migrations\\0005_characterability.py",
+      "size": 1,
+      "files": [
+        "world\\migrations\\0005_characterability.py"
+      ]
+    },
+    {
+      "label": "world\\migrations\\0006_knowntopicrecord_characterrecipe.py",
+      "size": 1,
+      "files": [
+        "world\\migrations\\0006_knowntopicrecord_characterrecipe.py"
+      ]
+    },
+    {
+      "label": "world\\migrations\\0006_spawnrecord.py",
+      "size": 1,
+      "files": [
+        "world\\migrations\\0006_spawnrecord.py"
+      ]
+    },
+    {
+      "label": "world\\migrations\\__init__.py",
+      "size": 1,
+      "files": [
+        "world\\migrations\\__init__.py"
+      ]
+    },
+    {
+      "label": "world\\mob_spawner.py",
+      "size": 1,
+      "files": [
+        "world\\mob_spawner.py"
+      ]
+    },
+    {
+      "label": "world\\named_mob_registry.py",
+      "size": 1,
+      "files": [
+        "world\\named_mob_registry.py"
+      ]
+    },
+    {
+      "label": "world\\nodes\\__init__.py",
+      "size": 1,
+      "files": [
+        "world\\nodes\\__init__.py"
+      ]
+    },
+    {
+      "label": "world\\oob_publisher.py",
+      "size": 1,
+      "files": [
+        "world\\oob_publisher.py"
+      ]
+    },
+    {
+      "label": "world\\prototypes.py",
+      "size": 1,
+      "files": [
+        "world\\prototypes.py"
+      ]
+    },
+    {
+      "label": "world\\scripts\\__init__.py",
+      "size": 1,
+      "files": [
+        "world\\scripts\\__init__.py"
+      ]
+    },
+    {
+      "label": "world\\trigger_engine.py",
+      "size": 1,
+      "files": [
+        "world\\trigger_engine.py"
+      ]
+    },
+    {
+      "label": "world\\zone_object.py",
+      "size": 1,
+      "files": [
+        "world\\zone_object.py"
+      ]
+    },
+    {
+      "label": "world\\zone_registry.py",
+      "size": 1,
+      "files": [
+        "world\\zone_registry.py"
+      ]
+    },
+    {
+      "label": "world\\zone_scaling.py",
+      "size": 1,
+      "files": [
+        "world\\zone_scaling.py"
+      ]
+    }
+  ],
+  "coupling": [],
+  "hotspots": [],
+  "clusterIndex": {
+    "commands\\cmd_abilities.py": 0,
+    "tests\\test_guild_engine.py": 1,
+    "tests\\test_area_builder.py": 2,
+    "typeclasses\\characters.py": 3,
+    "typeclasses\\mobs.py": 4,
+    "typeclasses\\scripts.py": 5,
+    "world\\nodes\\node_effects.py": 6,
+    "tests\\test_ability_engine.py": 7,
+    "tests\\test_base_attributes.py": 8,
+    "tests\\test_room_state.py": 9,
+    "tests\\test_status_effects.py": 10,
+    "world\\crafting_definitions.py": 11,
+    "world\\dialogue_definitions.py": 12,
+    "world\\skill_definitions.py": 13,
+    "commands\\default_cmdsets.py": 14,
+    "commands\\__init__.py": 15,
+    "server\\conf\\at_initial_setup.py": 16,
+    "server\\conf\\at_search.py": 17,
+    "server\\conf\\at_server_startstop.py": 18,
+    "server\\conf\\cmdparser.py": 19,
+    "server\\conf\\connection_screens.py": 20,
+    "server\\conf\\inlinefuncs.py": 21,
+    "server\\conf\\inputfuncs.py": 22,
+    "server\\conf\\lockfuncs.py": 23,
+    "server\\conf\\mssp.py": 24,
+    "server\\conf\\portal_services_plugins.py": 25,
+    "server\\conf\\secret_settings.py": 26,
+    "server\\conf\\serversession.py": 27,
+    "server\\conf\\server_services_plugins.py": 28,
+    "server\\conf\\settings.py": 29,
+    "server\\conf\\web_plugins.py": 30,
+    "server\\conf\\__init__.py": 31,
+    "server\\__init__.py": 32,
+    "tests\\test_action_vocabulary.py": 33,
+    "tests\\test_ancestry_engine.py": 34,
+    "tests\\test_banking.py": 35,
+    "tests\\test_combat_ai.py": 36,
+    "tests\\test_combat_engine.py": 37,
+    "tests\\test_combat_script.py": 38,
+    "tests\\test_command_preprocessor.py": 39,
+    "tests\\test_crafting.py": 40,
+    "tests\\test_dialogue.py": 41,
+    "tests\\test_flight_engine.py": 42,
+    "tests\\test_group_engine.py": 43,
+    "tests\\test_guild_engine_mutations.py": 44,
+    "tests\\test_item_spawner.py": 45,
+    "tests\\test_loot_tables.py": 46,
+    "tests\\test_mob_affixes.py": 47,
+    "tests\\test_mob_spawner.py": 48,
+    "tests\\test_node_system.py": 49,
+    "tests\\test_oob_publisher.py": 50,
+    "tests\\test_patrol_engine.py": 51,
+    "tests\\test_skill_engine.py": 52,
+    "tests\\test_spawn_record.py": 53,
+    "tests\\test_trigger_engine.py": 54,
+    "tests\\test_world_state.py": 55,
+    "tests\\test_zone_scaling.py": 56,
+    "tests\\__init__.py": 57,
+    "typeclasses\\accounts.py": 58,
+    "typeclasses\\channels.py": 59,
+    "typeclasses\\exits.py": 60,
+    "typeclasses\\__init__.py": 61,
+    "web\\admin\\urls.py": 62,
+    "web\\admin\\__init__.py": 63,
+    "web\\api\\__init__.py": 64,
+    "web\\urls.py": 65,
+    "web\\webclient\\urls.py": 66,
+    "web\\webclient\\__init__.py": 67,
+    "web\\website\\urls.py": 68,
+    "web\\website\\views\\__init__.py": 69,
+    "web\\website\\__init__.py": 70,
+    "web\\__init__.py": 71,
+    "world\\ability_engine.py": 72,
+    "world\\action_vocabulary.py": 73,
+    "world\\ancestry_engine.py": 74,
+    "world\\apps.py": 75,
+    "world\\areas\\__init__.py": 76,
+    "world\\combat_ai.py": 77,
+    "world\\combat_engine.py": 78,
+    "world\\combat_script.py": 79,
+    "world\\command_preprocessor.py": 80,
+    "world\\flight_engine.py": 81,
+    "world\\flight_registry.py": 82,
+    "world\\group_engine.py": 83,
+    "world\\help_entries.py": 84,
+    "world\\inventory_helpers.py": 85,
+    "world\\item_spawner.py": 86,
+    "world\\loot_tables.py": 87,
+    "world\\migrations\\0004_characterguild.py": 88,
+    "world\\migrations\\0005_characterability.py": 89,
+    "world\\migrations\\0006_knowntopicrecord_characterrecipe.py": 90,
+    "world\\migrations\\0006_spawnrecord.py": 91,
+    "world\\migrations\\__init__.py": 92,
+    "world\\mob_spawner.py": 93,
+    "world\\named_mob_registry.py": 94,
+    "world\\nodes\\__init__.py": 95,
+    "world\\oob_publisher.py": 96,
+    "world\\prototypes.py": 97,
+    "world\\scripts\\__init__.py": 98,
+    "world\\trigger_engine.py": 99,
+    "world\\zone_object.py": 100,
+    "world\\zone_registry.py": 101,
+    "world\\zone_scaling.py": 102
+  }
+}

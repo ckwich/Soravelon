@@ -223,8 +223,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [x] 5c-01-PLAN.md — Redesign ~18 redundant abilities with unique mechanics (loadout differentiation)
-- [ ] 5c-02-PLAN.md — Resource handler dispatch table (10 handlers) + type-aware init + combat lifecycle hooks
+- [ ] 5c-01-PLAN.md — Redesign ~18 redundant abilities with unique mechanics (loadout differentiation)
+- [x] 5c-02-PLAN.md — Resource handler dispatch table (10 handlers) + type-aware init + combat lifecycle hooks
 - [ ] 5c-03-PLAN.md — Test suite: resource system tests (10 types) + ability redundancy validation
 
 ### Phase 7: Milestone 1 Content
