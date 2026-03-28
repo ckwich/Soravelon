@@ -1,30 +1,23 @@
 ---
 phase: 05c-ability-polish-and-resource-engine
-verified: 2026-03-27T22:00:00Z
-status: gaps_found
-score: 3/4 success criteria verified
-re_verification: false
-gaps:
-  - truth: "Typed resource variants for Engineering (component types) and Alchemy (reagent types) have data-layer support (variant fields on abilities)"
-    status: failed
-    reason: "No reagent_type or component_type variant fields exist on any ability in ability_registry.py. Reagents and Components use a single undifferentiated pool (reagent_stock / component_stock). CONTEXT.md notes this was deferred, but ROADMAP success criterion 4 expects at minimum data-layer fields on abilities."
-    artifacts:
-      - path: "world/ability_registry.py"
-        issue: "No alchemy ability has a reagent_type field; no engineering ability has a component_type field"
-      - path: "world/ability_engine.py"
-        issue: "_handle_reagents_spend and _handle_components_spend treat resources as generic pools with no type differentiation"
-    missing:
-      - "Add reagent_type field to alchemy abilities (e.g., 'volatile', 'curative', 'toxic') in effect_params"
-      - "Add component_type field to engineering abilities (e.g., 'gear', 'conduit', 'plating') in effect_params"
-      - "Update _handle_reagents_spend and _handle_components_spend to read variant fields (even if stock tracking remains a single pool for now)"
+verified: 2026-03-28T20:15:00Z
+status: passed
+score: 4/4 success criteria verified
+re_verification:
+  previous_status: gaps_found
+  previous_score: 3/4
+  gaps_closed:
+    - "Typed resource variants for Engineering (component types) and Alchemy (reagent types) have data-layer support (variant fields on abilities)"
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 5c: Ability Polish & Resource Engine Verification Report
 
 **Phase Goal:** Fix ~18 redundant/obsolete abilities so every ability is attractive in an 8-slot loadout, and implement all 10 domain resource systems in the ability engine so combat mechanically differentiates every domain
-**Verified:** 2026-03-27T22:00:00Z
-**Status:** gaps_found
-**Re-verification:** No -- initial verification
+**Verified:** 2026-03-28T20:15:00Z
+**Status:** passed
+**Re-verification:** Yes -- after gap closure (plan 5c-04)
 
 ## Goal Achievement
 
@@ -32,53 +25,47 @@ gaps:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Zero obsolete abilities -- no ability is strictly worse than a tier-mate; every ability brings something unique to a loadout | VERIFIED | 17 abilities redesigned with unique effect_params (piercing, is_multi_hit, aoe, heal_over_time, reflect_damage, bleed, applies_to_next_attack, resource_refund, echoes_generated, ignores_armor). TestAbilityRedundancy passes. 330 total abilities preserved. |
-| 2 | All 10 domain resource systems have handler functions that dispatch correctly based on resource_type | VERIFIED | RESOURCE_HANDLERS dict has 10 entries (momentum, focus, balance, resonance, mana, influence, reagents, command, components, echoes). _check_and_spend_resource dispatches via RESOURCE_HANDLERS.get(res["type"]). Type-aware initialize_domain_resource for all 10 types. |
-| 3 | Resource-specific ability behaviors work: Focus builders generate points on hit (miss resets), Balance shifts on ability use and scales damage/healing, Resonance decays -10/round during combat | VERIFIED | Focus: _handle_focus_spend with is_builder/consumes_all_focus checks, handle_focus_miss resets to 0, on_round_end_resources resets on skip. Balance: _handle_balance_spend shifts and clamps 0-100, get_balance_modifier returns linear scaling. Resonance: decay_resonance subtracts 10 per round, on_round_end_resources calls it. All wired in combat_script.py and combat_engine.py. 61 tests pass including TestFocusResource (6 tests), TestBalanceResource (5 tests), TestResonanceResource (3 tests). |
-| 4 | Typed resource variants for Engineering (component types) and Alchemy (reagent types) have data-layer support (variant fields on abilities) | FAILED | No reagent_type or component_type fields exist on any ability. Reagents and Components are undifferentiated pools. CONTEXT.md explicitly deferred this ("if practical"), but the ROADMAP success criterion expects it. |
+| 1 | Zero obsolete abilities -- no ability is strictly worse than a tier-mate; every ability brings something unique to a loadout | VERIFIED | Regression: 330 abilities load, TestAbilityRedundancy passes in 65-test suite |
+| 2 | All 10 domain resource systems have handler functions that dispatch correctly based on resource_type | VERIFIED | Regression: RESOURCE_HANDLERS has 10 entries, all lifecycle functions importable |
+| 3 | Resource-specific ability behaviors work: Focus builders generate points on hit (miss resets), Balance shifts on ability use and scales damage/healing, Resonance decays -10/round during combat | VERIFIED | Regression: 65 tests pass including TestFocusResource, TestBalanceResource, TestResonanceResource |
+| 4 | Typed resource variants for Engineering (component types) and Alchemy (reagent types) have data-layer support (variant fields on abilities) | VERIFIED | 33 alchemy abilities have reagent_type in effect_params (volatile/curative/toxic), 33 engineering abilities have component_type in effect_params (gear/conduit/plating). Handlers _handle_reagents_spend (line 285) and _handle_components_spend (line 302) read variant fields. 4 new tests in TestTypedResourceVariants pass. |
 
-**Score:** 3/4 success criteria verified
+**Score:** 4/4 success criteria verified
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `world/ability_registry.py` | 17 redesigned abilities with unique mechanics | VERIFIED | All 17 abilities confirmed with unique effect_params: press_the_line (debuff/slow), death_of_a_thousand_reads (multi-hit), arcane_bolt (piercing), frost_shard (status/slow), meteor_strike (aoe), absolute_zero (status/frozen), dissonance_wave (aoe+weaken), echo_mend (heal_over_time), harmonic_shield (reflect_damage), bramble_burst (aoe), thorn_lash (bleed), venom_coat (applies_to_next_attack), smoke_screen (aoe+blind), enhanced_fuel_injection (resource_refund), fragment_pulse (echoes_generated), forgotten_impact (ignores_armor), pre_curse_strike (damage+weaken) |
-| `world/ability_engine.py` | 10 resource handler functions + dispatch table + lifecycle hooks | VERIFIED | 10 _handle_*_spend functions (lines 207-310), RESOURCE_HANDLERS dict (line 312), _post_ability_resource_hook (line 330), handle_focus_miss (line 376), get_balance_modifier (line 389), decay_resonance (line 408), on_round_end_resources (line 417), on_encounter_end_resources (line 453), build_momentum_on_damage (line 488) |
-| `world/combat_script.py` | Per-round resource decay and encounter-end resource lifecycle | VERIFIED | on_round_end_resources called at line 631, on_encounter_end_resources called at line 739, ally_action_count tracking at lines 450/482, reset at line 620 |
-| `world/combat_engine.py` | Momentum build on basic attack hit and damage taken | VERIFIED | build_momentum_on_damage(attacker, 10) at line 225, build_momentum_on_damage(target, 5) at lines 226/334, handle_focus_miss at line 265, get_balance_modifier at lines 293/393 |
-| `tests/test_ability_engine.py` | Resource system tests + redundancy validation | VERIFIED | 11 test classes: TestResourceInitialization, TestFocusResource, TestBalanceResource, TestResonanceResource, TestInfluenceResource, TestMomentumResource, TestFiniteResources, TestCommandResource, TestEchoesResource, TestFocusScaling, TestAbilityRedundancy. 61 tests, all passing. |
+| `world/ability_registry.py` | reagent_type on 33 alchemy, component_type on 33 engineering abilities | VERIFIED | grep counts: 33 reagent_type, 33 component_type occurrences |
+| `world/ability_engine.py` | Variant-aware handlers read reagent_type/component_type | VERIFIED | Lines 281-285 (_handle_reagents_spend reads reagent_type), lines 298-302 (_handle_components_spend reads component_type) |
+| `tests/test_ability_engine.py` | TestTypedResourceVariants with 4 tests | VERIFIED | Class at line 892 with test_all_alchemy_have_reagent_type, test_all_engineering_have_component_type, test_reagents_handler_reads_variant, test_components_handler_reads_variant |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| world/ability_engine.py | world/guild_engine.py | FINGERPRINTS resource_type lookup | WIRED | initialize_domain_resource reads FINGERPRINTS[guild_id]["resource_type"] for type-aware branching |
-| world/ability_engine.py | world/world_state.py | get_dimension_score for Influence | WIRED | Line uses lazy import for Influence initialization from Reputation score |
-| world/combat_script.py | world/ability_engine.py | on_round_end_resources + on_encounter_end_resources | WIRED | Both imported and called at correct lifecycle points (end_round line 631, end_combat line 739) |
-| world/combat_engine.py | world/ability_engine.py | build_momentum_on_damage, handle_focus_miss, get_balance_modifier | WIRED | All three imported and called at correct points in resolve_basic_attack and resolve_ability_damage |
-| tests/test_ability_engine.py | world/ability_engine.py | imports and function calls | WIRED | All 10 resource handler functions, lifecycle hooks, and helpers imported and tested |
+| world/ability_engine.py | world/ability_registry.py | effect_params.reagent_type / component_type | WIRED | Handlers read variant fields from ability dicts; tests import ABILITIES and assert field presence on all 66 abilities |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| All abilities load without import errors | `python -c "from world.ability_registry import ABILITIES; print(len(ABILITIES))"` | 330 | PASS |
-| 10 resource handlers in dispatch table | `python -c "from world.ability_engine import RESOURCE_HANDLERS; print(len(RESOURCE_HANDLERS))"` | 10 | PASS |
-| All exported lifecycle functions importable | `from world.ability_engine import decay_resonance, on_round_end_resources, on_encounter_end_resources, handle_focus_miss, get_balance_modifier, build_momentum_on_damage` | Success | PASS |
-| Full test suite passes | `python -m pytest tests/test_ability_engine.py -x` | 61 passed | PASS |
+| All 330 abilities load, 33 alchemy have reagent_type, 33 engineering have component_type | python -c import + assert | "All variant fields present" | PASS |
+| 10 resource handlers in dispatch table | python -c import RESOURCE_HANDLERS | 10 | PASS |
+| All lifecycle functions importable | python -c import 6 functions | Success | PASS |
+| Full test suite passes (65 tests) | python -m pytest tests/test_ability_engine.py -x -q | 65 passed in 0.53s | PASS |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|----------|
-| ABL-04 | 5c-01, 5c-02, 5c-03 | All 90 subclasses have mechanically distinct ability sets (4 tiers each) | SATISFIED | 17 redundant abilities redesigned with unique mechanics; TestAbilityRedundancy confirms no two same-tier abilities in a domain share identical (effect_type, effect_params); 10 resource handlers differentiate domain combat |
+| ABL-04 | 5c-01, 5c-02, 5c-03, 5c-04 | All 90 subclasses have mechanically distinct ability sets (4 tiers each) | SATISFIED | 17 redundant abilities redesigned, 10 resource handlers differentiate domains, typed variant fields on alchemy/engineering abilities, 65 tests pass |
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| None | - | - | - | No TODO/FIXME/PLACEHOLDER/stub patterns found in modified files |
+| None | - | - | - | No new anti-patterns introduced by gap closure |
 
 ### Human Verification Required
 
@@ -102,13 +89,16 @@ gaps:
 
 ### Gaps Summary
 
-One gap found against ROADMAP success criterion 4: **Typed resource variants for Engineering and Alchemy are not implemented.** No ability in ability_registry.py has a `reagent_type` or `component_type` field. The `_handle_reagents_spend` and `_handle_components_spend` functions treat these as generic pools with no type differentiation.
+No gaps remain. The single gap from the initial verification (typed resource variant fields) has been closed by plan 5c-04. All 4 ROADMAP success criteria are now verified:
 
-The phase CONTEXT.md (line 76) notes this was deferred ("5c only adds the variant data fields to abilities if practical") and lists it under "Deferred Ideas" (line 126). However, the ROADMAP success criterion 4 explicitly expects "data-layer support (variant fields on abilities)." Adding variant fields to effect_params would be a small, low-risk change that satisfies the criterion even without implementing the full gathering/inventory system.
+1. Zero obsolete abilities (17 redesigned with unique mechanics)
+2. All 10 domain resource handlers implemented and dispatched
+3. Resource-specific behaviors wired into combat lifecycle
+4. Typed resource variants on all 66 alchemy/engineering abilities
 
-The remaining 3 of 4 success criteria are fully verified with comprehensive test coverage (61 tests passing), all artifacts substantive and wired, and no anti-patterns detected.
+The commit `9d2a164` added reagent_type to 33 alchemy abilities and component_type to 33 engineering abilities, updated both handlers to read variant fields, and added 4 new tests (65 total, all passing).
 
 ---
 
-_Verified: 2026-03-27T22:00:00Z_
+_Verified: 2026-03-28T20:15:00Z_
 _Verifier: Claude (gsd-verifier)_
