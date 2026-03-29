@@ -242,7 +242,7 @@ Plans:
 Plans:
 - [ ] 07-01-PLAN.md — Equipment slot expansion (7 to 13 slots) + two-handed weapon logic
 - [x] 07-02-PLAN.md — Mob template registry (world/mob_templates.py) + spawner integration
-- [ ] 07-03-PLAN.md — Wandering mob system (world/wander_system.py) + server tick registration
+- [x] 07-03-PLAN.md — Wandering mob system (world/wander_system.py) + server tick registration
 - [ ] 07-04-PLAN.md — Vael's Crossing hub city zone spec (100+ rooms, 50+ NPCs, all services)
 - [ ] 07-05-PLAN.md — Ashreach Plains starter zone (100+ rooms, plains biome)
 - [ ] 07-06-PLAN.md — Reth Foothills starter zone (100+ rooms, mountain biome)

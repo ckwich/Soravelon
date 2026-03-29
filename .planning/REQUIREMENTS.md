@@ -94,7 +94,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 ### Content
 
 - [ ] **CON-01**: Hub City 1 (Vael's Crossing) authored via GUI builder with full services
-- [ ] **CON-02**: 3 starter zones with Layer 0 content (rooms, mobs, NPCs, quests)
+- [x] **CON-02**: 3 starter zones with Layer 0 content (rooms, mobs, NPCs, quests)
 - [ ] **CON-03**: 1 starter zone with active node and Layer 1 implementation
 - [ ] **CON-04**: Basic equipment (weapons/armor) available without procedural affixes
 
@@ -200,7 +200,7 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 | NPC-02 | Phase 6 | Complete |
 | NPC-03 | Phase 6 | Complete |
 | CON-01 | Phase 7 | Pending |
-| CON-02 | Phase 7 | Pending |
+| CON-02 | Phase 7 | Complete |
 | CON-03 | Phase 7 | Pending |
 | CON-04 | Phase 7 | Pending |
 
