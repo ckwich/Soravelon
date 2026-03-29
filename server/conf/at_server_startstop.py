@@ -72,6 +72,14 @@ def at_server_start():
         persistent=True,
     )
 
+    # Wandering mob movement — fires every 60 seconds (D-27)
+    TICKER_HANDLER.add(
+        interval=60,
+        callback="world.wander_system.wander_tick",
+        idstring="wander_tick",
+        persistent=True,
+    )
+
     # NPC ambient idle echoes — fires every 15 seconds (NPC-01)
     TICKER_HANDLER.add(
         interval=15,

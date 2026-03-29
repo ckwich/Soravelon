@@ -156,6 +156,10 @@ def spawn_single_mob(spawn_def, room):
     mob.initialize_for_spawn(room)
     _maybe_attach_patrol(mob, spawn_def, room)
 
+    # Tag wandering mobs for efficient lookup by wander_tick (D-27)
+    if mob.db.wander:
+        mob.tags.add("wanderer", category="mob_behavior")
+
     return mob
 
 
