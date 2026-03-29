@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: GUI Area Builder** - Tauri visual zone editor writing AreaBuilder .py files; two-pass loading fix prerequisite
 - [ ] **Phase 4: Domain Fingerprints and Guild Engine** - 10 domain mechanical fingerprints + guild/GTS computation engine (design gate for all ability work)
 - [x] **Phase 5: Ancestry Engine and Ability System** - 4 playable ancestries and all 90 subclasses with 360+ ability definitions (completed 2026-03-27)
-- [ ] **Phase 6: Combat, Skills, and NPC Templates** - Ability-driven combat engine, proficiency skill tracks, and world-state NPC dialogue system
+- [x] **Phase 6: Combat, Skills, and NPC Templates** - Ability-driven combat engine, proficiency skill tracks, and world-state NPC dialogue system (completed 2026-03-29)
 - [ ] **Phase 7: Milestone 1 Content** - Hub City 1, 4 starter zones (3 Layer 0 + 1 Layer 1), and basic equipment authored via GUI builder
 
 ## Phase Details
@@ -250,11 +250,11 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 2. OOB Push and Desktop Client | 4/4 | Complete | 2026-03-25 |
 | 3. GUI Area Builder | 4/4 | Complete | 2026-03-25 |
 | 3.1 Mob Spawn Runtime (INSERTED) | 5/5 | Complete | 2026-03-25 |
-| 4. Domain Fingerprints and Guild Engine | 0/2 | Not started | - |
-| 5. Ancestry Engine and Ability System | 5/5 | Complete   | 2026-03-27 |
-| 6a. Base Attributes & Combat System | 0/7 | Not started | - |
-| 6b. Spawn System, Skills & Mob AI | 0/5 | Not started | - |
+| 4. Domain Fingerprints and Guild Engine | 2/2 | Complete | 2026-03-26 |
+| 5. Ancestry Engine and Ability System | 5/5 | Complete | 2026-03-27 |
+| 6a. Base Attributes & Combat System | 7/7 | Complete | 2026-03-29 |
+| 6b. Spawn System, Skills & Mob AI | 5/5 | Complete | 2026-03-27 |
 | 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
 | 5b. Ability Content Authoring (INSERTED) | 6/6 | Complete | 2026-03-27 |
-| 5c. Ability Polish & Resource Engine (INSERTED) | 4/4 | Complete   | 2026-03-28 |
+| 5c. Ability Polish & Resource Engine (INSERTED) | 4/4 | Complete | 2026-03-28 |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
