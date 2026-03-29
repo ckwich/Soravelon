@@ -159,8 +159,9 @@ class SoravelonEquipment(SoravelonItem):
     """An item that can be equipped in a body slot."""
 
     VALID_SLOTS = {
-        "head", "body", "hands", "feet",
-        "right_hand", "left_hand", "accessory"
+        "head", "face", "chest", "back", "hands", "wrists",
+        "legs", "feet", "main_hand", "off_hand",
+        "ring1", "ring2", "amulet"
     }
 
     def at_object_creation(self):
@@ -169,6 +170,11 @@ class SoravelonEquipment(SoravelonItem):
         self.db.stat_bonuses = {}
         self.db.item_type = "equipment"
         self.db.stackable = False
+        self.db.two_handed = False
+        self.db.armor_value = 0
+        self.db.damage_min = 0
+        self.db.damage_max = 0
+        self.db.material_tier = 0
 
     def can_equip(self, character):
         from world.models import InventoryItem
@@ -176,6 +182,50 @@ class SoravelonEquipment(SoravelonItem):
         slot = self.db.equipment_slot
         if slot not in self.VALID_SLOTS:
             return False, "That item has an invalid equipment slot."
+
+        # Two-handed weapon check: need both hands free
+        if self.db.two_handed and slot == "main_hand":
+            off_occupied = InventoryItem.objects.filter(
+                character_id=character.id,
+                equipment_slot="off_hand",
+                is_equipped=True
+            ).exists()
+            if off_occupied:
+                return False, "You need both hands free for that weapon."
+
+        # Off-hand check: can't equip if main_hand has two-handed weapon
+        if slot == "off_hand":
+            main_items = InventoryItem.objects.filter(
+                character_id=character.id,
+                equipment_slot="main_hand",
+                is_equipped=True
+            ).select_related()
+            for mi in main_items:
+                from evennia.objects.models import ObjectDB
+                try:
+                    obj = ObjectDB.objects.get(id=mi.item_id)
+                    if getattr(obj.db, "two_handed", False):
+                        return False, "Your main hand weapon requires both hands."
+                except ObjectDB.DoesNotExist:
+                    pass
+
+        # Ring auto-fill: if slot is ring1 and occupied, try ring2
+        if slot == "ring1":
+            r1_occupied = InventoryItem.objects.filter(
+                character_id=character.id,
+                equipment_slot="ring1",
+                is_equipped=True
+            ).exists()
+            if r1_occupied:
+                r2_occupied = InventoryItem.objects.filter(
+                    character_id=character.id,
+                    equipment_slot="ring2",
+                    is_equipped=True
+                ).exists()
+                if r2_occupied:
+                    return False, "Both ring slots are occupied."
+                self.db.equipment_slot = "ring2"
+                return True, None
 
         occupied = InventoryItem.objects.filter(
             character_id=character.id,
