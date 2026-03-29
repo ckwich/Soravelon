@@ -65,8 +65,10 @@ def _make_player(player_id=1, hp=100, hp_max=200):
 def _make_combat_handler(players=None, mobs=None, round_number=1):
     """Create a MagicMock combat handler."""
     ch = MagicMock()
-    ch.ndb.player_combatants = players or []
-    ch.ndb.mob_combatants = mobs or []
+    _players = players or []
+    _mobs = mobs or []
+    ch.get_player_combatants = MagicMock(return_value=_players)
+    ch.get_mob_combatants = MagicMock(return_value=_mobs)
     ch.db.round_number = round_number
     ch.ndb.call_for_help_count = 0
     return ch

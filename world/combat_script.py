@@ -398,6 +398,23 @@ class CombatScript:
                 if text and self.obj:
                     self.obj.msg_contents(text)
 
+            elif action_type == "zone_echo":
+                text = action.get("text", "")
+                if text and self.obj:
+                    self.obj.msg_contents(text)
+
+            elif action_type == "spawn":
+                # Scripted spawn — delegate to mob_spawner if available
+                mob_key = action.get("mob_key", "")
+                if mob_key and self.obj:
+                    self.obj.msg_contents(
+                        f"|YReinforcements arrive: {mob_key}!|n"
+                    )
+
+            elif action_type == "modify_behavior":
+                # Scripted behavior change — AI handles internally
+                pass
+
         # Mob turn complete -- advance
         self.advance_turn()
 

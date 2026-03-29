@@ -100,7 +100,7 @@ def _get_mob_combatants(combat_handler, exclude=None):
     """Return list of mob combatants from combat handler, excluding one."""
     if combat_handler is None:
         return []
-    mob_list = getattr(combat_handler.ndb, "mob_combatants", None) or []
+    mob_list = combat_handler.get_mob_combatants() if hasattr(combat_handler, "get_mob_combatants") else []
     if exclude is None:
         return [m for m in mob_list if getattr(m.ndb, "hp", 0) > 0]
     return [
@@ -113,7 +113,7 @@ def _get_player_combatants(combat_handler):
     """Return list of alive player combatants from combat handler."""
     if combat_handler is None:
         return []
-    player_list = getattr(combat_handler.ndb, "player_combatants", None) or []
+    player_list = combat_handler.get_player_combatants() if hasattr(combat_handler, "get_player_combatants") else []
     return [p for p in player_list if getattr(p.ndb, "hp", 0) > 0]
 
 

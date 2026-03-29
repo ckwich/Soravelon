@@ -12,8 +12,7 @@ def get_carry_state(character):
     from evennia.objects.models import ObjectDB
 
     BASE_CAPACITY = 10
-    strength = character.db.strength
-    strength = strength if strength is not None else 10
+    strength = (character.db.base_stats or {}).get("strength", 10)
     capacity = BASE_CAPACITY + (strength * 5)
 
     records = list(InventoryItem.objects.filter(

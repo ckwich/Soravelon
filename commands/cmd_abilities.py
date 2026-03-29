@@ -130,10 +130,17 @@ class CmdUseAbility(Command):
             if not target:
                 return  # search() already sends error message
 
-        # Dispatch to ability engine
-        from world.ability_engine import use_ability
-        ok, msg = use_ability(character, ability_id, target)
-        character.msg(msg)
+        # Route through CombatScript if in combat (enforces turn order)
+        combat_handler = getattr(character.ndb, "combat_handler", None)
+        if combat_handler and hasattr(combat_handler, "process_player_action"):
+            combat_handler.process_player_action(
+                character, action_type="ability",
+                ability_id=ability_id, target=target
+            )
+        else:
+            from world.ability_engine import use_ability
+            ok, msg = use_ability(character, ability_id, target)
+            character.msg(msg)
 
         # D-23 stub: attuned variant informational text
         ability = ABILITIES.get(ability_id, {})
