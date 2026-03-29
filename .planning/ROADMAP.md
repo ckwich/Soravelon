@@ -235,14 +235,26 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A new player arrives in Vael's Crossing, can navigate to bank, guild, and services, and the city feels inhabited with NPCs and ambient content
   2. Three starter zones have rooms, mobs, NPCs, and basic quests playable from character creation; mob encounters use the ability-driven combat system
-  3. One starter zone's active node transitions through its failure states (healthy → stressed → failing → collapsed), swapping Layer 0 rooms for Layer 1 rooms correctly
+  3. One starter zone's active node transitions through its failure states (healthy -> stressed -> failing -> collapsed), swapping Layer 0 rooms for Layer 1 rooms correctly
   4. Basic weapons and armor are obtainable from zone loot and city vendors with no procedural affixes
-**Plans**: TBD
+**Plans**: 10 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Equipment slot expansion (7 to 13 slots) + two-handed weapon logic
+- [ ] 07-02-PLAN.md — Mob template registry (world/mob_templates.py) + spawner integration
+- [ ] 07-03-PLAN.md — Wandering mob system (world/wander_system.py) + server tick registration
+- [ ] 07-04-PLAN.md — Vael's Crossing hub city zone spec (100+ rooms, 50+ NPCs, all services)
+- [ ] 07-05-PLAN.md — Ashreach Plains starter zone (100+ rooms, plains biome)
+- [ ] 07-06-PLAN.md — Reth Foothills starter zone (100+ rooms, mountain biome)
+- [ ] 07-07-PLAN.md — Cantera Edge starter zone + node system (100+ rooms, forest biome, Layer 1)
+- [ ] 07-08-PLAN.md — Stormhaven Coast starter zone (100+ rooms, coastal biome)
+- [ ] 07-09-PLAN.md — Equipment catalog (50+ items, 3 material tiers) + crafting recipes
+- [ ] 07-10-PLAN.md — Integration: character spawn, death respawn, CmdStabilize, content tests
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b → 6c → 5b → 5c → 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c -> 5b -> 5c -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -257,4 +269,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
 | 5b. Ability Content Authoring (INSERTED) | 6/6 | Complete | 2026-03-27 |
 | 5c. Ability Polish & Resource Engine (INSERTED) | 4/4 | Complete | 2026-03-28 |
-| 7. Milestone 1 Content | 0/TBD | Not started | - |
+| 7. Milestone 1 Content | 0/10 | Not started | - |
