@@ -1,20 +1,16 @@
 ---
 phase: 06a-base-attributes-and-combat
-verified: 2026-03-26T23:00:00Z
-status: gaps_found
-score: 3/4 success criteria verified
-gaps:
-  - truth: "All test files pass with evennia test runner; each CMB requirement has at least one test"
-    status: partial
-    reason: "tests/test_base_attributes.py and tests/test_status_effects.py are MISSING from disk and git history despite being claimed in 06a-07-SUMMARY.md. The commit 4b73dc7 only contains 3 test files (combat_engine, combat_ai, combat_script). Summary mentions rate-limit interruption during Task 1 -- files were likely lost."
-    artifacts:
-      - path: "tests/test_base_attributes.py"
-        issue: "MISSING -- file does not exist on disk or in any commit"
-      - path: "tests/test_status_effects.py"
-        issue: "MISSING -- file does not exist on disk or in any commit"
-    missing:
-      - "Create tests/test_base_attributes.py with descriptor, point-buy, stat growth, HP/stamina derivation tests"
-      - "Create tests/test_status_effects.py with stackable/non-stackable, compound trigger, tick, modifier tests"
+verified: 2026-03-29T00:00:00Z
+status: passed
+score: 4/4 success criteria verified
+re_verification:
+  previous_status: gaps_found
+  previous_score: 3/4
+  gaps_closed:
+    - "tests/test_base_attributes.py and tests/test_status_effects.py now exist (578 + 564 lines, 121 tests passing)"
+    - "test_combat_ai.py mock bug fixed (ch.ndb.round_number → ch.db.round_number)"
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 06a: Base Attributes and Combat Verification Report

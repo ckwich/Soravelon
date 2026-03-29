@@ -67,7 +67,7 @@ def _make_combat_handler(players=None, mobs=None, round_number=1):
     ch = MagicMock()
     ch.ndb.player_combatants = players or []
     ch.ndb.mob_combatants = mobs or []
-    ch.ndb.round_number = round_number
+    ch.db.round_number = round_number
     ch.ndb.call_for_help_count = 0
     return ch
 

@@ -154,7 +154,7 @@ Plans:
 - [x] 06a-04-PLAN.md — Combat AI: mob ability selection, targeting, condition vocabulary, scripted sequences
 - [x] 06a-05-PLAN.md — CombatScript: room-attached turn manager, initiative, round progression, group timeout
 - [x] 06a-06-PLAN.md — Combat commands: CmdAttack/CmdFlee/CmdTarget/CmdPass, CombatCmdSet, auto-engage, OOB publishers
-- [ ] 06a-07-PLAN.md — Test suite: test_base_attributes + test_status_effects + test_combat_engine + test_combat_ai + test_combat_script
+- [x] 06a-07-PLAN.md — Test suite: test_base_attributes + test_status_effects + test_combat_engine + test_combat_ai + test_combat_script
 
 ### Phase 6b: Spawn System, Skills & Mob AI
 **Goal**: Mob spawn/respawn runtime with SpawnRecord model, mob ability AI with weighted priority selection, and full general proficiency + attunement skill system with discovery framework
