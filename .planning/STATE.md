@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 5b — ability-content-authoring
+**Current focus:** Phase 07 — milestone-1-content
 
 ## Current Position
 
-Phase: 06b
-Plan: Not started
+Phase: 07
+Plan: 02 complete
 
 ## Performance Metrics
 
@@ -83,6 +83,7 @@ Plan: Not started
 | Phase 5c P02 | 6 | 2 tasks | 3 files |
 | Phase 5c P03 | 8 | 1 tasks | 1 files |
 | Phase 5c P04 | 7 | 1 tasks | 3 files |
+| Phase 07 P02 | 3 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -168,6 +169,9 @@ Recent decisions affecting current work:
 - [Phase 5c]: Balance scaling: linear interpolation 1.0 at center, 1.5x at extremes (Feral for damage, Calm for heals)
 - [Phase 5c]: Added django.setup() to ability engine tests for guild_engine imports
 - [Phase 5c]: Typed resource variants: reagent_type (volatile/curative/toxic) and component_type (gear/conduit/plating) added to effect_params; handlers read but do not change spend logic
+- [Phase 07]: Sentinel pattern for flee_threshold: spawn_def explicit value overrides template, absent key uses template default
+- [Phase 07]: Template abilities copied (list()) to avoid shared mutation across spawned mobs
+- [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
 
 ### Pending Todos
 
@@ -181,6 +185,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T17:34:38.214Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-milestone-1-content/07-CONTEXT.md
+Last session: 2026-03-29T22:52:00Z
+Stopped at: Completed 07-02-PLAN.md
+Resume file: None

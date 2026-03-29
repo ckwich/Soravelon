@@ -241,7 +241,7 @@ Plans:
 
 Plans:
 - [ ] 07-01-PLAN.md — Equipment slot expansion (7 to 13 slots) + two-handed weapon logic
-- [ ] 07-02-PLAN.md — Mob template registry (world/mob_templates.py) + spawner integration
+- [x] 07-02-PLAN.md — Mob template registry (world/mob_templates.py) + spawner integration
 - [ ] 07-03-PLAN.md — Wandering mob system (world/wander_system.py) + server tick registration
 - [ ] 07-04-PLAN.md — Vael's Crossing hub city zone spec (100+ rooms, 50+ NPCs, all services)
 - [ ] 07-05-PLAN.md — Ashreach Plains starter zone (100+ rooms, plains biome)
@@ -269,4 +269,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
 | 5b. Ability Content Authoring (INSERTED) | 6/6 | Complete | 2026-03-27 |
 | 5c. Ability Polish & Resource Engine (INSERTED) | 4/4 | Complete | 2026-03-28 |
-| 7. Milestone 1 Content | 0/10 | Not started | - |
+| 7. Milestone 1 Content | 1/10 | In progress | - |
