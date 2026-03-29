@@ -530,7 +530,8 @@ class AreaBuilder:
                 location=room,
             )
         else:
-            npc_obj.location = room
+            if npc_obj.location != room:
+                npc_obj.move_to(room, quiet=True, move_hooks=False)
             npc_obj.key = kwargs.get("name", npc_id.replace("_", " ").title())
 
         # Core NPC flags
@@ -631,7 +632,8 @@ class AreaBuilder:
                 location=room,
             )
         else:
-            mob_obj.location = room
+            if mob_obj.location != room:
+                mob_obj.move_to(room, quiet=True, move_hooks=False)
 
         mob_obj.db.zone_id = self._zone_id
         for attr, val in kwargs.items():
@@ -757,13 +759,21 @@ class AreaBuilder:
             "aliases": aliases or [],
             "desc": desc or "",
         }
-        # Store definition on object for later CmdSet injection
+        # Store definition on object (idempotent — replace by key)
         existing = list(target.db.custom_commands or [])
-        existing.append(cmd_def)
+        replaced = False
+        for i, ex in enumerate(existing):
+            if ex.get("key") == key:
+                existing[i] = cmd_def
+                replaced = True
+                break
+        if not replaced:
+            existing.append(cmd_def)
         target.db.custom_commands = existing
-        # Build and attach dynamic CmdSet
+        # Rebuild all dynamic CmdSets from stored definitions
         from commands.cmd_dynamic import build_dynamic_cmdset
-        target.cmdset.add(build_dynamic_cmdset(cmd_def), persistent=True)
+        for cdef in existing:
+            target.cmdset.add(build_dynamic_cmdset(cdef), persistent=True)
         return self
 
     # ------------------------------------------------------------------

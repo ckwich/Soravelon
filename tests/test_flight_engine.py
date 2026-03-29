@@ -106,7 +106,7 @@ class TestFareForRoute(EvenniaTest):
 
 
 class TestBookFlight(EvenniaTest):
-    """book_flight validates discovery, balance, deducts via banking.withdraw()."""
+    """book_flight validates discovery, balance, deducts via banking.deduct_from_bank()."""
 
     def setUp(self):
         super().setUp()
@@ -135,7 +135,7 @@ class TestBookFlight(EvenniaTest):
         char.scripts.add.return_value = MagicMock()
         return char
 
-    @patch("world.banking.withdraw")
+    @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
     @patch("world.world_state.get_standing")
     def test_unknown_origin_returns_false(self, mock_standing, mock_bal, mock_wd):
@@ -146,7 +146,7 @@ class TestBookFlight(EvenniaTest):
         self.assertFalse(ok)
         self.assertIn("Unknown flight point", msg)
 
-    @patch("world.banking.withdraw")
+    @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
     @patch("world.world_state.get_standing")
     def test_unknown_destination_returns_false(self, mock_standing, mock_bal, mock_wd):
@@ -157,7 +157,7 @@ class TestBookFlight(EvenniaTest):
         self.assertFalse(ok)
         self.assertIn("Unknown flight point", msg)
 
-    @patch("world.banking.withdraw")
+    @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
     @patch("world.world_state.get_standing")
     def test_undiscovered_destination_returns_false(self, mock_standing, mock_bal, mock_wd):
@@ -168,7 +168,7 @@ class TestBookFlight(EvenniaTest):
         self.assertFalse(ok)
         self.assertIn("not discovered", msg)
 
-    @patch("world.banking.withdraw")
+    @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
     @patch("world.world_state.get_standing")
     def test_insufficient_funds_returns_false(self, mock_standing, mock_bal, mock_wd):
@@ -180,7 +180,7 @@ class TestBookFlight(EvenniaTest):
         self.assertFalse(ok)
         self.assertIn("Insufficient funds", msg)
 
-    @patch("world.banking.withdraw")
+    @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
     @patch("world.world_state.get_standing")
     def test_successful_booking_returns_true(self, mock_standing, mock_bal, mock_wd):
@@ -192,10 +192,10 @@ class TestBookFlight(EvenniaTest):
         ok, msg = book_flight(char, "point_a", "point_b")
         self.assertTrue(ok)
 
-    @patch("world.banking.withdraw")
+    @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
     @patch("world.world_state.get_standing")
-    def test_successful_booking_calls_withdraw(self, mock_standing, mock_bal, mock_wd):
+    def test_successful_booking_calls_deduct(self, mock_standing, mock_bal, mock_wd):
         from world.flight_engine import book_flight
         mock_standing.return_value = 0
         mock_bal.return_value = 100
@@ -204,10 +204,10 @@ class TestBookFlight(EvenniaTest):
         book_flight(char, "point_a", "point_b")
         mock_wd.assert_called_once()
 
-    @patch("world.banking.withdraw")
+    @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
     @patch("world.world_state.get_standing")
-    def test_withdraw_failure_returns_false(self, mock_standing, mock_bal, mock_wd):
+    def test_deduct_failure_returns_false(self, mock_standing, mock_bal, mock_wd):
         from world.flight_engine import book_flight
         mock_standing.return_value = 0
         mock_bal.return_value = 100
@@ -217,7 +217,7 @@ class TestBookFlight(EvenniaTest):
         self.assertFalse(ok)
         self.assertIn("Payment failed", msg)
 
-    @patch("world.banking.withdraw")
+    @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
     @patch("world.world_state.get_standing")
     def test_same_origin_destination_no_route(self, mock_standing, mock_bal, mock_wd):

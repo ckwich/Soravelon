@@ -76,7 +76,7 @@ def book_flight(character, origin_point_id, destination_point_id):
         (bool, str) — (True, "") on success; (False, reason) on failure
     """
     from world.flight_registry import FlightRegistry
-    from world.banking import withdraw, get_balance
+    from world.banking import deduct_from_bank, get_balance
 
     # 1. Validate both points exist
     origin = FlightRegistry.get_point(origin_point_id)
@@ -103,7 +103,7 @@ def book_flight(character, origin_point_id, destination_point_id):
         return False, f"Insufficient funds: need {fare} scales, have {balance}."
 
     # 5. Deduct fare atomically (before script creation — Pitfall 6)
-    ok, msg = withdraw(character, fare)
+    ok, msg = deduct_from_bank(character, fare, "flight_fare", f"Flight: {origin_point_id} → {destination_point_id}")
     if not ok:
         return False, f"Payment failed: {msg}"
 

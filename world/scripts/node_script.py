@@ -104,11 +104,17 @@ class NodeScript(DefaultScript):
         zone_id = self.obj.db.zone_id if self.obj else None
         if zone_id:
             from world import oob_publisher
-            candidates = evennia.search_tag(zone_id, category="zone_id")
-            for obj in candidates:
-                if (hasattr(obj, "sessions") and obj.sessions.all()
-                        and obj.tags.get("player_character", category="character_type")):
-                    oob_publisher.push_node_event(obj, zone_id, old_state, new_state)
+            # Find zone rooms, then get connected characters in those rooms
+            zone_rooms = [
+                r for r in evennia.search_tag(zone_id, category="zone_id")
+                if hasattr(r, "contents")
+                and (not hasattr(r, "db_typeclass_path") or "rooms." in (r.db_typeclass_path or ""))
+            ]
+            for room in zone_rooms:
+                for obj in room.contents:
+                    if (hasattr(obj, "sessions") and obj.sessions.all()
+                            and obj.tags.get("player_character", category="character_type")):
+                        oob_publisher.push_node_event(obj, zone_id, old_state, new_state)
 
     def _get_center_room(self):
         if not self.db.center_room_id:

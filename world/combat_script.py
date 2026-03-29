@@ -404,16 +404,23 @@ class CombatScript:
                     self.obj.msg_contents(text)
 
             elif action_type == "spawn":
-                # Scripted spawn — delegate to mob_spawner if available
                 mob_key = action.get("mob_key", "")
+                count = action.get("count", 1)
                 if mob_key and self.obj:
+                    from world.mob_spawner import spawn_single_mob
+                    spawn_def = {"mob": mob_key}
+                    for _ in range(count):
+                        spawned = spawn_single_mob(spawn_def, self.obj)
+                        if spawned:
+                            self.add_combatant(spawned)
                     self.obj.msg_contents(
                         f"|YReinforcements arrive: {mob_key}!|n"
                     )
 
             elif action_type == "modify_behavior":
-                # Scripted behavior change — AI handles internally
-                pass
+                new_behavior = action.get("behavior")
+                if new_behavior:
+                    mob.ndb.behavior_override = new_behavior
 
         # Mob turn complete -- advance
         self.advance_turn()
