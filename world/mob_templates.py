@@ -295,6 +295,284 @@ MOB_TEMPLATES = {
         "wander": True,
         "loot_table": "bandit",
     },
+    # --- Ashreach Plains mobs (07-05) ---
+    "ash_wolf": {
+        "key": "ash wolf",
+        "mob_type": "ash_wolf",
+        "desc": (
+            "A lean wolf with a dusty grey-brown coat, nearly invisible "
+            "against the Ashreach grass. Its amber eyes are intelligent "
+            "and watchful. Ash-colored fur gives the breed its name -- "
+            "and its camouflage."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 55,
+        "hp_max": 85,
+        "damage_min": 7,
+        "damage_max": 13,
+        "speed": 1.1,
+        "abilities": [
+            {
+                "ability_id": "ash_wolf_bite",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 11,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 3,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "ash_wolf_howl",
+                "weight": 1,
+                "element": "shadow",
+                "damage_base": 0,
+                "cooldown": 6,
+                "condition": "self_below_50hp",
+                "status_effect": "slow",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.5,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 15,
+        "wander": False,
+        "loot_table": "ash_wolf",
+    },
+    "plains_viper": {
+        "key": "plains viper",
+        "mob_type": "plains_viper",
+        "desc": (
+            "A thick-bodied serpent coiled among the dry grass, its "
+            "scales patterned in dusty brown and pale gold. It lies "
+            "motionless until prey draws close, then strikes with "
+            "terrifying speed."
+        ),
+        "base_aggression": "cautious",
+        "hp_min": 30,
+        "hp_max": 50,
+        "damage_min": 10,
+        "damage_max": 18,
+        "speed": 1.3,
+        "abilities": [
+            {
+                "ability_id": "viper_poison_bite",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 14,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "poison",
+                "effect_duration": 4,
+                "effect_magnitude": 4,
+                "application_chance": 0.5,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 40,
+        "wander": False,
+        "loot_table": "plains_viper",
+    },
+    "ashreach_bandit": {
+        "key": "Ashreach bandit",
+        "mob_type": "ashreach_bandit",
+        "desc": (
+            "A weather-hardened figure in mismatched leather and stolen "
+            "Imperial cloth. A notched blade hangs at the hip. The look "
+            "of someone who chose the plains over prison -- or possibly "
+            "both."
+        ),
+        "base_aggression": "cautious",
+        "hp_min": 65,
+        "hp_max": 95,
+        "damage_min": 7,
+        "damage_max": 12,
+        "speed": 1.0,
+        "abilities": [
+            {
+                "ability_id": "bandit_slash",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 10,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+            {
+                "ability_id": "bandit_dirty_kick",
+                "weight": 1,
+                "element": "physical",
+                "damage_base": 5,
+                "cooldown": 4,
+                "condition": "target_below_50hp",
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.3,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 25,
+        "wander": False,
+        "loot_table": "ashreach_bandit",
+    },
+    "dust_beetle": {
+        "key": "dust beetle",
+        "mob_type": "dust_beetle",
+        "desc": (
+            "A beetle the size of a small dog, its carapace the same "
+            "ash-grey as the plains soil. It trundles through the grass "
+            "on stubby legs, mandibles working at whatever organic "
+            "matter it finds. Harmless unless cornered."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 25,
+        "hp_max": 40,
+        "damage_min": 3,
+        "damage_max": 7,
+        "speed": 0.8,
+        "abilities": [
+            {
+                "ability_id": "beetle_carapace_slam",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 6,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 0,
+        "flee_threshold": 50,
+        "wander": True,
+        "loot_table": "dust_beetle",
+    },
+    "steppe_hawk": {
+        "key": "steppe hawk",
+        "mob_type": "steppe_hawk",
+        "desc": (
+            "A large raptor with dark plumage and a wingspan wider than "
+            "a person's outstretched arms. It circles overhead with "
+            "patient menace, sharp eyes tracking movement below. When "
+            "it stoops, it hits like a thrown stone."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 35,
+        "hp_max": 55,
+        "damage_min": 9,
+        "damage_max": 16,
+        "speed": 1.4,
+        "abilities": [
+            {
+                "ability_id": "hawk_dive",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 15,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+            {
+                "ability_id": "hawk_screech",
+                "weight": 1,
+                "element": "shadow",
+                "damage_base": 0,
+                "cooldown": 5,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.4,
+            },
+        ],
+        "faction": None,
+        "is_hunter": True,
+        "detection_range": 4,
+        "flee_threshold": 30,
+        "wander": False,
+        "loot_table": "steppe_hawk",
+    },
+    "alpha_ash_wolf": {
+        "key": "Alpha Ash Wolf",
+        "mob_type": "alpha_ash_wolf",
+        "desc": (
+            "A massive wolf, half again the size of its packmates, with "
+            "a scarred muzzle and a coat so dark it looks burnt. Its eyes "
+            "burn with feral intelligence. This is the apex predator of "
+            "the Ashreach -- the pack lord, unchallenged. A low growl "
+            "reverberates through the stone den."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 180,
+        "hp_max": 250,
+        "damage_min": 14,
+        "damage_max": 22,
+        "speed": 1.0,
+        "abilities": [
+            {
+                "ability_id": "alpha_rending_bite",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 20,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 4,
+                "effect_magnitude": 5,
+                "application_chance": 0.5,
+            },
+            {
+                "ability_id": "alpha_rallying_howl",
+                "weight": 1,
+                "element": "shadow",
+                "damage_base": 0,
+                "cooldown": 8,
+                "condition": "self_below_50hp",
+                "status_effect": "slow",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.7,
+            },
+            {
+                "ability_id": "alpha_pounce",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 16,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.3,
+            },
+        ],
+        "faction": None,
+        "is_hunter": True,
+        "detection_range": 4,
+        "flee_threshold": 5,
+        "wander": False,
+        "loot_table": "alpha_ash_wolf",
+    },
 }
 
 
