@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 07-08-PLAN.md
-last_updated: "2026-03-30T00:31:36.743Z"
+stopped_at: Completed 07-05-PLAN.md
+last_updated: "2026-03-30T00:32:54.542Z"
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 63
-  completed_plans: 55
+  completed_plans: 54
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 06a — base-attributes-and-combat
+**Current focus:** Phase 07 — milestone-1-content
 
 ## Current Position
 
-Phase: 06b
-Plan: Not started
+Phase: 07
+Plan: 03 complete
 
 ## Performance Metrics
 
@@ -72,8 +72,19 @@ Plan: Not started
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
-| Phase 07 P04 | 10 | 1 tasks | 3 files |
-| Phase 07 P08 | 9 | 1 tasks | 3 files |
+| Phase 06c P02 | 3 | 2 tasks | 2 files |
+| Phase 06c P04 | 6 | 2 tasks | 4 files |
+| Phase 06c P05 | 10 | 2 tasks | 2 files |
+| Phase 05b P02 | 4min | 2 tasks | 1 files |
+| Phase 05b P03 | 6min | 2 tasks | 1 files |
+| Phase 05b P04 | 317 | 2 tasks | 1 files |
+| Phase 05b P05 | 6min | 2 tasks | 1 files |
+| Phase 05b P06 | 1 | 1 tasks | 0 files |
+| Phase 5c P02 | 6 | 2 tasks | 3 files |
+| Phase 5c P03 | 8 | 1 tasks | 1 files |
+| Phase 5c P04 | 7 | 1 tasks | 3 files |
+| Phase 07 P02 | 3 | 1 tasks | 3 files |
+| Phase 07 P05 | 502 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -141,8 +152,28 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
-- [Phase 07]: Vael's Crossing: 7 districts, 106 rooms, 54 NPCs, all 21 skills trained, 5 landmarks with dragon-era symbol threading
-- [Phase 07]: Captain Wrack chosen as named mob over Tidecaller for narrative integration with smuggler sub-area
+- [Phase 06c]: Quality gap thresholds: <0=flawed, <15=standard, <30=fine, <50=superior, 50+=masterwork; random variance +/-1 tier center-biased
+- [Phase 06c]: Crafting station check via room.tags.has(crafting_{station}, category=crafting_station)
+- [Phase 06c]: CmdSay overrides Evennia default with same key/aliases; broadcasts to room then extracts NPC keywords (cap 2 responders, sorted by Standing tier)
+- [Phase 06c]: Crafting uses evennia.utils.delay with ndb.crafting_in_progress flag; cancelled if character moves during delay
+- [Phase 06c]: NPC lookup uses case-insensitive partial match (startswith) on npc_name db attr or key
+- [Phase 06c]: Patch lazy imports at source module for dialogue test mocking (world.mob_disposition, world.world_state)
+- [Phase 06c]: Statistical assertions (50+ iterations) for crafting quality variance tests to handle random.choices
+- [Phase 05b]: Subterfuge pool uses debuff stacking + chain damage payoffs; Diplomacy pool balances solo damage with group buff utility
+- [Phase 05b]: Arcana pool: charge_turns dominant, mana costs 15-70 for cross-encounter rationing
+- [Phase 05b]: Resonance pool: all abilities have attuned_variants, T1=builders(0 cost), T2-T4=spenders(60-100)
+- [Phase 05b]: Sealwright Seal Break = highest single-target burst in Resonance guild (base 250, +80% resonant)
+- [Phase 05b]: Naturalism Balance costs 10-55 (spectrum shifts); Alchemy Reagent costs T1:5-8, T2:12-15, T3:18-25, T4:30-45 (finite stock)
+- [Phase 05b]: Engineering companion IS the domain identity; Remnance uses excavation language exclusively; Sealbreaker Curse Break is most dangerous ability (charge_turns=2, damage_base=250); runewright_forge key for Eng+Res subclass
+- [Phase 05b]: No fixes required -- all 330 abilities passed all 10 structural validation checks on first run
+- [Phase 5c]: Resource handlers use function dispatch table (RESOURCE_HANDLERS dict) matching EFFECT_HANDLERS pattern
+- [Phase 5c]: Balance scaling: linear interpolation 1.0 at center, 1.5x at extremes (Feral for damage, Calm for heals)
+- [Phase 5c]: Added django.setup() to ability engine tests for guild_engine imports
+- [Phase 5c]: Typed resource variants: reagent_type (volatile/curative/toxic) and component_type (gear/conduit/plating) added to effect_params; handlers read but do not change spend logic
+- [Phase 07]: Sentinel pattern for flee_threshold: spawn_def explicit value overrides template, absent key uses template default
+- [Phase 07]: Template abilities copied (list()) to avoid shared mutation across spawned mobs
+- [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
+- [Phase 07]: Used existing FLAG_VOCABULARY entries (resonant, ancient_presence) for Ashreach ruins instead of inventing new flags
 
 ### Pending Todos
 
@@ -156,6 +187,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T00:31:36.739Z
-Stopped at: Completed 07-08-PLAN.md
+Last session: 2026-03-30T00:32:54.538Z
+Stopped at: Completed 07-05-PLAN.md
 Resume file: None

@@ -1,10 +1,10 @@
 {
   "version": "1.0",
   "meta": {
-    "generatedAt": "2026-03-28T00:41:47.240Z",
-    "gitHash": "f043d45",
-    "totalFiles": 145,
-    "totalEdges": 48
+    "generatedAt": "2026-03-30T00:37:43.347Z",
+    "gitHash": "f4fc391",
+    "totalFiles": 152,
+    "totalEdges": 50
   },
   "files": {
     "commands\\cmd_abilities.py": {
@@ -13,7 +13,7 @@
       ],
       "importedBy": [],
       "exports": [],
-      "lines": 219,
+      "lines": 226,
       "fanIn": 0,
       "fanOut": 1,
       "churn": 0,
@@ -221,7 +221,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 280,
+      "lines": 288,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -388,7 +388,7 @@
       ],
       "importedBy": [],
       "exports": [],
-      "lines": 336,
+      "lines": 924,
       "fanIn": 0,
       "fanOut": 1,
       "churn": 0,
@@ -472,7 +472,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 680,
+      "lines": 682,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -533,6 +533,17 @@
       "churn": 0,
       "priority": 1,
       "cluster": "tests\\test_dialogue.py"
+    },
+    "tests\\test_equipment_slots.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 112,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_equipment_slots.py"
     },
     "tests\\test_flight_engine.py": {
       "imports": [],
@@ -652,6 +663,17 @@
       "priority": 1,
       "cluster": "tests\\test_mob_spawner.py"
     },
+    "tests\\test_mob_templates.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 196,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_mob_templates.py"
+    },
     "tests\\test_node_system.py": {
       "imports": [],
       "importedBy": [],
@@ -756,6 +778,17 @@
       "churn": 0,
       "priority": 1,
       "cluster": "tests\\test_guild_engine.py"
+    },
+    "tests\\test_wander_system.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 271,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_wander_system.py"
     },
     "tests\\test_world_state.py": {
       "imports": [],
@@ -871,7 +904,7 @@
         "typeclasses\\rooms.py"
       ],
       "exports": [],
-      "lines": 224,
+      "lines": 274,
       "fanIn": 2,
       "fanOut": 0,
       "churn": 0,
@@ -1030,7 +1063,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 379,
+      "lines": 732,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -1043,7 +1076,7 @@
         "tests\\test_ability_engine.py"
       ],
       "exports": [],
-      "lines": 8546,
+      "lines": 8556,
       "fanIn": 1,
       "fanOut": 0,
       "churn": 0,
@@ -1083,6 +1116,32 @@
       "priority": 1,
       "cluster": "world\\apps.py"
     },
+    "world\\areas\\stormhaven_coast.py": {
+      "imports": [
+        "world\\area_builder.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 2254,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "world\\areas\\vaels_crossing.py": {
+      "imports": [
+        "world\\area_builder.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 2354,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
     "world\\areas\\__init__.py": {
       "imports": [],
       "importedBy": [],
@@ -1102,14 +1161,16 @@
       "importedBy": [
         "tests\\test_area_builder.py",
         "tests\\test_zone_serializer.py",
+        "world\\areas\\stormhaven_coast.py",
+        "world\\areas\\vaels_crossing.py",
         "world\\zone_serializer.py"
       ],
       "exports": [],
-      "lines": 1103,
-      "fanIn": 3,
+      "lines": 1113,
+      "fanIn": 5,
       "fanOut": 2,
       "churn": 0,
-      "priority": 10,
+      "priority": 16,
       "cluster": "tests\\test_area_builder.py"
     },
     "world\\area_validator.py": {
@@ -1168,7 +1229,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 554,
+      "lines": 587,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -1179,7 +1240,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 999,
+      "lines": 1045,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -1325,7 +1386,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 72,
+      "lines": 71,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -1347,7 +1408,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 189,
+      "lines": 417,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -1457,12 +1518,23 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 482,
+      "lines": 343,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
       "priority": 1,
       "cluster": "world\\mob_spawner.py"
+    },
+    "world\\mob_templates.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 612,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\mob_templates.py"
     },
     "world\\models.py": {
       "imports": [],
@@ -1599,7 +1671,7 @@
       ],
       "importedBy": [],
       "exports": [],
-      "lines": 198,
+      "lines": 204,
       "fanIn": 0,
       "fanOut": 2,
       "churn": 0,
@@ -1636,7 +1708,7 @@
         "world\\skill_engine.py"
       ],
       "exports": [],
-      "lines": 426,
+      "lines": 488,
       "fanIn": 1,
       "fanOut": 0,
       "churn": 0,
@@ -1679,6 +1751,17 @@
       "churn": 0,
       "priority": 1,
       "cluster": "world\\trigger_engine.py"
+    },
+    "world\\wander_system.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 121,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "world\\wander_system.py"
     },
     "world\\world_state.py": {
       "imports": [
@@ -1773,7 +1856,7 @@
     },
     {
       "path": "world\\area_builder.py",
-      "fanIn": 3,
+      "fanIn": 5,
       "exports": []
     },
     {
@@ -1900,12 +1983,14 @@
     },
     {
       "label": "tests\\test_area_builder.py",
-      "size": 7,
+      "size": 9,
       "files": [
         "tests\\test_area_builder.py",
         "world\\area_builder.py",
         "world\\__init__.py",
         "tests\\test_zone_serializer.py",
+        "world\\areas\\stormhaven_coast.py",
+        "world\\areas\\vaels_crossing.py",
         "world\\area_validator.py",
         "world\\zone_serializer.py",
         "tests\\test_area_validator.py"
@@ -2200,6 +2285,13 @@
       ]
     },
     {
+      "label": "tests\\test_equipment_slots.py",
+      "size": 1,
+      "files": [
+        "tests\\test_equipment_slots.py"
+      ]
+    },
+    {
       "label": "tests\\test_flight_engine.py",
       "size": 1,
       "files": [
@@ -2249,6 +2341,13 @@
       ]
     },
     {
+      "label": "tests\\test_mob_templates.py",
+      "size": 1,
+      "files": [
+        "tests\\test_mob_templates.py"
+      ]
+    },
+    {
       "label": "tests\\test_node_system.py",
       "size": 1,
       "files": [
@@ -2288,6 +2387,13 @@
       "size": 1,
       "files": [
         "tests\\test_trigger_engine.py"
+      ]
+    },
+    {
+      "label": "tests\\test_wander_system.py",
+      "size": 1,
+      "files": [
+        "tests\\test_wander_system.py"
       ]
     },
     {
@@ -2564,6 +2670,13 @@
       ]
     },
     {
+      "label": "world\\mob_templates.py",
+      "size": 1,
+      "files": [
+        "world\\mob_templates.py"
+      ]
+    },
+    {
       "label": "world\\named_mob_registry.py",
       "size": 1,
       "files": [
@@ -2603,6 +2716,13 @@
       "size": 1,
       "files": [
         "world\\trigger_engine.py"
+      ]
+    },
+    {
+      "label": "world\\wander_system.py",
+      "size": 1,
+      "files": [
+        "world\\wander_system.py"
       ]
     },
     {
@@ -2672,66 +2792,71 @@
     "tests\\test_command_preprocessor.py": 39,
     "tests\\test_crafting.py": 40,
     "tests\\test_dialogue.py": 41,
-    "tests\\test_flight_engine.py": 42,
-    "tests\\test_group_engine.py": 43,
-    "tests\\test_guild_engine_mutations.py": 44,
-    "tests\\test_item_spawner.py": 45,
-    "tests\\test_loot_tables.py": 46,
-    "tests\\test_mob_affixes.py": 47,
-    "tests\\test_mob_spawner.py": 48,
-    "tests\\test_node_system.py": 49,
-    "tests\\test_oob_publisher.py": 50,
-    "tests\\test_patrol_engine.py": 51,
-    "tests\\test_skill_engine.py": 52,
-    "tests\\test_spawn_record.py": 53,
-    "tests\\test_trigger_engine.py": 54,
-    "tests\\test_world_state.py": 55,
-    "tests\\test_zone_scaling.py": 56,
-    "tests\\__init__.py": 57,
-    "typeclasses\\accounts.py": 58,
-    "typeclasses\\channels.py": 59,
-    "typeclasses\\exits.py": 60,
-    "typeclasses\\__init__.py": 61,
-    "web\\admin\\urls.py": 62,
-    "web\\admin\\__init__.py": 63,
-    "web\\api\\__init__.py": 64,
-    "web\\urls.py": 65,
-    "web\\webclient\\urls.py": 66,
-    "web\\webclient\\__init__.py": 67,
-    "web\\website\\urls.py": 68,
-    "web\\website\\views\\__init__.py": 69,
-    "web\\website\\__init__.py": 70,
-    "web\\__init__.py": 71,
-    "world\\ability_engine.py": 72,
-    "world\\action_vocabulary.py": 73,
-    "world\\ancestry_engine.py": 74,
-    "world\\apps.py": 75,
-    "world\\areas\\__init__.py": 76,
-    "world\\combat_ai.py": 77,
-    "world\\combat_engine.py": 78,
-    "world\\combat_script.py": 79,
-    "world\\command_preprocessor.py": 80,
-    "world\\flight_engine.py": 81,
-    "world\\flight_registry.py": 82,
-    "world\\group_engine.py": 83,
-    "world\\help_entries.py": 84,
-    "world\\inventory_helpers.py": 85,
-    "world\\item_spawner.py": 86,
-    "world\\loot_tables.py": 87,
-    "world\\migrations\\0004_characterguild.py": 88,
-    "world\\migrations\\0005_characterability.py": 89,
-    "world\\migrations\\0006_knowntopicrecord_characterrecipe.py": 90,
-    "world\\migrations\\0006_spawnrecord.py": 91,
-    "world\\migrations\\__init__.py": 92,
-    "world\\mob_spawner.py": 93,
-    "world\\named_mob_registry.py": 94,
-    "world\\nodes\\__init__.py": 95,
-    "world\\oob_publisher.py": 96,
-    "world\\prototypes.py": 97,
-    "world\\scripts\\__init__.py": 98,
-    "world\\trigger_engine.py": 99,
-    "world\\zone_object.py": 100,
-    "world\\zone_registry.py": 101,
-    "world\\zone_scaling.py": 102
+    "tests\\test_equipment_slots.py": 42,
+    "tests\\test_flight_engine.py": 43,
+    "tests\\test_group_engine.py": 44,
+    "tests\\test_guild_engine_mutations.py": 45,
+    "tests\\test_item_spawner.py": 46,
+    "tests\\test_loot_tables.py": 47,
+    "tests\\test_mob_affixes.py": 48,
+    "tests\\test_mob_spawner.py": 49,
+    "tests\\test_mob_templates.py": 50,
+    "tests\\test_node_system.py": 51,
+    "tests\\test_oob_publisher.py": 52,
+    "tests\\test_patrol_engine.py": 53,
+    "tests\\test_skill_engine.py": 54,
+    "tests\\test_spawn_record.py": 55,
+    "tests\\test_trigger_engine.py": 56,
+    "tests\\test_wander_system.py": 57,
+    "tests\\test_world_state.py": 58,
+    "tests\\test_zone_scaling.py": 59,
+    "tests\\__init__.py": 60,
+    "typeclasses\\accounts.py": 61,
+    "typeclasses\\channels.py": 62,
+    "typeclasses\\exits.py": 63,
+    "typeclasses\\__init__.py": 64,
+    "web\\admin\\urls.py": 65,
+    "web\\admin\\__init__.py": 66,
+    "web\\api\\__init__.py": 67,
+    "web\\urls.py": 68,
+    "web\\webclient\\urls.py": 69,
+    "web\\webclient\\__init__.py": 70,
+    "web\\website\\urls.py": 71,
+    "web\\website\\views\\__init__.py": 72,
+    "web\\website\\__init__.py": 73,
+    "web\\__init__.py": 74,
+    "world\\ability_engine.py": 75,
+    "world\\action_vocabulary.py": 76,
+    "world\\ancestry_engine.py": 77,
+    "world\\apps.py": 78,
+    "world\\areas\\__init__.py": 79,
+    "world\\combat_ai.py": 80,
+    "world\\combat_engine.py": 81,
+    "world\\combat_script.py": 82,
+    "world\\command_preprocessor.py": 83,
+    "world\\flight_engine.py": 84,
+    "world\\flight_registry.py": 85,
+    "world\\group_engine.py": 86,
+    "world\\help_entries.py": 87,
+    "world\\inventory_helpers.py": 88,
+    "world\\item_spawner.py": 89,
+    "world\\loot_tables.py": 90,
+    "world\\migrations\\0004_characterguild.py": 91,
+    "world\\migrations\\0005_characterability.py": 92,
+    "world\\migrations\\0006_knowntopicrecord_characterrecipe.py": 93,
+    "world\\migrations\\0006_spawnrecord.py": 94,
+    "world\\migrations\\__init__.py": 95,
+    "world\\mob_spawner.py": 96,
+    "world\\mob_templates.py": 97,
+    "world\\named_mob_registry.py": 98,
+    "world\\nodes\\__init__.py": 99,
+    "world\\oob_publisher.py": 100,
+    "world\\prototypes.py": 101,
+    "world\\scripts\\__init__.py": 102,
+    "world\\trigger_engine.py": 103,
+    "world\\wander_system.py": 104,
+    "world\\zone_object.py": 105,
+    "world\\zone_registry.py": 106,
+    "world\\zone_scaling.py": 107
   }
 }

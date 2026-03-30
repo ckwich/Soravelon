@@ -58,6 +58,8 @@ Skills document the game's major systems. Invoke via Skill tool when working in 
 | **Room State** | Volatile room flags, lazy decay, Sense display | `.claude/skills/room-state/skill.md` |
 | **Mob Affix System** | Rarity tiers, weighted pools, forbidden combos | `.claude/skills/mob-affix-system/skill.md` |
 | **Mob Disposition** | Computed disposition float, behavior modifiers | `.claude/skills/mob-disposition/skill.md` |
+| **Mob Templates** | Mob stat blocks, template registry, spawner | `.claude/skills/mob-templates/skill.md` |
+| **Wander System** | Stochastic zone-bounded mob wandering | `.claude/skills/wander-system/skill.md` |
 | **Zone Scaling** | Per-player scaling, mob HP, damage math, loot tiers | `.claude/skills/zone-scaling/skill.md` |
 | **Combat System** | Damage resolution, crits, mob AI, targeting, corpses | `.claude/skills/combat-system/skill.md` |
 | **Banking** | Deposits, withdrawals, drafts, debt, payments | `.claude/skills/banking/skill.md` |

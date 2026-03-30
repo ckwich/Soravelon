@@ -30,7 +30,7 @@ You are working on **soravelon's inventory engine** — stateless service functi
 - **Keyring routing:** `SoravelonKeyringItem` instances get `keyring=True` on their record. Zero weight, cannot be dropped
 - **Container weight reduction:** Rolled per-container by rarity band (`CONTAINER_WEIGHT_RANGES`). Stored as `db.weight_reduction` (integer 0-75, applied as `/100`)
 - **Encumbrance thresholds:** capacity = `10 + (strength * 5)` kg. Ratio ≤1.0 normal, ≤1.3 encumbered, ≤1.6 heavy, >1.6 overloaded
-- **Equipment slots:** `head`, `body`, `hands`, `feet`, `right_hand`, `left_hand`, `accessory` — one item per slot enforced in `can_equip()`
+- **Equipment slots (13):** `head`, `face`, `chest`, `back`, `hands`, `wrists`, `legs`, `feet`, `main_hand`, `off_hand`, `ring1`, `ring2`, `amulet` — one item per slot enforced in `can_equip()` with two-handed and ring auto-fill logic
 
 ## Critical Rules
 1. **All item ops go through `inventory_engine.py`** — never move items by setting `location` directly without updating the `InventoryItem` record
@@ -44,7 +44,7 @@ You are working on **soravelon's inventory engine** — stateless service functi
 ## References
 - **Model definitions:** `world/models.py`
 - **Item typeclasses:** `typeclasses/objects.py`
-- **Tests:** `tests/test_inventory_engine.py`
+- **Tests:** `tests/test_inventory_engine.py`, `tests/test_equipment_slots.py`
 
 ---
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-03-29

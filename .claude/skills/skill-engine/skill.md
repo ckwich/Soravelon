@@ -28,6 +28,7 @@ You are working on **the skill engine** (`world/skill_engine.py`) — character 
 - **Diminishing returns:** 5 brackets from 100% (0-25) down to ~0% (96-100). Shared by passive and practice paths
 - **Trainer bonus is volatile:** Stored as `character.ndb.trainer_bonus_{skill_id}` — consumed on next practice, lost on disconnect
 - **trainer_required_above gate:** Above threshold (default 50), practicing without trainer bonus halves gain
+- **Trainer registry populated:** `TRAINER_REGISTRY` maps NPC db key (e.g. `"npc_guildmaster_subterfuge_dessa"`) → trainer config with `skills_taught`, `quality_multiplier`, and `cost_per_session`. 10 trainers registered for Vael's Crossing. Quality tiers: apprentice (1.25×), journeyman (1.5×), master (2.0×)
 - **Discovery triggers:** Multi-skill threshold conditions checked only on threshold crossings (25/50/75/90/100). Discovered set stored in `character.db.discoveries` using SaverDict copy pattern
 - **Ancestry seeds:** `apply_ancestry_skill_seeds()` sets starting values at creation. Selvar coat maps to lineage key. Defensive: only raises value, never lowers
 - **Skill types:** `general`, `zone_attunement`, `node_attunement`, `creature_attunement` — stored on `CharacterSkill.skill_type`
@@ -40,6 +41,7 @@ You are working on **the skill engine** (`world/skill_engine.py`) — character 
 5. **24hr rolling cooldown per skill** — `last_practiced_at` on `CharacterSkill` model, checked in `practice_skill()`
 6. **Trainer cost deducts from `carried_scales`** — NOT from bank account. Direct `db.carried_scales` mutation
 7. **`commit_skill_accumulators()` iterates ALL skills** — called at session end alongside `commit_session_xp()`. Wire into same lifecycle hooks
+8. **Trainer registry keys = NPC db keys** — trainer lookup uses the same string as `area_builder.npc()` second argument. New zone trainers must use matching keys
 
 ## References
 - **Model:** `world/models.py` — `CharacterSkill` (lines 77-108)
@@ -47,4 +49,4 @@ You are working on **the skill engine** (`world/skill_engine.py`) — character 
 - **World State:** `world/world_state.py` — parallel accumulation pattern (domain XP)
 
 ---
-**Last Updated:** 2026-03-26
+**Last Updated:** 2026-03-30
