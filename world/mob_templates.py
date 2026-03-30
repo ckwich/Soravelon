@@ -130,6 +130,171 @@ MOB_TEMPLATES = {
         "wander": False,
         "loot_table": "bandit",
     },
+    # --- Vael's Crossing city mobs (07-04) ---
+    "sewer_rat": {
+        "key": "sewer rat",
+        "mob_type": "sewer_rat",
+        "desc": (
+            "An oversized rat with matted grey fur and yellowed teeth. "
+            "It hisses from the darkness, eyes reflecting torchlight "
+            "like dull coins."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 15,
+        "hp_max": 25,
+        "damage_min": 2,
+        "damage_max": 4,
+        "speed": 1.3,
+        "abilities": [
+            {
+                "ability_id": "rat_bite",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 4,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": "disease",
+                "effect_duration": 4,
+                "effect_magnitude": 1,
+                "application_chance": 0.15,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 0,
+        "flee_threshold": 60,
+        "wander": True,
+        "loot_table": "rat",
+    },
+    "thug": {
+        "key": "street thug",
+        "mob_type": "thug",
+        "desc": (
+            "A heavyset figure in stained clothes, hands wrapped in "
+            "dirty rags. A crude cudgel hangs from a belt loop. "
+            "The look in their eyes says they have nothing to lose."
+        ),
+        "base_aggression": "cautious",
+        "hp_min": 60,
+        "hp_max": 85,
+        "damage_min": 6,
+        "damage_max": 12,
+        "speed": 0.9,
+        "abilities": [
+            {
+                "ability_id": "thug_bludgeon",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 10,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.2,
+            },
+            {
+                "ability_id": "thug_shakedown",
+                "weight": 1,
+                "element": "shadow",
+                "damage_base": 0,
+                "cooldown": 5,
+                "condition": "target_below_50hp",
+                "status_effect": "slow",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.4,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 30,
+        "wander": False,
+        "loot_table": "bandit",
+    },
+    "smuggler": {
+        "key": "smuggler",
+        "mob_type": "smuggler",
+        "desc": (
+            "A wiry figure in a dark cloak, moving with the alertness "
+            "of someone who expects trouble. A short blade is visible "
+            "at the hip. Their eyes dart to every exit."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 55,
+        "hp_max": 80,
+        "damage_min": 7,
+        "damage_max": 13,
+        "speed": 1.1,
+        "abilities": [
+            {
+                "ability_id": "smuggler_backstab",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "smuggler_smoke_bomb",
+                "weight": 1,
+                "element": "shadow",
+                "damage_base": 0,
+                "cooldown": 6,
+                "condition": "self_below_40hp",
+                "status_effect": "blind",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.6,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 35,
+        "wander": False,
+        "loot_table": "bandit",
+    },
+    "pickpocket": {
+        "key": "pickpocket",
+        "mob_type": "pickpocket",
+        "desc": (
+            "A slight figure who blends into the crowd. Quick hands, "
+            "quicker feet. If caught, they fight dirty -- but they "
+            "prefer running."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 30,
+        "hp_max": 50,
+        "damage_min": 3,
+        "damage_max": 7,
+        "speed": 1.4,
+        "abilities": [
+            {
+                "ability_id": "pickpocket_slash",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 6,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 0,
+        "flee_threshold": 50,
+        "wander": True,
+        "loot_table": "bandit",
+    },
 }
 
 

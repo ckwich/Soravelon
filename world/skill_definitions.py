@@ -377,15 +377,77 @@ SELVAR_COAT_TO_LINEAGE = {
 # --- Trainer Registry (framework ready for content phase) ---
 
 TRAINER_REGISTRY = {
-    # Populated during content phase. Framework ready.
-    # Example entry:
-    # "marveth_locksmith": {
-    #     "name": "Marveth",
-    #     "trainer_quality": "journeyman",  # apprentice/journeyman/master
-    #     "quality_multiplier": 1.5,
-    #     "skills_taught": ["lockpicking", "appraisal"],
-    #     "cost_per_session": 80,
-    # },
+    # --- Vael's Crossing Trainers (07-04) ---
+    "npc_trainer_combat_sergeant_vale": {
+        "name": "Sergeant Vale",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["reflexes", "climbing", "intimidation"],
+        "cost_per_session": 80,
+    },
+    "npc_guildmaster_subterfuge_dessa": {
+        "name": "Dessa",
+        "trainer_quality": "master",
+        "quality_multiplier": 2.0,
+        "skills_taught": ["lockpicking", "stealth"],
+        "cost_per_session": 150,
+    },
+    "npc_guildmaster_naturalism_elwen": {
+        "name": "Elwen",
+        "trainer_quality": "master",
+        "quality_multiplier": 2.0,
+        "skills_taught": ["animal_handling", "herbalism", "foraging"],
+        "cost_per_session": 120,
+    },
+    "npc_guildmaster_diplomacy_aldric": {
+        "name": "Aldric",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["persuasion", "appraisal"],
+        "cost_per_session": 100,
+    },
+    "npc_guildmaster_alchemy_mirelle": {
+        "name": "Mirelle",
+        "trainer_quality": "master",
+        "quality_multiplier": 2.0,
+        "skills_taught": ["alchemy", "first_aid"],
+        "cost_per_session": 140,
+    },
+    "npc_guildmaster_tactics_brennus": {
+        "name": "Brennus",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["navigation", "tracking"],
+        "cost_per_session": 90,
+    },
+    "npc_guildmaster_engineering_pren": {
+        "name": "Pren",
+        "trainer_quality": "master",
+        "quality_multiplier": 2.0,
+        "skills_taught": ["engineering", "smithing"],
+        "cost_per_session": 160,
+    },
+    "npc_guildmaster_resonance_kael": {
+        "name": "Kael",
+        "trainer_quality": "master",
+        "quality_multiplier": 2.0,
+        "skills_taught": ["node_reading"],
+        "cost_per_session": 200,
+    },
+    "npc_herbalist_old_ystra": {
+        "name": "Old Ystra",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["herbalism", "cooking"],
+        "cost_per_session": 60,
+    },
+    "npc_stablehand_korua": {
+        "name": "Korua",
+        "trainer_quality": "apprentice",
+        "quality_multiplier": 1.25,
+        "skills_taught": ["animal_handling", "beast_training", "swimming", "fishing"],
+        "cost_per_session": 40,
+    },
 }
 
 # --- Trainer Quality Multipliers ---
