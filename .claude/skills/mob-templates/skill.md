@@ -24,7 +24,7 @@ You are working on **the mob template registry** (`world/mob_templates.py`) and 
 
 ## Key Concepts
 - **Template as stat block:** Each `MOB_TEMPLATES` entry defines key, mob_type, desc, aggression, HP/damage ranges, speed, abilities, faction, hunter/wander/flee behavior, and loot_table
-- **Registered templates:** Starter set (rat, wolf, bandit) + Vael's Crossing city mobs (sewer_rat, thug, smuggler, pickpocket) + Stormhaven Coast mobs (shore_crab, sea_serpent, coastal_raider, cliff_harpy, salt_lurker). Zone content plans add entries as zones are authored
+- **Registered templates:** Starter set (rat, wolf, bandit) + Vael's Crossing city mobs (sewer_rat, thug, smuggler, pickpocket) + Stormhaven Coast mobs (shore_crab, sea_serpent, coastal_raider, cliff_harpy, salt_lurker) + Ashreach Plains mobs (ash_wolf, plains_viper, ashreach_bandit, dust_beetle, steppe_hawk, alpha_ash_wolf). Zone content plans add entries as zones are authored
 - **Spawn flow:** `spawn_single_mob()` creates mob → sets zone_id/disposition/trust → calls `apply_mob_template(mob, spawn_def["mob"])` → then `mob.initialize_for_spawn(room)` (affixes + combat stats). Template provides base values; scaling applies on top
 - **Wanderer tagging:** After `apply_mob_template()`, if `mob.db.wander` is True, `spawn_single_mob()` adds tag `wanderer` (category `mob_behavior`) for efficient lookup by `wander_tick()`
 - **Sentinel override pattern:** `spawn_def.get("flee_threshold", _SENTINEL)` — if spawn_def explicitly sets flee_threshold, it overrides the template value. Otherwise template value is kept

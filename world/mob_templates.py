@@ -816,6 +816,797 @@ MOB_TEMPLATES = {
         "wander": False,
         "loot_table": "alpha_ash_wolf",
     },
+    # --- Reth Foothills mobs (07-06) ---
+    "rock_troll": {
+        "key": "rock troll",
+        "mob_type": "rock_troll",
+        "desc": (
+            "A massive humanoid figure of mottled grey-brown hide, thick "
+            "as stone. Its arms hang past its knees, ending in hands like "
+            "sledgehammers. Small, deep-set eyes peer from beneath a heavy "
+            "brow ridge. The stench of rotting meat and unwashed flesh is "
+            "overwhelming."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 120,
+        "hp_max": 180,
+        "damage_min": 12,
+        "damage_max": 20,
+        "speed": 0.7,
+        "abilities": [
+            {
+                "ability_id": "troll_slam",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 18,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.25,
+            },
+            {
+                "ability_id": "throw_rock",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": True,
+        "detection_range": 2,
+        "flee_threshold": 10,
+        "wander": False,
+        "loot_table": "rock_troll",
+    },
+    "mountain_cat": {
+        "key": "mountain cat",
+        "mob_type": "mountain_cat",
+        "desc": (
+            "A sleek, powerful feline with tawny fur mottled grey to match "
+            "the mountain stone. Its eyes are pale amber, unblinking and "
+            "predatory. Muscles coil beneath the fur like springs wound "
+            "tight. It watches from a crouch, tail twitching."
+        ),
+        "base_aggression": "cautious",
+        "hp_min": 50,
+        "hp_max": 75,
+        "damage_min": 10,
+        "damage_max": 18,
+        "speed": 1.3,
+        "abilities": [
+            {
+                "ability_id": "cat_pounce",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 16,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "cat_claw",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 12,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.25,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 3,
+        "flee_threshold": 30,
+        "wander": True,
+        "loot_table": "mountain_cat",
+    },
+    "cave_spider": {
+        "key": "cave spider",
+        "mob_type": "cave_spider",
+        "desc": (
+            "A spider the size of a large dog, its carapace pale and "
+            "translucent from a life lived in darkness. Eight eyes catch "
+            "the faintest light. Its mandibles drip with venom that "
+            "hisses faintly when it hits stone."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 30,
+        "hp_max": 50,
+        "damage_min": 6,
+        "damage_max": 12,
+        "speed": 1.2,
+        "abilities": [
+            {
+                "ability_id": "spider_web",
+                "weight": 2,
+                "element": "nature",
+                "damage_base": 0,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.5,
+            },
+            {
+                "ability_id": "venomous_bite",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 10,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "poison",
+                "effect_duration": 4,
+                "effect_magnitude": 3,
+                "application_chance": 0.35,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 20,
+        "wander": False,
+        "loot_table": "cave_spider",
+    },
+    "stone_golem_fragment": {
+        "key": "stone golem fragment",
+        "mob_type": "stone_golem_fragment",
+        "desc": (
+            "A broken section of an ancient stone construct, still "
+            "faintly animate. It shifts and grinds with mechanical "
+            "slowness, stone plates sliding over stone joints. Carved "
+            "symbols pulse dimly on its surface -- not dead, not alive, "
+            "but persisting. It pays no attention to passers-by unless "
+            "disturbed."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 150,
+        "hp_max": 220,
+        "damage_min": 14,
+        "damage_max": 22,
+        "speed": 0.5,
+        "abilities": [
+            {
+                "ability_id": "golem_pound",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 20,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.35,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 0,
+        "flee_threshold": 0,
+        "wander": False,
+        "loot_table": "stone_golem_fragment",
+    },
+    "reth_eagle": {
+        "key": "Reth eagle",
+        "mob_type": "reth_eagle",
+        "desc": (
+            "A massive bird of prey with a wingspan wider than a man is "
+            "tall. Dark brown plumage fades to tawny gold on the breast. "
+            "Its talons are the size of daggers, curved and razor-sharp. "
+            "It circles overhead with effortless grace, watching for "
+            "anything it considers either prey or threat."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 45,
+        "hp_max": 70,
+        "damage_min": 9,
+        "damage_max": 16,
+        "speed": 1.2,
+        "abilities": [
+            {
+                "ability_id": "eagle_dive",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 16,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 2,
+                "effect_magnitude": 2,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "wing_buffet",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 8,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.2,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 4,
+        "flee_threshold": 25,
+        "wander": True,
+        "loot_table": "reth_eagle",
+    },
+    # --- Named mob: Grandmother Spider (07-06) ---
+    "grandmother_spider": {
+        "key": "Grandmother Spider",
+        "mob_type": "grandmother_spider",
+        "desc": (
+            "An enormous cave spider, ancient beyond reckoning. Her body "
+            "is the size of a cart, her legs spanning the width of the "
+            "chamber. Unlike her lesser kin, her carapace is dark and "
+            "patterned -- spirals and lines that might be natural, might "
+            "be deliberate. Her eyes -- all eight of them -- reflect an "
+            "intelligence that ordinary spiders should not possess. She "
+            "has lived in these caves for longer than the mine, longer "
+            "than Vael's Crossing, longer than anyone can say."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 300,
+        "hp_max": 400,
+        "damage_min": 16,
+        "damage_max": 28,
+        "speed": 0.9,
+        "abilities": [
+            {
+                "ability_id": "grandmother_web_cage",
+                "weight": 2,
+                "element": "nature",
+                "damage_base": 0,
+                "cooldown": 5,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 4,
+                "effect_magnitude": 3,
+                "application_chance": 0.7,
+            },
+            {
+                "ability_id": "grandmother_venomous_bite",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 22,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "poison",
+                "effect_duration": 5,
+                "effect_magnitude": 5,
+                "application_chance": 0.5,
+            },
+            {
+                "ability_id": "grandmother_silk_storm",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 12,
+                "cooldown": 6,
+                "condition": "self_below_50hp",
+                "status_effect": "blind",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.6,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 0,
+        "wander": False,
+        "loot_table": "grandmother_spider",
+    },
+    # --- Cantera Edge forest mobs (07-07) ---
+    "forest_spider": {
+        "key": "forest spider",
+        "mob_type": "forest_spider",
+        "desc": (
+            "A large spider with mottled brown and green coloring that "
+            "blends with the forest floor. Its legs span wider than "
+            "outstretched arms. Mandibles drip with a clear venom that "
+            "sizzles faintly where it hits the ground."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 50,
+        "hp_max": 75,
+        "damage_min": 6,
+        "damage_max": 12,
+        "speed": 1.2,
+        "abilities": [
+            {
+                "ability_id": "spider_bite",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 10,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "poison",
+                "effect_duration": 4,
+                "effect_magnitude": 2,
+                "application_chance": 0.35,
+            },
+            {
+                "ability_id": "web_snare",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 0,
+                "cooldown": 5,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.5,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 20,
+        "wander": False,
+        "loot_table": "forest_spider",
+    },
+    "wild_boar": {
+        "key": "wild boar",
+        "mob_type": "wild_boar",
+        "desc": (
+            "A stocky, bristle-backed boar with scarred flanks and "
+            "yellowed tusks curved upward like scimitars. It paws the "
+            "ground aggressively, snorting clouds of mist in the cool "
+            "forest air."
+        ),
+        "base_aggression": "cautious",
+        "hp_min": 80,
+        "hp_max": 120,
+        "damage_min": 8,
+        "damage_max": 15,
+        "speed": 0.9,
+        "abilities": [
+            {
+                "ability_id": "boar_charge",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "tusk_gore",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 10,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.25,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 25,
+        "wander": True,
+        "loot_table": "wild_boar",
+    },
+    "cantera_wolf": {
+        "key": "cantera wolf",
+        "mob_type": "cantera_wolf",
+        "desc": (
+            "A large wolf with dark grey fur tinged amber at the tips -- "
+            "stained by the forest's sap. Its eyes glow faintly in dim "
+            "light, a reflection that seems to last a beat too long. "
+            "A low growl rumbles in its chest."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 65,
+        "hp_max": 95,
+        "damage_min": 9,
+        "damage_max": 16,
+        "speed": 1.1,
+        "abilities": [
+            {
+                "ability_id": "wolf_bite",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 12,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 3,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "pack_howl",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 0,
+                "cooldown": 6,
+                "condition": "self_below_50hp",
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": True,
+        "detection_range": 3,
+        "flee_threshold": 15,
+        "wander": False,
+        "loot_table": "cantera_wolf",
+    },
+    "vine_creeper": {
+        "key": "vine creeper",
+        "mob_type": "vine_creeper",
+        "desc": (
+            "A mass of thick, thorny vines that moves with slow "
+            "deliberation across the forest floor. It looks like "
+            "harmless undergrowth until it coils around an ankle "
+            "with crushing force. Barbed tendrils reach outward, "
+            "tasting the air."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 40,
+        "hp_max": 65,
+        "damage_min": 5,
+        "damage_max": 10,
+        "speed": 0.7,
+        "abilities": [
+            {
+                "ability_id": "vine_entangle",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 6,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.5,
+            },
+            {
+                "ability_id": "thorn_constrict",
+                "weight": 2,
+                "element": "nature",
+                "damage_base": 8,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 2,
+                "effect_magnitude": 2,
+                "application_chance": 0.4,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 30,
+        "wander": False,
+        "loot_table": "vine_creeper",
+    },
+    "forest_bandit": {
+        "key": "forest bandit",
+        "mob_type": "forest_bandit",
+        "desc": (
+            "A lean figure in mismatched leathers and a hooded cloak "
+            "stained green by forest moss. A recurve bow is slung "
+            "across one shoulder and a short sword hangs at the hip. "
+            "Their eyes are watchful, calculating."
+        ),
+        "base_aggression": "cautious",
+        "hp_min": 65,
+        "hp_max": 95,
+        "damage_min": 7,
+        "damage_max": 14,
+        "speed": 1.0,
+        "abilities": [
+            {
+                "ability_id": "bandit_slash",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 10,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+            {
+                "ability_id": "aimed_shot",
+                "weight": 1,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "bandit_intimidate",
+                "weight": 1,
+                "element": "shadow",
+                "damage_base": 0,
+                "cooldown": 5,
+                "condition": "target_below_50hp",
+                "status_effect": "slow",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.5,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 30,
+        "wander": False,
+        "loot_table": "forest_bandit",
+    },
+    # --- Cantera Edge L1 corrupted variants (07-07) ---
+    "corrupted_treant": {
+        "key": "corrupted treant",
+        "mob_type": "corrupted_treant",
+        "desc": (
+            "What was once a tree has torn itself from the earth, its "
+            "root system trailing behind it like a nest of grasping "
+            "tentacles. The trunk is split and blackened, amber sap "
+            "bleeding from every crack and burning with a dull inner "
+            "light. Its branches reach outward with terrible purpose. "
+            "It does not have eyes. It does not need them."
+        ),
+        "base_aggression": "hostile",
+        "hp_min": 120,
+        "hp_max": 180,
+        "damage_min": 12,
+        "damage_max": 22,
+        "speed": 0.6,
+        "abilities": [
+            {
+                "ability_id": "root_slam",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 18,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.4,
+            },
+            {
+                "ability_id": "sap_spray",
+                "weight": 2,
+                "element": "fire",
+                "damage_base": 12,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "burn",
+                "effect_duration": 3,
+                "effect_magnitude": 3,
+                "application_chance": 0.5,
+            },
+            {
+                "ability_id": "bark_shield",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 0,
+                "cooldown": 8,
+                "condition": "self_below_50hp",
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 0,
+        "wander": False,
+        "loot_table": "corrupted_treant",
+    },
+    "void_wisp": {
+        "key": "void wisp",
+        "mob_type": "void_wisp",
+        "desc": (
+            "A sphere of unstable energy hovering at eye level, shifting "
+            "between colors that do not exist in normal light. It moves "
+            "erratically -- darting, pausing, darting again -- as if "
+            "following a logic that makes sense only to itself. Where "
+            "it passes, the air crackles and smells of ozone."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 35,
+        "hp_max": 55,
+        "damage_min": 10,
+        "damage_max": 18,
+        "speed": 1.4,
+        "abilities": [
+            {
+                "ability_id": "resonance_pulse",
+                "weight": 3,
+                "element": "arcane",
+                "damage_base": 14,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "confusion",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.35,
+            },
+            {
+                "ability_id": "phase_shift",
+                "weight": 1,
+                "element": "arcane",
+                "damage_base": 0,
+                "cooldown": 6,
+                "condition": "self_below_40hp",
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 3,
+        "flee_threshold": 0,
+        "wander": True,
+        "loot_table": "void_wisp",
+    },
+    "blighted_stag": {
+        "key": "blighted stag",
+        "mob_type": "blighted_stag",
+        "desc": (
+            "A large stag with antlers that have grown wrong -- "
+            "crystallized at the tips, glowing amber in dim light. "
+            "Its hide is mottled with patches of grey where the fur "
+            "has fallen away, revealing skin that pulses with faint "
+            "bioluminescence. Its eyes are solid white. It moves with "
+            "an aggression that no healthy deer would show."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 70,
+        "hp_max": 110,
+        "damage_min": 10,
+        "damage_max": 18,
+        "speed": 1.1,
+        "abilities": [
+            {
+                "ability_id": "antler_gore",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 3,
+                "application_chance": 0.35,
+            },
+            {
+                "ability_id": "resonance_bellow",
+                "weight": 1,
+                "element": "arcane",
+                "damage_base": 8,
+                "cooldown": 5,
+                "condition": None,
+                "status_effect": "confusion",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.3,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 10,
+        "wander": True,
+        "loot_table": "blighted_stag",
+    },
+    # --- Cantera Edge named mob (07-07) ---
+    "heartwood_ancient": {
+        "key": "The Heartwood Ancient",
+        "mob_type": "heartwood_ancient",
+        "desc": (
+            "An enormous treant, older than anything else in the forest. "
+            "Its trunk is thirty feet across, its branches a canopy of "
+            "their own. Unlike the corrupted treants, this creature was "
+            "never a normal tree -- it was always something more. Amber "
+            "sap flows from cracks in its bark like blood from a wound. "
+            "Its roots grip the earth with the force of centuries. It "
+            "does not move. It does not need to. Everything within reach "
+            "of its roots is within its domain."
+        ),
+        "base_aggression": "hostile",
+        "hp_min": 250,
+        "hp_max": 350,
+        "damage_min": 15,
+        "damage_max": 28,
+        "speed": 0.5,
+        "abilities": [
+            {
+                "ability_id": "root_slam",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 22,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.45,
+            },
+            {
+                "ability_id": "bark_shield",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 0,
+                "cooldown": 10,
+                "condition": "self_below_50hp",
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+            {
+                "ability_id": "sap_spray",
+                "weight": 2,
+                "element": "fire",
+                "damage_base": 16,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "burn",
+                "effect_duration": 4,
+                "effect_magnitude": 3,
+                "application_chance": 0.5,
+            },
+            {
+                "ability_id": "ancient_roar",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 10,
+                "cooldown": 8,
+                "condition": "self_below_30hp",
+                "status_effect": "slow",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.6,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 0,
+        "wander": False,
+        "loot_table": "heartwood_ancient",
+    },
 }
 
 
