@@ -260,6 +260,249 @@ MOB_TEMPLATES = {
         "wander": False,
         "loot_table": "bandit",
     },
+    # --- Stormhaven Coast mobs (07-08) ---
+    "shore_crab": {
+        "key": "shore crab",
+        "mob_type": "shore_crab",
+        "desc": (
+            "A large crab with a mottled grey-green shell, perfectly "
+            "camouflaged against the coastal rocks. Its claws are "
+            "disproportionately large, snapping open and shut with "
+            "a sound like cracking knuckles."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 25,
+        "hp_max": 40,
+        "damage_min": 4,
+        "damage_max": 8,
+        "speed": 0.9,
+        "abilities": [
+            {
+                "ability_id": "crab_pinch",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 7,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 2,
+                "effect_magnitude": 2,
+                "application_chance": 0.2,
+            },
+            {
+                "ability_id": "shell_guard",
+                "weight": 1,
+                "element": "physical",
+                "damage_base": 0,
+                "cooldown": 5,
+                "condition": "self_below_40hp",
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 0,
+        "flee_threshold": 40,
+        "wander": True,
+        "loot_table": "shore_crab",
+    },
+    "sea_serpent": {
+        "key": "sea serpent",
+        "mob_type": "sea_serpent",
+        "desc": (
+            "A sinuous creature of deep water, its scales the color of "
+            "storm-tossed iron. It rises from the depths with unsettling "
+            "silence, fangs bared, eyes like polished obsidian. The air "
+            "around it smells of brine and something older."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 90,
+        "hp_max": 140,
+        "damage_min": 12,
+        "damage_max": 20,
+        "speed": 1.0,
+        "abilities": [
+            {
+                "ability_id": "serpent_constrict",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 16,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 2,
+                "effect_magnitude": 2,
+                "application_chance": 0.4,
+            },
+            {
+                "ability_id": "venom_spray",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 10,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "poison",
+                "effect_duration": 4,
+                "effect_magnitude": 3,
+                "application_chance": 0.5,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 10,
+        "wander": False,
+        "loot_table": "sea_serpent",
+    },
+    "coastal_raider": {
+        "key": "coastal raider",
+        "mob_type": "coastal_raider",
+        "desc": (
+            "A weathered figure in salt-stained leathers, face half-hidden "
+            "by a ragged scarf. A cutlass hangs at the hip, well-oiled "
+            "and recently sharpened. The look in their eyes is calculating "
+            "-- they are deciding whether you are worth the trouble."
+        ),
+        "base_aggression": "cautious",
+        "hp_min": 65,
+        "hp_max": 95,
+        "damage_min": 8,
+        "damage_max": 14,
+        "speed": 1.0,
+        "abilities": [
+            {
+                "ability_id": "cutlass_slash",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 11,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 2,
+                "effect_magnitude": 2,
+                "application_chance": 0.25,
+            },
+            {
+                "ability_id": "net_throw",
+                "weight": 1,
+                "element": "physical",
+                "damage_base": 3,
+                "cooldown": 5,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.6,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 25,
+        "wander": False,
+        "loot_table": "coastal_raider",
+    },
+    "cliff_harpy": {
+        "key": "cliff harpy",
+        "mob_type": "cliff_harpy",
+        "desc": (
+            "A gaunt, avian creature with ragged feathers the color of "
+            "storm clouds. Its talons are hooked and crusted with dried "
+            "blood. It perches on the cliff edge, head cocked, watching "
+            "with unsettling intelligence. When it screams, the sound "
+            "cuts through the wind like a blade."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 50,
+        "hp_max": 75,
+        "damage_min": 9,
+        "damage_max": 15,
+        "speed": 1.2,
+        "abilities": [
+            {
+                "ability_id": "harpy_screech",
+                "weight": 2,
+                "element": "sonic",
+                "damage_base": 5,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.35,
+            },
+            {
+                "ability_id": "harpy_dive",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 3,
+        "flee_threshold": 20,
+        "wander": False,
+        "loot_table": "cliff_harpy",
+    },
+    "salt_lurker": {
+        "key": "salt lurker",
+        "mob_type": "salt_lurker",
+        "desc": (
+            "A pale, bloated creature that emerged from the brine-soaked "
+            "depths of the sea caves. Its skin is crusted with salt "
+            "crystals that crack and flake with each movement. Eyeless, "
+            "it navigates by vibration and the taste of the air. When "
+            "disturbed, it rears up with surprising speed."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 55,
+        "hp_max": 80,
+        "damage_min": 10,
+        "damage_max": 16,
+        "speed": 0.8,
+        "abilities": [
+            {
+                "ability_id": "lurker_slam",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.25,
+            },
+            {
+                "ability_id": "spit_brine",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 8,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "blind",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.4,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 15,
+        "wander": False,
+        "loot_table": "salt_lurker",
+    },
     "pickpocket": {
         "key": "pickpocket",
         "mob_type": "pickpocket",
