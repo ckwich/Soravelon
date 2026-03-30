@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-29T22:58:00Z"
+stopped_at: Completed 07-05-PLAN.md
+last_updated: "2026-03-30T00:32:54.542Z"
 progress:
   total_phases: 12
   completed_phases: 9
-  total_plans: 53
-  completed_plans: 50
+  total_plans: 63
+  completed_plans: 54
 ---
 
 # Project State
@@ -84,6 +84,7 @@ Plan: 03 complete
 | Phase 5c P03 | 8 | 1 tasks | 1 files |
 | Phase 5c P04 | 7 | 1 tasks | 3 files |
 | Phase 07 P02 | 3 | 1 tasks | 3 files |
+| Phase 07 P05 | 502 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -172,6 +173,7 @@ Recent decisions affecting current work:
 - [Phase 07]: Sentinel pattern for flee_threshold: spawn_def explicit value overrides template, absent key uses template default
 - [Phase 07]: Template abilities copied (list()) to avoid shared mutation across spawned mobs
 - [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
+- [Phase 07]: Used existing FLAG_VOCABULARY entries (resonant, ancient_presence) for Ashreach ruins instead of inventing new flags
 
 ### Pending Todos
 
@@ -185,6 +187,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T22:52:00Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-03-30T00:32:54.538Z
+Stopped at: Completed 07-05-PLAN.md
 Resume file: None
