@@ -32,6 +32,7 @@ You are working on **soravelon's crafting system** — recipe-based item creatio
 - **Crafting delay:** Uses `evennia.utils.delay()` with `ndb.crafting_in_progress` flag. Cancelled if character moves (room comparison guard)
 - **Ingredient matching:** Items matched by `item_tag` category tag on Evennia objects. Consumed (deleted) on successful craft
 - **Skill integration:** `craft_item()` calls `get_skill_value()` for quality calc and `accumulate_skill_use()` for passive skill gain
+- **Recipe output references equipment catalog:** Recipes with `output_template_id` reference item IDs defined in `world/areas/equipment_catalog.py`. The item spawner resolves these at craft time
 
 ## Critical Rules
 1. **Craft delay is in command layer, not engine** — `craft_item()` is called AFTER delay completes. Don't add delay logic to the engine
@@ -45,6 +46,7 @@ You are working on **soravelon's crafting system** — recipe-based item creatio
 - **Skill Engine:** `world/skill_engine.py` — `get_skill_value()`, `accumulate_skill_use()` for quality and progression
 - **Models:** `world/models.py` — `CharacterRecipe` model
 - **Item Spawner:** `world/item_spawner.py` — `create_item_from_template()` used by crafted item creation (with fallback)
+- **Equipment Catalog:** `world/areas/equipment_catalog.py` — item definitions referenced by recipe `output_template_id`
 
 ---
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-03-30

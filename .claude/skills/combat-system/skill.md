@@ -14,14 +14,14 @@ This skill triggers when editing these files:
 - `commands/combat_commands.py`
 - `typeclasses/mobs.py`
 
-Keywords: combat, damage, crit, critical hit, death, corpse, combat AI, mob turn, ability selection, targeting, scripted sequence, flee, basic attack, CombatCmdSet, combat command, ability, momentum, command resource, effect_params
+Keywords: combat, damage, crit, critical hit, death, corpse, combat AI, mob turn, ability selection, targeting, scripted sequence, flee, basic attack, CombatCmdSet, combat command, ability, momentum, command resource, effect_params, respawn
 
 ---
 
 You are working on **soravelon's combat system** — damage resolution in `world/combat_engine.py`, mob turn AI in `world/combat_ai.py`, ability execution in `world/ability_engine.py`, and player combat commands in `commands/combat_commands.py`.
 
 ## Key Files
-- `world/combat_engine.py` — Damage math: `resolve_basic_attack`, `resolve_ability_damage`, `resolve_heal`, crit system, elite/boss scaling, death handling, corpse spawning
+- `world/combat_engine.py` — Damage math: `resolve_basic_attack`, `resolve_ability_damage`, `resolve_heal`, crit system, elite/boss scaling, death handling, corpse spawning, player respawn
 - `world/combat_ai.py` — Mob turn AI: `process_mob_turn`, `select_mob_action`, `get_mob_target`, `check_scripted_sequence`, `execute_sequence_action`, condition vocabulary
 - `world/combat_script.py` — `CombatScript` turn manager: `start_combat()`, turn order, `process_player_action()`, dynamic CombatCmdSet add/remove
 - `world/ability_engine.py` — Ability dispatcher: `use_ability()`, cooldown management, domain resource (build/spend/get), effect handlers delegate to `combat_engine` and `status_effects`
@@ -49,6 +49,7 @@ You are working on **soravelon's combat system** — damage resolution in `world
 - **DOMAIN_TO_STAT mapping:** Maps 10 domain names to base attribute stat names for ability scaling formula: `ability_base * (1 + primary_stat*0.02 + secondary_stat*0.01)`.
 - **Crit system (D-20):** Characters: 5% base + Acuity×0.002. Mobs: `db.crit_chance` or 3% flat. Multiplier 2.0×.
 - **Scripted sequences:** Named mob triggers (combat_start, hp_below_X, round_N, target_flees, on_death). Fire-once via `ndb.fired_sequence_triggers` set.
+- **Player death respawn (D-14):** `handle_player_death()` calls `_respawn_player()` which teleports to the `respawn_point` tagged room (category `spawn_point`) via `search_tag`. Falls back to `character.home`. Restores 25% max HP and stamina. Equipment stays on corpse at death location.
 - **Corpse lifecycle:** `spawn_corpse()` → grace period → open → decayed (deleted). Player corpses skip grace. `delay()` drives transitions.
 
 ## Authored Domain Pools
@@ -76,6 +77,7 @@ All 10 domains are fully authored (15 base + 18 subclass signatures each):
 9. **Effect params use fallback pattern** — always `params.get("key") or ability.get("key", default)`. This preserves backwards compat with old top-level keys while preferring `effect_params`
 10. **Subterfuge `is_builder` and `consumes_all_focus` flags live in `effect_params`** — builders have `resource_cost: 0` with `"is_builder": True`; capstone spenders have `"consumes_all_focus": True` for Focus-scaled damage
 11. **Naturalism `balance_shift` and `balance_type` live in `effect_params`** — `resource_cost` is always 0; `balance_shift` (int, positive=toward Calm, negative=toward Feral) and `balance_type` (`"feral"` or `"calm"`) control the pendulum
+12. **Respawn uses tag lookup** — `_respawn_player()` finds destination via `search_tag("respawn_point", category="spawn_point")`. Falls back to `character.home`, then no-ops. Never hardcode room dbrefs
 
 ## References
 - **Ability Registry:** `world/ability_registry.py` — all ability definitions and derived lookups
@@ -86,4 +88,4 @@ All 10 domains are fully authored (15 base + 18 subclass signatures each):
 - **Mob Typeclasses:** `typeclasses/mobs.py` — mob attribute schema
 
 ---
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-03-30

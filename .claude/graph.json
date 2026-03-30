@@ -1,10 +1,10 @@
 {
   "version": "1.0",
   "meta": {
-    "generatedAt": "2026-03-30T00:37:43.347Z",
-    "gitHash": "f4fc391",
-    "totalFiles": 152,
-    "totalEdges": 50
+    "generatedAt": "2026-03-30T16:49:29.556Z",
+    "gitHash": "290f80a",
+    "totalFiles": 157,
+    "totalEdges": 54
   },
   "files": {
     "commands\\cmd_abilities.py": {
@@ -342,7 +342,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 56,
+      "lines": 61,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -511,6 +511,17 @@
       "churn": 0,
       "priority": 1,
       "cluster": "tests\\test_command_preprocessor.py"
+    },
+    "tests\\test_content_integration.py": {
+      "imports": [],
+      "importedBy": [],
+      "exports": [],
+      "lines": 182,
+      "fanIn": 0,
+      "fanOut": 0,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_content_integration.py"
     },
     "tests\\test_crafting.py": {
       "imports": [],
@@ -865,7 +876,7 @@
       ],
       "importedBy": [],
       "exports": [],
-      "lines": 264,
+      "lines": 271,
       "fanIn": 0,
       "fanOut": 1,
       "churn": 0,
@@ -1116,6 +1127,58 @@
       "priority": 1,
       "cluster": "world\\apps.py"
     },
+    "world\\areas\\ashreach_plains.py": {
+      "imports": [
+        "world\\area_builder.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 1988,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "world\\areas\\cantera_edge.py": {
+      "imports": [
+        "world\\area_builder.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 2611,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "world\\areas\\equipment_catalog.py": {
+      "imports": [
+        "world\\area_builder.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 501,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
+    "world\\areas\\reth_foothills.py": {
+      "imports": [
+        "world\\area_builder.py"
+      ],
+      "importedBy": [],
+      "exports": [],
+      "lines": 2229,
+      "fanIn": 0,
+      "fanOut": 1,
+      "churn": 0,
+      "priority": 1,
+      "cluster": "tests\\test_area_builder.py"
+    },
     "world\\areas\\stormhaven_coast.py": {
       "imports": [
         "world\\area_builder.py"
@@ -1135,7 +1198,7 @@
       ],
       "importedBy": [],
       "exports": [],
-      "lines": 2354,
+      "lines": 2358,
       "fanIn": 0,
       "fanOut": 1,
       "churn": 0,
@@ -1161,16 +1224,20 @@
       "importedBy": [
         "tests\\test_area_builder.py",
         "tests\\test_zone_serializer.py",
+        "world\\areas\\ashreach_plains.py",
+        "world\\areas\\cantera_edge.py",
+        "world\\areas\\equipment_catalog.py",
+        "world\\areas\\reth_foothills.py",
         "world\\areas\\stormhaven_coast.py",
         "world\\areas\\vaels_crossing.py",
         "world\\zone_serializer.py"
       ],
       "exports": [],
       "lines": 1113,
-      "fanIn": 5,
+      "fanIn": 9,
       "fanOut": 2,
       "churn": 0,
-      "priority": 16,
+      "priority": 28,
       "cluster": "tests\\test_area_builder.py"
     },
     "world\\area_validator.py": {
@@ -1229,7 +1296,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 587,
+      "lines": 616,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -1264,7 +1331,7 @@
         "world\\crafting_engine.py"
       ],
       "exports": [],
-      "lines": 223,
+      "lines": 435,
       "fanIn": 1,
       "fanOut": 0,
       "churn": 0,
@@ -1408,7 +1475,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 417,
+      "lines": 1241,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -1529,7 +1596,7 @@
       "imports": [],
       "importedBy": [],
       "exports": [],
-      "lines": 612,
+      "lines": 1681,
       "fanIn": 0,
       "fanOut": 0,
       "churn": 0,
@@ -1850,13 +1917,13 @@
       "exports": []
     },
     {
-      "path": "world\\models.py",
-      "fanIn": 7,
+      "path": "world\\area_builder.py",
+      "fanIn": 9,
       "exports": []
     },
     {
-      "path": "world\\area_builder.py",
-      "fanIn": 5,
+      "path": "world\\models.py",
+      "fanIn": 7,
       "exports": []
     },
     {
@@ -1947,6 +2014,25 @@
   ],
   "clusters": [
     {
+      "label": "tests\\test_area_builder.py",
+      "size": 13,
+      "files": [
+        "tests\\test_area_builder.py",
+        "world\\area_builder.py",
+        "world\\__init__.py",
+        "tests\\test_zone_serializer.py",
+        "world\\areas\\ashreach_plains.py",
+        "world\\areas\\cantera_edge.py",
+        "world\\areas\\equipment_catalog.py",
+        "world\\areas\\reth_foothills.py",
+        "world\\areas\\stormhaven_coast.py",
+        "world\\areas\\vaels_crossing.py",
+        "world\\area_validator.py",
+        "world\\zone_serializer.py",
+        "tests\\test_area_validator.py"
+      ]
+    },
+    {
       "label": "commands\\cmd_abilities.py",
       "size": 12,
       "files": [
@@ -1979,21 +2065,6 @@
         "world\\banking.py",
         "world\\inventory_engine.py",
         "world\\patrol_engine.py"
-      ]
-    },
-    {
-      "label": "tests\\test_area_builder.py",
-      "size": 9,
-      "files": [
-        "tests\\test_area_builder.py",
-        "world\\area_builder.py",
-        "world\\__init__.py",
-        "tests\\test_zone_serializer.py",
-        "world\\areas\\stormhaven_coast.py",
-        "world\\areas\\vaels_crossing.py",
-        "world\\area_validator.py",
-        "world\\zone_serializer.py",
-        "tests\\test_area_validator.py"
       ]
     },
     {
@@ -2268,6 +2339,13 @@
       "size": 1,
       "files": [
         "tests\\test_command_preprocessor.py"
+      ]
+    },
+    {
+      "label": "tests\\test_content_integration.py",
+      "size": 1,
+      "files": [
+        "tests\\test_content_integration.py"
       ]
     },
     {
@@ -2750,9 +2828,9 @@
   "coupling": [],
   "hotspots": [],
   "clusterIndex": {
-    "commands\\cmd_abilities.py": 0,
-    "tests\\test_guild_engine.py": 1,
-    "tests\\test_area_builder.py": 2,
+    "tests\\test_area_builder.py": 0,
+    "commands\\cmd_abilities.py": 1,
+    "tests\\test_guild_engine.py": 2,
     "typeclasses\\characters.py": 3,
     "typeclasses\\mobs.py": 4,
     "typeclasses\\scripts.py": 5,
@@ -2790,73 +2868,74 @@
     "tests\\test_combat_engine.py": 37,
     "tests\\test_combat_script.py": 38,
     "tests\\test_command_preprocessor.py": 39,
-    "tests\\test_crafting.py": 40,
-    "tests\\test_dialogue.py": 41,
-    "tests\\test_equipment_slots.py": 42,
-    "tests\\test_flight_engine.py": 43,
-    "tests\\test_group_engine.py": 44,
-    "tests\\test_guild_engine_mutations.py": 45,
-    "tests\\test_item_spawner.py": 46,
-    "tests\\test_loot_tables.py": 47,
-    "tests\\test_mob_affixes.py": 48,
-    "tests\\test_mob_spawner.py": 49,
-    "tests\\test_mob_templates.py": 50,
-    "tests\\test_node_system.py": 51,
-    "tests\\test_oob_publisher.py": 52,
-    "tests\\test_patrol_engine.py": 53,
-    "tests\\test_skill_engine.py": 54,
-    "tests\\test_spawn_record.py": 55,
-    "tests\\test_trigger_engine.py": 56,
-    "tests\\test_wander_system.py": 57,
-    "tests\\test_world_state.py": 58,
-    "tests\\test_zone_scaling.py": 59,
-    "tests\\__init__.py": 60,
-    "typeclasses\\accounts.py": 61,
-    "typeclasses\\channels.py": 62,
-    "typeclasses\\exits.py": 63,
-    "typeclasses\\__init__.py": 64,
-    "web\\admin\\urls.py": 65,
-    "web\\admin\\__init__.py": 66,
-    "web\\api\\__init__.py": 67,
-    "web\\urls.py": 68,
-    "web\\webclient\\urls.py": 69,
-    "web\\webclient\\__init__.py": 70,
-    "web\\website\\urls.py": 71,
-    "web\\website\\views\\__init__.py": 72,
-    "web\\website\\__init__.py": 73,
-    "web\\__init__.py": 74,
-    "world\\ability_engine.py": 75,
-    "world\\action_vocabulary.py": 76,
-    "world\\ancestry_engine.py": 77,
-    "world\\apps.py": 78,
-    "world\\areas\\__init__.py": 79,
-    "world\\combat_ai.py": 80,
-    "world\\combat_engine.py": 81,
-    "world\\combat_script.py": 82,
-    "world\\command_preprocessor.py": 83,
-    "world\\flight_engine.py": 84,
-    "world\\flight_registry.py": 85,
-    "world\\group_engine.py": 86,
-    "world\\help_entries.py": 87,
-    "world\\inventory_helpers.py": 88,
-    "world\\item_spawner.py": 89,
-    "world\\loot_tables.py": 90,
-    "world\\migrations\\0004_characterguild.py": 91,
-    "world\\migrations\\0005_characterability.py": 92,
-    "world\\migrations\\0006_knowntopicrecord_characterrecipe.py": 93,
-    "world\\migrations\\0006_spawnrecord.py": 94,
-    "world\\migrations\\__init__.py": 95,
-    "world\\mob_spawner.py": 96,
-    "world\\mob_templates.py": 97,
-    "world\\named_mob_registry.py": 98,
-    "world\\nodes\\__init__.py": 99,
-    "world\\oob_publisher.py": 100,
-    "world\\prototypes.py": 101,
-    "world\\scripts\\__init__.py": 102,
-    "world\\trigger_engine.py": 103,
-    "world\\wander_system.py": 104,
-    "world\\zone_object.py": 105,
-    "world\\zone_registry.py": 106,
-    "world\\zone_scaling.py": 107
+    "tests\\test_content_integration.py": 40,
+    "tests\\test_crafting.py": 41,
+    "tests\\test_dialogue.py": 42,
+    "tests\\test_equipment_slots.py": 43,
+    "tests\\test_flight_engine.py": 44,
+    "tests\\test_group_engine.py": 45,
+    "tests\\test_guild_engine_mutations.py": 46,
+    "tests\\test_item_spawner.py": 47,
+    "tests\\test_loot_tables.py": 48,
+    "tests\\test_mob_affixes.py": 49,
+    "tests\\test_mob_spawner.py": 50,
+    "tests\\test_mob_templates.py": 51,
+    "tests\\test_node_system.py": 52,
+    "tests\\test_oob_publisher.py": 53,
+    "tests\\test_patrol_engine.py": 54,
+    "tests\\test_skill_engine.py": 55,
+    "tests\\test_spawn_record.py": 56,
+    "tests\\test_trigger_engine.py": 57,
+    "tests\\test_wander_system.py": 58,
+    "tests\\test_world_state.py": 59,
+    "tests\\test_zone_scaling.py": 60,
+    "tests\\__init__.py": 61,
+    "typeclasses\\accounts.py": 62,
+    "typeclasses\\channels.py": 63,
+    "typeclasses\\exits.py": 64,
+    "typeclasses\\__init__.py": 65,
+    "web\\admin\\urls.py": 66,
+    "web\\admin\\__init__.py": 67,
+    "web\\api\\__init__.py": 68,
+    "web\\urls.py": 69,
+    "web\\webclient\\urls.py": 70,
+    "web\\webclient\\__init__.py": 71,
+    "web\\website\\urls.py": 72,
+    "web\\website\\views\\__init__.py": 73,
+    "web\\website\\__init__.py": 74,
+    "web\\__init__.py": 75,
+    "world\\ability_engine.py": 76,
+    "world\\action_vocabulary.py": 77,
+    "world\\ancestry_engine.py": 78,
+    "world\\apps.py": 79,
+    "world\\areas\\__init__.py": 80,
+    "world\\combat_ai.py": 81,
+    "world\\combat_engine.py": 82,
+    "world\\combat_script.py": 83,
+    "world\\command_preprocessor.py": 84,
+    "world\\flight_engine.py": 85,
+    "world\\flight_registry.py": 86,
+    "world\\group_engine.py": 87,
+    "world\\help_entries.py": 88,
+    "world\\inventory_helpers.py": 89,
+    "world\\item_spawner.py": 90,
+    "world\\loot_tables.py": 91,
+    "world\\migrations\\0004_characterguild.py": 92,
+    "world\\migrations\\0005_characterability.py": 93,
+    "world\\migrations\\0006_knowntopicrecord_characterrecipe.py": 94,
+    "world\\migrations\\0006_spawnrecord.py": 95,
+    "world\\migrations\\__init__.py": 96,
+    "world\\mob_spawner.py": 97,
+    "world\\mob_templates.py": 98,
+    "world\\named_mob_registry.py": 99,
+    "world\\nodes\\__init__.py": 100,
+    "world\\oob_publisher.py": 101,
+    "world\\prototypes.py": 102,
+    "world\\scripts\\__init__.py": 103,
+    "world\\trigger_engine.py": 104,
+    "world\\wander_system.py": 105,
+    "world\\zone_object.py": 106,
+    "world\\zone_registry.py": 107,
+    "world\\zone_scaling.py": 108
   }
 }

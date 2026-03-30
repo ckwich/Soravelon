@@ -2,8 +2,8 @@
 
 **Hub files (most depended-on — prioritize reading these):**
 - `commands\command.py` — 11 dependents
+- `world\area_builder.py` — 9 dependents
 - `world\models.py` — 7 dependents
-- `world\area_builder.py` — 5 dependents
 - `world\area_validator.py` — 3 dependents
 - `world\world_state.py` — 3 dependents
 - `world\__init__.py` — 3 dependents
@@ -13,9 +13,9 @@
 - `world\ability_registry.py` — 1 dependents
 
 **Domain clusters:**
+- **tests\test_area_builder.py** (13 files): `world\area_builder.py`, `world\__init__.py`, `world\area_validator.py`, `tests\test_area_builder.py`, `tests\test_zone_serializer.py`
 - **commands\cmd_abilities.py** (12 files): `commands\command.py`, `commands\cmd_abilities.py`, `commands\cmd_alias.py`, `commands\cmd_ancestry.py`, `commands\cmd_crafting.py`
 - **tests\test_guild_engine.py** (11 files): `world\models.py`, `world\world_state.py`, `world\guild_engine.py`, `world\mob_disposition.py`, `tests\test_guild_engine.py`
-- **tests\test_area_builder.py** (9 files): `world\area_builder.py`, `world\__init__.py`, `world\area_validator.py`, `tests\test_area_builder.py`, `tests\test_zone_serializer.py`
 - **typeclasses\characters.py** (3 files): `typeclasses\objects.py`, `typeclasses\characters.py`, `typeclasses\rooms.py`
 - **typeclasses\mobs.py** (3 files): `world\mob_affixes.py`, `world\mob_affix_roller.py`, `typeclasses\mobs.py`
 - **typeclasses\scripts.py** (3 files): `typeclasses\scripts.py`, `world\scripts\flight_script.py`, `world\scripts\patrol_script.py`
@@ -28,4 +28,4 @@
 - **world\dialogue_definitions.py** (2 files): `world\dialogue_definitions.py`, `world\dialogue_engine.py`
 - **world\skill_definitions.py** (2 files): `world\skill_definitions.py`, `world\skill_engine.py`
 
-*152 files, 50 edges — updated 2026-03-30*
+*157 files, 54 edges — updated 2026-03-30*
