@@ -87,6 +87,13 @@ class Character(ObjectParent, DefaultCharacter):
         # Tag for queryset filtering
         self.tags.add("player_character", category="character_type")
 
+        # D-11: Set spawn location to Vael's Crossing greeter room
+        from evennia.utils.search import search_tag
+        greeter_rooms = search_tag("greeter_room", category="spawn_point")
+        if greeter_rooms:
+            self.home = greeter_rooms[0]
+            self.location = greeter_rooms[0]
+
     def at_post_puppet(self, **kwargs):
         """Called after a player connects to this character."""
         super().at_post_puppet(**kwargs)

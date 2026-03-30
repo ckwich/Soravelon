@@ -66,6 +66,8 @@ def build():
             "A merchant curses as a crate slips from a cart.",
         ],
     )
+    # D-11: Tag arrival square as new character spawn point
+    hg_arrival.tags.add("greeter_room", category="spawn_point")
 
     hg_gatehouse = area.room(
         "hg_gatehouse",
@@ -1366,6 +1368,8 @@ def build():
         room_type="building",
         indoor=True,
     )
+    # D-14: Tag medic building as death respawn point
+    iq_medic_building.tags.add("respawn_point", category="spawn_point")
 
     iq_courier_platform = area.room(
         "iq_courier_platform",

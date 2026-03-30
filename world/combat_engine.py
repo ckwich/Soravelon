@@ -450,8 +450,7 @@ def handle_mob_death(mob, killer):
 def handle_player_death(character):
     """
     Process player death per D-26: spawn corpse with equipment.
-
-    Actual respawn teleport handled by CombatScript on cleanup.
+    D-14: Respawn at medic building (respawn_point tag).
 
     Args:
         character: The defeated player character.
@@ -468,7 +467,37 @@ def handle_player_death(character):
 
     character.ndb.hp = 0
     msg = f"|r{character.key} has fallen!|n"
+
+    # D-14: Respawn at medic building via tag lookup
+    _respawn_player(character)
+
     return msg
+
+
+def _respawn_player(character):
+    """
+    Teleport player to respawn point (medic building) after death.
+    Falls back to character home if no respawn_point tagged room exists.
+    """
+    from evennia.utils.search import search_tag
+    from world.base_attributes import derive_max_hp, derive_max_stamina
+
+    respawn_rooms = search_tag("respawn_point", category="spawn_point")
+    if respawn_rooms:
+        destination = respawn_rooms[0]
+    elif character.home:
+        destination = character.home
+    else:
+        return  # nowhere to go
+
+    character.move_to(destination, quiet=True)
+    # Restore partial HP on respawn
+    character.ndb.hp = max(1, derive_max_hp(character) // 4)
+    character.ndb.stamina = derive_max_stamina(character) // 4
+    character.msg(
+        "|yYou awaken on a cot in the medic station, bandaged and "
+        "bruised. Your belongings remain where you fell.|n"
+    )
 
 
 # ---------------------------------------------------------------------------
