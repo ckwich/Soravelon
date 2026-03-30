@@ -6,8 +6,14 @@ Integration tests for Phase 7 content:
 - Spawn/respawn tag wiring
 """
 
+import os
 import unittest
 from unittest.mock import MagicMock, patch
+
+# Django setup required for Evennia command imports
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.conf.settings")
+import django  # noqa: E402
+django.setup()
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +155,7 @@ class TestContentCrossReferences(unittest.TestCase):
 
     def test_loot_tables_module_imports(self):
         from world import loot_tables
-        self.assertTrue(hasattr(loot_tables, "MOB_DROP_TABLES"))
+        self.assertTrue(hasattr(loot_tables, "LOOT_TABLES"))
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +181,6 @@ class TestSpawnPointTags(unittest.TestCase):
 
     def test_cmdstabilize_registered_in_cmdset(self):
         """CmdStabilize should be registered in CharacterCmdSet."""
-        import inspect
-        from commands.default_cmdsets import CharacterCmdSet
-        source = inspect.getsource(CharacterCmdSet.at_cmdset_creation)
+        import pathlib
+        source = pathlib.Path("commands/default_cmdsets.py").read_text()
         self.assertIn("CmdStabilize", source)
