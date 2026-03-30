@@ -775,6 +775,7 @@ def build():
     area.exit(gm_south_drift, gm_deep_crosscut, "west")
     area.exit(gm_deep_crosscut, gm_south_drift, "east")
     area.exit(gm_deep_crosscut, gm_north_drift, "north")
+    area.exit(gm_north_drift, gm_deep_crosscut, "south")
     area.exit(gm_deep_crosscut, gm_hidden_alcove, "in")
     area.exit(gm_hidden_alcove, gm_deep_crosscut, "out")
 

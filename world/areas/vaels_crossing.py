@@ -322,10 +322,12 @@ def build():
     area.exit(hg_alley, hg_gatehouse, "west")
 
     # Thematic zone exit stubs (will be cross-zone exits when zones load)
-    area.exit(hg_south_road, hg_arrival, "north")  # already exists, but safe
+    area.exit(hg_south_road, hg_arrival, "north")
+    area.exit(hg_arrival, hg_south_road, "south")
     area.exit(hg_east_road, hg_plaza_north, "west")
     area.exit(hg_plaza_north, hg_east_road, "east")
-    area.exit(hg_west_road, hg_plaza_north, "west")  # will be cross-zone
+    area.exit(hg_west_road, hg_plaza_north, "west")
+    area.exit(hg_plaza_north, hg_west_road, "east")
     area.exit(hg_wagon_yard, hg_west_road, "west")
     area.exit(hg_west_road, hg_wagon_yard, "east")
     area.exit(hg_north_road, hg_plaza_north, "south")
@@ -644,7 +646,7 @@ def build():
 
     # Market District exits
     area.exit(mk_square, hg_plaza_north, "south")
-    area.exit(hg_plaza_north, mk_square, "northeast")
+    area.exit(hg_plaza_north, mk_square, "north")
     area.exit(mk_square, mk_weapon_shop, "east")
     area.exit(mk_weapon_shop, mk_square, "west")
     area.exit(mk_square, mk_armor_shop, "northeast")
