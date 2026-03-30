@@ -46,6 +46,11 @@ BASE_SCRIPT_TYPECLASS = "typeclasses.scripts.SoravelonScript"
 BASE_ACCOUNT_TYPECLASS = "typeclasses.accounts.SoravelonAccount"
 
 
+# D-11: New characters spawn in Vael's Crossing greeter room.
+# Tag-based lookup in Character.at_object_creation() is the primary
+# mechanism; this setting is the Evennia-level fallback.
+START_LOCATION = "#2"  # Limbo fallback; tag lookup overrides in practice
+
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
 ######################################################################
