@@ -295,6 +295,304 @@ MOB_TEMPLATES = {
         "wander": True,
         "loot_table": "bandit",
     },
+    # --- Reth Foothills mobs (07-06) ---
+    "rock_troll": {
+        "key": "rock troll",
+        "mob_type": "rock_troll",
+        "desc": (
+            "A massive humanoid figure of mottled grey-brown hide, thick "
+            "as stone. Its arms hang past its knees, ending in hands like "
+            "sledgehammers. Small, deep-set eyes peer from beneath a heavy "
+            "brow ridge. The stench of rotting meat and unwashed flesh is "
+            "overwhelming."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 120,
+        "hp_max": 180,
+        "damage_min": 12,
+        "damage_max": 20,
+        "speed": 0.7,
+        "abilities": [
+            {
+                "ability_id": "troll_slam",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 18,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.25,
+            },
+            {
+                "ability_id": "throw_rock",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": True,
+        "detection_range": 2,
+        "flee_threshold": 10,
+        "wander": False,
+        "loot_table": "rock_troll",
+    },
+    "mountain_cat": {
+        "key": "mountain cat",
+        "mob_type": "mountain_cat",
+        "desc": (
+            "A sleek, powerful feline with tawny fur mottled grey to match "
+            "the mountain stone. Its eyes are pale amber, unblinking and "
+            "predatory. Muscles coil beneath the fur like springs wound "
+            "tight. It watches from a crouch, tail twitching."
+        ),
+        "base_aggression": "cautious",
+        "hp_min": 50,
+        "hp_max": 75,
+        "damage_min": 10,
+        "damage_max": 18,
+        "speed": 1.3,
+        "abilities": [
+            {
+                "ability_id": "cat_pounce",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 16,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "cat_claw",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 12,
+                "cooldown": 1,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.25,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 3,
+        "flee_threshold": 30,
+        "wander": True,
+        "loot_table": "mountain_cat",
+    },
+    "cave_spider": {
+        "key": "cave spider",
+        "mob_type": "cave_spider",
+        "desc": (
+            "A spider the size of a large dog, its carapace pale and "
+            "translucent from a life lived in darkness. Eight eyes catch "
+            "the faintest light. Its mandibles drip with venom that "
+            "hisses faintly when it hits stone."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 30,
+        "hp_max": 50,
+        "damage_min": 6,
+        "damage_max": 12,
+        "speed": 1.2,
+        "abilities": [
+            {
+                "ability_id": "spider_web",
+                "weight": 2,
+                "element": "nature",
+                "damage_base": 0,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.5,
+            },
+            {
+                "ability_id": "venomous_bite",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 10,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "poison",
+                "effect_duration": 4,
+                "effect_magnitude": 3,
+                "application_chance": 0.35,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 20,
+        "wander": False,
+        "loot_table": "cave_spider",
+    },
+    "stone_golem_fragment": {
+        "key": "stone golem fragment",
+        "mob_type": "stone_golem_fragment",
+        "desc": (
+            "A broken section of an ancient stone construct, still "
+            "faintly animate. It shifts and grinds with mechanical "
+            "slowness, stone plates sliding over stone joints. Carved "
+            "symbols pulse dimly on its surface -- not dead, not alive, "
+            "but persisting. It pays no attention to passers-by unless "
+            "disturbed."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 150,
+        "hp_max": 220,
+        "damage_min": 14,
+        "damage_max": 22,
+        "speed": 0.5,
+        "abilities": [
+            {
+                "ability_id": "golem_pound",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 20,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.35,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 0,
+        "flee_threshold": 0,
+        "wander": False,
+        "loot_table": "stone_golem_fragment",
+    },
+    "reth_eagle": {
+        "key": "Reth eagle",
+        "mob_type": "reth_eagle",
+        "desc": (
+            "A massive bird of prey with a wingspan wider than a man is "
+            "tall. Dark brown plumage fades to tawny gold on the breast. "
+            "Its talons are the size of daggers, curved and razor-sharp. "
+            "It circles overhead with effortless grace, watching for "
+            "anything it considers either prey or threat."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 45,
+        "hp_max": 70,
+        "damage_min": 9,
+        "damage_max": 16,
+        "speed": 1.2,
+        "abilities": [
+            {
+                "ability_id": "eagle_dive",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 16,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 2,
+                "effect_magnitude": 2,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "wing_buffet",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 8,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.2,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 4,
+        "flee_threshold": 25,
+        "wander": True,
+        "loot_table": "reth_eagle",
+    },
+    # --- Named mob: Grandmother Spider (07-06) ---
+    "grandmother_spider": {
+        "key": "Grandmother Spider",
+        "mob_type": "grandmother_spider",
+        "desc": (
+            "An enormous cave spider, ancient beyond reckoning. Her body "
+            "is the size of a cart, her legs spanning the width of the "
+            "chamber. Unlike her lesser kin, her carapace is dark and "
+            "patterned -- spirals and lines that might be natural, might "
+            "be deliberate. Her eyes -- all eight of them -- reflect an "
+            "intelligence that ordinary spiders should not possess. She "
+            "has lived in these caves for longer than the mine, longer "
+            "than Vael's Crossing, longer than anyone can say."
+        ),
+        "base_aggression": "aggressive",
+        "hp_min": 300,
+        "hp_max": 400,
+        "damage_min": 16,
+        "damage_max": 28,
+        "speed": 0.9,
+        "abilities": [
+            {
+                "ability_id": "grandmother_web_cage",
+                "weight": 2,
+                "element": "nature",
+                "damage_base": 0,
+                "cooldown": 5,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 4,
+                "effect_magnitude": 3,
+                "application_chance": 0.7,
+            },
+            {
+                "ability_id": "grandmother_venomous_bite",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 22,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "poison",
+                "effect_duration": 5,
+                "effect_magnitude": 5,
+                "application_chance": 0.5,
+            },
+            {
+                "ability_id": "grandmother_silk_storm",
+                "weight": 1,
+                "element": "nature",
+                "damage_base": 12,
+                "cooldown": 6,
+                "condition": "self_below_50hp",
+                "status_effect": "blind",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.6,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 0,
+        "wander": False,
+        "loot_table": "grandmother_spider",
+    },
 }
 
 
