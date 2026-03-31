@@ -72,16 +72,16 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 ### Combat
 
 - [x] **CMB-01**: Combat system integrates ability effects with damage, status, and targeting
-- [ ] **CMB-02**: Zone scaling applies per-player logarithmic factors during combat
+- [x] **CMB-02**: Zone scaling applies per-player logarithmic factors during combat
 - [x] **CMB-03**: Mob abilities fire based on weight, cooldown, and condition vocabulary
 - [x] **CMB-04**: Group combat uses existing group engine for proximity and loot
 
 ### Skills & Professions
 
-- [ ] **SKL-01**: General proficiency skills (0-100) with learn-by-use progression
-- [ ] **SKL-02**: 4 profession tracks: Cooking, Smithing, Alchemy, Scholarly Research
-- [ ] **SKL-03**: Animal Handling skill track (0-100) with Dragon Handling unlock at 100
-- [ ] **SKL-04**: Profession progression is independent of domain/guild system
+- [x] **SKL-01**: General proficiency skills (0-100) with learn-by-use progression
+- [x] **SKL-02**: 4 profession tracks: Cooking, Smithing, Alchemy, Scholarly Research
+- [x] **SKL-03**: Animal Handling skill track (0-100) with Dragon Handling unlock at 100
+- [x] **SKL-04**: Profession progression is independent of domain/guild system
 
 ### Ancestries
 
@@ -95,14 +95,14 @@ Requirements for Milestone 0 completion + Milestone 1 playable skeleton.
 
 - [x] **CON-01**: Hub City 1 (Vael's Crossing) authored via GUI builder with full services
 - [x] **CON-02**: 3 starter zones with Layer 0 content (rooms, mobs, NPCs, quests)
-- [ ] **CON-03**: 1 starter zone with active node and Layer 1 implementation
-- [ ] **CON-04**: Basic equipment (weapons/armor) available without procedural affixes
+- [x] **CON-03**: 1 starter zone with active node and Layer 1 implementation
+- [x] **CON-04**: Basic equipment (weapons/armor) available without procedural affixes
 
 ### NPC System
 
-- [ ] **NPC-01**: NPC template system injects world-state variables into dialogue
-- [ ] **NPC-02**: NPCs respond differently based on character standing, ancestry, and reputation
-- [ ] **NPC-03**: Context packet feeds NPC templates (same interface as future LLM consumer)
+- [x] **NPC-01**: NPC template system injects world-state variables into dialogue
+- [x] **NPC-02**: NPCs respond differently based on character standing, ancestry, and reputation
+- [x] **NPC-03**: Context packet feeds NPC templates (same interface as future LLM consumer)
 
 ## v2 Requirements
 

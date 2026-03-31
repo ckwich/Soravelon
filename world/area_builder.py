@@ -547,6 +547,12 @@ class AreaBuilder:
         npc_obj.tags.add("npc", category="character_type")
         npc_obj.tags.add("npc", category="mob_type")
 
+        # Trainer binding (SKL-01)
+        trainer_id = kwargs.get("trainer_id")
+        if trainer_id:
+            npc_obj.db.trainer_id = trainer_id
+            npc_obj.tags.add(trainer_id, category="trainer_id")
+
         # --- 3. Dialogue data on db attributes (NPC-01) -------------------
         dialogue = kwargs.get("dialogue", {})
         npc_obj.db.dialogue_greeting_tiers = dialogue.get("greeting_tiers", {})

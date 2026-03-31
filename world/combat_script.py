@@ -359,11 +359,37 @@ class CombatScript:
                     return  # Combat may have ended
 
             elif action_type == "ability" and target:
-                from world.ability_engine import use_ability
                 ability_id = action.get("ability_id", "")
-                ok, msg = use_ability(mob, ability_id, target=target)
+                # Mob abilities use inline data from combat_ai, not the player
+                # ability registry. Build a compatible ability dict and resolve
+                # damage directly through combat_engine.
+                mob_ability = {
+                    "name": ability_id or "ability",
+                    "damage_base": action.get("damage_base", 0),
+                    "element": action.get("element", "physical"),
+                    "effect_params": {"damage_base": action.get("damage_base", 0)},
+                }
+                from world.combat_engine import resolve_ability_damage
+                ok, msg, dmg = resolve_ability_damage(mob, mob_ability, target)
                 if self.obj:
                     self.obj.msg_contents(msg)
+                # Apply status effect if ability has one
+                status = action.get("status_effect")
+                if status and ok:
+                    from world.status_effects import apply_effect
+                    apply_effect(
+                        target, status,
+                        duration=action.get("effect_duration", 2),
+                        magnitude=action.get("effect_magnitude", 1),
+                        source=mob,
+                        chance=action.get("application_chance", 1.0),
+                    )
+                # Set cooldown on mob
+                cooldown = action.get("cooldown", 0)
+                if cooldown and ability_id:
+                    cds = dict(getattr(mob.ndb, "ability_cooldowns", None) or {})
+                    cds[ability_id] = cooldown
+                    mob.ndb.ability_cooldowns = cds
                 if check_death(target):
                     if _is_player(target):
                         death_msg = handle_player_death(target)

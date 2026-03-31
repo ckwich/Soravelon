@@ -75,6 +75,11 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdBrew())
         self.add(CmdCraft())
         self.add(CmdRecipes())
+        # Equipment commands (CON-04)
+        from commands.cmd_equipment import CmdEquip, CmdUnequip, CmdGear
+        self.add(CmdEquip())
+        self.add(CmdUnequip())
+        self.add(CmdGear())
         # Node interaction commands (D-51)
         from world.node_commands import CmdStabilize
         self.add(CmdStabilize())
