@@ -33,7 +33,7 @@ def build():
         name="Stormhaven Coast",
         zone_type="coastal",
         continent="varath",
-        faction_territory=None,
+        faction_territory="neutral",
         world_x=60,
         world_y=10,
         world_radius=60,
@@ -2107,11 +2107,8 @@ def build():
     # ==================================================================
 
     area.named_mob(
-        sm_captain_cabin,
         "captain_wrack",
-        template="coastal_raider",
-        count_min=1,
-        count_max=1,
+        sm_captain_cabin,
         respawn_minutes=120,
         respawn_variance=30,
         base_disposition=-0.5,

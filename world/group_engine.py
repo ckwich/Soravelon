@@ -23,6 +23,16 @@ def _get_group_state(leader):
     return getattr(leader.ndb, 'group_state', None)
 
 
+def get_group_state(character):
+    """Return the public group-state dict for character's current group."""
+    if not is_in_group(character):
+        return None
+    leader = _get_leader(character)
+    if not leader:
+        return None
+    return _get_group_state(leader)
+
+
 def _get_leader(character):
     leader_id = getattr(character.ndb, 'group_leader_id', None)
     if leader_id is None:

@@ -118,10 +118,12 @@ def _load_all_zones():
     from django.conf import settings
     from world import zone_registry
     from world.area_builder import clear_unresolved_exits, get_unresolved_exits
+    from world.flight_registry import FlightRegistry
     import evennia as _evennia
 
     # Clear registries before rebuild
     zone_registry.clear()
+    FlightRegistry.clear()
     clear_unresolved_exits()
 
     areas_dir = os.path.join(settings.GAME_DIR, "world", "areas")
@@ -140,6 +142,12 @@ def _load_all_zones():
                 module = importlib.sys.modules[module_name]
                 if hasattr(module, "build"):
                     report = module.build()
+                    if report is None:
+                        print(
+                            f"Zone [{filename}] returned no build report; "
+                            f"skipping warning/unresolved processing"
+                        )
+                        continue
                     warnings = report.get("warnings", [])
                     for w in warnings:
                         if "target zone may not be loaded yet" not in w:
@@ -150,15 +158,6 @@ def _load_all_zones():
                             f"Zone [{filename}]: {len(unresolved)} "
                             f"cross-zone exit(s) deferred to second pass"
                         )
-                    zone_id = report.get("zone_id")
-                    if zone_id:
-                        from world.mob_spawner import spawn_zone
-                        zone_objs = _evennia.search_tag("zone_object", category="object_type")
-                        zone_obj = next((o for o in zone_objs if o.db.zone_id == zone_id), None)
-                        if zone_obj:
-                            count = spawn_zone(zone_obj)
-                            if count:
-                                print(f"Zone [{filename}]: spawned {count} mob(s)")
             except Exception as e:
                 import traceback
                 print(f"Error loading zone {filename}: {e}")
@@ -170,6 +169,12 @@ def _load_all_zones():
                 with open(filepath, "r") as f:
                     zone_data = json.load(f)
                 report = load_zone_from_json(zone_data)
+                if report is None:
+                    print(
+                        f"Zone [{filename}] returned no build report; "
+                        f"skipping warning/unresolved processing"
+                    )
+                    continue
                 warnings = report.get("warnings", [])
                 for w in warnings:
                     if "target zone may not be loaded yet" not in w:
@@ -180,15 +185,6 @@ def _load_all_zones():
                         f"Zone [{filename}]: {len(unresolved)} "
                         f"cross-zone exit(s) deferred to second pass"
                     )
-                zone_id = report.get("zone_id")
-                if zone_id:
-                    from world.mob_spawner import spawn_zone
-                    zone_objs = _evennia.search_tag("zone_object", category="object_type")
-                    zone_obj = next((o for o in zone_objs if o.db.zone_id == zone_id), None)
-                    if zone_obj:
-                        count = spawn_zone(zone_obj)
-                        if count:
-                            print(f"Zone [{filename}]: spawned {count} mob(s)")
             except ImportError:
                 print(
                     f"Skipping {filename}: zone_serializer not available"

@@ -22,8 +22,7 @@ from world.area_builder import AreaBuilder
 def build():
     area = AreaBuilder("equipment_catalog")
     area.zone(
-        "equipment_catalog",
-        "Equipment Catalog",
+        name="Equipment Catalog",
         zone_type="frontier",
         continent="varath",
     )

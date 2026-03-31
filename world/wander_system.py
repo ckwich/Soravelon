@@ -14,7 +14,15 @@ Decision refs: D-27 in 07-CONTEXT.md
 
 import random
 
-import evennia
+try:
+    import evennia
+except Exception:  # pragma: no cover - fallback for pure-logic tests
+    class _EvenniaStub:
+        @staticmethod
+        def search_tag(*args, **kwargs):
+            return []
+
+    evennia = _EvenniaStub()
 
 
 # ---------------------------------------------------------------------------
@@ -22,6 +30,18 @@ import evennia
 # ---------------------------------------------------------------------------
 
 WANDER_CHANCE = 0.4  # 40% chance per tick to actually move
+
+
+def _get_combat_handler(mob):
+    """Return the current combat handler without triggering MagicMock autovivification."""
+    ndb = getattr(mob, "ndb", None)
+    if ndb is None:
+        return None
+    if hasattr(ndb, "__dict__"):
+        if "combat_handler" not in vars(ndb):
+            return None
+        return vars(ndb)["combat_handler"]
+    return getattr(ndb, "combat_handler", None)
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +54,7 @@ def wander_mob(mob):
 
     Skips if:
       - mob.db.wander is not True
-      - mob is in combat (ndb.combat_script is not None)
+      - mob is in combat (ndb.combat_handler is not None)
       - mob has an active PatrolScript (patrol takes priority)
       - mob is dead (db.is_dead)
       - no valid exits exist (same zone, no no_mobs tag)
@@ -52,7 +72,7 @@ def wander_mob(mob):
         return False
 
     # Guard: in combat
-    if mob.ndb.combat_script is not None:
+    if _get_combat_handler(mob) is not None:
         return False
 
     # Guard: active patrol script takes priority

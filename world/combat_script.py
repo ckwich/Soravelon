@@ -766,6 +766,13 @@ class CombatScript:
             combatant.ndb.actions_remaining = 0
             combatant.ndb.ability_used_this_turn = False
 
+            patrol_scripts = combatant.scripts.get("patrol_script") if hasattr(combatant, "scripts") else []
+            for patrol_script in patrol_scripts or []:
+                try:
+                    patrol_script.on_combat_end("combat_ended")
+                except Exception:
+                    continue
+
         # Clear pending charged and mob casts
         self.ndb.pending_charged = {}
         self.ndb.pending_mob_casts = {}
@@ -932,8 +939,12 @@ def _resolve_by_id(obj_id):
 
 def _is_player(combatant):
     """Check if combatant is a player character."""
-    return hasattr(combatant, "account") or (
-        hasattr(combatant, "tags") and combatant.tags.has("player_character", category="character_type")
+    account = getattr(combatant, "account", None)
+    if account is not None:
+        return True
+    return bool(
+        hasattr(combatant, "tags")
+        and combatant.tags.has("player_character", category="character_type")
     )
 
 

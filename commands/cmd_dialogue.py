@@ -43,6 +43,20 @@ def _find_npc_in_room(character, npc_name):
     return None
 
 
+def _build_quest_oob_payload(npc, quest_data):
+    """Build a stable quest payload for OOB updates from dialogue commands."""
+    quest_data = quest_data or {}
+    return {
+        "event": "accepted",
+        "quest_id": quest_data.get("quest_id") or quest_data.get("id") or "",
+        "quest_name": quest_data.get("name", "a task"),
+        "npc_id": getattr(npc.db, "npc_id", None) or getattr(npc, "key", ""),
+        "npc_name": getattr(npc.db, "npc_name", None) or getattr(npc, "key", ""),
+        "description": quest_data.get("description", ""),
+        "objectives": quest_data.get("objectives", []),
+    }
+
+
 # ---------------------------------------------------------------------------
 # CmdTalk / greet
 # ---------------------------------------------------------------------------
@@ -410,7 +424,10 @@ class CmdAccept(Command):
 
         # OOB push for quest accepted
         from world import oob_publisher
-        oob_publisher.push_quest_update(character)
+        oob_publisher.push_quest_update(
+            character,
+            _build_quest_oob_payload(npc, quest_data),
+        )
 
         character.ndb.pending_quest_offer = None
 

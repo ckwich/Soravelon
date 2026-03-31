@@ -305,6 +305,7 @@ class AreaBuilder:
         room_obj.tags.add(self._zone_id, category="zone_id")
         room_obj.tags.add(room_id, category="room_id")
         room_obj.tags.add(room_type, category="room_type")
+        room_obj.tags.add("soravelon_room", category="room_type")
 
     # ------------------------------------------------------------------
     # exit()
@@ -770,10 +771,17 @@ class AreaBuilder:
         if not replaced:
             existing.append(cmd_def)
         target.db.custom_commands = existing
-        # Rebuild all dynamic CmdSets from stored definitions
+        # Rebuild one owned dynamic CmdSet per target to avoid duplicate registrations.
         from commands.cmd_dynamic import build_dynamic_cmdset
-        for cdef in existing:
-            target.cmdset.add(build_dynamic_cmdset(cdef), persistent=True)
+        cmdset_key = f"DynamicAreaCmdSet_{target.id}"
+        try:
+            target.cmdset.remove(cmdset_key)
+        except Exception:
+            pass
+        target.cmdset.add(
+            build_dynamic_cmdset(existing, cmdset_key=cmdset_key),
+            persistent=True,
+        )
         return self
 
     # ------------------------------------------------------------------

@@ -1,25 +1,32 @@
 """
 Mob spawn engine for Soravelon.
 
-Stateless functions that read spawn_definitions from rooms and produce
-SoravelonMob instances with affixes, combat stats, patrol scripts, and
-respawn timers.
+Two spawn paths coexist here:
 
-Key call chain:
-  spawn_zone(zone_obj) → spawn_room_mobs(room) → spawn_single_mob / spawn_named_mob
-    → mob.initialize_for_spawn(room)   (affixes + combat stats)
-    → _maybe_attach_patrol(mob, ...)   (PatrolScript if patrol def found)
+- Legacy room bootstrap helpers used by area loading and older tests:
+  spawn_zone() / spawn_room_mobs() / spawn_single_mob() / spawn_named_mob()
+- Authoritative runtime respawn flow:
+  initialize_spawn_records() / spawn_tick() / schedule_respawn_from_death()
 
-Respawn:
-  _schedule_respawn(spawn_def, room) — called from SoravelonMob.at_death()
-  NOT called during initial zone spawn. Fires a one-shot Twisted callLater.
-
-Decision refs: D-01 through D-31 in 03.1-CONTEXT.md
+The runtime path uses SpawnRecord rows as the single source of truth for
+live slot state. room.db.spawn_definitions remains the authored content
+source produced by AreaBuilder.
 """
 
 import random
+from datetime import datetime, timedelta
 
 import evennia
+
+try:
+    from django.utils import timezone
+except Exception:  # pragma: no cover - fallback for pure-logic tests
+    class _FallbackTimezone:
+        @staticmethod
+        def now():
+            return datetime.utcnow()
+
+    timezone = _FallbackTimezone()
 
 # Sentinel for detecting explicit vs. missing spawn_def keys
 _SENTINEL = object()
@@ -139,6 +146,9 @@ def spawn_single_mob(spawn_def, room):
     mob.db.zone_id = room.db.zone_id
     mob.db.base_disposition = spawn_def.get("base_disposition", 0.0)
     mob.db.trust_sensitive = spawn_def.get("trust_sensitive", False)
+    mob.db.named_id = spawn_def.get("named_id")
+    mob.db.sequence = spawn_def.get("sequence", [])
+    mob.db.spawn_record_id = spawn_def.get("_spawn_record_id")
 
     # Store whether spawn_def explicitly set flee_threshold (sentinel pattern)
     explicit_flee = spawn_def.get("flee_threshold", _SENTINEL)
@@ -340,3 +350,160 @@ def _schedule_respawn(spawn_def, room):
 
     reactor = _get_reactor()
     reactor.callLater(delay, _do_respawn)
+
+
+# ---------------------------------------------------------------------------
+# SpawnRecord runtime
+# ---------------------------------------------------------------------------
+
+def _is_respawn(record):
+    """Return True if the record is being processed as a timed respawn."""
+    return record.respawn_at is not None
+
+
+def _get_spawn_def_for_record(record, room):
+    """Resolve the authored spawn definition for a SpawnRecord."""
+    spawn_defs = list(getattr(room.db, "spawn_definitions", None) or [])
+    if record.spawn_index < 0 or record.spawn_index >= len(spawn_defs):
+        return None
+    return dict(spawn_defs[record.spawn_index])
+
+
+def _spawn_from_record(room, spawn_def, record, is_respawn=False):
+    """Spawn one mob for a record-backed slot and tag it with the record ID."""
+    runtime_def = dict(spawn_def)
+    runtime_def["_spawn_record_id"] = record.id
+    if runtime_def.get("is_named"):
+        return spawn_named_mob(runtime_def, room, is_respawn=is_respawn)
+    return spawn_single_mob(runtime_def, room)
+
+
+def _process_spawn_record(record):
+    """
+    Attempt to repopulate one SpawnRecord's slot.
+
+    Missing rooms or invalid spawn indexes delete the record. Failed spawn
+    conditions are retried in five minutes.
+    """
+    room_objs = evennia.search_object(f"#{record.room_id}")
+    if not room_objs:
+        record.delete()
+        return
+
+    room = room_objs[0]
+    spawn_def = _get_spawn_def_for_record(record, room)
+    if not spawn_def:
+        record.delete()
+        return
+
+    if not _evaluate_spawn_condition(spawn_def.get("spawn_condition"), room):
+        record.respawn_at = timezone.now() + timedelta(minutes=5)
+        record.save()
+        return
+
+    count_min = spawn_def.get("count_min", 1)
+    count_max = spawn_def.get("count_max", count_min)
+    spawn_count = random.randint(count_min, max(count_min, count_max))
+    was_respawn = _is_respawn(record)
+
+    mob_ids = []
+    for _ in range(spawn_count):
+        mob = _spawn_from_record(room, spawn_def, record, is_respawn=was_respawn)
+        if mob is not None:
+            mob_ids.append(mob.id)
+
+    record.active_mob_ids = mob_ids
+    record.respawn_at = None
+    record.save()
+
+
+def spawn_tick():
+    """Process all due SpawnRecord rows."""
+    from world.models import SpawnRecord
+
+    due_records = SpawnRecord.objects.filter(
+        respawn_at__lte=timezone.now(),
+        respawn_at__isnull=False,
+    )
+    for record in due_records:
+        try:
+            _process_spawn_record(record)
+        except Exception:
+            continue
+
+
+def initialize_spawn_records():
+    """
+    Ensure every authored spawn definition has a SpawnRecord.
+
+    Newly created records are scheduled for immediate population. Existing
+    records preserve their active and respawn state across reloads.
+    """
+    from world.models import SpawnRecord
+
+    all_rooms = list(evennia.search_tag("soravelon_room", category="room_type") or [])
+    if not all_rooms:
+        try:
+            from evennia.objects.models import ObjectDB
+            all_rooms = [
+                obj for obj in ObjectDB.objects.filter(db_typeclass_path__contains="rooms.")
+            ]
+        except Exception:
+            all_rooms = []
+    for room in all_rooms:
+        if room.tags.get("zone_object", category="object_type"):
+            continue
+        spawn_defs = list(getattr(room.db, "spawn_definitions", None) or [])
+        for idx, spawn_def in enumerate(spawn_defs):
+            record, created = SpawnRecord.objects.get_or_create(
+                room_id=room.id,
+                spawn_index=idx,
+                defaults={
+                    "mob_template": spawn_def.get("mob", ""),
+                    "active_mob_ids": [],
+                    "respawn_at": None,
+                    "is_named": spawn_def.get("is_named", False),
+                    "named_id": spawn_def.get("named_id") or spawn_def.get("mob", ""),
+                },
+            )
+            if created:
+                record.respawn_at = timezone.now()
+                record.save()
+
+
+def schedule_respawn_from_death(mob):
+    """
+    Remove a dead mob from its SpawnRecord and schedule slot respawn if empty.
+    """
+    from world.models import SpawnRecord
+
+    record_id = getattr(mob.db, "spawn_record_id", None)
+    if not record_id:
+        return
+
+    try:
+        record = SpawnRecord.objects.get(id=record_id)
+    except Exception:
+        return
+
+    remaining_ids = [mid for mid in (record.active_mob_ids or []) if mid != mob.id]
+    record.active_mob_ids = remaining_ids
+
+    if remaining_ids:
+        record.save()
+        return
+
+    room = mob.location
+    if room is None:
+        room_objs = evennia.search_object(f"#{record.room_id}")
+        room = room_objs[0] if room_objs else None
+
+    spawn_def = _get_spawn_def_for_record(record, room) if room else None
+    if spawn_def:
+        base_minutes = spawn_def.get("respawn_minutes", 15)
+        variance_minutes = spawn_def.get("respawn_variance", 5)
+        variance_offset = random.uniform(-variance_minutes, variance_minutes)
+        delay_minutes = max(1.0, base_minutes + variance_offset)
+        record.respawn_at = timezone.now() + timedelta(minutes=delay_minutes)
+
+    record.save()

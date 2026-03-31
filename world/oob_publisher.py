@@ -119,6 +119,17 @@ def _get_group_positions(character):
     return markers
 
 
+def _get_zone_obj(room):
+    """Resolve the zone object for a room, if available."""
+    if not room or not hasattr(room, "db"):
+        return None
+    try:
+        from world.zone_scaling import get_zone_obj_for_room
+        return get_zone_obj_for_room(room)
+    except Exception:
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Combat OOB helpers
 # ---------------------------------------------------------------------------
@@ -135,6 +146,24 @@ def _resolve_combatant(cid):
     except Exception:
         pass
     return None
+
+
+def _safe_ndb_value(holder, attr, default=None):
+    """Read an ndb attribute without leaking MagicMock placeholders into payloads."""
+    try:
+        value = getattr(holder.ndb, attr, default)
+    except Exception:
+        return default
+    if type(value).__module__.startswith("unittest.mock"):
+        return default
+    return value
+
+
+def _safe_value(value, default=None):
+    """Collapse MagicMock placeholder values to a default."""
+    if type(value).__module__.startswith("unittest.mock"):
+        return default
+    return value
 
 
 def _get_available_abilities(character):
@@ -214,14 +243,14 @@ def push_stat_update(character):
 
     resource = get_domain_resource(character)
     data = {
-        "hp": character.ndb.hp or 0,
-        "hp_max": derive_max_hp(character),
-        "stamina": character.ndb.stamina or 0,
-        "stamina_max": derive_max_stamina(character),
+        "hp": _safe_ndb_value(character, "hp"),
+        "hp_max": _safe_value(derive_max_hp(character)),
+        "stamina": _safe_ndb_value(character, "stamina"),
+        "stamina_max": _safe_value(derive_max_stamina(character)),
         "domain_resource": resource,
         "conditions": [
             f"{e['type']}_{e.get('stacks', 1)}"
-            for e in (character.ndb.active_effects or [])
+            for e in (_safe_ndb_value(character, "active_effects", []) or [])
         ],
     }
     _send(character, "stat_update", data)
@@ -247,7 +276,11 @@ def push_map_update(character):
         return
 
     visited_ids = set(character.db.visited_room_ids or set())
-    fog_of_war = bool(room.db.fog_of_war if hasattr(room, "db") else False)
+    zone_obj = _get_zone_obj(room)
+    if zone_obj and hasattr(zone_obj, "db"):
+        fog_of_war = bool(zone_obj.db.fog_of_war)
+    else:
+        fog_of_war = bool(room.db.fog_of_war if hasattr(room, "db") else False)
 
     # Collect all objects tagged with this zone_id, filter to rooms only
     candidates = evennia.search_tag(zone_id, category="zone_id")

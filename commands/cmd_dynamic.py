@@ -32,20 +32,27 @@ class DynamicAreaCmdSet(CmdSet):
     no_objs = False
 
 
-def build_dynamic_cmdset(cmd_def):
+def build_dynamic_cmdset(cmd_defs, cmdset_key="DynamicAreaCmdSet"):
     """
-    Build a CmdSet containing one DynamicAreaCommand from a cmd_def dict.
+    Build a CmdSet containing one or more DynamicAreaCommand instances.
 
     Args:
-        cmd_def: dict with keys: key, action_dict, aliases, visible_in_exits, desc
+        cmd_defs: dict or list of dicts with keys: key, action_dict, aliases,
+            visible_in_exits, desc
+        cmdset_key: Stable key used to own/replace the dynamic cmdset on a target
 
     Returns:
         A DynamicAreaCmdSet instance ready to be added via obj.cmdset.add()
     """
-    cmd = DynamicAreaCommand()
-    cmd.key = cmd_def["key"]
-    cmd.aliases = list(cmd_def.get("aliases", []))
-    cmd.action_dict = cmd_def["action_dict"]
+    if isinstance(cmd_defs, dict):
+        cmd_defs = [cmd_defs]
+
     cmdset = DynamicAreaCmdSet()
-    cmdset.add(cmd)
+    cmdset.key = cmdset_key
+    for cmd_def in cmd_defs:
+        cmd = DynamicAreaCommand()
+        cmd.key = cmd_def["key"]
+        cmd.aliases = list(cmd_def.get("aliases", []))
+        cmd.action_dict = cmd_def["action_dict"]
+        cmdset.add(cmd)
     return cmdset

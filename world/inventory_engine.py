@@ -62,6 +62,12 @@ def _delete_inventory_record(character, item):
     ).delete()
 
 
+def _apply_stack_quantity(item, quantity):
+    """Persist world-stack quantity on an item object."""
+    item.db.quantity = quantity
+    return item
+
+
 def _find_existing_stack(character, item):
     """Find an existing stack of the same item type for auto-stacking."""
     from evennia.objects.models import ObjectDB
@@ -217,6 +223,7 @@ def drop_item(character, item, quantity=None):
             val = getattr(item.db, attr_name, None)
             if val is not None:
                 setattr(dropped.db, attr_name, val)
+        _apply_stack_quantity(dropped, quantity)
 
         record.quantity -= quantity
         record.save()
@@ -225,6 +232,7 @@ def drop_item(character, item, quantity=None):
 
     # Full drop
     item.move_to(character.location, quiet=True)
+    _apply_stack_quantity(item, record.quantity or 1)
     _delete_inventory_record(character, item)
 
     return True, f"You drop the {item.key}."
