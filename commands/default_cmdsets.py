@@ -52,6 +52,10 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUseAbility())
         from commands.combat_commands import CmdAttack
         self.add(CmdAttack())
+        from commands.cmd_loadout import CmdLoadout
+        self.add(CmdLoadout())
+        from commands.cmd_map import CmdMap
+        self.add(CmdMap())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
