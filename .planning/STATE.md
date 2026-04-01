@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Milestone complete
-stopped_at: Completed 07-06-PLAN.md
-last_updated: "2026-03-30T20:24:51.755Z"
+stopped_at: Phase 8 context gathered
+last_updated: "2026-04-01T16:25:20.677Z"
 progress:
-  total_phases: 12
+  total_phases: 17
   completed_phases: 10
   total_plans: 63
   completed_plans: 60
@@ -175,6 +175,14 @@ Recent decisions affecting current work:
 - [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
 - [Phase 07]: Grandmother Spider as named mob in deepest cave; 8 sub-areas for geographic variety; dragon-era notation threading in lore
 
+### Roadmap Evolution
+
+- Phase 8 added: Player Surface Commands — core text commands wrapping existing backend engines (score, bank, group, search, use, loadout, sense) plus equip_slot schema fix and OOB inventory wiring
+- Phase 9 added: Content Activation and Travel Network — wire trainers to NPCs, recipe learning, flight routes, Remnance unlock, triggers, wilderness NPC density
+- Phase 10 added: Node System Player-Ready — Layer 1 exits/overrides, all 5 node effects functional, stabilization duration
+- Phase 11 added: Quest MVP — CharacterQuest model, acceptance/tracking/completion/rewards for 5+ authored quests
+- Phase 12 added: Launch Polish and Help System — connection screen, text map, lore journal, comprehensive help for every command/ability/system
+
 ### Pending Todos
 
 None yet.
@@ -187,6 +195,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T00:33:07.738Z
-Stopped at: Completed 07-06-PLAN.md
-Resume file: None
+Last session: 2026-04-01T16:25:20.672Z
+Stopped at: Phase 8 context gathered
+Resume file: .planning/phases/08-player-surface-commands/08-CONTEXT.md
