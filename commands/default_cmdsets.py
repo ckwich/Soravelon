@@ -52,6 +52,12 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUseAbility())
         from commands.combat_commands import CmdAttack
         self.add(CmdAttack())
+        from commands.cmd_bank import CmdBank, CmdDeposit, CmdWithdraw
+        self.add(CmdBank())
+        self.add(CmdDeposit())
+        self.add(CmdWithdraw())
+        from commands.cmd_group import CmdGroup
+        self.add(CmdGroup())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
