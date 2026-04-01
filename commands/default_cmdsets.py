@@ -88,6 +88,12 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdStatus())
         from commands.cmd_sense import CmdSense
         self.add(CmdSense())
+        from commands.cmd_bank import CmdBank, CmdDeposit, CmdWithdraw
+        self.add(CmdBank())
+        self.add(CmdDeposit())
+        self.add(CmdWithdraw())
+        from commands.cmd_group import CmdGroup
+        self.add(CmdGroup())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
