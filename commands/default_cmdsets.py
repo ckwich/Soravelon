@@ -52,6 +52,11 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUseAbility())
         from commands.combat_commands import CmdAttack
         self.add(CmdAttack())
+        # Player surface commands (Phase 8)
+        from commands.cmd_status import CmdStatus
+        self.add(CmdStatus())
+        from commands.cmd_sense import CmdSense
+        self.add(CmdSense())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
