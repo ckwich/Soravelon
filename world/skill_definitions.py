@@ -333,6 +333,20 @@ SKILL_DEFINITIONS = {
             100: "Nothing catches you off guard",
         },
     },
+    "investigation": {
+        "name": "Investigation",
+        "skill_type": "general",
+        "description": "Search rooms for hidden exits, lore fragments, and concealed objects.",
+        "domain_bonus": "remnance",
+        "trainer_required_above": 50,
+        "thresholds": {
+            25: "Obvious hidden doors and recent disturbances",
+            50: "Concealed passages, buried objects, faded inscriptions",
+            75: "Magically obscured exits, ancient caches",
+            90: "Dragon-era vaults, node-sealed chambers",
+            100: "Nothing stays hidden from your scrutiny",
+        },
+    },
 }
 
 # --- Ancestry Skill Seeds (D-20) ---
