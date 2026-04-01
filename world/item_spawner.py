@@ -34,7 +34,7 @@ def create_item_from_template(item_def, location=None):
       - "item" / unknown / missing → SoravelonItem (default)
 
     Always sets: db.item_type, db.weight, db.rarity, db.desc, db.value,
-    db.equip_slot (None for non-equipment).
+    db.equipment_slot (None for non-equipment).
 
     Any item_def key NOT in _RESERVED_KEYS is set as a db.* attribute
     (e.g., damage_min, damage_max, capacity, lock_tag).
@@ -62,7 +62,7 @@ def create_item_from_template(item_def, location=None):
     item.db.rarity     = item_def.get("rarity", "normal")
     item.db.desc       = item_def.get("desc", "")
     item.db.value      = item_def.get("value", 0)
-    item.db.equip_slot = item_def.get("equip_slot")  # None for non-equipment
+    item.db.equipment_slot = item_def.get("equip_slot")  # None for non-equipment
 
     # Extra attrs — anything not in the reserved key set
     for k, v in item_def.items():

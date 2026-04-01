@@ -2163,11 +2163,11 @@ def build():
               stat_scaling="strength", value=50,
               desc="An iron-headed axe. Splits wood and skulls with equal efficiency.")
     area.item("iron_greatsword", key="iron greatsword", item_type="equipment",
-              equip_slot="two_hand", damage_min=14, damage_max=22,
+              equip_slot="main_hand", two_handed=True, damage_min=14, damage_max=22,
               stat_scaling="strength", value=80,
               desc="A massive two-handed iron blade. Requires both hands and considerable resolve.")
     area.item("iron_greataxe", key="iron greataxe", item_type="equipment",
-              equip_slot="two_hand", damage_min=16, damage_max=24,
+              equip_slot="main_hand", two_handed=True, damage_min=16, damage_max=24,
               stat_scaling="strength", value=85,
               desc="A two-handed axe of raw iron. Slow, devastating, unsubtle.")
 
