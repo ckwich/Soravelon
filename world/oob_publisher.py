@@ -439,14 +439,20 @@ def push_quest_update(character, data):
 def push_inventory_update(character):
     """
     Push inventory state to the character.
-
-    Items list is a stub — full item enumeration via inventory_engine in Phase 6.
-    Encumbrance state from inventory_helpers.get_carry_state is live now.
+    Uses get_inventory_display_data() for real item data.
     """
+    from world.inventory_engine import get_inventory_display_data  # lazy import
     from world.inventory_helpers import get_carry_state  # lazy import
 
+    inv_data = get_inventory_display_data(character)
     data = {
-        "items": [],  # stub: Phase 6 will populate via inventory_engine query
-        "encumbrance": get_carry_state(character),
+        "equipped": inv_data.get("equipped", []),
+        "carried": inv_data.get("carried", []),
+        "containers": inv_data.get("containers", {}),
+        "keyring": inv_data.get("keyring", []),
+        "carried_scales": inv_data.get("carried_scales", 0),
+        "encumbrance": inv_data.get("carry_state", "light"),
+        "carry_weight": inv_data.get("carry_weight", 0.0),
+        "carry_capacity": inv_data.get("carry_capacity", 60),
     }
     _send(character, "inventory_update", data)
