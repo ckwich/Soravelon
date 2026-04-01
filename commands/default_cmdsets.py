@@ -83,6 +83,11 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         # Node interaction commands (D-51)
         from world.node_commands import CmdStabilize
         self.add(CmdStabilize())
+        # Player surface commands (Phase 8)
+        from commands.cmd_status import CmdStatus
+        self.add(CmdStatus())
+        from commands.cmd_sense import CmdSense
+        self.add(CmdSense())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
