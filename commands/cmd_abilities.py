@@ -2,7 +2,10 @@
 Ability display and use commands.
 
 CmdAbilities shows known abilities and active loadout (D-26).
-CmdUseAbility is the single dispatcher for all abilities (ABL-02).
+CmdUseAbility is the unified dispatcher for `use`:
+  - If args match an inventory consumable -> consume item (D-13, D-14)
+  - If args match a known ability -> route to ability_engine (ABL-02)
+  - Ability use gated by active_loadout (PSC-06)
 Handles ambiguous prefix matching by listing options instead of
 silently picking the first match.
 """
@@ -78,14 +81,16 @@ class CmdAbilities(Command):
 
 class CmdUseAbility(Command):
     """
-    Use an ability.
+    Use an ability or consume an item.
 
     Usage:
       use <ability_name> [<target>]
+      use <item>
 
     Examples:
       use momentum strike
       use resonant strike goblin
+      use healing potion
     """
 
     key = "use"
@@ -96,9 +101,21 @@ class CmdUseAbility(Command):
         character = self.caller
 
         if not self.args or not self.args.strip():
-            character.msg("Usage: use <ability_name> [<target>]")
+            character.msg("Usage: use <ability_name> [<target>]  or  use <item>")
             return
 
+        raw_args = self.args.strip()
+
+        # --- ITEM CONSUMPTION BRANCH (D-13, D-14) ---
+        # Search inventory for a matching consumable item by name
+        item_matches = character.search(raw_args, location=character, quiet=True)
+        if item_matches:
+            item = item_matches[0] if isinstance(item_matches, list) else item_matches
+            if getattr(item.db, "consumable", False):
+                self._consume_item(character, item)
+                return
+
+        # --- ABILITY BRANCH (existing logic) ---
         from world.ability_registry import ABILITIES
         from world.models import CharacterAbility
 
@@ -113,8 +130,6 @@ class CmdUseAbility(Command):
             character.msg("You have not yet unlocked any abilities.")
             return
 
-        raw_args = self.args.strip()
-
         # Try to resolve ability name and target
         ability_id, target_str = self._resolve_ability_and_target(
             raw_args, known_ids
@@ -122,6 +137,17 @@ class CmdUseAbility(Command):
 
         if ability_id is None:
             return  # Error already messaged
+
+        # --- LOADOUT GATE (PSC-06) ---
+        # If player has configured a loadout, ability must be in it.
+        # Empty loadout = unrestricted (backward compat until player sets one up).
+        active_loadout = character.db.active_loadout or []
+        if active_loadout and ability_id not in active_loadout:
+            character.msg(
+                "That ability is not in your active loadout. "
+                "Use |wloadout add <ability>|n first."
+            )
+            return
 
         # Target resolution
         target = None
@@ -223,3 +249,71 @@ class CmdUseAbility(Command):
             "Type 'abilities' to see your known abilities."
         )
         return None, None
+
+    def _consume_item(self, character, item):
+        """Handle consumable item usage (D-13, D-14)."""
+        # D-14: Combat action cost check
+        if getattr(character.ndb, "in_combat", False):
+            action_cost = getattr(item.db, "action_cost", 1)
+            actions_remaining = getattr(character.ndb, "actions_remaining", 0)
+            if actions_remaining < action_cost:
+                character.msg(
+                    f"Using {item.key} requires {action_cost} action(s). "
+                    f"You have {actions_remaining} remaining."
+                )
+                return
+            character.ndb.actions_remaining = actions_remaining - action_cost
+
+        effects_applied = []
+
+        heal_amount = getattr(item.db, "heal_amount", 0)
+        if heal_amount:
+            from world.base_attributes import derive_max_hp
+
+            max_hp = derive_max_hp(character)
+            current = getattr(character.ndb, "current_hp", None)
+            if current is None:
+                current = max_hp
+            new_hp = min(current + heal_amount, max_hp)
+            character.ndb.current_hp = new_hp
+            effects_applied.append(f"restored {new_hp - current} HP")
+
+        stamina_amount = getattr(item.db, "stamina_amount", 0)
+        if stamina_amount:
+            from world.base_attributes import derive_max_stamina
+
+            max_stam = derive_max_stamina(character)
+            current = getattr(character.ndb, "current_stamina", None)
+            if current is None:
+                current = max_stam
+            new_stam = min(current + stamina_amount, max_stam)
+            character.ndb.current_stamina = new_stam
+            effects_applied.append(f"restored {new_stam - current} stamina")
+
+        cure_effect = getattr(item.db, "cure_effect", None)
+        if cure_effect:
+            status_effects = getattr(character.ndb, "status_effects", None)
+            if status_effects:
+                effects = dict(status_effects)
+                if cure_effect in effects:
+                    del effects[cure_effect]
+                    character.ndb.status_effects = effects
+                    effects_applied.append(f"cured {cure_effect}")
+
+        # Destroy the consumed item
+        from world.models import InventoryItem
+
+        InventoryItem.objects.filter(
+            character_id=character.id, item_id=item.id
+        ).delete()
+        item.delete()
+
+        if effects_applied:
+            character.msg(f"You use {item.key}: {', '.join(effects_applied)}.")
+        else:
+            character.msg(f"You use {item.key}.")
+
+        # Push inventory update
+        from world.oob_publisher import push_inventory_update
+
+        push_inventory_update(character)
