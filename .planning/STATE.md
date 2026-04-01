@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Milestone complete
-stopped_at: Phase 8 context gathered
-last_updated: "2026-04-01T16:25:20.677Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-04-01T20:35:15.447Z"
 progress:
-  total_phases: 17
+  total_phases: 12
   completed_phases: 10
   total_plans: 63
   completed_plans: 60
@@ -85,6 +85,7 @@ Plan: Not started
 | Phase 5c P04 | 7 | 1 tasks | 3 files |
 | Phase 07 P02 | 3 | 1 tasks | 3 files |
 | Phase 07 P06 | 11 | 1 tasks | 3 files |
+| Phase 08 P01 | 243 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -174,6 +175,9 @@ Recent decisions affecting current work:
 - [Phase 07]: Template abilities copied (list()) to avoid shared mutation across spawned mobs
 - [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
 - [Phase 07]: Grandmother Spider as named mob in deepest cave; 8 sub-areas for geographic variety; dragon-era notation threading in lore
+- [Phase 08]: D-15: item_spawner writes db.equipment_slot to match SoravelonEquipment.can_equip
+- [Phase 08]: D-17: OOB push_inventory_update wired to get_inventory_display_data
+- [Phase 08]: D-11: investigation skill uses remnance domain_bonus for search command
 
 ### Roadmap Evolution
 
@@ -195,6 +199,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T16:25:20.672Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-player-surface-commands/08-CONTEXT.md
+Last session: 2026-04-01T20:35:15.443Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
