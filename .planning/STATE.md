@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-04-01T20:33:43.585Z"
+stopped_at: Completed 08-05-PLAN.md
+last_updated: "2026-04-01T20:34:19.641Z"
 progress:
   total_phases: 10
   completed_phases: 6
@@ -72,7 +72,7 @@ Plan: Not started
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
-| Phase 08 P03 | 3 | 2 tasks | 3 files |
+| Phase 08 P05 | 3 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -140,7 +140,7 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
-- [Phase 08]: Used private _get_leader/_get_group_state imports in CmdGroup since no public get_group_state wrapper exists in group_engine
+- [Phase 08]: Loadout preset slots integer-keyed (1-5) in char.db.loadout_presets dict
 
 ### Pending Todos
 
@@ -154,6 +154,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T20:33:43.581Z
-Stopped at: Completed 08-03-PLAN.md
+Last session: 2026-04-01T20:34:19.638Z
+Stopped at: Completed 08-05-PLAN.md
 Resume file: None

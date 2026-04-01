@@ -52,6 +52,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUseAbility())
         from commands.combat_commands import CmdAttack
         self.add(CmdAttack())
+<<<<<<< HEAD
         from commands.skill_commands import CmdSkills, CmdPractice, CmdTrain
         self.add(CmdSkills())
         self.add(CmdPractice())
@@ -94,6 +95,10 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdWithdraw())
         from commands.cmd_group import CmdGroup
         self.add(CmdGroup())
+        from commands.cmd_loadout import CmdLoadout
+        self.add(CmdLoadout())
+        from commands.cmd_map import CmdMap
+        self.add(CmdMap())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
