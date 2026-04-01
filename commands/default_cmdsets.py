@@ -52,7 +52,6 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUseAbility())
         from commands.combat_commands import CmdAttack
         self.add(CmdAttack())
-<<<<<<< HEAD
         from commands.skill_commands import CmdSkills, CmdPractice, CmdTrain
         self.add(CmdSkills())
         self.add(CmdPractice())
@@ -99,6 +98,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdLoadout())
         from commands.cmd_map import CmdMap
         self.add(CmdMap())
+        from commands.cmd_search import CmdSearch
+        self.add(CmdSearch())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
