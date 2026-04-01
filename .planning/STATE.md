@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 08-05-PLAN.md
-last_updated: "2026-04-01T20:34:19.641Z"
+stopped_at: Completed 08-04-PLAN.md
+last_updated: "2026-04-01T20:46:33.826Z"
 progress:
-  total_phases: 10
-  completed_phases: 6
-  total_plans: 33
-  completed_plans: 31
+  total_phases: 12
+  completed_phases: 10
+  total_plans: 63
+  completed_plans: 60
 ---
 
 # Project State
@@ -73,6 +73,7 @@ Plan: Not started
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
 | Phase 08 P05 | 3 | 2 tasks | 3 files |
+| Phase 08 P04 | 194 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -141,6 +142,8 @@ Recent decisions affecting current work:
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
 - [Phase 08]: Loadout preset slots integer-keyed (1-5) in char.db.loadout_presets dict
+- [Phase 08]: Item consumption branch runs before ability resolution in unified use dispatcher
+- [Phase 08]: Empty loadout allows all abilities for backward compat; non-empty loadout gates ability use
 
 ### Pending Todos
 
@@ -154,6 +157,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T20:34:19.638Z
-Stopped at: Completed 08-05-PLAN.md
+Last session: 2026-04-01T20:46:33.822Z
+Stopped at: Completed 08-04-PLAN.md
 Resume file: None
