@@ -271,11 +271,11 @@ class CmdUseAbility(Command):
             from world.base_attributes import derive_max_hp
 
             max_hp = derive_max_hp(character)
-            current = getattr(character.ndb, "current_hp", None)
+            current = character.ndb.hp
             if current is None:
                 current = max_hp
             new_hp = min(current + heal_amount, max_hp)
-            character.ndb.current_hp = new_hp
+            character.ndb.hp = new_hp
             effects_applied.append(f"restored {new_hp - current} HP")
 
         stamina_amount = getattr(item.db, "stamina_amount", 0)
@@ -283,11 +283,11 @@ class CmdUseAbility(Command):
             from world.base_attributes import derive_max_stamina
 
             max_stam = derive_max_stamina(character)
-            current = getattr(character.ndb, "current_stamina", None)
+            current = character.ndb.stamina
             if current is None:
                 current = max_stam
             new_stam = min(current + stamina_amount, max_stam)
-            character.ndb.current_stamina = new_stam
+            character.ndb.stamina = new_stam
             effects_applied.append(f"restored {new_stam - current} stamina")
 
         cure_effect = getattr(item.db, "cure_effect", None)

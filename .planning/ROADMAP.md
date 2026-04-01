@@ -251,10 +251,53 @@ Plans:
 - [ ] 07-09-PLAN.md — Equipment catalog (50+ items, 3 material tiers) + crafting recipes
 - [ ] 07-10-PLAN.md — Integration: character spawn, death respawn, CmdStabilize, content tests
 
+### Phase 8: Player Surface Commands
+**Goal**: Every backend engine with player-facing utility has a working text command — players can see their stats, manage money, form groups, search for hidden content, use consumables, and manage ability loadouts. Critical equipment schema bugs fixed. OOB inventory wired.
+**Depends on**: Phase 7 (content must exist for commands to operate on)
+**Success Criteria** (what must be TRUE):
+  1. `status` displays full character sheet: 7 stats, 5 dimensions, HP/stamina, guild, ancestry, domains
+  2. `bank deposit/withdraw/balance` commands call banking engine functions; players can bank Scales at teller NPCs
+  3. `group invite/accept/leave/kick/lootmode` commands call group_engine; parties of up to 6 work end-to-end
+  4. `search` command rolls against hidden exit search_dc and surfaces lore fragments with discovery_method="search"
+  5. `use <item>` consumes potions/bandages, applies HP/stamina/effect, destroys consumed item
+  6. `loadout add/remove/clear` modifies character.db.active_loadout; abilities only usable if in loadout
+  7. equip_slot schema drift fixed (item_spawner writes same attr name as objects.py reads)
+  8. Starter greatswords in Vael's Crossing use main_hand+two_handed=True (not invalid "two_hand")
+  9. OOB push_inventory_update sends real item data from get_inventory_display_data() instead of empty stub
+  10. `sense` command surfaces SENSE_DISPLAY atmospheric text for active room flags
+**Plans:** 5 plans
+
+Plans:
+- [x] 08-01-PLAN.md — Bug fixes (equip_slot, greatsword slots, OOB inventory) + investigation skill
+- [x] 08-02-PLAN.md — CmdStatus (character sheet) + CmdSense (room atmosphere)
+- [x] 08-03-PLAN.md — CmdBank (deposit/withdraw/balance) + CmdGroup (invite/accept/leave/kick/lootmode)
+- [x] 08-04-PLAN.md — CmdSearch (investigation skill check) + unified CmdUseAbility (items + abilities) + loadout gate
+- [x] 08-05-PLAN.md — CmdLoadout (ability presets) + CmdMap (ASCII text map with fog-of-war)
+
+### Phase 9: Content Activation and Travel Network
+**Goal**: Authored content becomes reachable — trainers bound to NPCs, recipes learnable, flight routes connecting zones, Remnance discoverable, triggers firing
+**Depends on**: Phase 8
+**Plans:** 0 plans
+
+### Phase 10: Node System Player-Ready
+**Goal**: Layer 1 rooms have exits, descriptions, and mob spawns; all 5 node effect types function mechanically
+**Depends on**: Phase 8
+**Plans:** 0 plans
+
+### Phase 11: Quest MVP
+**Goal**: 20 authored quest specs become playable — acceptance, tracking, completion, rewards
+**Depends on**: Phase 9
+**Plans:** 0 plans
+
+### Phase 12: Launch Polish and Help System
+**Goal**: Connection screen, text map, lore journal, comprehensive help for every command/ability/system
+**Depends on**: Phase 11
+**Plans:** 0 plans
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c -> 5b -> 5c -> 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c -> 5b -> 5c -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -270,3 +313,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 5b. Ability Content Authoring (INSERTED) | 6/6 | Complete | 2026-03-27 |
 | 5c. Ability Polish & Resource Engine (INSERTED) | 4/4 | Complete | 2026-03-28 |
 | 7. Milestone 1 Content | 1/10 | In progress | - |
+| 8. Player Surface Commands | 5/5 | Complete | 2026-04-01 |
+| 9. Content Activation and Travel Network | 0/? | Not planned | - |
+| 10. Node System Player-Ready | 0/? | Not planned | - |
+| 11. Quest MVP | 0/? | Not planned | - |
+| 12. Launch Polish and Help System | 0/? | Not planned | - |
