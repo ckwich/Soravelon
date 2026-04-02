@@ -274,10 +274,22 @@ Plans:
 - [x] 08-04-PLAN.md — CmdSearch (investigation skill check) + unified CmdUseAbility (items + abilities) + loadout gate
 - [x] 08-05-PLAN.md — CmdLoadout (ability presets) + CmdMap (ASCII text map with fog-of-war)
 
-### Phase 9: Content Activation and Travel Network
-**Goal**: Authored content becomes reachable — trainers bound to NPCs, recipes learnable, flight routes connecting zones, Remnance discoverable, triggers firing
+### Phase 9: Content Activation
+**Goal**: Authored content becomes reachable — trainers bound to NPCs with TRAINER_REGISTRY entries, non-default recipes learnable via triggers, zone entry triggers firing, crafting stations added where missing
 **Depends on**: Phase 8
-**Plans:** 0 plans
+**Requirements**: ACT-01, ACT-02, ACT-03, ACT-04, ACT-05
+**Note**: Flight network deferred (D-01/D-02). Remnance discovery deferred (D-06). Scope reduced to trainer wiring, recipe learning, triggers, NPC additions, and crafting stations.
+**Success Criteria** (what must be TRUE):
+  1. Vael's Crossing guild NPCs have trainer_id wired to TRAINER_REGISTRY; players can train skills at guild halls
+  2. Each wilderness zone has 1-2 specialist trainers matched to biome
+  3. Non-default recipes (iron_chainmail, antidote, steel_sword, etc.) are learnable through on_first_visit triggers at appropriate NPCs
+  4. All 5 zones have on_first_visit atmospheric entry triggers
+  5. Engineering workbench exists in Vael's Crossing; fire pits exist at wilderness camps
+**Plans:** 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — TRAINER_REGISTRY wilderness entries + learn_recipe action handler
+- [ ] 09-02-PLAN.md — Zone spec wiring: trainer_id on NPCs, triggers, crafting stations, new wilderness NPCs
 
 ### Phase 10: Node System Player-Ready
 **Goal**: Layer 1 rooms have exits, descriptions, and mob spawns; all 5 node effect types function mechanically
@@ -314,7 +326,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 5c. Ability Polish & Resource Engine (INSERTED) | 4/4 | Complete | 2026-03-28 |
 | 7. Milestone 1 Content | 1/10 | In progress | - |
 | 8. Player Surface Commands | 5/5 | Complete | 2026-04-01 |
-| 9. Content Activation and Travel Network | 0/? | Not planned | - |
+| 9. Content Activation | 0/2 | Planned | - |
 | 10. Node System Player-Ready | 0/? | Not planned | - |
 | 11. Quest MVP | 0/? | Not planned | - |
 | 12. Launch Polish and Help System | 0/? | Not planned | - |
