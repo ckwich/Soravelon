@@ -341,7 +341,7 @@ def build():
     area.npc(hg_customs_office, "npc_customs_clerk_pellam", faction="empire")
 
     # 4. Stable hand
-    area.npc(hg_stable, "npc_stablehand_korua", faction="kauroran")
+    area.npc(hg_stable, "npc_stablehand_korua", faction="kauroran", trainer_id="npc_stablehand_korua")
 
     # 5. Wheelwright
     area.npc(hg_wagon_yard, "npc_wheelwright_tomas", faction=None)
@@ -866,6 +866,7 @@ def build():
         ),
         room_type="building",
         indoor=True,
+        crafting_stations=["workbench"],
     )
 
     gq_remnance_hall = area.room(
@@ -986,28 +987,28 @@ def build():
     area.npc(gq_combat_hall, "npc_guildmaster_combat_haren", faction="empire")
 
     # 17. Subterfuge guild master
-    area.npc(gq_subterfuge_den, "npc_guildmaster_subterfuge_dessa", faction=None)
+    area.npc(gq_subterfuge_den, "npc_guildmaster_subterfuge_dessa", faction=None, trainer_id="npc_guildmaster_subterfuge_dessa")
 
     # 18. Naturalism guild master
-    area.npc(gq_naturalism_hall, "npc_guildmaster_naturalism_elwen", faction="wardens")
+    area.npc(gq_naturalism_hall, "npc_guildmaster_naturalism_elwen", faction="wardens", trainer_id="npc_guildmaster_naturalism_elwen")
 
     # 19. Resonance guild master
-    area.npc(gq_resonance_hall, "npc_guildmaster_resonance_kael", faction=None)
+    area.npc(gq_resonance_hall, "npc_guildmaster_resonance_kael", faction=None, trainer_id="npc_guildmaster_resonance_kael")
 
     # 20. Arcana guild master
     area.npc(gq_arcana_hall, "npc_guildmaster_arcana_thessa", faction=None)
 
     # 21. Diplomacy guild master
-    area.npc(gq_diplomacy_hall, "npc_guildmaster_diplomacy_aldric", faction="empire")
+    area.npc(gq_diplomacy_hall, "npc_guildmaster_diplomacy_aldric", faction="empire", trainer_id="npc_guildmaster_diplomacy_aldric")
 
     # 22. Alchemy guild master
-    area.npc(gq_alchemy_lab, "npc_guildmaster_alchemy_mirelle", faction=None)
+    area.npc(gq_alchemy_lab, "npc_guildmaster_alchemy_mirelle", faction=None, trainer_id="npc_guildmaster_alchemy_mirelle")
 
     # 23. Tactics guild master
-    area.npc(gq_tactics_hall, "npc_guildmaster_tactics_brennus", faction="empire")
+    area.npc(gq_tactics_hall, "npc_guildmaster_tactics_brennus", faction="empire", trainer_id="npc_guildmaster_tactics_brennus")
 
     # 24. Engineering guild master
-    area.npc(gq_engineering_hall, "npc_guildmaster_engineering_pren", faction="consortium")
+    area.npc(gq_engineering_hall, "npc_guildmaster_engineering_pren", faction="consortium", trainer_id="npc_guildmaster_engineering_pren")
 
     # 25. Remnance guild master
     area.npc(gq_remnance_hall, "npc_guildmaster_remnance_morwen", faction=None)
@@ -1016,7 +1017,7 @@ def build():
     area.npc(gq_library, "npc_librarian_whisp", faction=None)
 
     # 27. Training instructor
-    area.npc(gq_training_yard, "npc_trainer_combat_sergeant_vale", faction="empire")
+    area.npc(gq_training_yard, "npc_trainer_combat_sergeant_vale", faction="empire", trainer_id="npc_trainer_combat_sergeant_vale")
 
     # ==================================================================
     #  DISTRICT 4: CONSORTIUM QUARTER (~15 rooms)
@@ -1807,7 +1808,7 @@ def build():
     area.npc(rd_inn, "npc_innkeeper_whistle", faction=None)
 
     # 43. Herbalist
-    area.npc(rd_herbalist, "npc_herbalist_old_ystra", faction=None)
+    area.npc(rd_herbalist, "npc_herbalist_old_ystra", faction=None, trainer_id="npc_herbalist_old_ystra")
 
     # 44. Baker
     area.npc(rd_bakery, "npc_baker_marta_hawe", faction=None)
@@ -2334,6 +2335,50 @@ def build():
                objective_type="gather",
                objective_target="rare_herb_bundle",
                objective_count=5)
+
+    # ==================================================================
+    #  TRIGGERS (zone entry, recipe learning, atmospheric)
+    # ==================================================================
+
+    # Zone entry — first visit atmospheric welcome
+    area.trigger(
+        hg_arrival, "on_first_visit",
+        [{"action_type": "echo", "message": "|yThe gates of Vael's Crossing stand open before you. The smell of woodsmoke and spiced meat drifts from somewhere deeper in the city. A guard gives you an appraising look but waves you through.|n"}],
+        trigger_id="vc_first_arrival",
+        once_per_character=True,
+    )
+
+    # Forge — learn iron chainmail recipe from Goram
+    area.trigger(
+        mk_forge, "on_first_visit",
+        [{"action_type": "learn_recipe", "recipe_id": "iron_chainmail", "learned_from": "Goram the Smith", "message": "|gGoram demonstrates a basic chainmail weave. You have learned to craft |wIron Chainmail|g.|n"}],
+        trigger_id="vc_forge_learn_chainmail",
+        once_per_character=True,
+    )
+
+    # Alchemy lab — learn antidote recipe from Mirelle
+    area.trigger(
+        gq_alchemy_lab, "on_first_visit",
+        [{"action_type": "learn_recipe", "recipe_id": "antidote", "learned_from": "Mirelle", "message": "|gMirelle shows you how to distill a basic antidote. You have learned to brew |wAntidote|g.|n"}],
+        trigger_id="vc_alchemy_learn_antidote",
+        once_per_character=True,
+    )
+
+    # Alchemy lab — learn stamina tonic recipe from Mirelle
+    area.trigger(
+        gq_alchemy_lab, "on_first_visit",
+        [{"action_type": "learn_recipe", "recipe_id": "stamina_tonic", "learned_from": "Mirelle", "message": "|gMirelle demonstrates the stamina tonic formula. You have learned to brew |wStamina Tonic|g.|n"}],
+        trigger_id="vc_alchemy_learn_stamina",
+        once_per_character=True,
+    )
+
+    # Food stalls — learn spiced fish recipe from Malani
+    area.trigger(
+        mk_food_stalls, "on_first_visit",
+        [{"action_type": "learn_recipe", "recipe_id": "spiced_fish", "learned_from": "Malani", "message": "|gMalani shares her spiced fish recipe with a knowing grin. You have learned to cook |wSpiced Fish|g.|n"}],
+        trigger_id="vc_food_learn_spiced_fish",
+        once_per_character=True,
+    )
 
     # ==================================================================
     #  MATERIALS (zone-level harvestable materials)
