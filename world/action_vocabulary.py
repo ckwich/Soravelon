@@ -242,6 +242,24 @@ def _action_add_room_flag(action_dict, context, _depth):
 
 
 
+def _handle_learn_recipe(action_dict, context, _depth):
+    """Teach a recipe to the triggering character."""
+    from world.crafting_engine import learn_recipe as _learn_recipe
+
+    character = context.get("character")
+    if not character:
+        return False, "No character in context for learn_recipe."
+    recipe_id = action_dict.get("recipe_id")
+    if not recipe_id:
+        return False, "learn_recipe action missing recipe_id."
+    learned_from = action_dict.get("learned_from", "")
+    success, msg = _learn_recipe(character, recipe_id, learned_from=learned_from)
+    if success:
+        echo_msg = action_dict.get("message", f"You have learned a new recipe: {recipe_id}.")
+        character.msg(echo_msg)
+    return success, msg
+
+
 def _stub_handler(action_dict, context, _depth):
     """Placeholder for not-yet-implemented actions."""
     action_type = action_dict.get("action_type", "unknown")
@@ -266,6 +284,7 @@ ACTION_HANDLERS = {
     "open_dialogue": _stub_handler,
     "spawn_mob": _handle_spawn_mob,
     "add_room_flag": _action_add_room_flag,
+    "learn_recipe": _handle_learn_recipe,
 }
 
 
