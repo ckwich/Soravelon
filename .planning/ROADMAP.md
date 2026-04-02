@@ -309,7 +309,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c -> 5b -> 5c -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
+Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c -> 5b -> 5c -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -326,7 +326,23 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 5c. Ability Polish & Resource Engine (INSERTED) | 4/4 | Complete | 2026-03-28 |
 | 7. Milestone 1 Content | 1/10 | In progress | - |
 | 8. Player Surface Commands | 5/5 | Complete | 2026-04-01 |
-| 9. Content Activation | 0/2 | Planned | - |
+| 9. Content Activation | 2/2 | Complete | 2026-04-02 |
 | 10. Node System Player-Ready | 0/? | Not planned | - |
 | 11. Quest MVP | 0/? | Not planned | - |
 | 12. Launch Polish and Help System | 0/? | Not planned | - |
+| 13. Gathering and Refining Pipeline | 0/? | Not planned | - |
+
+### Phase 13: Gathering and Refining Pipeline
+**Goal**: Players can acquire crafting ingredients through gameplay — gathering raw materials from zones, refining them into recipe ingredients, getting ingredients from mob loot drops, and buying basics from vendors. Closes the gap between authored zone materials and recipe ingredient requirements.
+**Depends on**: Phase 9 (trainers and recipes must be wired before ingredient acquisition matters)
+**Success Criteria** (what must be TRUE):
+  1. `gather`/`harvest`/`mine` command lets players collect raw materials from rooms with authored `area.material()` definitions
+  2. Refining pipeline converts raw materials to recipe ingredients (e.g., iron_ore → iron_ingot at forge, wild_herb → thornroot at campfire)
+  3. Mob loot tables drop ingredient-tagged items (raw_meat, raw_fish, leather_strip) from thematically appropriate mobs
+  4. At least one vendor NPC in Vael's Crossing sells basic ingredients (clean_water, spice, common crafting supplies)
+  5. Every recipe ingredient in RECIPE_REGISTRY has at least one acquisition path (gather, refine, loot, or vendor)
+  6. Zone material definitions map to specific gatherable item types per terrain tag
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 13 to break down)

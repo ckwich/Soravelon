@@ -175,6 +175,15 @@ Recent decisions affecting current work:
 - [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
 - [Phase 07]: Grandmother Spider as named mob in deepest cave; 8 sub-areas for geographic variety; dragon-era notation threading in lore
 
+### Roadmap Evolution
+
+- Phase 8 added: Player Surface Commands (completed 2026-04-01)
+- Phase 9 added: Content Activation and Travel Network (completed 2026-04-02)
+- Phase 10 added: Node System Player-Ready
+- Phase 11 added: Quest MVP
+- Phase 12 added: Launch Polish and Help System
+- Phase 13 added: Gathering and Refining Pipeline — harvest/gather/mine commands, material-to-ingredient refining, loot drops, vendor stock
+
 ### Pending Todos
 
 None yet.
