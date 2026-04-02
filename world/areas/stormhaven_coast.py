@@ -118,6 +118,7 @@ def build():
         ),
         room_type="clearing",
         indoor=False,
+        crafting_stations=["campfire"],
         ambient_echoes=[
             "Dried nets crackle and snap in the wind.",
             "A crab picks through the remains of a fish skeleton near the fire pit.",
@@ -2119,13 +2120,13 @@ def build():
     # ==================================================================
 
     # 1. Old Fisherman -- harbor rumors about deep caves
-    area.npc(sv_harbor, "npc_fisherman_old_korrin", faction=None)
+    area.npc(sv_harbor, "npc_fisherman_old_korrin", faction=None, trainer_id="npc_trainer_navigation_stormhaven")
 
     # 2. Smuggler contact in the cove (Resistance-adjacent)
     area.npc(sm_mess_area, "npc_smuggler_contact_veyra", faction=None)
 
     # 3. Imperial coastguard patrol captain
-    area.npc(lh_base, "npc_coastguard_captain_aldren", faction="empire")
+    area.npc(lh_base, "npc_coastguard_captain_aldren", faction="empire", trainer_id="npc_trainer_swimming_stormhaven")
 
     # ==================================================================
     #  MATERIALS (D-24: salt, driftwood, sea glass, coral fragments)
@@ -2242,6 +2243,26 @@ def build():
                objective_type="deliver",
                objective_target="contraband_package",
                objective_count=1)
+
+    # ==================================================================
+    #  TRIGGERS (09-02: zone entry, recipe learning)
+    # ==================================================================
+
+    # Zone entry — first visit atmospheric welcome
+    area.trigger(
+        hr_junction, "on_first_visit",
+        [{"action_type": "echo", "message": "|yThe salt wind hits you full in the face as the road crests the final hill. The Stormhaven Coast unfolds below -- rocky bluffs, crashing surf, and the distant shapes of fishing boats riding the swells.|n"}],
+        trigger_id="stormhaven_first_entry",
+        once_per_character=True,
+    )
+
+    # Recipe: spiced fish from Old Korrin
+    area.trigger(
+        sv_harbor, "on_first_visit",
+        [{"action_type": "learn_recipe", "recipe_id": "spiced_fish", "learned_from": "Old Korrin", "message": "|gOld Korrin tosses you a handful of dried herbs. 'Rub these into the fish before you cook it. Keeps the salt taste down.' You have learned to cook |wSpiced Fish|g.|n"}],
+        trigger_id="stormhaven_learn_spiced_fish",
+        once_per_character=True,
+    )
 
     # ==================================================================
     #  BUILD
