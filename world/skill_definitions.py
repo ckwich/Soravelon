@@ -462,6 +462,66 @@ TRAINER_REGISTRY = {
         "skills_taught": ["animal_handling", "beast_training", "swimming", "fishing"],
         "cost_per_session": 40,
     },
+    # --- Ashreach Plains Trainers (09-01) ---
+    "npc_trainer_fishing_ashreach": {
+        "name": "Neddra",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["fishing"],
+        "cost_per_session": 50,
+    },
+    "npc_trainer_herbalism_ashreach": {
+        "name": "Senna",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["herbalism", "foraging"],
+        "cost_per_session": 60,
+    },
+    # --- Reth Foothills Trainers (09-01) ---
+    "npc_trainer_climbing_reth": {
+        "name": "Grenn",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["climbing"],
+        "cost_per_session": 70,
+    },
+    "npc_trainer_smithing_reth": {
+        "name": "Halvek",
+        "trainer_quality": "apprentice",
+        "quality_multiplier": 1.25,
+        "skills_taught": ["smithing"],
+        "cost_per_session": 90,
+    },
+    # --- Cantera Edge Trainers (09-01) ---
+    "npc_trainer_tracking_cantera": {
+        "name": "Kaelen",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["tracking"],
+        "cost_per_session": 60,
+    },
+    "npc_trainer_foraging_cantera": {
+        "name": "Thaelen",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["foraging", "herbalism"],
+        "cost_per_session": 55,
+    },
+    # --- Stormhaven Coast Trainers (09-01) ---
+    "npc_trainer_swimming_stormhaven": {
+        "name": "Aldren",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["swimming", "fishing"],
+        "cost_per_session": 60,
+    },
+    "npc_trainer_navigation_stormhaven": {
+        "name": "Korrin",
+        "trainer_quality": "journeyman",
+        "quality_multiplier": 1.5,
+        "skills_taught": ["navigation"],
+        "cost_per_session": 65,
+    },
 }
 
 # --- Trainer Quality Multipliers ---

@@ -7,8 +7,8 @@ Every action type in the game routes through execute_action().
 13 action types (D-07, D-24):
   Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
                modify_standing, modify_attunement, log_world_event, despawn_self,
-               spawn_mob, add_room_flag, open_dialogue
-  Stubs (D-05): set_quest_flag
+               spawn_mob, add_room_flag
+  Stubs (D-05): set_quest_flag, open_dialogue
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
 execute_action() enforces a trigger chain depth limit of 3 (D-19).
@@ -242,57 +242,22 @@ def _action_add_room_flag(action_dict, context, _depth):
 
 
 
-def _handle_open_dialogue(action_dict, context, _depth):
-    """
-    Trigger dialogue with a specific NPC. Used by trigger system.
+def _handle_learn_recipe(action_dict, context, _depth):
+    """Teach a recipe to the triggering character."""
+    from world.crafting_engine import learn_recipe as _learn_recipe
 
-    action_dict keys:
-        npc_id (str): NPC identifier (tag or key match)
-        topic (str, optional): topic to ask about; omit for greeting
-    """
     character = context.get("character")
     if not character:
-        return False, "No character in context"
-    room = context.get("room") or (character.location if character else None)
-    if not room:
-        return False, "open_dialogue: no room context"
-
-    npc_id = action_dict.get("npc_id")
-    if not npc_id:
-        return False, "open_dialogue: missing npc_id"
-
-    # Find NPC in room by npc_id tag or key match
-    npcs = [
-        obj for obj in room.contents
-        if obj.db.is_npc and (
-            obj.tags.has(npc_id, category="npc_id")
-            or obj.key.lower().replace(" ", "_") == npc_id
-        )
-    ]
-    if not npcs:
-        return False, f"open_dialogue: NPC '{npc_id}' not found in room"
-
-    npc = npcs[0]
-    topic = action_dict.get("topic")
-
-    if topic:
-        # Direct topic query
-        from world.dialogue_engine import resolve_topic_response
-        text, _condition = resolve_topic_response(npc, character, topic)
-        if text:
-            character.msg(f"\n{npc.key} says: {text}")
-            return True, ""
-        return True, "No response for topic"
-    else:
-        # Greeting
-        from world.dialogue_engine import resolve_greeting, get_npc_hints
-        greeting_text, _tier = resolve_greeting(npc, character)
-        character.msg(f"\n{greeting_text}")
-        hints = get_npc_hints(npc, character)
-        if hints:
-            hint_str = ", ".join(f"ask about |w{h}|n" for h in hints)
-            character.msg(f"|x[Try: {hint_str}]|n")
-        return True, ""
+        return False, "No character in context for learn_recipe."
+    recipe_id = action_dict.get("recipe_id")
+    if not recipe_id:
+        return False, "learn_recipe action missing recipe_id."
+    learned_from = action_dict.get("learned_from", "")
+    success, msg = _learn_recipe(character, recipe_id, learned_from=learned_from)
+    if success:
+        echo_msg = action_dict.get("message", f"You have learned a new recipe: {recipe_id}.")
+        character.msg(echo_msg)
+    return success, msg
 
 
 def _stub_handler(action_dict, context, _depth):
@@ -316,9 +281,10 @@ ACTION_HANDLERS = {
     "log_world_event": _handle_log_world_event,
     "despawn_self": _handle_despawn_self,
     "set_quest_flag": _stub_handler,
-    "open_dialogue": _handle_open_dialogue,
+    "open_dialogue": _stub_handler,
     "spawn_mob": _handle_spawn_mob,
     "add_room_flag": _action_add_room_flag,
+    "learn_recipe": _handle_learn_recipe,
 }
 
 
