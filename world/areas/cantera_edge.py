@@ -131,6 +131,7 @@ def build():
         ),
         room_type="clearing",
         indoor=False,
+        crafting_stations=["campfire"],
     )
 
     fe_split_oak = area.room(
@@ -2173,6 +2174,7 @@ def build():
             "on strips of bark with charcoal."
         ),
         faction="wardens",
+        trainer_id="npc_trainer_foraging_cantera",
         dialogue={
             "greeting": (
                 "Thaelen looks up from his bark notes. 'Another one drawn "
@@ -2226,6 +2228,7 @@ def build():
             "the center of the forest. Her expression is grim."
         ),
         faction="wardens",
+        trainer_id="npc_trainer_tracking_cantera",
         dialogue={
             "greeting": (
                 "Kaelen glances up briefly. 'You heading deeper? Watch "
@@ -2602,6 +2605,18 @@ def build():
                 ),
             },
         },
+    )
+
+    # ------------------------------------------------------------------
+    # Triggers (09-02: zone entry)
+    # ------------------------------------------------------------------
+
+    # Zone entry — first visit atmospheric welcome
+    area.trigger(
+        fe_trailhead, "on_first_visit",
+        [{"action_type": "echo", "message": "|yThe canopy closes overhead as you enter the Cantera. Pale orange sap weeps from the bark of towering Pala trees. The air is heavy, warm, and thrums with a low vibration you feel more than hear.|n"}],
+        trigger_id="cantera_first_entry",
+        once_per_character=True,
     )
 
     # ------------------------------------------------------------------

@@ -192,6 +192,7 @@ def build():
         ),
         room_type="clearing",
         indoor=False,
+        crafting_stations=["campfire"],
         ambient_echoes=[
             "Wind whistles through the hitching post's iron ring.",
             "Flies buzz around the old dung heaps.",
@@ -1979,6 +1980,44 @@ def build():
     grass_12.db.initial_room_flags = {
         "resonant": {"duration": -1},
     }
+
+    # ==================================================================
+    #  TRAINER NPCs (09-02: wilderness trainers)
+    # ==================================================================
+
+    # Fishing trainer near stream crossing
+    area.npc(
+        outpost_03, "npc_trainer_fishing_ashreach",
+        name="Neddra",
+        title="Fishing Instructor",
+        desc="A weathered woman with sun-darkened skin sits on the bank, mending a fishing net with practiced fingers. Several rods lean against a rock beside her, each rigged differently.",
+        faction=None,
+        trainer_id="npc_trainer_fishing_ashreach",
+        dialogue={"greeting": "Neddra glances at your empty hands. 'Heading through the plains without knowing how to fish? The rivers here are generous if you know where to cast. I can show you, for a fair price.'", "topics": {"fish": "'The silverscale trout run heavy in spring. Use grubs, not worms -- the trout here are picky. And stay upstream of the ashfall zones. The fish there taste like sulfur.'"}},
+    )
+
+    # Herbalism trainer in the grasslands
+    area.npc(
+        grass_03, "npc_trainer_herbalism_ashreach",
+        name="Senna",
+        title="Plains Herbalist",
+        desc="A young woman kneels among the grasses, carefully separating dried stalks into bundles. Her satchel overflows with cuttings. She hums tunelessly as she works.",
+        faction="wardens",
+        trainer_id="npc_trainer_herbalism_ashreach",
+        dialogue={"greeting": "Senna looks up with grass-stained fingers. 'The ashreach grasses look dead but they are not. Half these stalks have medicinal properties if you know how to prepare them. Want me to show you?'", "topics": {"herbs": "'Ash sage grows where the soil is darkest -- near old burn patches. Bittervine clings to rocks along the ridgeline. And never eat the red-tipped grass. It looks like everything else but it will put you down for days.'"}},
+    )
+
+    # ==================================================================
+    #  TRIGGERS (09-02: zone entry and atmospheric)
+    # ==================================================================
+
+    # Zone entry — first visit atmospheric welcome
+    area.trigger(
+        ash_road_01, "on_first_visit",
+        [{"action_type": "echo", "message": "|yThe wind carries the scent of ash and dry grass. The Ashreach stretches before you -- an endless expanse of golden plains scarred by ancient fires. In the distance, smoke rises from what might be a campfire or another burn.|n"}],
+        trigger_id="ashreach_first_entry",
+        once_per_character=True,
+    )
 
     # ==================================================================
     #  BUILD

@@ -2097,7 +2097,7 @@ def build():
     # ==================================================================
 
     # 1. Mining Foreman (Consortium faction) -- quest hook about lost miners
-    area.npc(gm_foreman_office, "npc_foreman_halvek", faction="consortium")
+    area.npc(gm_foreman_office, "npc_foreman_halvek", faction="consortium", trainer_id="npc_trainer_smithing_reth")
 
     # 2. Warden Patrol Captain -- quest about troll activity
     area.npc(ra_warden_camp, "npc_warden_captain_serra", faction="wardens")
@@ -2220,6 +2220,49 @@ def build():
                   profession_bonus={"smithing": 0.08})
     area.material("mountain_herb", tier=1, terrain="clearing",
                   profession_bonus={"herbalism": 0.08, "alchemy": 0.05})
+
+    # ==================================================================
+    #  TRAINER NPCs (09-02: wilderness trainers)
+    # ==================================================================
+
+    # Climbing trainer at cliff face
+    area.npc(
+        wr_cliff_face, "npc_trainer_climbing_reth",
+        name="Grenn",
+        title="Mountain Guide",
+        desc="A wiry man with scarred hands and a coil of rope over one shoulder. He leans against the rock face, testing handholds with casual expertise.",
+        faction=None,
+        trainer_id="npc_trainer_climbing_reth",
+        dialogue={"greeting": "Grenn looks you up and down. 'The foothills are gentle enough, but the real peaks will kill you if you do not know what you are doing. I can teach you to read the rock. It is not cheap, but it is cheaper than a funeral.'", "topics": {"climbing": "'Three rules: test every hold twice, never look down when you are committed, and always know your escape route before you start. The mountain does not forgive mistakes.'"}},
+    )
+
+    # ==================================================================
+    #  TRIGGERS (09-02: zone entry, recipe learning)
+    # ==================================================================
+
+    # Zone entry — first visit atmospheric welcome
+    area.trigger(
+        ra_road_south, "on_first_visit",
+        [{"action_type": "echo", "message": "|yThe air thins as the road climbs into the Reth Foothills. Jagged peaks loom above, their faces scarred with old mine shafts. The wind carries the distant ring of hammers on stone.|n"}],
+        trigger_id="reth_first_entry",
+        once_per_character=True,
+    )
+
+    # Recipe: steel sword from Foreman Halvek
+    area.trigger(
+        gm_foreman_office, "on_first_visit",
+        [{"action_type": "learn_recipe", "recipe_id": "steel_sword", "learned_from": "Foreman Halvek", "message": "|gHalvek sketches a blade design on scrap parchment. 'Mountain steel holds an edge longer than city iron.' You have learned to forge |wSteel Sword|g.|n"}],
+        trigger_id="reth_learn_steel_sword",
+        once_per_character=True,
+    )
+
+    # Recipe: iron breastplate from Foreman Halvek
+    area.trigger(
+        gm_foreman_office, "on_first_visit",
+        [{"action_type": "learn_recipe", "recipe_id": "iron_breastplate", "learned_from": "Foreman Halvek", "message": "|gHalvek shows you a breastplate mold. 'Five ingots, two straps. Simple, if your arm is strong enough.' You have learned to forge |wIron Breastplate|g.|n"}],
+        trigger_id="reth_learn_iron_breastplate",
+        once_per_character=True,
+    )
 
     # ==================================================================
     #  BUILD
