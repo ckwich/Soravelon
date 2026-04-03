@@ -2283,64 +2283,169 @@ def build():
     )
 
     # ==================================================================
-    #  QUEST STUBS (D-23: viewable/editable, no implementation)
+    #  QUESTS (enriched specs — D-21/D-22)
     # ==================================================================
 
     area.quest("vc_q_missing_shipment",
-               quest_type="investigation",
-               quest_giver="npc_broker_carston",
-               objective_type="investigate",
-               objective_target="missing_consortium_shipment",
-               objective_count=1)
+        name="The Missing Shipment",
+        description="Carston's latest shipment from the southern road never arrived. Investigate the warehouse district for signs of tampering or foul play.",
+        quest_type="investigation",
+        quest_giver="npc_broker_carston",
+        objectives=[
+            {"type": "investigate", "target": "vc_warehouse_district", "count": 1,
+             "description": "Investigate the warehouse district for signs of the missing shipment"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 75},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 150},
+            {"action_type": "echo", "message": "|gCarston exhales with visible relief. \"Good work. The Consortium doesn't forget those who look out for its interests.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="investigate",
+        objective_target="missing_consortium_shipment",
+        objective_count=1,
+    )
 
     area.quest("vc_q_rat_problem",
-               quest_type="combat",
-               quest_giver="npc_barkeep_marta_voss",
-               objective_type="kill",
-               objective_target="sewer_rat",
-               objective_count=10)
+        name="Cellar Menace",
+        description="Marta Voss needs someone to clear the sewer rats that have been ruining her ale stores. They've gotten bolder since the last cold snap drove them up from the undercity.",
+        quest_type="combat",
+        quest_giver="npc_barkeep_marta_voss",
+        objectives=[
+            {"type": "kill", "target": "sewer_rat", "count": 10,
+             "description": "Kill sewer rats in the cellar"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 50},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 100},
+            {"action_type": "echo", "message": "|gMarta slides a pouch of coins across the bar. \"That should keep them out for a while. Drink's on me.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="kill",
+        objective_target="sewer_rat",
+        objective_count=10,
+    )
 
     area.quest("vc_q_warden_report",
-               quest_type="delivery",
-               quest_giver="npc_warden_agent_calloway",
-               objective_type="deliver",
-               objective_target="warden_field_report",
-               objective_count=1)
+        name="Warden's Dispatch",
+        description="Agent Calloway needs field intelligence delivered to the Warden outpost beyond the city walls. The roads aren't safe, and official couriers have been turning up empty-handed.",
+        quest_type="delivery",
+        quest_giver="npc_warden_agent_calloway",
+        objectives=[
+            {"type": "deliver", "target": "npc_warden_outpost_commander", "count": 1,
+             "description": "Deliver the field report to the outpost commander"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 60},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 200},
+            {"action_type": "echo", "message": "|gCalloway nods curtly. \"The Wardens remember those who can be relied upon. You'll find our doors open to you.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="deliver",
+        objective_target="warden_field_report",
+        objective_count=1,
+    )
 
     area.quest("vc_q_debt_collection",
-               quest_type="social",
-               quest_giver="npc_debt_collector_raith",
-               objective_type="collect",
-               objective_target="outstanding_debts",
-               objective_count=3)
+        name="Outstanding Debts",
+        description="Raith needs certain debts collected from merchants who've been avoiding their obligations. He's not particular about methods, so long as the coin comes back.",
+        quest_type="social",
+        quest_giver="npc_debt_collector_raith",
+        objectives=[
+            {"type": "collect", "target": "outstanding_debt_token", "count": 3,
+             "description": "Collect outstanding debts from merchants"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 100},
+            {"action_type": "echo", "message": "|gRaith counts the coins with practiced fingers. \"Pleasure doing business. I'll keep you in mind for future work.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="collect",
+        objective_target="outstanding_debts",
+        objective_count=3,
+    )
 
     area.quest("vc_q_forging_commission",
-               quest_type="crafting",
-               quest_giver="npc_smith_goram",
-               objective_type="craft",
-               objective_target="commissioned_blade",
-               objective_count=1)
+        name="Goram's Commission",
+        description="Goram needs an apprentice blade forged to his exacting specifications. The old smith claims nobody in the city can meet his standards anymore.",
+        quest_type="crafting",
+        quest_giver="npc_smith_goram",
+        objectives=[
+            {"type": "collect", "target": "commissioned_blade", "count": 1,
+             "description": "Craft and deliver a commissioned blade to Goram"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 80},
+            {"action_type": "give_skill_xp", "skill_id": "smithing", "count": 5},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 100},
+            {"action_type": "echo", "message": "|gGoram turns the blade in the firelight, testing its edge with a calloused thumb. \"Not bad. Not bad at all. You might have the makings of a real smith.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="craft",
+        objective_target="commissioned_blade",
+        objective_count=1,
+    )
 
     area.quest("vc_q_stolen_goods",
-               quest_type="investigation",
-               quest_giver="npc_fence_shadow_mekk",
-               objective_type="recover",
-               objective_target="stolen_artifacts",
-               objective_count=5)
+        name="Shadow Market Recovery",
+        description="Shadow Mekk knows where several stolen artifacts ended up after last month's warehouse heists. Recover them, and he'll make it worth your while -- no questions asked.",
+        quest_type="investigation",
+        quest_giver="npc_fence_shadow_mekk",
+        objectives=[
+            {"type": "collect", "target": "stolen_artifact", "count": 5,
+             "description": "Recover stolen artifacts from the shadow market"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 120},
+            {"action_type": "echo", "message": "|gMekk's eyes glitter as he examines each artifact. \"Beautiful. The original owners won't be needing these where they've gone. Your cut, as promised.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="recover",
+        objective_target="stolen_artifacts",
+        objective_count=5,
+    )
 
     area.quest("vc_q_tower_mystery",
-               quest_type="exploration",
-               quest_giver="npc_guildmaster_remnance_morwen",
-               objective_type="investigate",
-               objective_target="ashwatch_symbols",
-               objective_count=3)
+        name="Echoes of the Tower",
+        description="Guildmaster Morwen senses Remnance disturbances near the old Ashwatch Tower ruins. The wards are failing, and something is seeping through. Investigate before it gets worse.",
+        quest_type="exploration",
+        quest_giver="npc_guildmaster_remnance_morwen",
+        objectives=[
+            {"type": "investigate", "target": "ashwatch_tower_ruins", "count": 3,
+             "description": "Investigate Ashwatch ward sites for Remnance disturbances"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 90},
+            {"action_type": "modify_standing", "faction_id": "arcanists", "delta": 150},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
+            {"action_type": "echo", "message": "|gMorwen studies your findings with furrowed brows. \"The wards are weaker than I feared. This data is invaluable -- the Guild owes you a debt.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="investigate",
+        objective_target="ashwatch_symbols",
+        objective_count=3,
+    )
 
     area.quest("vc_q_herbalist_gathering",
-               quest_type="gathering",
-               quest_giver="npc_herbalist_old_ystra",
-               objective_type="gather",
-               objective_target="rare_herb_bundle",
-               objective_count=5)
+        name="Ystra's Remedy",
+        description="Old Ystra's stores are running low on the rare herbs needed for healing draughts. The wilds beyond the walls still grow them, but few dare venture out to gather.",
+        quest_type="gathering",
+        quest_giver="npc_herbalist_old_ystra",
+        objectives=[
+            {"type": "collect", "target": "rare_herb_bundle", "count": 5,
+             "description": "Gather rare herb bundles from the wilds"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 60},
+            {"action_type": "give_skill_xp", "skill_id": "herbalism", "count": 3},
+            {"action_type": "learn_recipe", "recipe_id": "healing_draught"},
+            {"action_type": "echo", "message": "|gYstra's weathered hands sort through the herbs with practiced care. \"Good quality. Here -- let me show you how I make my draughts. You've earned the knowledge.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="gather",
+        objective_target="rare_herb_bundle",
+        objective_count=5,
+    )
 
     # ==================================================================
     #  TRIGGERS (zone entry, recipe learning, atmospheric)
