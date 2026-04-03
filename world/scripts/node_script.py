@@ -6,10 +6,24 @@ Driven externally by global TickerHandler via receive_tick().
 NOT self-ticking — interval=0.
 """
 
+import random
+
 from evennia.scripts.scripts import DefaultScript
 from world.node_helpers import get_rooms_in_radius
 from world.nodes.node_effects import apply_node_effects, remove_node_effects
 import evennia
+
+# Atmospheric echo messages during awakening (D-13)
+_AWAKENING_ECHOES = [
+    "The air shimmers with an unseen pressure.",
+    "A faint hum resonates through the stone beneath your feet.",
+    "Shadows lengthen unnaturally for a moment.",
+    "You taste copper. The world feels thin here.",
+    "The edges of your vision distort briefly.",
+]
+
+# Direct warning threshold (D-13 — ~55% failure before node activates)
+_DIRECT_WARNING_THRESHOLD = 55
 
 
 class NodeScript(DefaultScript):
@@ -54,6 +68,53 @@ class NodeScript(DefaultScript):
         self.db.failure = max(0.0, min(100.0, self.db.failure + delta))
 
         self._update_state(old_failure, self.db.failure)
+
+        # Send atmospheric warnings during awakening stage (D-13/D-14)
+        if self.db.state == "awakening":
+            self._send_awakening_warnings()
+
+    def _send_awakening_warnings(self):
+        """
+        Send atmospheric echo messages to players in the zone during
+        awakening stage (30-59% failure). Only fires on ~50% of ticks
+        to avoid spam. At failure >= 55, also sends a direct warning.
+        """
+        zone_id = self.obj.db.zone_id if self.obj else None
+        if not zone_id:
+            return
+
+        # Only send atmospheric messages on ~50% of ticks
+        send_atmospheric = random.random() < 0.5
+
+        # Gather connected player characters in the zone
+        zone_rooms = [
+            r for r in evennia.search_tag(zone_id, category="zone_id")
+            if hasattr(r, "contents")
+            and (not hasattr(r, "db_typeclass_path")
+                 or "rooms." in (r.db_typeclass_path or ""))
+        ]
+        players = []
+        for room in zone_rooms:
+            for obj in room.contents:
+                if (hasattr(obj, "sessions") and obj.sessions.all()
+                        and hasattr(obj, "msg")):
+                    players.append(obj)
+
+        if not players:
+            return
+
+        if send_atmospheric:
+            echo = random.choice(_AWAKENING_ECHOES)
+            for player in players:
+                player.msg(f"|x{echo}|n")
+
+        # Direct warning at 55% threshold (D-13)
+        if self.db.failure >= _DIRECT_WARNING_THRESHOLD:
+            for player in players:
+                player.msg(
+                    "|rThe dimensional barrier is weakening. "
+                    "Prepare yourself.|n"
+                )
 
     def _failure_to_state(self, failure):
         if failure < 30:

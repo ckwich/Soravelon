@@ -1,10 +1,11 @@
 """
 Tests for the Soravelon node system (Build Order Step 3).
 
-Tests written FIRST per TDD. These must all fail before production code.
+Covers node failure state machine, layer swaps, node effects,
+stabilization limits, and awakening warnings (Phases 7 and 10).
 """
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock, PropertyMock
 from evennia.utils.test_resources import EvenniaTest
 from evennia import create_object, create_script
 
@@ -425,3 +426,455 @@ class TestHelperGetRoomsInRadius(NodeTestBase):
         self.assertIn(self.room_north, rooms)
         self.assertIn(self.room_far, rooms)
         self.assertNotIn(self.room_other_zone, rooms)
+
+
+# -----------------------------------------------------------------------
+# Phase 10 Plan 01 Tests — L1 Exit Cloning and Override Application
+# -----------------------------------------------------------------------
+
+class TestLayer1Exits(NodeTestBase):
+    """Test L1 exit cloning from Plan 01."""
+
+    def test_initialize_node_creates_l1_exits(self):
+        """L1 rooms should have exits matching L0 topology."""
+        from typeclasses.objects import Object
+        from world.zone_object import initialize_node
+
+        zone = create_object(Object, key="zone_exits", location=None)
+        zone.db.zone_id = "exits_test"
+
+        script = initialize_node(
+            zone, "resonance", self.room_center, 1,
+            [self.room_center, self.room_north], failure_start=0
+        )
+
+        # Both rooms should have L1 counterparts
+        l1_center_id = self.room_center.db.layer1_room_id
+        l1_north_id = self.room_north.db.layer1_room_id
+        self.assertIsNotNone(l1_center_id)
+        self.assertIsNotNone(l1_north_id)
+
+        # L1 center room should have at least one exit (to L1 north)
+        import evennia
+        l1_center = evennia.search_object("#" + str(l1_center_id))[0]
+        l1_exit_dests = [e.destination.id for e in l1_center.exits]
+        self.assertIn(l1_north_id, l1_exit_dests)
+
+    def test_l1_exits_tagged_inactive(self):
+        """L1 exits should start with inactive tag."""
+        from typeclasses.objects import Object
+        from world.zone_object import initialize_node
+        import evennia
+
+        zone = create_object(Object, key="zone_tag_exits", location=None)
+        zone.db.zone_id = "tag_exits_test"
+
+        script = initialize_node(
+            zone, "cognitive", self.room_center, 1,
+            [self.room_center, self.room_north], failure_start=0
+        )
+
+        l1_center_id = self.room_center.db.layer1_room_id
+        l1_center = evennia.search_object("#" + str(l1_center_id))[0]
+        for exit_obj in l1_center.exits:
+            self.assertTrue(
+                exit_obj.tags.has("inactive", category="node_layer"),
+                f"Exit {exit_obj.key} should be tagged inactive"
+            )
+
+    def test_l1_exits_only_between_rooms_with_l1(self):
+        """Exits to rooms outside layer0_rooms should not get L1 clones."""
+        from typeclasses.objects import Object
+        from world.zone_object import initialize_node
+        import evennia
+
+        zone = create_object(Object, key="zone_partial", location=None)
+        zone.db.zone_id = "partial_test"
+
+        # Only include room_center (not room_north)
+        script = initialize_node(
+            zone, "thermal", self.room_center, 1,
+            [self.room_center], failure_start=0
+        )
+
+        l1_center_id = self.room_center.db.layer1_room_id
+        l1_center = evennia.search_object("#" + str(l1_center_id))[0]
+
+        # L1 center should have NO exits (room_north has no L1 counterpart)
+        self.assertEqual(len(l1_center.exits), 0)
+
+
+class TestLayer1Overrides(NodeTestBase):
+    """Test override application from Plan 01."""
+
+    def test_activate_applies_overrides(self):
+        """L1 rooms with overrides get custom name/desc."""
+        from typeclasses.objects import Object
+        from world.zone_object import initialize_node
+        import evennia
+
+        zone = create_object(Object, key="zone_overrides", location=None)
+        zone.db.zone_id = "override_test"
+        zone.db.layer_1_overrides = {
+            self.room_center.key: {
+                "name": "Shattered Nexus",
+                "desc": "The center has warped beyond recognition."
+            }
+        }
+
+        script = initialize_node(
+            zone, "resonance", self.room_center, 1,
+            [self.room_center], failure_start=65.0
+        )
+
+        script._activate_layer1()
+
+        l1_id = self.room_center.db.layer1_room_id
+        l1_room = evennia.search_object("#" + str(l1_id))[0]
+        self.assertEqual(l1_room.key, "Shattered Nexus")
+
+    def test_activate_default_distorted_prefix(self):
+        """L1 rooms without overrides get [Distorted] prefix."""
+        from typeclasses.objects import Object
+        from world.zone_object import initialize_node
+        import evennia
+
+        zone = create_object(Object, key="zone_distort", location=None)
+        zone.db.zone_id = "distort_test"
+        zone.db.layer_1_overrides = {}
+
+        script = initialize_node(
+            zone, "temporal", self.room_center, 1,
+            [self.room_center], failure_start=65.0
+        )
+
+        script._activate_layer1()
+
+        l1_id = self.room_center.db.layer1_room_id
+        l1_room = evennia.search_object("#" + str(l1_id))[0]
+        self.assertTrue(l1_room.key.startswith("[Distorted]"))
+
+    def test_deactivate_restores_names(self):
+        """After deactivation, L1 rooms revert to original names."""
+        from typeclasses.objects import Object
+        from world.zone_object import initialize_node
+        import evennia
+
+        zone = create_object(Object, key="zone_restore", location=None)
+        zone.db.zone_id = "restore_test"
+        zone.db.layer_1_overrides = {}
+
+        script = initialize_node(
+            zone, "gravity", self.room_center, 1,
+            [self.room_center], failure_start=65.0
+        )
+
+        l1_id = self.room_center.db.layer1_room_id
+        l1_room = evennia.search_object("#" + str(l1_id))[0]
+        original_name = l1_room.key
+
+        script._activate_layer1()
+        self.assertNotEqual(l1_room.key, original_name)
+
+        script._deactivate_layer1()
+        self.assertEqual(l1_room.key, original_name)
+
+
+# -----------------------------------------------------------------------
+# Phase 10 Plan 02 Tests — Thermal, Cognitive, Temporal Node Effects
+# -----------------------------------------------------------------------
+
+class TestThermalNodeEffect(EvenniaTest):
+    """Test thermal damage modifiers from Plan 02."""
+
+    def test_fire_damage_boosted(self):
+        """Fire damage boosted 30% in burn_enhanced rooms."""
+        from typeclasses.rooms import SoravelonRoom
+        from world.zone_scaling import apply_resistance
+
+        room = create_object(SoravelonRoom, key="Thermal Room")
+        room.tags.add("burn_enhanced", category="node_effect")
+
+        target = MagicMock()
+        target.db.resistances = {}
+        target.location = room
+
+        result = apply_resistance(100, "fire", target)
+        self.assertEqual(result, 130)  # 100 * 1.3
+
+    def test_water_damage_reduced(self):
+        """Water/ice damage reduced 30% in burn_enhanced rooms."""
+        from typeclasses.rooms import SoravelonRoom
+        from world.zone_scaling import apply_resistance
+
+        room = create_object(SoravelonRoom, key="Thermal Room Water")
+        room.tags.add("burn_enhanced", category="node_effect")
+
+        target = MagicMock()
+        target.db.resistances = {}
+        target.location = room
+
+        result = apply_resistance(100, "water", target)
+        self.assertEqual(result, 70)  # 100 * 0.7
+
+    def test_wet_blocked(self):
+        """Wet status blocked in wet_suppressed rooms."""
+        from typeclasses.rooms import SoravelonRoom
+        from world.status_effects import apply_effect
+
+        room = create_object(SoravelonRoom, key="Thermal Room Wet")
+        room.tags.add("wet_suppressed", category="node_effect")
+
+        target = MagicMock()
+        target.location = room
+        target.ndb.active_effects = []
+        target.ndb.immunities = set()
+        target.db.immunities = set()
+
+        success, msg = apply_effect(target, "wet", duration=3)
+        self.assertFalse(success)
+        self.assertIn("evaporates", msg)
+
+
+class TestCognitiveNodeEffect(EvenniaTest):
+    """Test cognitive mob coordination from Plan 02."""
+
+    def test_mobs_focus_same_target(self):
+        """In mob_coordination room, second mob copies first's target."""
+        from typeclasses.rooms import SoravelonRoom
+        from world.combat_ai import get_mob_target
+
+        room = create_object(SoravelonRoom, key="Cognitive Room")
+        room.tags.add("mob_coordination", category="node_effect")
+
+        # Create mock combat handler
+        combat = MagicMock()
+
+        # Two players
+        player_a = MagicMock()
+        player_a.id = 100
+        player_a.location = room
+        player_a.ndb.active_effects = []
+        player_b = MagicMock()
+        player_b.id = 101
+        player_b.location = room
+        player_b.ndb.active_effects = []
+
+        # Two mobs
+        mob1 = MagicMock()
+        mob1.id = 200
+        mob1.location = room
+        mob1.ndb.last_attacker_id = None
+        mob1.ndb.current_target_id = None
+
+        mob2 = MagicMock()
+        mob2.id = 201
+        mob2.location = room
+        mob2.ndb.last_attacker_id = None
+        mob2.ndb.current_target_id = player_a.id  # mob2 already targeting A
+
+        # Mock combat_handler to return players and mobs
+        combat.db.combatants = [player_a, player_b, mob1, mob2]
+
+        # Patch internal helpers
+        with patch("world.combat_ai._get_player_combatants", return_value=[player_a, player_b]):
+            with patch("world.combat_ai._get_mob_combatants", return_value=[mob1, mob2]):
+                with patch("world.combat_ai._has_vanish", return_value=False):
+                    with patch("world.combat_ai._target_in_room", return_value=True):
+                        result = get_mob_target(mob1, combat)
+
+        # mob1 should copy mob2's target (player_a)
+        self.assertEqual(result.id, player_a.id)
+
+
+class TestTemporalNodeEffect(EvenniaTest):
+    """Test temporal DoT variance from Plan 02."""
+
+    def test_dot_variance_applied(self):
+        """DoT damage varies in rooms with dot_tick_variance tag."""
+        from typeclasses.rooms import SoravelonRoom
+        from world.status_effects import tick_effects
+
+        room = create_object(SoravelonRoom, key="Temporal Room")
+        room.tags.add("dot_tick_variance", category="node_effect")
+
+        damages = set()
+        for _ in range(50):
+            target = MagicMock()
+            target.location = room
+            target.ndb.hp = 100
+            target.ndb.stamina = 100
+            target.ndb.took_damage_this_round = False
+            target.ndb.active_effects = [
+                {
+                    "type": "burn",
+                    "stacks": 1,
+                    "duration": 2,
+                    "magnitude": 1.0,
+                    "source_id": 1,
+                    "max_stacks": 4,
+                    "is_compound": False,
+                }
+            ]
+            target.ndb.immunities = set()
+            target.db.immunities = set()
+
+            tick_effects(target)
+            damage_dealt = 100 - target.ndb.hp
+            damages.add(damage_dealt)
+
+        # With 50%-150% variance over 50 runs, we should see at least
+        # 2 distinct damage values
+        self.assertGreater(len(damages), 1, f"Expected variance, got: {damages}")
+
+
+# -----------------------------------------------------------------------
+# Phase 10 Plan 03 Tests — Stabilization Limits and Awakening Warnings
+# -----------------------------------------------------------------------
+
+class TestStabilizationLimits(NodeTestBase):
+    """Test stabilization stamina drain and break conditions."""
+
+    def test_stamina_drain(self):
+        """stabilization_tick drains 5 stamina."""
+        from world.node_helpers import stabilization_tick
+
+        char = MagicMock()
+        char.ndb.stamina = 30
+        char.ndb.stabilizing_zones = {"test_zone"}
+
+        stabilization_tick(char, "test_zone")
+
+        self.assertEqual(char.ndb.stamina, 25)
+
+    def test_auto_stop_at_zero_stamina(self):
+        """When stamina hits 0, stabilization stops automatically."""
+        from world.node_helpers import stabilization_tick
+
+        char = MagicMock()
+        char.ndb.stamina = 3
+        char.ndb.stabilizing_zones = {"test_zone"}
+
+        stabilization_tick(char, "test_zone")
+
+        self.assertEqual(char.ndb.stamina, 0)
+        # Should have been removed from stabilizing_zones
+        self.assertNotIn("test_zone", char.ndb.stabilizing_zones)
+        # Should have received the exhaustion message
+        char.msg.assert_called_with(
+            "Your concentration wavers. The stabilization fades."
+        )
+
+    def test_combat_break(self):
+        """Entering combat breaks all stabilizations."""
+        from world.node_helpers import break_stabilization_on_combat
+
+        char = MagicMock()
+        char.ndb.stabilizing_zones = {"zone_a", "zone_b"}
+
+        break_stabilization_on_combat(char)
+
+        self.assertEqual(len(char.ndb.stabilizing_zones), 0)
+        char.msg.assert_called_with("Your focus breaks as combat begins.")
+
+    def test_movement_break(self):
+        """Moving rooms breaks all stabilizations."""
+        from world.node_helpers import break_stabilization_on_move
+
+        char = MagicMock()
+        char.ndb.stabilizing_zones = {"zone_a"}
+
+        break_stabilization_on_move(char)
+
+        self.assertEqual(len(char.ndb.stabilizing_zones), 0)
+        char.msg.assert_called_with("Your focus breaks.")
+
+    def test_attempt_requires_stamina(self):
+        """attempt_stabilization fails if stamina is 0."""
+        from world.node_helpers import attempt_stabilization
+
+        char = MagicMock()
+        char.ndb.stamina = 0
+
+        result = attempt_stabilization(char, "test_zone")
+
+        self.assertFalse(result)
+        char.msg.assert_called_with("You lack the stamina to stabilize.")
+
+
+class TestAwakeningWarnings(NodeTestBase):
+    """Test awakening atmospheric messages from Plan 03."""
+
+    def test_warnings_sent_during_awakening(self):
+        """Players in zone receive atmospheric messages during awakening."""
+        from world.scripts.node_script import NodeScript
+
+        script = create_script(NodeScript, obj=self.zone_obj)
+        script.db.failure = 35.0
+        script.db.state = "awakening"
+        script.db.session_failure_added = 0.0
+
+        # Use fully-mocked room + player to avoid mutating real DB objects
+        mock_player = MagicMock()
+        mock_player.sessions.all.return_value = [MagicMock()]
+        mock_player.msg = MagicMock()
+
+        mock_room = MagicMock()
+        mock_room.contents = [mock_player]
+        mock_room.db_typeclass_path = "typeclasses.rooms.SoravelonRoom"
+
+        with patch("world.scripts.node_script.random") as mock_random:
+            mock_random.random.return_value = 0.3  # < 0.5, will send
+            mock_random.choice.return_value = "The air shimmers with an unseen pressure."
+            with patch("world.scripts.node_script.evennia") as mock_ev:
+                mock_ev.search_tag.return_value = [mock_room]
+                script._send_awakening_warnings()
+
+        mock_player.msg.assert_any_call(
+            "|xThe air shimmers with an unseen pressure.|n"
+        )
+
+    def test_direct_warning_at_55_percent(self):
+        """Direct warning sent when failure >= 55%."""
+        from world.scripts.node_script import NodeScript
+
+        script = create_script(NodeScript, obj=self.zone_obj)
+        script.db.failure = 55.0
+        script.db.state = "awakening"
+        script.db.session_failure_added = 0.0
+
+        mock_player = MagicMock()
+        mock_player.sessions.all.return_value = [MagicMock()]
+        mock_player.msg = MagicMock()
+
+        mock_room = MagicMock()
+        mock_room.contents = [mock_player]
+        mock_room.db_typeclass_path = "typeclasses.rooms.SoravelonRoom"
+
+        with patch("world.scripts.node_script.random") as mock_random:
+            mock_random.random.return_value = 0.8  # > 0.5, skip atmospheric
+            with patch("world.scripts.node_script.evennia") as mock_ev:
+                mock_ev.search_tag.return_value = [mock_room]
+                script._send_awakening_warnings()
+
+        mock_player.msg.assert_called_with(
+            "|rThe dimensional barrier is weakening. "
+            "Prepare yourself.|n"
+        )
+
+    def test_no_warnings_in_dormant(self):
+        """No warnings sent during dormant state (receive_tick skips)."""
+        from world.scripts.node_script import NodeScript
+
+        script = create_script(NodeScript, obj=self.zone_obj)
+        script.db.failure = 10.0
+        script.db.state = "dormant"
+        script.db.session_failure_added = 0.0
+
+        # In dormant state, _send_awakening_warnings should not be called
+        with patch.object(script, '_send_awakening_warnings') as mock_warn:
+            script.receive_tick(player_count=1, scholar_count=0,
+                                stabilizer_count=0)
+            # State stays dormant (failure < 30)
+            self.assertEqual(script.db.state, "dormant")
+            mock_warn.assert_not_called()
