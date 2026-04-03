@@ -183,6 +183,10 @@ def pick_up(character, item, container=None):
         keyring=is_keyring,
     )
 
+    # Quest progress: collect objectives (D-08, D-19)
+    from world.quest_engine import check_collect_objectives
+    check_collect_objectives(character, item)
+
     return True, f"You pick up the {item.key}."
 
 

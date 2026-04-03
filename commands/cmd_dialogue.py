@@ -109,6 +109,11 @@ class CmdTalk(Command):
             hint_str = "|x, ".join(hint_parts)
             character.msg(f"|x[Try: {hint_str}|x]|n")
 
+        # Quest progress: talk_to and deliver objectives (D-11, D-10, D-19)
+        from world.quest_engine import check_talk_to_objectives, check_deliver_objectives
+        check_talk_to_objectives(character, npc)
+        check_deliver_objectives(character, npc)
+
         # Quest offer
         if has_available_quest(npc, character):
             quest_data = get_quest_offer(npc, character)
@@ -413,7 +418,20 @@ class CmdAccept(Command):
             character.ndb.pending_quest_offer = None
             return
 
-        # Accept quest (stub — set quest flag, send OOB)
+        # Accept quest via quest engine (D-17)
+        from world.quest_engine import accept_quest
+        quest_id = quest_data.get("quest_id") if quest_data else None
+        if not quest_id:
+            character.msg("|rThat quest has no valid identifier.|n")
+            character.ndb.pending_quest_offer = None
+            return
+
+        success, msg = accept_quest(character, quest_id, quest_data)
+        if not success:
+            character.msg(f"|r{msg}|n")
+            character.ndb.pending_quest_offer = None
+            return
+
         npc_display = npc.db.npc_name or npc.key
         quest_name = quest_data.get("name", "a task") if quest_data else "a task"
         character.msg(

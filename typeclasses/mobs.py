@@ -203,6 +203,11 @@ class SoravelonMob(DefaultCharacter):
             if is_named or is_boss:
                 add_room_flag(room, "power_vacuum")
 
+        # Quest progress: kill objectives (D-07, D-19)
+        if killer and hasattr(killer, 'account') and killer.account:
+            from world.quest_engine import check_kill_objectives
+            check_kill_objectives(killer, self)
+
         # Schedule respawn via SpawnRecord (replaces callLater)
         from world.mob_spawner import schedule_respawn_from_death
         schedule_respawn_from_death(self)
