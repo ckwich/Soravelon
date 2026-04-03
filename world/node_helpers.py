@@ -56,13 +56,17 @@ def count_zone_actors(zone_id):
     """
     Single-pass count of players, scholars, and stabilizers in a zone.
     One tag search, one pass through room contents. Returns
-    (player_count, scholar_count, stabilizer_count).
+    (player_count, scholar_count, stabilizer_count, stabilizer_list).
     Called every 30 seconds per zone — must be efficient.
+
+    stabilizer_list contains the actual character objects for stabilization
+    tick processing in node_failure_tick().
     """
     rooms = evennia.search_tag(zone_id, category="zone_id")
     players = 0
     scholars = 0
     stabilizers = 0
+    stabilizer_list = []
     for room in rooms:
         for obj in room.contents:
             if not (hasattr(obj, 'account') and obj.account):
@@ -73,32 +77,42 @@ def count_zone_actors(zone_id):
             stab_zones = getattr(obj.ndb, 'stabilizing_zones', None)
             if stab_zones and zone_id in stab_zones:
                 stabilizers += 1
-    return players, scholars, stabilizers
+                stabilizer_list.append(obj)
+    return players, scholars, stabilizers, stabilizer_list
 
 
-# Legacy wrappers — kept for any external callers
+# Legacy wrappers — kept for any external callers (use indices [0:3])
 def count_players_in_zone(zone_id):
     """Count characters currently in any room of this zone."""
-    players, _, _ = count_zone_actors(zone_id)
+    players, _, _, _ = count_zone_actors(zone_id)
     return players
 
 
 def count_scholars_studying(zone_id):
     """STUB — Returns 0 until Milestone 2."""
-    _, scholars, _ = count_zone_actors(zone_id)
+    _, scholars, _, _ = count_zone_actors(zone_id)
     return scholars
 
 
 def count_active_stabilizers(zone_id):
     """STUB — Returns 0 until Milestone 2."""
-    _, _, stabilizers = count_zone_actors(zone_id)
+    _, _, stabilizers, _ = count_zone_actors(zone_id)
     return stabilizers
 
 
 def attempt_stabilization(character, zone_id):
     """
-    Register character as active stabilizer. Hook for future abilities.
+    Start continuous stabilization of a zone node.
+
+    Requires stamina > 0 to begin. Drains 5 stamina per tick via
+    stabilization_tick(). Stops automatically at 0 stamina.
+    Breaks on combat entry or room movement (see break_stabilization_*).
     """
+    # Check stamina requirement
+    if (getattr(character.ndb, 'stamina', None) or 0) <= 0:
+        character.msg("You lack the stamina to stabilize.")
+        return False
+
     script = get_node_script(zone_id)
     if not script:
         return False
@@ -107,7 +121,7 @@ def attempt_stabilization(character, zone_id):
     character.ndb.stabilizing_zones.add(zone_id)
     character.msg(
         "You focus on the patterns in the stone, working against "
-        "the failure. The air resists."
+        "the instability."
     )
     return True
 
@@ -116,6 +130,50 @@ def stop_stabilization(character, zone_id):
     """Called when a character stops stabilizing."""
     if hasattr(character.ndb, "stabilizing_zones"):
         character.ndb.stabilizing_zones.discard(zone_id)
+
+
+def stabilization_tick(character, zone_id):
+    """
+    Per-tick stamina drain for active stabilizers. Called every 30s
+    from node_failure_tick() for each stabilizer in the zone.
+
+    Drains 5 stamina per tick. Auto-stops at 0 stamina (D-09/D-12).
+    """
+    current_stamina = getattr(character.ndb, 'stamina', None) or 0
+    character.ndb.stamina = max(0, current_stamina - 5)
+    if character.ndb.stamina <= 0:
+        stop_stabilization(character, zone_id)
+        character.msg("Your concentration wavers. The stabilization fades.")
+
+
+def break_stabilization_on_combat(character):
+    """
+    Break all active stabilizations when combat begins (D-10).
+
+    Integration point: called by Character typeclass or CombatScript
+    when the character enters combat. The caller is responsible for
+    invoking this function — this module only provides it.
+    """
+    zones = getattr(character.ndb, 'stabilizing_zones', None)
+    if zones:
+        for zone_id in list(zones):
+            stop_stabilization(character, zone_id)
+        character.msg("Your focus breaks as combat begins.")
+
+
+def break_stabilization_on_move(character):
+    """
+    Break all active stabilizations when the character moves rooms (D-10).
+
+    Integration point: called by Character.at_pre_move() or similar
+    hook when the character changes rooms. The caller is responsible
+    for invoking this function — this module only provides it.
+    """
+    zones = getattr(character.ndb, 'stabilizing_zones', None)
+    if zones:
+        for zone_id in list(zones):
+            stop_stabilization(character, zone_id)
+        character.msg("Your focus breaks.")
 
 
 def node_failure_tick(*args, **kwargs):
@@ -133,8 +191,14 @@ def node_failure_tick(*args, **kwargs):
         if not zone or not zone.db.zone_id:
             continue
         zone_id = zone.db.zone_id
-        players, scholars, stabilizers = count_zone_actors(zone_id)
+        players, scholars, stabilizers, stabilizer_list = count_zone_actors(
+            zone_id
+        )
         script.receive_tick(players, scholars, stabilizers)
+
+        # Drain stamina for each active stabilizer (D-09)
+        for stabilizer in stabilizer_list:
+            stabilization_tick(stabilizer, zone_id)
 
 
 def initialize_node_pool():

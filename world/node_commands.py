@@ -2,7 +2,9 @@
 Node interaction commands.
 
 CmdStabilize (D-51): allows players to slow or reverse node failure
-by interacting at node_center rooms.
+by continuously stabilizing at node_center rooms. Drains stamina over
+time (D-09). Breaks on combat or movement (D-10). 5-minute cooldown
+between attempts (D-11).
 """
 
 import time
@@ -13,28 +15,25 @@ from evennia.utils.search import search_tag
 
 class CmdStabilize(Command):
     """
-    Attempt to stabilize an unstable node.
+    Stabilize an unstable node.
 
     Usage:
         stabilize
+        stabilize stop
 
-    Works only in rooms marked as node_center. Reduces the node's
-    failure value, slowing or reversing the failure progression.
-    The amount of stabilization scales with your Echoes or Remnance
-    domain score.
+    Works only in rooms marked as node_center. Begins a continuous
+    stabilization that drains stamina over time. Use 'stabilize stop'
+    to end stabilization early. Stabilization also breaks automatically
+    if you enter combat or leave the room.
 
-    Has a 5-minute cooldown between uses.
+    Has a 5-minute cooldown between stabilization attempts.
     """
 
     key = "stabilize"
     help_category = "Node"
 
-    # Cooldown in seconds (5 minutes)
+    # Cooldown in seconds (5 minutes) — D-11
     COOLDOWN_SECONDS = 300
-
-    # Base and max failure reduction
-    BASE_REDUCTION = 5.0
-    MAX_REDUCTION = 15.0
 
     def func(self):
         caller = self.caller
@@ -44,12 +43,36 @@ class CmdStabilize(Command):
             caller.msg("You are nowhere.")
             return
 
+        # Handle "stabilize stop" subcommand
+        args = self.args.strip().lower()
+        if args == "stop":
+            zones = getattr(caller.ndb, 'stabilizing_zones', None)
+            if not zones:
+                caller.msg("You are not stabilizing anything.")
+                return
+            from world.node_helpers import stop_stabilization
+            for zone_id in list(zones):
+                stop_stabilization(caller, zone_id)
+            # Set cooldown after stopping (D-11)
+            caller.ndb.stabilize_cooldown = (
+                time.time() + self.COOLDOWN_SECONDS
+            )
+            caller.msg("You release your focus. The stabilization ends.")
+            return
+
         # Check room is a node center
         if not room.tags.has("node_center", category="room_type"):
             caller.msg(
                 "There is no node to stabilize here. "
                 "You must be at a node center."
             )
+            return
+
+        # Check not already stabilizing
+        stab_zones = getattr(caller.ndb, 'stabilizing_zones', None)
+        zone_id = room.db.zone_id
+        if stab_zones and zone_id in stab_zones:
+            caller.msg("You are already stabilizing this node.")
             return
 
         # Check cooldown
@@ -65,7 +88,6 @@ class CmdStabilize(Command):
             return
 
         # Find the zone's NodeScript
-        zone_id = room.db.zone_id
         if not zone_id:
             caller.msg("This area has no active node.")
             return
@@ -94,35 +116,16 @@ class CmdStabilize(Command):
             )
             return
 
-        # Calculate reduction based on domain scores
-        reduction = self.BASE_REDUCTION
-        domain_scores = caller.db.domain_scores or {}
-        echoes_score = domain_scores.get("echoes", 0)
-        remnance_score = domain_scores.get("remnance", 0)
-        best_score = max(echoes_score, remnance_score)
-
-        # Scale: every 10 points of domain score adds 1 point of reduction
-        reduction += min(best_score / 10.0, self.MAX_REDUCTION - self.BASE_REDUCTION)
-
-        # Apply reduction
-        old_failure = node_script.db.failure
-        node_script.db.failure = max(0.0, old_failure - reduction)
-        actual_reduction = old_failure - node_script.db.failure
-
-        # Set cooldown
-        caller.ndb.stabilize_cooldown = time.time() + self.COOLDOWN_SECONDS
-
-        # Feedback
-        caller.msg(
-            f"|cYou focus your will on the node, pushing back against "
-            f"the instability. The failure eases by "
-            f"{actual_reduction:.1f} points.|n"
-        )
+        # Start continuous stabilization
+        from world.node_helpers import attempt_stabilization
+        success = attempt_stabilization(caller, zone_id)
+        if not success:
+            return
 
         # Notify others in the room
         if room:
             room.msg_contents(
-                f"|c{caller.key} channels energy into the node, "
-                f"and the air steadies briefly.|n",
+                f"|c{caller.key} focuses intently, channeling energy "
+                f"into the node.|n",
                 exclude=[caller],
             )
