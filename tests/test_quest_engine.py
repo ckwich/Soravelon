@@ -599,9 +599,29 @@ class TestGetAvailableQuestForNpc(unittest.TestCase):
         mock_all_specs.return_value = [
             {"quest_id": "q1", "quest_giver": "npc_barkeep", "name": "Rat Problem"},
         ]
-        # Quest already active
-        MockCQ.objects.filter.return_value.exists.return_value = True
-        MockCQ.objects.filter.return_value.values_list.return_value = ["q1"]
+
+        # Build separate mocks for each chained filter call
+        existing_qs = MagicMock()
+        active_qs = MagicMock()
+        active_qs.values_list.return_value = ["q1"]
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = []
+        failed_qs = MagicMock()
+        failed_qs.values_list.return_value = []
+
+        def filter_side_effect(**kwargs):
+            if "status" not in kwargs:
+                return existing_qs
+            if kwargs.get("status") == "active":
+                return active_qs
+            if kwargs.get("status") == "complete":
+                return complete_qs
+            if kwargs.get("status") == "failed":
+                return failed_qs
+            return MagicMock(values_list=MagicMock(return_value=[]))
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+        existing_qs.filter.side_effect = filter_side_effect
 
         result = get_available_quest_for_npc(npc, char)
 
