@@ -1,0 +1,185 @@
+"""
+Quest management commands.
+
+Usage:
+    quest             - List active quests
+    quest <name>      - Show quest details
+    quest abandon <name> - Abandon a quest
+"""
+
+from commands.command import Command
+
+
+class CmdQuest(Command):
+    """
+    View and manage your active quests.
+
+    Usage:
+      quest                   List all active quests
+      quest <name>            Show quest details
+      quest abandon <name>    Abandon a quest
+
+    Shows quest name, progress, giver, and objectives.
+    """
+
+    key = "quest"
+    aliases = ["quests"]
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        character = self.caller
+        args = self.args.strip()
+
+        # Subcommand: abandon
+        if args.lower().startswith("abandon "):
+            quest_name = args[8:].strip()
+            self._abandon(character, quest_name)
+            return
+
+        if not args:
+            self._list_quests(character)
+        else:
+            self._detail(character, args)
+
+    def _list_quests(self, character):
+        """List all active quests (D-15, D-16)."""
+        from world.quest_engine import get_active_quests, _get_quest_spec, _normalize_quest_spec
+        quests = get_active_quests(character)
+
+        if not quests:
+            character.msg("|yYou have no active quests.|n")
+            return
+
+        lines = ["|w=== Active Quests ===|n"]
+        for cq in quests:
+            spec = _get_quest_spec(cq.quest_id)
+            if spec:
+                spec = _normalize_quest_spec(spec)
+                name = spec.get("name", cq.quest_id)
+                giver = spec.get("quest_giver", "unknown")
+                # Build progress bar
+                objectives = spec.get("objectives", [])
+                total_required = 0
+                total_done = 0
+                progress_dict = cq.progress or {}
+                for obj in objectives:
+                    obj_key = f"{obj.get('type', 'unknown')}_{obj.get('target', 'unknown')}"
+                    count = obj.get("count", 1)
+                    done = progress_dict.get(obj_key, 0)
+                    total_required += count
+                    total_done += min(done, count)
+                if total_required > 0:
+                    pct = int(total_done / total_required * 100)
+                    bar_filled = int(pct / 10)
+                    bar_empty = 10 - bar_filled
+                    bar = f"|g{'#' * bar_filled}|x{'.' * bar_empty}|n"
+                    progress_str = f"[{bar}] {pct}%"
+                else:
+                    progress_str = "[|x..........|n]"
+            else:
+                name = cq.quest_id
+                giver = "?"
+                progress_str = "[?]"
+
+            # Replace underscores in giver name for display
+            giver_display = giver.replace("npc_", "").replace("_", " ").title()
+            lines.append(f"  |w{name}|n  {progress_str}  (from {giver_display})")
+
+        character.msg("\n".join(lines))
+
+    def _detail(self, character, quest_name):
+        """Show detailed quest info (D-16)."""
+        from world.quest_engine import get_active_quests, _get_quest_spec, _normalize_quest_spec
+
+        quests = get_active_quests(character)
+        # Match by name (case-insensitive partial)
+        match = None
+        for cq in quests:
+            spec = _get_quest_spec(cq.quest_id)
+            if spec:
+                spec = _normalize_quest_spec(spec)
+                name = spec.get("name", cq.quest_id)
+                if quest_name.lower() in name.lower() or quest_name.lower() in cq.quest_id.lower():
+                    match = (cq, spec)
+                    break
+
+        if not match:
+            character.msg(f"|rNo active quest matching '{quest_name}'.|n")
+            return
+
+        cq, spec = match
+        name = spec.get("name", cq.quest_id)
+        desc = spec.get("description", "No description.")
+        giver = spec.get("quest_giver", "unknown")
+        giver_display = giver.replace("npc_", "").replace("_", " ").title()
+        progress_dict = cq.progress or {}
+
+        lines = [
+            f"|w=== {name} ===|n",
+            f"|x{desc}|n",
+            f"|xGiven by: {giver_display}|n",
+            "",
+            "|wObjectives:|n",
+        ]
+
+        for obj in spec.get("objectives", []):
+            obj_type = obj.get("type", "unknown")
+            obj_target = obj.get("target", "unknown")
+            obj_count = obj.get("count", 1)
+            obj_desc = obj.get("description", f"{obj_type} {obj_target}")
+            obj_key = f"{obj_type}_{obj_target}"
+            done = progress_dict.get(obj_key, 0)
+            done = min(done, obj_count)
+            if done >= obj_count:
+                status = "|g[DONE]|n"
+            else:
+                status = f"|y[{done}/{obj_count}]|n"
+            lines.append(f"  {status} {obj_desc}")
+
+        # Rewards preview
+        rewards = spec.get("rewards", [])
+        if rewards:
+            lines.append("")
+            lines.append("|wRewards:|n")
+            for r in rewards:
+                rtype = r.get("action_type", "?")
+                if rtype == "give_scales":
+                    lines.append(f"  |y{r.get('amount', 0)} Scales|n")
+                elif rtype == "modify_standing":
+                    faction = r.get("faction_id", "?").replace("_", " ").title()
+                    delta = r.get("delta", 0)
+                    sign = "+" if delta > 0 else ""
+                    lines.append(f"  |c{sign}{delta} {faction} Standing|n")
+                elif rtype == "give_item":
+                    lines.append(f"  |w{r.get('template_id', 'item').replace('_', ' ').title()}|n")
+                elif rtype == "give_skill_xp":
+                    skill = r.get("skill_id", "?").replace("_", " ").title()
+                    lines.append(f"  |g+{r.get('count', 1)} {skill} XP|n")
+                elif rtype == "learn_recipe":
+                    lines.append(f"  |mRecipe: {r.get('recipe_id', '?').replace('_', ' ').title()}|n")
+                # Skip echo/teleport/spawn_mob in rewards preview
+
+        character.msg("\n".join(lines))
+
+    def _abandon(self, character, quest_name):
+        """Abandon a quest (D-04, D-15)."""
+        from world.quest_engine import get_active_quests, _get_quest_spec, _normalize_quest_spec, abandon_quest
+
+        quests = get_active_quests(character)
+        match_id = None
+        for cq in quests:
+            spec = _get_quest_spec(cq.quest_id)
+            if spec:
+                spec = _normalize_quest_spec(spec)
+                name = spec.get("name", cq.quest_id)
+                if quest_name.lower() in name.lower() or quest_name.lower() in cq.quest_id.lower():
+                    match_id = cq.quest_id
+                    break
+
+        if not match_id:
+            character.msg(f"|rNo active quest matching '{quest_name}'.|n")
+            return
+
+        success, msg = abandon_quest(character, match_id)
+        character.msg(f"|y{msg}|n" if success else f"|r{msg}|n")

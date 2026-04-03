@@ -100,6 +100,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdMap())
         from commands.cmd_search import CmdSearch
         self.add(CmdSearch())
+        # Quest commands (Phase 11)
+        from commands.cmd_quest import CmdQuest
+        self.add(CmdQuest())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
