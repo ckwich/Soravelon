@@ -16,8 +16,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: OOB Push and Desktop Client** - OOB publisher infrastructure and Tauri desktop client with terminal, status, and map panels
 - [ ] **Phase 3: GUI Area Builder** - Tauri visual zone editor writing AreaBuilder .py files; two-pass loading fix prerequisite
 - [ ] **Phase 4: Domain Fingerprints and Guild Engine** - 10 domain mechanical fingerprints + guild/GTS computation engine (design gate for all ability work)
-- [x] **Phase 5: Ancestry Engine and Ability System** - 4 playable ancestries and all 90 subclasses with 360+ ability definitions (completed 2026-03-27)
-- [x] **Phase 6: Combat, Skills, and NPC Templates** - Ability-driven combat engine, proficiency skill tracks, and world-state NPC dialogue system (completed 2026-03-29)
+- [ ] **Phase 5: Ancestry Engine and Ability System** - 4 playable ancestries and all 90 subclasses with 360+ ability definitions
+- [ ] **Phase 6: Combat, Skills, and NPC Templates** - Ability-driven combat engine, proficiency skill tracks, and world-state NPC dialogue system
 - [ ] **Phase 7: Milestone 1 Content** - Hub City 1, 4 starter zones (3 Layer 0 + 1 Layer 1), and basic equipment authored via GUI builder
 
 ## Phase Details
@@ -154,7 +154,7 @@ Plans:
 - [x] 06a-04-PLAN.md — Combat AI: mob ability selection, targeting, condition vocabulary, scripted sequences
 - [x] 06a-05-PLAN.md — CombatScript: room-attached turn manager, initiative, round progression, group timeout
 - [x] 06a-06-PLAN.md — Combat commands: CmdAttack/CmdFlee/CmdTarget/CmdPass, CombatCmdSet, auto-engage, OOB publishers
-- [x] 06a-07-PLAN.md — Test suite: test_base_attributes + test_status_effects + test_combat_engine + test_combat_ai + test_combat_script
+- [ ] 06a-07-PLAN.md — Test suite: test_base_attributes + test_status_effects + test_combat_engine + test_combat_ai + test_combat_script
 
 ### Phase 6b: Spawn System, Skills & Mob AI
 **Goal**: Mob spawn/respawn runtime with SpawnRecord model, mob ability AI with weighted priority selection, and full general proficiency + attunement skill system with discovery framework
@@ -165,14 +165,7 @@ Plans:
   2. Mob abilities fire based on weight and cooldown conditions during combat turns
   3. A general proficiency skill (e.g., Lockpicking) increases through passive use and deliberate practice independently of the domain system
   4. Ancestry skill seeds are applied via set_ancestry(); attunement skills track per-zone and per-creature progress
-**Plans**: 5 plans
-
-Plans:
-- [x] 06b-01-PLAN.md — WorldEventLog fix + SpawnRecord model + migration + spawn_tick + death hook rewrite
-- [x] 06b-02-PLAN.md — Skill definitions registry (21+ skills) + skill engine (accumulation, practice, training, discovery)
-- [x] 06b-03-PLAN.md — Ancestry seed wiring + session flush integration + skill commands (CmdSkills/CmdPractice/CmdTrain)
-- [x] 06b-04-PLAN.md — Combat AI extensions: casting time, missing conditions, is_hunter chase
-- [x] 06b-05-PLAN.md — Test suite: test_spawn_record + test_skill_engine + test_combat_ai extensions
+**Plans**: TBD
 
 ### Phase 6c: NPC Dialogue & Crafting
 **Goal**: NPC dialogue system with Standing-tier greetings, keyword topics, dynamic hints, ambient behavior; crafting framework with recipe registry, quality variance, and basic output for Cooking/Smithing/Alchemy
@@ -183,160 +176,23 @@ Plans:
   2. Dynamic hints show relevant topics based on Standing tier, active quests, and world-state dimensions
   3. Crafting a recipe with ingredients produces an item; quality varies based on skill level — higher skill = better results
   4. Ambient NPC echoes fire on timer with variance, creating lived-in atmosphere
-**Plans**: 5 plans
-
-Plans:
-- [x] 06c-01-PLAN.md — Dialogue definitions + dialogue engine + KnownTopicRecord/CharacterRecipe models + migration
-- [x] 06c-02-PLAN.md — Crafting definitions registry + crafting engine
-- [x] 06c-03-PLAN.md — AreaBuilder NPC extension (object creation, dialogue/ambient db attrs) + ambient ticker + open_dialogue handler
-- [x] 06c-04-PLAN.md — Dialogue commands (talk/ask/say/tell/accept/decline) + crafting commands (cook/smith/brew/craft/recipes) + cmdset registration
-- [x] 06c-05-PLAN.md — Test suite: test_dialogue.py (NPC-01/02/03, hints, extraction) + test_crafting.py (quality, discovery, registry)
-
-### Phase 5b: Ability Content Authoring (INSERTED)
-**Goal**: Author all 330 ability definitions (150 domain + 180 subclass signatures) through collaborative guild-by-guild review — Claude proposes, user reviews/revises, repeat for all 10 domains
-**Depends on**: Phase 5 (ability framework must exist), Phase 6a (combat engine must exist to validate effect types)
-**Requirements**: ABL-04
-**Success Criteria** (what must be TRUE):
-  1. All 10 domains have 15 abilities each (3-4 per tier) with concrete damage values, resource costs, cooldowns, and effect types — not stubs
-  2. All 90 subclasses have 2 signature abilities each (Tier 3 + Tier 4) that mechanically distinguish the subclass
-  3. Ability definitions pass structural validation: every ability has all required fields from the ability data model, resource costs match guild resource types, scaling stats are valid
-  4. DOMAIN_ABILITIES and SUBCLASS_SIGNATURES derived lookups in ability_registry.py return correct abilities for every guild/subclass combination
-**Plans**: 6 plans
-
-Plans:
-- [ ] 05b-01-PLAN.md — Combat + Tactics domain pair (30 pool + 36 signatures)
-- [x] 05b-02-PLAN.md — Subterfuge + Diplomacy domain pair (30 pool + 36 signatures)
-- [x] 05b-03-PLAN.md — Arcana + Resonance domain pair (30 pool + 36 signatures)
-- [x] 05b-04-PLAN.md — Naturalism + Alchemy domain pair (30 pool + 36 signatures)
-- [x] 05b-05-PLAN.md — Engineering + Remnance domain pair (30 pool + 36 signatures)
-- [x] 05b-06-PLAN.md — Structural validation of complete 330-ability registry
-
-### Phase 5c: Ability Polish & Resource Engine (INSERTED)
-**Goal**: Fix ~18 redundant/obsolete abilities so every ability is attractive in an 8-slot loadout, and implement all 10 domain resource systems in the ability engine so combat mechanically differentiates every domain
-**Depends on**: Phase 5b (all 330 abilities authored), Phase 6a (combat engine exists)
-**Requirements**: ABL-04
-**Success Criteria** (what must be TRUE):
-  1. Zero obsolete abilities — no ability is strictly worse than another ability at the same or higher tier within its domain; every ability brings something unique to a loadout
-  2. All 10 domain resource systems are implemented in ability_engine.py: Focus combo points, Balance pendulum, Influence reputation-pool, Momentum build-on-hit, Command ally-scaling, Mana cross-encounter pool, Resonance builder/spender with decay, Echoes investigation-bonus, Reagents finite stock, Components finite stock
-  3. Resource-specific ability behaviors work: Focus builders generate points on hit (miss resets), Balance shifts on ability use and scales damage/healing, Resonance decays -10/round during combat
-  4. Typed resource variants for Engineering (component types) and Alchemy (reagent types) have data-layer support (variant fields on abilities) even if the gathering/inventory system is deferred
-**Plans**: 4 plans
-
-Plans:
-- [x] 5c-01-PLAN.md — Redesign ~18 redundant abilities with unique mechanics (loadout differentiation)
-- [x] 5c-02-PLAN.md — Resource handler dispatch table (10 handlers) + type-aware init + combat lifecycle hooks
-- [x] 5c-03-PLAN.md — Test suite: resource system tests (10 types) + ability redundancy validation
-- [x] 5c-04-PLAN.md — Gap closure: typed resource variants (reagent_type, component_type) on all alchemy/engineering abilities
+**Plans**: TBD
 
 ### Phase 7: Milestone 1 Content
 **Goal**: Soravelon's first playable slice is live — Vael's Crossing is navigable, 4 starter zones are populated with mobs and NPCs, one zone has an active node with Layer 1 rooms, and basic weapons and armor exist
-**Depends on**: Phase 3 (GUI builder required to author content), Phase 5c (abilities polished and resource engines built), Phase 6c (combat, NPC, and skill systems required for meaningful play)
+**Depends on**: Phase 3 (GUI builder required to author content), Phase 6c (combat, NPC, and skill systems required for meaningful play)
 **Requirements**: CON-01, CON-02, CON-03, CON-04
 **Success Criteria** (what must be TRUE):
   1. A new player arrives in Vael's Crossing, can navigate to bank, guild, and services, and the city feels inhabited with NPCs and ambient content
   2. Three starter zones have rooms, mobs, NPCs, and basic quests playable from character creation; mob encounters use the ability-driven combat system
-  3. One starter zone's active node transitions through its failure states (healthy -> stressed -> failing -> collapsed), swapping Layer 0 rooms for Layer 1 rooms correctly
+  3. One starter zone's active node transitions through its failure states (healthy → stressed → failing → collapsed), swapping Layer 0 rooms for Layer 1 rooms correctly
   4. Basic weapons and armor are obtainable from zone loot and city vendors with no procedural affixes
-**Plans**: 10 plans
-
-Plans:
-- [x] 07-01-PLAN.md — Equipment slot expansion (7 to 13 slots) + two-handed weapon logic
-- [x] 07-02-PLAN.md — Mob template registry (world/mob_templates.py) + spawner integration
-- [x] 07-03-PLAN.md — Wandering mob system (world/wander_system.py) + server tick registration
-- [ ] 07-04-PLAN.md — Vael's Crossing hub city zone spec (100+ rooms, 50+ NPCs, all services)
-- [ ] 07-05-PLAN.md — Ashreach Plains starter zone (100+ rooms, plains biome)
-- [x] 07-06-PLAN.md — Reth Foothills starter zone (100+ rooms, mountain biome)
-- [ ] 07-07-PLAN.md — Cantera Edge starter zone + node system (100+ rooms, forest biome, Layer 1)
-- [ ] 07-08-PLAN.md — Stormhaven Coast starter zone (100+ rooms, coastal biome)
-- [ ] 07-09-PLAN.md — Equipment catalog (50+ items, 3 material tiers) + crafting recipes
-- [ ] 07-10-PLAN.md — Integration: character spawn, death respawn, CmdStabilize, content tests
-
-### Phase 8: Player Surface Commands
-**Goal**: Every backend engine with player-facing utility has a working text command — players can see their stats, manage money, form groups, search for hidden content, use consumables, and manage ability loadouts. Critical equipment schema bugs fixed. OOB inventory wired.
-**Depends on**: Phase 7 (content must exist for commands to operate on)
-**Success Criteria** (what must be TRUE):
-  1. `status` displays full character sheet: 7 stats, 5 dimensions, HP/stamina, guild, ancestry, domains
-  2. `bank deposit/withdraw/balance` commands call banking engine functions; players can bank Scales at teller NPCs
-  3. `group invite/accept/leave/kick/lootmode` commands call group_engine; parties of up to 6 work end-to-end
-  4. `search` command rolls against hidden exit search_dc and surfaces lore fragments with discovery_method="search"
-  5. `use <item>` consumes potions/bandages, applies HP/stamina/effect, destroys consumed item
-  6. `loadout add/remove/clear` modifies character.db.active_loadout; abilities only usable if in loadout
-  7. equip_slot schema drift fixed (item_spawner writes same attr name as objects.py reads)
-  8. Starter greatswords in Vael's Crossing use main_hand+two_handed=True (not invalid "two_hand")
-  9. OOB push_inventory_update sends real item data from get_inventory_display_data() instead of empty stub
-  10. `sense` command surfaces SENSE_DISPLAY atmospheric text for active room flags
-**Plans:** 5 plans
-
-Plans:
-- [x] 08-01-PLAN.md — Bug fixes (equip_slot, greatsword slots, OOB inventory) + investigation skill
-- [x] 08-02-PLAN.md — CmdStatus (character sheet) + CmdSense (room atmosphere)
-- [x] 08-03-PLAN.md — CmdBank (deposit/withdraw/balance) + CmdGroup (invite/accept/leave/kick/lootmode)
-- [x] 08-04-PLAN.md — CmdSearch (investigation skill check) + unified CmdUseAbility (items + abilities) + loadout gate
-- [x] 08-05-PLAN.md — CmdLoadout (ability presets) + CmdMap (ASCII text map with fog-of-war)
-
-### Phase 9: Content Activation
-**Goal**: Authored content becomes reachable — trainers bound to NPCs with TRAINER_REGISTRY entries, non-default recipes learnable via triggers, zone entry triggers firing, crafting stations added where missing
-**Depends on**: Phase 8
-**Requirements**: ACT-01, ACT-02, ACT-03, ACT-04, ACT-05
-**Note**: Flight network deferred (D-01/D-02). Remnance discovery deferred (D-06). Scope reduced to trainer wiring, recipe learning, triggers, NPC additions, and crafting stations.
-**Success Criteria** (what must be TRUE):
-  1. Vael's Crossing guild NPCs have trainer_id wired to TRAINER_REGISTRY; players can train skills at guild halls
-  2. Each wilderness zone has 1-2 specialist trainers matched to biome
-  3. Non-default recipes (iron_chainmail, antidote, steel_sword, etc.) are learnable through on_first_visit triggers at appropriate NPCs
-  4. All 5 zones have on_first_visit atmospheric entry triggers
-  5. Engineering workbench exists in Vael's Crossing; fire pits exist at wilderness camps
-**Plans:** 2 plans
-
-Plans:
-- [ ] 09-01-PLAN.md — TRAINER_REGISTRY wilderness entries + learn_recipe action handler
-- [ ] 09-02-PLAN.md — Zone spec wiring: trainer_id on NPCs, triggers, crafting stations, new wilderness NPCs
-
-### Phase 10: Node System Player-Ready
-**Goal**: L1 rooms navigable with mirrored exits and override descriptions; all 5 node effect types function mechanically in combat; stabilization has stamina cost and break conditions; awakening warnings alert players
-**Depends on**: Phase 8
-**Success Criteria** (what must be TRUE):
-  1. L1 rooms have exits mirroring L0 topology; players navigate the shadow dimension with their existing mental map
-  2. L1 rooms display override names/descriptions when active, revert when deactivated
-  3. Thermal node: fire +30%, water/ice -30%, burn DoT doubled, wet blocked
-  4. Cognitive node: mobs focus same target instead of splitting
-  5. Temporal node: DoT damage varies 50%-150% per tick
-  6. Stabilization drains stamina, breaks on combat/movement, 5-minute cooldown between attempts
-  7. Players receive atmospheric warnings during awakening stage; direct warning at ~55% failure
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 10-01-PLAN.md — L1 exit cloning + override application/restoration
-- [x] 10-02-PLAN.md — Node effect consumers: thermal/cognitive/temporal in combat systems
-- [x] 10-03-PLAN.md — Stabilization limits + awakening warnings + comprehensive tests
-
-### Phase 11: Quest MVP
-**Goal**: 20 authored quest specs become playable — CharacterQuest model tracks state, quest_engine.py handles acceptance/progress/completion/rewards, 4 event hooks fire progress, CmdQuest lets players manage quests, and all 20 quest specs enriched with names/descriptions/objectives/rewards
-**Depends on**: Phase 9
-**Success Criteria** (what must be TRUE):
-  1. A player talks to an NPC with an available quest, accepts it, and a CharacterQuest record is created with status="active"
-  2. Quest progress fires automatically: killing a mob updates kill objectives, picking up items updates collect objectives, entering rooms updates investigate objectives, talking to NPCs updates talk_to/deliver objectives
-  3. When all objectives are complete, the quest auto-completes, rewards are paid via action_vocabulary.execute_action(), and if next_quest_id exists the chain quest auto-offers
-  4. The `quest` command shows all active quests with progress bars, detail view with objectives and rewards, and abandon subcommand
-  5. Hard cap of 5 active quests enforced; one_chance flag prevents re-acceptance after failure
-  6. All 20 quest specs across 5 zones have enriched name, description, objectives list, and rewards list
-**Plans:** 5 plans
-
-Plans:
-- [ ] 11-01-PLAN.md — CharacterQuest model + migration + quest_engine.py core functions
-- [ ] 11-02-PLAN.md — New action handlers (give_scales, give_skill_xp, modify_node_failure) + area.quest() DSL update
-- [ ] 11-03-PLAN.md — Progress hooks (mobs/rooms/inventory/dialogue) + CmdAccept wiring + CmdQuest command
-- [ ] 11-04-PLAN.md — Quest spec enrichment: 20 quests across 5 zone files with names, descriptions, objectives, rewards
-- [ ] 11-05-PLAN.md — Test suite: test_quest_engine.py + test_action_vocabulary.py extensions
-
-### Phase 12: Launch Polish and Help System
-**Goal**: Connection screen, text map, lore journal, comprehensive help for every command/ability/system
-**Depends on**: Phase 11
-**Plans:** 0 plans
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c -> 5b -> 5c -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13
+Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b → 6c → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -344,32 +200,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 2. OOB Push and Desktop Client | 4/4 | Complete | 2026-03-25 |
 | 3. GUI Area Builder | 4/4 | Complete | 2026-03-25 |
 | 3.1 Mob Spawn Runtime (INSERTED) | 5/5 | Complete | 2026-03-25 |
-| 4. Domain Fingerprints and Guild Engine | 2/2 | Complete | 2026-03-26 |
-| 5. Ancestry Engine and Ability System | 5/5 | Complete | 2026-03-27 |
-| 6a. Base Attributes & Combat System | 7/7 | Complete | 2026-03-29 |
-| 6b. Spawn System, Skills & Mob AI | 5/5 | Complete | 2026-03-27 |
-| 6c. NPC Dialogue & Crafting | 5/5 | Complete | 2026-03-27 |
-| 5b. Ability Content Authoring (INSERTED) | 6/6 | Complete | 2026-03-27 |
-| 5c. Ability Polish & Resource Engine (INSERTED) | 4/4 | Complete | 2026-03-28 |
-| 7. Milestone 1 Content | 1/10 | In progress | - |
-| 8. Player Surface Commands | 5/5 | Complete | 2026-04-01 |
-| 9. Content Activation | 2/2 | Complete | 2026-04-02 |
-| 10. Node System Player-Ready | 3/3 | Complete    | 2026-04-03 |
-| 11. Quest MVP | 0/5 | Planned | - |
-| 12. Launch Polish and Help System | 0/? | Not planned | - |
-| 13. Gathering and Refining Pipeline | 0/? | Not planned | - |
-
-### Phase 13: Gathering and Refining Pipeline
-**Goal**: Players can acquire crafting ingredients through gameplay — gathering raw materials from zones, refining them into recipe ingredients, getting ingredients from mob loot drops, and buying basics from vendors. Closes the gap between authored zone materials and recipe ingredient requirements.
-**Depends on**: Phase 9 (trainers and recipes must be wired before ingredient acquisition matters)
-**Success Criteria** (what must be TRUE):
-  1. `gather`/`harvest`/`mine` command lets players collect raw materials from rooms with authored `area.material()` definitions
-  2. Refining pipeline converts raw materials to recipe ingredients (e.g., iron_ore -> iron_ingot at forge, wild_herb -> thornroot at campfire)
-  3. Mob loot tables drop ingredient-tagged items (raw_meat, raw_fish, leather_strip) from thematically appropriate mobs
-  4. At least one vendor NPC in Vael's Crossing sells basic ingredients (clean_water, spice, common crafting supplies)
-  5. Every recipe ingredient in RECIPE_REGISTRY has at least one acquisition path (gather, refine, loot, or vendor)
-  6. Zone material definitions map to specific gatherable item types per terrain tag
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 13 to break down)
+| 4. Domain Fingerprints and Guild Engine | 0/2 | Not started | - |
+| 5. Ancestry Engine and Ability System | 0/5 | Not started | - |
+| 6a. Base Attributes & Combat System | 0/7 | Not started | - |
+| 6b. Spawn System, Skills & Mob AI | 0/TBD | Not started | - |
+| 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
+| 7. Milestone 1 Content | 0/TBD | Not started | - |
+| 11. Quest MVP | 1/5 | In progress | - |

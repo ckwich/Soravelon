@@ -313,107 +313,42 @@ class CharacterAbility(models.Model):
         return f"{self.character.db_key}:{self.ability_id}"
 
 
-class KnownTopicRecord(models.Model):
+class CharacterQuest(models.Model):
     """
-    Tracks which dialogue topics a character has learned from each NPC.
+    Tracks a character's progress on a specific quest.
 
-    Used by the hint system to suppress already-known topics and re-surface
-    them when context changes (via context_hash comparison). Lazy creation:
-    no record = topic not yet learned from this NPC.
+    Per D-01: character FK, quest_id (str), status, progress (JSONField dict),
+    started_at, completed_at.
+    Per D-04: Three terminal states: complete, failed, abandoned. Active = in-progress.
+    Progress uses a dict keyed by objective key (e.g. {"kill_ash_wolf": 4, "collect_fang": 2})
+    so multi-objective quests track each objective independently.
     """
+
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("complete", "Complete"),
+        ("failed", "Failed"),
+        ("abandoned", "Abandoned"),
+    ]
 
     character = models.ForeignKey(
         "objects.ObjectDB",
         on_delete=models.CASCADE,
-        related_name="known_topics",
+        related_name="character_quests",
     )
-    npc_id = models.CharField(max_length=128)
-    topic_key = models.CharField(max_length=128)
-    context_hash = models.CharField(max_length=64, blank=True, default="")
-    learned_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("character", "npc_id", "topic_key")
-        indexes = [
-            models.Index(fields=["character", "npc_id"]),
-        ]
-
-    def __str__(self):
-        return f"{self.character.db_key}:{self.npc_id}/{self.topic_key}"
-
-
-class WorldEventLog(models.Model):
-    """
-    Log of significant world events.
-    Consumed by the LLM quest generation system and world-state queries.
-    """
-
-    event_type = models.CharField(max_length=64, db_index=True)
-    zone_id = models.CharField(max_length=64, null=True, blank=True, db_index=True)
-    faction_id = models.CharField(max_length=64, null=True, blank=True, db_index=True)
-    character_id = models.IntegerField(null=True, blank=True)
-    description = models.TextField()
-    data = models.JSONField(default=dict)
-    occurred_at = models.DateTimeField(auto_now_add=True, db_index=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["event_type", "occurred_at"]),
-            models.Index(fields=["zone_id", "occurred_at"]),
-            models.Index(fields=["faction_id", "occurred_at"]),
-        ]
-
-    def __str__(self):
-        return f"{self.event_type}:{self.zone_id}@{self.occurred_at}"
-
-
-class SpawnRecord(models.Model):
-    """
-    Tracks active and respawning mobs per room spawn slot.
-    One record per (room_id, spawn_index) pair.
-    """
-
-    room_id = models.IntegerField(db_index=True)
-    spawn_index = models.IntegerField()
-    mob_template = models.CharField(max_length=64)
-    active_mob_ids = models.JSONField(default=list)
-    respawn_at = models.DateTimeField(null=True, db_index=True)
-    is_named = models.BooleanField(default=False)
-    named_id = models.CharField(max_length=128, blank=True, default="")
-
-    class Meta:
-        unique_together = ("room_id", "spawn_index")
-        indexes = [
-            models.Index(fields=["respawn_at"]),
-            models.Index(fields=["is_named"]),
-        ]
-
-    def __str__(self):
-        return f"room={self.room_id}:idx={self.spawn_index}:{self.mob_template}"
-
-
-class CharacterRecipe(models.Model):
-    """
-    Tracks which crafting recipes a character has learned.
-
-    Recipes can be learned from trainer NPCs, recipe items, or granted by
-    default. Lazy creation: no record = recipe not known.
-    """
-
-    character = models.ForeignKey(
-        "objects.ObjectDB",
-        on_delete=models.CASCADE,
-        related_name="known_recipes",
+    quest_id = models.CharField(max_length=128, db_index=True)
+    status = models.CharField(
+        max_length=16, choices=STATUS_CHOICES, default="active"
     )
-    recipe_id = models.CharField(max_length=128)
-    learned_from = models.CharField(max_length=64, blank=True, default="")
-    learned_at = models.DateTimeField(auto_now_add=True)
+    progress = models.JSONField(default=dict)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        unique_together = ("character", "recipe_id")
         indexes = [
-            models.Index(fields=["character_id", "recipe_id"]),
+            models.Index(fields=["character", "status"]),
+            models.Index(fields=["character", "quest_id"]),
         ]
 
     def __str__(self):
-        return f"{self.character.db_key}:{self.recipe_id}"
+        return f"{self.character.db_key}:{self.quest_id}={self.status}"
