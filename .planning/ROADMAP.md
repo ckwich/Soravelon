@@ -292,9 +292,22 @@ Plans:
 - [ ] 09-02-PLAN.md — Zone spec wiring: trainer_id on NPCs, triggers, crafting stations, new wilderness NPCs
 
 ### Phase 10: Node System Player-Ready
-**Goal**: Layer 1 rooms have exits, descriptions, and mob spawns; all 5 node effect types function mechanically
+**Goal**: L1 rooms navigable with mirrored exits and override descriptions; all 5 node effect types function mechanically in combat; stabilization has stamina cost and break conditions; awakening warnings alert players
 **Depends on**: Phase 8
-**Plans:** 0 plans
+**Success Criteria** (what must be TRUE):
+  1. L1 rooms have exits mirroring L0 topology; players navigate the shadow dimension with their existing mental map
+  2. L1 rooms display override names/descriptions when active, revert when deactivated
+  3. Thermal node: fire +30%, water/ice -30%, burn DoT doubled, wet blocked
+  4. Cognitive node: mobs focus same target instead of splitting
+  5. Temporal node: DoT damage varies 50%-150% per tick
+  6. Stabilization drains stamina, breaks on combat/movement, 5-minute cooldown between attempts
+  7. Players receive atmospheric warnings during awakening stage; direct warning at ~55% failure
+**Plans:** 3 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — L1 exit cloning + override application/restoration
+- [ ] 10-02-PLAN.md — Node effect consumers: thermal/cognitive/temporal in combat systems
+- [ ] 10-03-PLAN.md — Stabilization limits + awakening warnings + comprehensive tests
 
 ### Phase 11: Quest MVP
 **Goal**: 20 authored quest specs become playable — acceptance, tracking, completion, rewards
@@ -327,7 +340,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 7. Milestone 1 Content | 1/10 | In progress | - |
 | 8. Player Surface Commands | 5/5 | Complete | 2026-04-01 |
 | 9. Content Activation | 2/2 | Complete | 2026-04-02 |
-| 10. Node System Player-Ready | 0/? | Not planned | - |
+| 10. Node System Player-Ready | 0/3 | Planned | - |
 | 11. Quest MVP | 0/? | Not planned | - |
 | 12. Launch Polish and Help System | 0/? | Not planned | - |
 | 13. Gathering and Refining Pipeline | 0/? | Not planned | - |
