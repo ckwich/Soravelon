@@ -92,10 +92,21 @@ def get_player_damage_to_mob(base_player_damage, mob, character):
 
 
 def apply_resistance(damage, element, target):
-    """Apply elemental resistance. Minimum 1 damage."""
+    """Apply elemental resistance and node effect modifiers. Minimum 1 damage."""
     resistances = target.db.resistances or {}
     resistance  = resistances.get(element, 0.0)
-    return max(1, int(damage * (1 - resistance)))
+    reduced = int(damage * (1 - resistance))
+
+    # Thermal node modifier: fire +30%, water/ice -30%
+    room = getattr(target, "location", None)
+    if room and hasattr(room, "tags"):
+        if room.tags.has("burn_enhanced", category="node_effect"):
+            if element in ("fire",):
+                reduced = int(reduced * 1.3)
+            elif element in ("water", "ice"):
+                reduced = int(reduced * 0.7)
+
+    return max(1, reduced)
 
 
 # ---------------------------------------------------------------------------

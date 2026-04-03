@@ -149,6 +149,12 @@ def apply_effect(target, effect_type, duration, magnitude=1.0, source_id=None):
     if _has_immunity(target, effect_type):
         return (False, f"Immune to {effect_type}.")
 
+    # Thermal node: wet status blocked in rooms with wet_suppressed tag
+    if effect_type == "wet":
+        room = getattr(target, "location", None)
+        if room and hasattr(room, "tags") and room.tags.has("wet_suppressed", category="node_effect"):
+            return (False, "The thermal distortion evaporates the moisture instantly.")
+
     effects = _get_effects(target)
 
     if effect_type in STACKABLE_EFFECTS:
