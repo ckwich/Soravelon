@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Phase 12 context gathered
-last_updated: "2026-04-03T20:07:06.069Z"
+status: Executing
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-04-03T22:29:12Z"
 progress:
   total_phases: 10
-  completed_phases: 9
-  total_plans: 53
-  completed_plans: 51
+  completed_phases: 6
+  total_plans: 33
+  completed_plans: 31
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 06a — base-attributes-and-combat
+**Current focus:** Phase 12 — launch-polish-help
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
+Phase: 12-launch-polish-help
+Plan: 02 of 3 complete
 
 ## Performance Metrics
 
@@ -72,8 +72,7 @@ Plan: Not started
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
-| Phase 11 P03 | 4 | 2 tasks | 7 files |
-| Phase 11 P05 | 7 | 2 tasks | 2 files |
+| Phase 12 P02 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -141,8 +140,8 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
-- [Phase 11]: Quest progress hooks placed after existing game logic but before infrastructure; all quest_engine imports lazy
-- [Phase 11]: Used unittest.TestCase for action handler tests (not EvenniaTest) since handlers use MagicMock with no DB dependencies
+- [Phase 12]: CmdHelp overrides Evennia default via same key='help' in CharacterCmdSet; ABILITIES import is lazy inside func()
+- [Phase 12]: 92 help entries across 8 categories (New Player, Systems, Commands, Ancestries, Guilds, Skills, World Lore, General)
 
 ### Pending Todos
 
@@ -156,6 +155,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T20:07:06.064Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-launch-polish-help/12-CONTEXT.md
+Last session: 2026-04-03T22:29:12Z
+Stopped at: Completed 12-02-PLAN.md
+Resume file: None
