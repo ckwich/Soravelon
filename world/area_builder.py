@@ -755,7 +755,9 @@ class AreaBuilder:
     def quest(self, quest_id, **kwargs):
         """
         Register a quest definition on the zone object.
-        Does NOT implement quest logic — stores the definition.
+        Accepts both legacy flat format and new enriched format.
+        Per D-21: DSL stores all fields needed by quest_engine.py.
+        Per D-22: All fields JSON-serializable for builder app.
         """
         if not self._zone_obj:
             raise AreaBuilderValidationError(
@@ -764,11 +766,20 @@ class AreaBuilder:
 
         quest_def = {
             "quest_id": quest_id,
+            # New enriched fields (D-21, D-22)
+            "name": kwargs.get("name", quest_id),
+            "description": kwargs.get("description", ""),
             "quest_type": kwargs.get("quest_type"),
+            "quest_giver": kwargs.get("quest_giver"),
+            "objectives": kwargs.get("objectives", []),
+            "rewards": kwargs.get("rewards", []),
+            "next_quest_id": kwargs.get("next_quest_id"),
+            "one_chance": kwargs.get("one_chance", False),
+            # Sharing (deferred but stored for future use)
             "can_share": kwargs.get("can_share", False),
             "share_radius": kwargs.get("share_radius", 1),
             "share_cap": kwargs.get("share_cap", 6),
-            "quest_giver": kwargs.get("quest_giver"),
+            # Legacy flat fields (backward compat — quest_engine normalizes)
             "objective_type": kwargs.get("objective_type"),
             "objective_target": kwargs.get("objective_target"),
             "objective_count": kwargs.get("objective_count", 1),
@@ -779,11 +790,17 @@ class AreaBuilder:
             "consequence_medium": kwargs.get("consequence_medium"),
         }
 
-        # Silently ignore level_range (legacy field)
-        # kwargs.get("level_range") intentionally not stored
+        # Silently ignore level_range (legacy field, no visible levels)
 
         current = list(self._zone_obj.db.quest_definitions or [])
-        current.append(quest_def)
+        replaced = False
+        for i, existing in enumerate(current):
+            if existing.get("quest_id") == quest_id:
+                current[i] = quest_def
+                replaced = True
+                break
+        if not replaced:
+            current.append(quest_def)
         self._zone_obj.db.quest_definitions = current
 
     # ------------------------------------------------------------------
