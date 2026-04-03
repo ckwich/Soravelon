@@ -33,6 +33,8 @@ def initialize_node(zone_obj, node_type, center_room, radius,
     if zone_obj.db.zone_id:
         zone_obj.tags.add(zone_obj.db.zone_id, category="zone_id")
 
+    # First pass: create L1 rooms and build L0→L1 mapping
+    l0_to_l1 = {}  # L0 room id → L1 room object
     layer1_ids = []
     for layer0_room in layer0_rooms:
         layer1_room = create_object(
@@ -49,6 +51,29 @@ def initialize_node(zone_obj, node_type, center_room, radius,
 
         layer0_room.db.layer1_room_id = layer1_room.id
         layer1_ids.append(layer1_room.id)
+        l0_to_l1[layer0_room.id] = layer1_room
+
+    # Second pass: clone L0 exits into L1 rooms (D-02: created at build time)
+    from typeclasses.exits import SoravelonExit
+    for layer0_room in layer0_rooms:
+        l1_source = l0_to_l1.get(layer0_room.id)
+        if not l1_source:
+            continue
+        for exit_obj in layer0_room.exits:
+            dest = exit_obj.destination
+            if not dest or dest.id not in l0_to_l1:
+                # Only clone exits where both endpoints have L1 counterparts (D-03)
+                continue
+            l1_dest = l0_to_l1[dest.id]
+            l1_exit = create_object(
+                SoravelonExit,
+                key=exit_obj.key,
+                location=l1_source,
+                destination=l1_dest,
+            )
+            l1_exit.tags.add("inactive", category="node_layer")
+            if zone_obj.db.zone_id:
+                l1_exit.tags.add(zone_obj.db.zone_id, category="zone_id")
 
     script = create_script(
         NodeScript,
