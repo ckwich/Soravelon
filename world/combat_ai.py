@@ -271,6 +271,20 @@ def get_mob_target(mob, combat_handler):
     if not valid:
         return None
 
+    # Cognitive node: all mobs focus same target
+    # Contract: CombatScript must set mob.ndb.current_target_id after get_mob_target() returns
+    room = getattr(mob, "location", None)
+    if room and hasattr(room, "tags") and room.tags.has("mob_coordination", category="node_effect"):
+        mob_combatants = _get_mob_combatants(combat_handler)
+        for other_mob in mob_combatants:
+            if other_mob.id != mob.id:
+                other_target_id = getattr(other_mob.ndb, "current_target_id", None)
+                if other_target_id is not None:
+                    for p in valid:
+                        if p.id == other_target_id:
+                            return p
+        # If no other mob has a target yet, fall through to normal logic
+
     # Priority 1: last attacker
     last_attacker_id = getattr(mob.ndb, "last_attacker_id", None)
     if last_attacker_id is not None:
