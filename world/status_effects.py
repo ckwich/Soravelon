@@ -376,6 +376,19 @@ def tick_effects(target):
             spec = STACKABLE_EFFECTS[etype]
             diminishing = spec["diminishing"]
             damage = sum(diminishing[:stacks])
+
+            # Node effect modifiers on DoT damage
+            room = getattr(target, "location", None)
+            if room and hasattr(room, "tags"):
+                # D-06: Thermal node doubles burn DoT
+                if etype == "burn" and room.tags.has("burn_enhanced", category="node_effect"):
+                    damage = damage * 2
+                # D-08: Temporal node adds 50%-150% variance to all DoTs
+                if room.tags.has("dot_tick_variance", category="node_effect"):
+                    import random
+                    variance = random.uniform(0.5, 1.5)
+                    damage = int(damage * variance)
+
             current_hp = target.ndb.hp or 0
             target.ndb.hp = current_hp - damage
             messages.append(
