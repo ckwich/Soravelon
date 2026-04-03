@@ -302,12 +302,12 @@ Plans:
   5. Temporal node: DoT damage varies 50%-150% per tick
   6. Stabilization drains stamina, breaks on combat/movement, 5-minute cooldown between attempts
   7. Players receive atmospheric warnings during awakening stage; direct warning at ~55% failure
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 10-01-PLAN.md — L1 exit cloning + override application/restoration
-- [ ] 10-02-PLAN.md — Node effect consumers: thermal/cognitive/temporal in combat systems
-- [ ] 10-03-PLAN.md — Stabilization limits + awakening warnings + comprehensive tests
+- [x] 10-01-PLAN.md — L1 exit cloning + override application/restoration
+- [x] 10-02-PLAN.md — Node effect consumers: thermal/cognitive/temporal in combat systems
+- [x] 10-03-PLAN.md — Stabilization limits + awakening warnings + comprehensive tests
 
 ### Phase 11: Quest MVP
 **Goal**: 20 authored quest specs become playable — acceptance, tracking, completion, rewards
@@ -340,7 +340,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 7. Milestone 1 Content | 1/10 | In progress | - |
 | 8. Player Surface Commands | 5/5 | Complete | 2026-04-01 |
 | 9. Content Activation | 2/2 | Complete | 2026-04-02 |
-| 10. Node System Player-Ready | 1/3 | In progress | - |
+| 10. Node System Player-Ready | 3/3 | Complete   | 2026-04-03 |
 | 11. Quest MVP | 0/? | Not planned | - |
 | 12. Launch Polish and Help System | 0/? | Not planned | - |
 | 13. Gathering and Refining Pipeline | 0/? | Not planned | - |
