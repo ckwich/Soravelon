@@ -19,7 +19,6 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 5: Ancestry Engine and Ability System** - 4 playable ancestries and all 90 subclasses with 360+ ability definitions
 - [ ] **Phase 6: Combat, Skills, and NPC Templates** - Ability-driven combat engine, proficiency skill tracks, and world-state NPC dialogue system
 - [ ] **Phase 7: Milestone 1 Content** - Hub City 1, 4 starter zones (3 Layer 0 + 1 Layer 1), and basic equipment authored via GUI builder
-- [ ] **Phase 12: Launch Polish and Help** - Connection screen, comprehensive help system, lore journal, new player funnel
 
 ## Phase Details
 
@@ -190,24 +189,6 @@ Plans:
   4. Basic weapons and armor are obtainable from zone loot and city vendors with no procedural affixes
 **Plans**: TBD
 
-### Phase 12: Launch Polish and Help
-**Goal**: New player experience is smooth from connection to first combat — atmospheric connection screen sets the dark fantasy tone, comprehensive help system covers every command and ability, lore journal lets players revisit discovered fragments, and guided prompts with ancestry-based starter kits onboard new players
-**Depends on**: Phase 11 (quest system for guidance hints), Phase 5 (ancestry engine for starter kits, ability registry for dynamic help)
-**Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11, D-12
-**Success Criteria** (what must be TRUE):
-  1. A connecting player sees dark fantasy atmospheric text before login, with clear connect/create instructions
-  2. `help <ability_name>` dynamically generates formatted help from the ABILITIES registry with zero maintenance
-  3. 70+ hand-written help entries cover all custom commands, systems, ancestries, guilds, and skills
-  4. `lore` shows zone-organized fragment collection progress; `lore <zone>` displays collected fragment text
-  5. New players receive guided prompts for ancestry choice, guild discovery, and NPC interaction
-  6. Each ancestry's starter kit places thematically appropriate gear in inventory after ancestry selection
-**Plans**: 3 plans
-
-Plans:
-- [ ] 12-01-PLAN.md — Connection screen + ancestry starter kits + new player guidance prompts
-- [ ] 12-02-PLAN.md — Dynamic ability help (CmdHelp override) + 100+ hand-written help entries
-- [ ] 12-03-PLAN.md — Lore journal (CmdLore + lore fragment registry + cmd_search bug fix)
-
 ## Progress
 
 **Execution Order:**
@@ -225,5 +206,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6b. Spawn System, Skills & Mob AI | 0/TBD | Not started | - |
 | 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
-| 11. Quest MVP | 4/5 | Complete    | 2026-04-03 |
-| 12. Launch Polish and Help | 0/3 | Not started | - |
+| 12. Launch Polish and Help | 1/3 | In progress | - |

@@ -150,6 +150,39 @@ class Character(ObjectParent, DefaultCharacter):
             from world.ability_engine import initialize_domain_resource
             initialize_domain_resource(self)
 
+        # New player guidance (after all init is complete)
+        self._send_new_player_guidance()
+
+    def _send_new_player_guidance(self):
+        """Send context-sensitive guidance prompts to new players."""
+        # Skip guidance for experienced players
+        if self.db.backend_level and self.db.backend_level > 1:
+            return
+        domain_scores = self.db.domain_scores or {}
+        if len(domain_scores) > 2:
+            return
+
+        self.msg("")  # blank line separator
+
+        # Step 1: ancestry not yet chosen
+        if self.db.ancestry is None:
+            self.msg("|y[New Player]|n You must first choose your ancestry. "
+                     "Type |wancestry|n to begin.")
+            return
+
+        # Step 2: no guild yet
+        if self.db.guild_id is None:
+            self.msg("|y[Hint]|n Your actions shape which guilds take notice of you. "
+                     "Explore the world and practice your skills — a guild may discover "
+                     "you when you have proven yourself.")
+
+        # Step 3: no active quests (ancestry + guild both set)
+        if self.db.guild_id is not None:
+            active_quests = self.db.active_quest_ids or []
+            if not active_quests:
+                self.msg("|y[Hint]|n Speak with the townsfolk in Vael's Crossing. "
+                         "Type |wtalk|n near an NPC to begin a conversation.")
+
     def at_pre_unpuppet(self):
         """Called just before a player disconnects from this character."""
         from world.world_state import commit_session_xp

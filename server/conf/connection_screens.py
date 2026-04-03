@@ -25,16 +25,18 @@ from django.conf import settings
 from evennia import utils
 
 CONNECTION_SCREEN = """
-|b==============================================================|n
- Welcome to |g{}|n, version {}!
+ |xThe old patterns stir beneath the stone. Wards flicker and fade
+ where once they held for centuries. The dragon-built world is failing,
+ and those who inherit it must learn to survive what comes next.|n
 
- If you have an existing account, connect to it by typing:
-      |wconnect <username> <password>|n
- If you need to create an account, type (without the <>'s):
-      |wcreate <username> <password>|n
+ |m~ |rS O R A V E L O N|n |m~|n
+ |xA dark fantasy MUD  |w{}|n |xv{}|n
 
- If you have spaces in your username, enclose it in quotes.
+ To connect an existing account:  |wconnect <username> <password>|n
+ To forge a new identity:         |wcreate <username> <password>|n
+
+ |xEnclose usernames with spaces in quotes.|n
  Enter |whelp|n for more info. |wlook|n will re-show this screen.
-|b==============================================================|n""".format(
+""".format(
     settings.SERVERNAME, utils.get_evennia_version("short")
 )
