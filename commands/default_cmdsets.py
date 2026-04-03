@@ -52,6 +52,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUseAbility())
         from commands.combat_commands import CmdAttack
         self.add(CmdAttack())
+        # Lore journal (Phase 12)
+        from commands.cmd_lore import CmdLore
+        self.add(CmdLore())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
