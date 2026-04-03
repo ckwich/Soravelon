@@ -1919,13 +1919,26 @@ def build():
     area.npc(ash_road_09, "npc_merchant_reva", faction="consortium")
 
     # ==================================================================
-    #  QUEST STUBS (D-23)
+    #  QUESTS (enriched specs — D-21/D-22)
     # ==================================================================
 
     area.quest(
         "ashreach_wolf_overpopulation",
+        name="Wolf Cull",
+        description="Captain Ashwyn reports the ash wolf packs are growing bolder, threatening travelers on the Ashway. The beasts have lost their fear of fire and steel alike. Thin their numbers before someone gets killed.",
         quest_type="kill",
         quest_giver="npc_warden_captain_ashwyn",
+        objectives=[
+            {"type": "kill", "target": "ash_wolf", "count": 10,
+             "description": "Cull ash wolves on the plains"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 80},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 200},
+            {"action_type": "echo", "message": "|gAshwyn marks your tally with grim satisfaction. \"Good hunting. The Ashway will be safer for it -- but I've another matter, if you're willing.\"|n"},
+        ],
+        next_quest_id="ashreach_bandit_problem",
+        # Legacy fields (backward compat)
         objective_type="kill",
         objective_target="ash_wolf",
         objective_count=10,
@@ -1936,8 +1949,21 @@ def build():
 
     area.quest(
         "ashreach_bandit_problem",
+        name="Ashway Brigands",
+        description="With the wolves thinned, Ashwyn turns to the next problem: bandits have established a camp near the old trade route. They prey on merchants and refugees alike, and the Wardens are spread too thin to deal with them.",
         quest_type="kill",
         quest_giver="npc_warden_captain_ashwyn",
+        objectives=[
+            {"type": "kill", "target": "ashreach_bandit", "count": 6,
+             "description": "Eliminate Ashreach bandits along the Ashway"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 100},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 300},
+            {"action_type": "give_skill_xp", "skill_id": "combat", "count": 3},
+            {"action_type": "echo", "message": "|gAshwyn clasps your arm in the Warden salute. \"The Ashway breathes easier tonight. You've done the Wardens a true service.\"|n"},
+        ],
+        # Legacy fields (backward compat)
         objective_type="kill",
         objective_target="ashreach_bandit",
         objective_count=6,
@@ -1948,8 +1974,20 @@ def build():
 
     area.quest(
         "ashreach_ruin_investigation",
+        name="Voices in the Dust",
+        description="Scholar Obed believes the wind-worn ruins scattered across the plains hold records of a civilization that predates the Dragon Empire. The inscriptions are fading fast -- document what remains before the ash-winds erase them entirely.",
         quest_type="investigate",
         quest_giver="npc_hermit_scholar_obed",
+        objectives=[
+            {"type": "investigate", "target": "ashreach_ancient_ruins", "count": 3,
+             "description": "Investigate ancient ruin sites on the Ashreach plains"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 70},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 5},
+            {"action_type": "echo", "message": "|gObed's eyes widen as he reads your rubbings. \"Remarkable. These glyphs predate everything in my collection. The world was old before the dragons came, it seems.\"|n"},
+        ],
+        # Legacy fields (backward compat)
         objective_type="discover",
         objective_target="lore_fragment",
         objective_count=3,

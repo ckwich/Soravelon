@@ -2220,29 +2220,68 @@ def build():
     )
 
     # ==================================================================
-    #  QUEST STUBS (D-23)
+    #  QUESTS (enriched specs — D-21/D-22)
     # ==================================================================
 
     area.quest("sc_q_raider_bounty",
-               quest_type="combat",
-               quest_giver="npc_coastguard_captain_aldren",
-               objective_type="kill",
-               objective_target="coastal_raider",
-               objective_count=10)
+        name="Coastal Bounty",
+        description="Captain Aldren has posted a bounty on the sea raiders harassing fishing boats along the coast. They strike at dawn from hidden coves, and the coastguard can't cover every inlet. End their threat.",
+        quest_type="combat",
+        quest_giver="npc_coastguard_captain_aldren",
+        objectives=[
+            {"type": "kill", "target": "sea_raider", "count": 10,
+             "description": "Eliminate sea raiders along the coast"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 100},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 250},
+            {"action_type": "give_skill_xp", "skill_id": "combat", "count": 4},
+            {"action_type": "echo", "message": "|gAldren crosses the last name off his bounty list. \"Ten less raiders on the water. The fishing fleet can breathe again. Your bounty, well earned.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="kill",
+        objective_target="coastal_raider",
+        objective_count=10,
+    )
 
     area.quest("sc_q_deep_cave_rumors",
-               quest_type="exploration",
-               quest_giver="npc_fisherman_old_korrin",
-               objective_type="investigate",
-               objective_target="sea_cave_deep_pool",
-               objective_count=1)
+        name="Whispers from the Deep",
+        description="Old Korrin swears he heard voices echoing from the sea caves at low tide. The other fishermen think he's gone salt-mad, but Korrin has been on these waters for fifty years. Something is down there.",
+        quest_type="exploration",
+        quest_giver="npc_fisherman_old_korrin",
+        objectives=[
+            {"type": "investigate", "target": "sc_deep_sea_cave", "count": 1,
+             "description": "Investigate the deep sea cave at low tide"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 80},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 5},
+            {"action_type": "echo", "message": "|gKorrin listens to your account with narrowed eyes. \"I knew it. Fifty years on these waters and my ears haven't failed me yet. Whatever you found down there, it's just the beginning.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="investigate",
+        objective_target="sea_cave_deep_pool",
+        objective_count=1,
+    )
 
     area.quest("sc_q_smuggler_delivery",
-               quest_type="delivery",
-               quest_giver="npc_smuggler_contact_veyra",
-               objective_type="deliver",
-               objective_target="contraband_package",
-               objective_count=1)
+        name="Quiet Cargo",
+        description="Veyra needs a package delivered to a contact at the docks. No questions asked. The package is sealed and surprisingly heavy for its size. Keep it quiet, keep it dry, and don't look inside.",
+        quest_type="delivery",
+        quest_giver="npc_smuggler_contact_veyra",
+        objectives=[
+            {"type": "deliver", "target": "npc_dock_contact", "count": 1,
+             "description": "Deliver the sealed package to Veyra's dock contact"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 90},
+            {"action_type": "echo", "message": "|gVeyra's contact weighs the package in practiced hands and nods once. A pouch of coins appears from nowhere. \"Veyra says thanks. You never saw me.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="deliver",
+        objective_target="contraband_package",
+        objective_count=1,
+    )
 
     # ==================================================================
     #  TRIGGERS (09-02: zone entry, recipe learning)

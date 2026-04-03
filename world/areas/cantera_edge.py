@@ -2299,25 +2299,63 @@ def build():
     )
 
     # ------------------------------------------------------------------
-    # Quest stubs
+    # Quests (enriched specs -- D-21/D-22)
     # ------------------------------------------------------------------
     area.quest("cantera_resupply",
+        name="Warden Resupply",
+        description="Warden Kaelen's outpost is running dangerously low on supplies. The node corruption has made the usual routes impassable, and the forward positions need crates from the staging camp before they're cut off entirely.",
         quest_type="delivery",
         quest_giver="npc_warden_kaelen",
+        objectives=[
+            {"type": "deliver", "target": "npc_warden_supply_sergeant", "count": 3,
+             "description": "Deliver supply crates to the forward Warden positions"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 80},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 200},
+            {"action_type": "echo", "message": "|gKaelen checks the supply manifest with visible relief. \"Three crates received. The forward posts can hold another week now. The Wardens won't forget this.\"|n"},
+        ],
+        # Legacy fields (backward compat)
         objective_type="deliver",
         objective_target="warden_supplies",
         objective_count=3,
     )
+
     area.quest("cantera_lost_traveler",
+        name="The Lost Traveler",
+        description="Mirren is lost and frightened in the twisted forest paths near the cantera. The node corruption has warped the landmarks beyond recognition. Find the ranger at the forest edge who knows the safe routes out.",
         quest_type="escort",
         quest_giver="npc_traveler_mirren",
+        objectives=[
+            {"type": "talk_to", "target": "npc_ranger_forest_edge", "count": 1,
+             "description": "Speak with the ranger about safe passage for Mirren"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 60},
+            {"action_type": "echo", "message": "|gMirren's shoulders sag with relief. \"A way out. Thank you -- I thought I'd wander these twisted paths forever. Take this, it's all I can offer.\"|n"},
+        ],
+        # Legacy fields (backward compat)
         objective_type="escort",
         objective_target="fe_trailhead",
         objective_count=1,
     )
+
     area.quest("cantera_node_study",
+        name="Node Resonance Samples",
+        description="Druid Thaelen needs resonance samples from around the active node. The energy distortions make collection dangerous -- the node pulses erratically, and each sample must be gathered during a lull in the resonance cycle.",
         quest_type="investigation",
         quest_giver="npc_druid_thaelen",
+        objectives=[
+            {"type": "collect", "target": "resonance_sample", "count": 5,
+             "description": "Collect node resonance samples from around the active node"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 100},
+            {"action_type": "modify_node_failure", "zone_id": "cantera_edge", "delta": -5.0},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
+            {"action_type": "echo", "message": "|gThaelen cradles the resonance samples with reverent care. \"These readings... the node is more unstable than I feared, but your samples may hold the key to stabilizing it.\"|n"},
+        ],
+        # Legacy fields (backward compat)
         objective_type="collect",
         objective_target="node_fragment",
         objective_count=5,

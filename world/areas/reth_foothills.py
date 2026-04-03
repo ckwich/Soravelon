@@ -2187,29 +2187,70 @@ def build():
     )
 
     # ==================================================================
-    #  QUEST STUBS (D-23: viewable/editable, no implementation)
+    #  QUESTS (enriched specs — D-21/D-22)
     # ==================================================================
 
     area.quest("rf_q_lost_miners",
-               quest_type="investigation",
-               quest_giver="npc_foreman_halvek",
-               objective_type="investigate",
-               objective_target="missing_miners",
-               objective_count=3)
+        name="Lost in the Deep",
+        description="Foreman Halvek's survey team went silent three days ago in the mountain passages. They were mapping new tunnels when contact was lost. Check the passages for signs of them -- or whatever drove them underground.",
+        quest_type="investigation",
+        quest_giver="npc_foreman_halvek",
+        objectives=[
+            {"type": "investigate", "target": "rf_mountain_passage", "count": 3,
+             "description": "Search mountain passages for signs of the lost miners"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 90},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 200},
+            {"action_type": "echo", "message": "|gHalvek's weathered face creases with relief. \"Alive, then. Thank the stone. The Consortium will remember this -- and so will I.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="investigate",
+        objective_target="missing_miners",
+        objective_count=3,
+    )
 
     area.quest("rf_q_troll_menace",
-               quest_type="combat",
-               quest_giver="npc_warden_captain_serra",
-               objective_type="kill",
-               objective_target="rock_troll",
-               objective_count=5)
+        name="Troll Country",
+        description="Captain Serra warns that trolls have moved into the lower foothills from their highland territories. They must be driven back before they threaten the mining camps and cut off the ore supply entirely.",
+        quest_type="combat",
+        quest_giver="npc_warden_captain_serra",
+        objectives=[
+            {"type": "kill", "target": "mountain_troll", "count": 5,
+             "description": "Slay mountain trolls in the foothills"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 120},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 250},
+            {"action_type": "give_skill_xp", "skill_id": "combat", "count": 4},
+            {"action_type": "echo", "message": "|gSerra examines the troll-tooth trophies with a soldier's eye. \"Five less to worry about. The foothills won't thank you, but the miners will.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="kill",
+        objective_target="rock_troll",
+        objective_count=5,
+    )
 
     area.quest("rf_q_rare_ingredients",
-               quest_type="gathering",
-               quest_giver="npc_hermit_alchemist_old_renn",
-               objective_type="gather",
-               objective_target="rare_mountain_ingredient",
-               objective_count=4)
+        name="Mountain Remedies",
+        description="Old Renn needs rare alpine ingredients that only grow at high elevation where the air thins and the rock bleeds iron. Gather them before the season turns and the frost kills the last of the growth.",
+        quest_type="gathering",
+        quest_giver="npc_hermit_alchemist_old_renn",
+        objectives=[
+            {"type": "collect", "target": "rare_alpine_ingredient", "count": 4,
+             "description": "Gather rare alpine ingredients from the high foothills"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 70},
+            {"action_type": "give_skill_xp", "skill_id": "herbalism", "count": 4},
+            {"action_type": "learn_recipe", "recipe_id": "mountain_tonic"},
+            {"action_type": "echo", "message": "|gRenn sniffs each ingredient with an alchemist's precision. \"Perfect specimens. Here -- I'll teach you the mountain tonic. The recipe is old, older than the Empire.\"|n"},
+        ],
+        # Legacy fields (backward compat)
+        objective_type="gather",
+        objective_target="rare_mountain_ingredient",
+        objective_count=4,
+    )
 
     # ==================================================================
     #  MATERIALS (D-24: zone-level harvestable materials)
