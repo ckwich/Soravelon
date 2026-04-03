@@ -4,10 +4,11 @@ Action Vocabulary for Soravelon.
 Shared dispatch module for all trigger-driven and command-driven game events.
 Every action type in the game routes through execute_action().
 
-13 action types (D-07, D-24):
+16 action types (D-07, D-24):
   Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
                modify_standing, modify_attunement, log_world_event, despawn_self,
-               spawn_mob, add_room_flag
+               spawn_mob, add_room_flag, give_scales, give_skill_xp,
+               modify_node_failure
   Stubs (D-05): set_quest_flag, open_dialogue
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
@@ -242,22 +243,55 @@ def _action_add_room_flag(action_dict, context, _depth):
 
 
 
-def _handle_learn_recipe(action_dict, context, _depth):
-    """Teach a recipe to the triggering character."""
-    from world.crafting_engine import learn_recipe as _learn_recipe
-
+def _handle_give_scales(action_dict, context, _depth):
+    """Award Scales to character's carried_scales."""
     character = context.get("character")
     if not character:
-        return False, "No character in context for learn_recipe."
-    recipe_id = action_dict.get("recipe_id")
-    if not recipe_id:
-        return False, "learn_recipe action missing recipe_id."
-    learned_from = action_dict.get("learned_from", "")
-    success, msg = _learn_recipe(character, recipe_id, learned_from=learned_from)
-    if success:
-        echo_msg = action_dict.get("message", f"You have learned a new recipe: {recipe_id}.")
-        character.msg(echo_msg)
-    return success, msg
+        return False, "give_scales: no character in context"
+    amount = action_dict.get("amount", 0)
+    if amount <= 0:
+        return False, "give_scales: invalid amount"
+    current = character.db.carried_scales or 0
+    character.db.carried_scales = current + amount
+    character.msg(f"|y[+{amount} Scales]|n")
+    return True, ""
+
+
+def _handle_give_skill_xp(action_dict, context, _depth):
+    """Award skill XP via the ndb accumulator pattern."""
+    character = context.get("character")
+    if not character:
+        return False, "give_skill_xp: no character in context"
+    skill_id = action_dict.get("skill_id")
+    count = action_dict.get("count", 1)
+    if not skill_id:
+        return False, "give_skill_xp: missing skill_id"
+    from world.skill_engine import accumulate_skill_use
+    accumulate_skill_use(character, skill_id, count)
+    character.msg(f"|g[+{count} {skill_id.replace('_', ' ').title()} XP]|n")
+    return True, ""
+
+
+def _handle_modify_node_failure(action_dict, context, _depth):
+    """Adjust node failure percentage for a zone."""
+    zone_id = action_dict.get("zone_id")
+    delta = action_dict.get("delta", 0)
+    if not zone_id:
+        return False, "modify_node_failure: missing zone_id"
+    import evennia
+    zone_objs = evennia.search_tag(zone_id, category="zone_id")
+    if not zone_objs:
+        return False, f"modify_node_failure: zone '{zone_id}' not found"
+    zone_obj = zone_objs[0]
+    scripts = zone_obj.scripts.get("node_script")
+    if not scripts:
+        return False, f"modify_node_failure: no node_script on zone '{zone_id}'"
+    script = scripts[0]
+    old_failure = script.db.failure
+    new_failure = max(0.0, min(100.0, old_failure + delta))
+    script.db.failure = new_failure
+    script._update_state(old_failure, new_failure)
+    return True, ""
 
 
 def _stub_handler(action_dict, context, _depth):
@@ -284,7 +318,9 @@ ACTION_HANDLERS = {
     "open_dialogue": _stub_handler,
     "spawn_mob": _handle_spawn_mob,
     "add_room_flag": _action_add_room_flag,
-    "learn_recipe": _handle_learn_recipe,
+    "give_scales": _handle_give_scales,
+    "give_skill_xp": _handle_give_skill_xp,
+    "modify_node_failure": _handle_modify_node_failure,
 }
 
 
