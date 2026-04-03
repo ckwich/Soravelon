@@ -310,9 +310,23 @@ Plans:
 - [x] 10-03-PLAN.md — Stabilization limits + awakening warnings + comprehensive tests
 
 ### Phase 11: Quest MVP
-**Goal**: 20 authored quest specs become playable — acceptance, tracking, completion, rewards
+**Goal**: 20 authored quest specs become playable — CharacterQuest model tracks state, quest_engine.py handles acceptance/progress/completion/rewards, 4 event hooks fire progress, CmdQuest lets players manage quests, and all 20 quest specs enriched with names/descriptions/objectives/rewards
 **Depends on**: Phase 9
-**Plans:** 0 plans
+**Success Criteria** (what must be TRUE):
+  1. A player talks to an NPC with an available quest, accepts it, and a CharacterQuest record is created with status="active"
+  2. Quest progress fires automatically: killing a mob updates kill objectives, picking up items updates collect objectives, entering rooms updates investigate objectives, talking to NPCs updates talk_to/deliver objectives
+  3. When all objectives are complete, the quest auto-completes, rewards are paid via action_vocabulary.execute_action(), and if next_quest_id exists the chain quest auto-offers
+  4. The `quest` command shows all active quests with progress bars, detail view with objectives and rewards, and abandon subcommand
+  5. Hard cap of 5 active quests enforced; one_chance flag prevents re-acceptance after failure
+  6. All 20 quest specs across 5 zones have enriched name, description, objectives list, and rewards list
+**Plans:** 5 plans
+
+Plans:
+- [ ] 11-01-PLAN.md — CharacterQuest model + migration + quest_engine.py core functions
+- [ ] 11-02-PLAN.md — New action handlers (give_scales, give_skill_xp, modify_node_failure) + area.quest() DSL update
+- [ ] 11-03-PLAN.md — Progress hooks (mobs/rooms/inventory/dialogue) + CmdAccept wiring + CmdQuest command
+- [ ] 11-04-PLAN.md — Quest spec enrichment: 20 quests across 5 zone files with names, descriptions, objectives, rewards
+- [ ] 11-05-PLAN.md — Test suite: test_quest_engine.py + test_action_vocabulary.py extensions
 
 ### Phase 12: Launch Polish and Help System
 **Goal**: Connection screen, text map, lore journal, comprehensive help for every command/ability/system
@@ -341,7 +355,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 8. Player Surface Commands | 5/5 | Complete | 2026-04-01 |
 | 9. Content Activation | 2/2 | Complete | 2026-04-02 |
 | 10. Node System Player-Ready | 3/3 | Complete    | 2026-04-03 |
-| 11. Quest MVP | 0/? | Not planned | - |
+| 11. Quest MVP | 0/5 | Planned | - |
 | 12. Launch Polish and Help System | 0/? | Not planned | - |
 | 13. Gathering and Refining Pipeline | 0/? | Not planned | - |
 
@@ -350,7 +364,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 **Depends on**: Phase 9 (trainers and recipes must be wired before ingredient acquisition matters)
 **Success Criteria** (what must be TRUE):
   1. `gather`/`harvest`/`mine` command lets players collect raw materials from rooms with authored `area.material()` definitions
-  2. Refining pipeline converts raw materials to recipe ingredients (e.g., iron_ore → iron_ingot at forge, wild_herb → thornroot at campfire)
+  2. Refining pipeline converts raw materials to recipe ingredients (e.g., iron_ore -> iron_ingot at forge, wild_herb -> thornroot at campfire)
   3. Mob loot tables drop ingredient-tagged items (raw_meat, raw_fish, leather_strip) from thematically appropriate mobs
   4. At least one vendor NPC in Vael's Crossing sells basic ingredients (clean_water, spice, common crafting supplies)
   5. Every recipe ingredient in RECIPE_REGISTRY has at least one acquisition path (gather, refine, loot, or vendor)
