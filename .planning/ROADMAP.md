@@ -340,7 +340,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 7. Milestone 1 Content | 1/10 | In progress | - |
 | 8. Player Surface Commands | 5/5 | Complete | 2026-04-01 |
 | 9. Content Activation | 2/2 | Complete | 2026-04-02 |
-| 10. Node System Player-Ready | 0/3 | Planned | - |
+| 10. Node System Player-Ready | 1/3 | In progress | - |
 | 11. Quest MVP | 0/? | Not planned | - |
 | 12. Launch Polish and Help System | 0/? | Not planned | - |
 | 13. Gathering and Refining Pipeline | 0/? | Not planned | - |

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 10 context gathered
-last_updated: "2026-04-03T06:16:28.285Z"
+status: Executing
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-04-03T17:54:00Z"
 progress:
-  total_phases: 18
-  completed_phases: 12
-  total_plans: 70
-  completed_plans: 67
+  total_phases: 10
+  completed_phases: 6
+  total_plans: 33
+  completed_plans: 31
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 09 — content-activation
+**Current focus:** Phase 06a — base-attributes-and-combat
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 10-node-system-player-ready
+Plan: 02 (next)
 
 ## Performance Metrics
 
@@ -72,19 +72,6 @@ Plan: Not started
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
-| Phase 06c P02 | 3 | 2 tasks | 2 files |
-| Phase 06c P04 | 6 | 2 tasks | 4 files |
-| Phase 06c P05 | 10 | 2 tasks | 2 files |
-| Phase 05b P02 | 4min | 2 tasks | 1 files |
-| Phase 05b P03 | 6min | 2 tasks | 1 files |
-| Phase 05b P04 | 317 | 2 tasks | 1 files |
-| Phase 05b P05 | 6min | 2 tasks | 1 files |
-| Phase 05b P06 | 1 | 1 tasks | 0 files |
-| Phase 5c P02 | 6 | 2 tasks | 3 files |
-| Phase 5c P03 | 8 | 1 tasks | 1 files |
-| Phase 5c P04 | 7 | 1 tasks | 3 files |
-| Phase 07 P02 | 3 | 1 tasks | 3 files |
-| Phase 07 P06 | 11 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -152,37 +139,9 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
-- [Phase 06c]: Quality gap thresholds: <0=flawed, <15=standard, <30=fine, <50=superior, 50+=masterwork; random variance +/-1 tier center-biased
-- [Phase 06c]: Crafting station check via room.tags.has(crafting_{station}, category=crafting_station)
-- [Phase 06c]: CmdSay overrides Evennia default with same key/aliases; broadcasts to room then extracts NPC keywords (cap 2 responders, sorted by Standing tier)
-- [Phase 06c]: Crafting uses evennia.utils.delay with ndb.crafting_in_progress flag; cancelled if character moves during delay
-- [Phase 06c]: NPC lookup uses case-insensitive partial match (startswith) on npc_name db attr or key
-- [Phase 06c]: Patch lazy imports at source module for dialogue test mocking (world.mob_disposition, world.world_state)
-- [Phase 06c]: Statistical assertions (50+ iterations) for crafting quality variance tests to handle random.choices
-- [Phase 05b]: Subterfuge pool uses debuff stacking + chain damage payoffs; Diplomacy pool balances solo damage with group buff utility
-- [Phase 05b]: Arcana pool: charge_turns dominant, mana costs 15-70 for cross-encounter rationing
-- [Phase 05b]: Resonance pool: all abilities have attuned_variants, T1=builders(0 cost), T2-T4=spenders(60-100)
-- [Phase 05b]: Sealwright Seal Break = highest single-target burst in Resonance guild (base 250, +80% resonant)
-- [Phase 05b]: Naturalism Balance costs 10-55 (spectrum shifts); Alchemy Reagent costs T1:5-8, T2:12-15, T3:18-25, T4:30-45 (finite stock)
-- [Phase 05b]: Engineering companion IS the domain identity; Remnance uses excavation language exclusively; Sealbreaker Curse Break is most dangerous ability (charge_turns=2, damage_base=250); runewright_forge key for Eng+Res subclass
-- [Phase 05b]: No fixes required -- all 330 abilities passed all 10 structural validation checks on first run
-- [Phase 5c]: Resource handlers use function dispatch table (RESOURCE_HANDLERS dict) matching EFFECT_HANDLERS pattern
-- [Phase 5c]: Balance scaling: linear interpolation 1.0 at center, 1.5x at extremes (Feral for damage, Calm for heals)
-- [Phase 5c]: Added django.setup() to ability engine tests for guild_engine imports
-- [Phase 5c]: Typed resource variants: reagent_type (volatile/curative/toxic) and component_type (gear/conduit/plating) added to effect_params; handlers read but do not change spend logic
-- [Phase 07]: Sentinel pattern for flee_threshold: spawn_def explicit value overrides template, absent key uses template default
-- [Phase 07]: Template abilities copied (list()) to avoid shared mutation across spawned mobs
-- [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
-- [Phase 07]: Grandmother Spider as named mob in deepest cave; 8 sub-areas for geographic variety; dragon-era notation threading in lore
-
-### Roadmap Evolution
-
-- Phase 8 added: Player Surface Commands (completed 2026-04-01)
-- Phase 9 added: Content Activation and Travel Network (completed 2026-04-02)
-- Phase 10 added: Node System Player-Ready
-- Phase 11 added: Quest MVP
-- Phase 12 added: Launch Polish and Help System
-- Phase 13 added: Gathering and Refining Pipeline — harvest/gather/mine commands, material-to-ingredient refining, loot drops, vendor stock
+- [Phase 10]: L1 exits created at build time in initialize_node(), tagged inactive until node activates (D-02)
+- [Phase 10]: Override lookup uses layer0_room.db.room_id falling back to layer0_room.key as dict key
+- [Phase 10]: State tags extended to L1 rooms for consistency
 
 ### Pending Todos
 
@@ -196,6 +155,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T06:16:28.280Z
-Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-node-system-player-ready/10-CONTEXT.md
+Last session: 2026-04-03T17:54:00Z
+Stopped at: Completed 10-01-PLAN.md
+Resume file: None
