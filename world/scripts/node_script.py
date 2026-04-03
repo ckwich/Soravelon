@@ -123,15 +123,25 @@ class NodeScript(DefaultScript):
         affected = get_rooms_in_radius(center, self.db.node_radius)
         for room in affected:
             room.tags.add(tag_name, category="node_state")
+        # Also apply to L1 rooms for consistency
+        for l1_id in (self.db.layer1_room_ids or []):
+            l1_objs = evennia.search_object("#" + str(l1_id))
+            if l1_objs:
+                l1_objs[0].tags.add(tag_name, category="node_state")
 
     def _remove_state_tags(self, tag_name):
-        """Remove a node state tag from all L0 rooms in node radius."""
+        """Remove a node state tag from all L0 and L1 rooms in node radius."""
         center = self._get_center_room()
         if not center:
             return
         affected = get_rooms_in_radius(center, self.db.node_radius)
         for room in affected:
             room.tags.remove(tag_name, category="node_state")
+        # Also remove from L1 rooms
+        for l1_id in (self.db.layer1_room_ids or []):
+            l1_objs = evennia.search_object("#" + str(l1_id))
+            if l1_objs:
+                l1_objs[0].tags.remove(tag_name, category="node_state")
 
     def _activate_layer1(self):
         self.db.layer1_active = True
@@ -140,6 +150,9 @@ class NodeScript(DefaultScript):
             return
 
         affected_layer0 = get_rooms_in_radius(center, self.db.node_radius)
+
+        # Load overrides from zone object (D-04)
+        overrides = (self.obj.db.layer_1_overrides or {}) if self.obj else {}
 
         for layer0_room in affected_layer0:
             layer1_room_id = layer0_room.db.layer1_room_id
@@ -153,6 +166,22 @@ class NodeScript(DefaultScript):
 
             layer1_room.tags.remove("inactive", category="node_layer")
             layer1_room.tags.add("active", category="node_layer")
+
+            # Apply L1 override names and descriptions (D-04, D-05)
+            layer1_room.db.original_name = layer1_room.key
+            room_key = layer0_room.db.room_id or layer0_room.key
+            override = overrides.get(str(room_key))
+            if override:
+                layer1_room.key = override.get("name", layer1_room.key)
+                layer1_room.db.desc = override.get("desc", "")
+            else:
+                # No override: prefix with [Distorted] (D-05)
+                layer1_room.key = f"[Distorted] {layer0_room.key}"
+
+            # Activate L1 exits in this room
+            for exit_obj in layer1_room.exits:
+                exit_obj.tags.remove("inactive", category="node_layer")
+                exit_obj.tags.add("active", category="node_layer")
 
             apply_node_effects(layer1_room, self.db.node_type, "active")
 
@@ -188,6 +217,17 @@ class NodeScript(DefaultScript):
                                 "You are where you were."
                             )
                     obj.db.layer0_room_id = None
+
+            # Restore original L1 room name (D-04)
+            original_name = layer1_room.db.original_name
+            if original_name:
+                layer1_room.key = original_name
+                layer1_room.db.original_name = None
+
+            # Deactivate L1 exits in this room
+            for exit_obj in layer1_room.exits:
+                exit_obj.tags.remove("active", category="node_layer")
+                exit_obj.tags.add("inactive", category="node_layer")
 
             remove_node_effects(layer1_room)
             room_tags_to_remove = ["node_awakening", "node_critical"]
