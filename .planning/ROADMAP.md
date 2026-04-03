@@ -206,4 +206,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6b. Spawn System, Skills & Mob AI | 0/TBD | Not started | - |
 | 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
-| 11. Quest MVP | 1/5 | In progress | - |
+| 11. Quest MVP | 3/5 | In Progress|  |
