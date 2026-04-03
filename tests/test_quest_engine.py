@@ -1,14 +1,18 @@
 """
-Tests for the quest engine module (Phase 11 Plan 01, Task 2).
+Tests for the quest engine module (Phase 11).
+
+Plan 01 Task 2: 28 initial tests (TDD RED/GREEN).
+Plan 05 Task 1: Extended to comprehensive coverage of all D-01 through D-20
+requirements, including normalization edge cases, re-accept after abandon,
+multi-objective completion, reward payout, chain auto-offer, and query
+edge cases.
 
 Uses unittest.TestCase + MagicMock for pure-logic tests. Django models
 are mocked -- no Evennia DB setup needed.
-
-TDD RED phase: all tests written first.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch, PropertyMock, call
 
 
 # ---------------------------------------------------------------------------
@@ -142,6 +146,47 @@ class TestAcceptQuest(unittest.TestCase):
         self.assertIsInstance(result[0], bool)
         self.assertIsInstance(result[1], str)
 
+    @patch("world.quest_engine.CharacterQuest")
+    def test_reaccept_after_abandon(self, MockCQ):
+        """Can re-accept a quest after abandoning it (D-03: one_chance not set)."""
+        from world.quest_engine import accept_quest
+
+        char = MagicMock()
+        # Not at cap, not already active
+        MockCQ.objects.filter.return_value.count.return_value = 0
+        MockCQ.objects.filter.return_value.exists.return_value = False
+
+        spec = {"quest_id": "q_retry", "name": "Retry Quest"}
+        ok, msg = accept_quest(char, "q_retry", spec)
+
+        self.assertTrue(ok)
+        MockCQ.objects.create.assert_called_once()
+
+    @patch("world.quest_engine.CharacterQuest")
+    def test_accept_initializes_progress_for_all_objectives(self, MockCQ):
+        """accept_quest initializes progress dict with zero for each objective."""
+        from world.quest_engine import accept_quest
+
+        char = MagicMock()
+        MockCQ.objects.filter.return_value.count.return_value = 0
+        MockCQ.objects.filter.return_value.exists.return_value = False
+
+        spec = {
+            "quest_id": "multi_q",
+            "objectives": [
+                {"type": "kill", "target": "wolf", "count": 5},
+                {"type": "collect", "target": "fang", "count": 3},
+            ],
+        }
+        ok, msg = accept_quest(char, "multi_q", spec)
+
+        self.assertTrue(ok)
+        create_kwargs = MockCQ.objects.create.call_args[1]
+        self.assertIn("kill_wolf", create_kwargs["progress"])
+        self.assertIn("collect_fang", create_kwargs["progress"])
+        self.assertEqual(create_kwargs["progress"]["kill_wolf"], 0)
+        self.assertEqual(create_kwargs["progress"]["collect_fang"], 0)
+
 
 # ---------------------------------------------------------------------------
 # Test: abandon_quest
@@ -241,6 +286,77 @@ class TestNormalizeQuestSpec(unittest.TestCase):
         result = _normalize_quest_spec(spec)
         self.assertEqual(result["objectives"][0]["type"], "investigate")
 
+    def test_normalizes_escort_to_deliver(self):
+        """'escort' normalizes to 'deliver'."""
+        from world.quest_engine import _normalize_quest_spec
+
+        spec = {
+            "quest_id": "q5",
+            "objective_type": "escort",
+            "objective_target": "npc_merchant",
+            "objective_count": 1,
+        }
+        result = _normalize_quest_spec(spec)
+        self.assertEqual(result["objectives"][0]["type"], "deliver")
+
+    def test_normalizes_recover_to_collect(self):
+        """'recover' normalizes to 'collect'."""
+        from world.quest_engine import _normalize_quest_spec
+
+        spec = {
+            "quest_id": "q6",
+            "objective_type": "recover",
+            "objective_target": "lost_artifact",
+            "objective_count": 1,
+        }
+        result = _normalize_quest_spec(spec)
+        self.assertEqual(result["objectives"][0]["type"], "collect")
+
+    def test_normalizes_craft_to_collect(self):
+        """'craft' normalizes to 'collect' for MVP."""
+        from world.quest_engine import _normalize_quest_spec
+
+        spec = {
+            "quest_id": "q7",
+            "objective_type": "craft",
+            "objective_target": "iron_sword",
+            "objective_count": 3,
+        }
+        result = _normalize_quest_spec(spec)
+        self.assertEqual(result["objectives"][0]["type"], "collect")
+        self.assertEqual(result["objectives"][0]["count"], 3)
+
+    def test_normalizes_objectives_list_types(self):
+        """Non-MVP types in objectives list format are also normalized."""
+        from world.quest_engine import _normalize_quest_spec
+
+        spec = {
+            "quest_id": "q8",
+            "objectives": [
+                {"type": "gather", "target": "herb", "count": 5},
+                {"type": "discover", "target": "cave", "count": 1},
+            ],
+        }
+        result = _normalize_quest_spec(spec)
+        self.assertEqual(result["objectives"][0]["type"], "collect")
+        self.assertEqual(result["objectives"][1]["type"], "investigate")
+
+    def test_deliver_flat_sets_item_tag(self):
+        """Flat format deliver objective sets item_tag from flagged_drop."""
+        from world.quest_engine import _normalize_quest_spec
+
+        spec = {
+            "quest_id": "q9",
+            "objective_type": "deliver",
+            "objective_target": "npc_guard",
+            "objective_count": 1,
+            "flagged_drop": "guard_report",
+        }
+        result = _normalize_quest_spec(spec)
+        obj = result["objectives"][0]
+        self.assertEqual(obj["type"], "deliver")
+        self.assertEqual(obj["item_tag"], "guard_report")
+
 
 # ---------------------------------------------------------------------------
 # Test: check_kill_objectives
@@ -323,6 +439,49 @@ class TestCheckKillObjectives(unittest.TestCase):
 
         self.assertEqual(cq.progress.get("kill_sewer_rat", 0), 0)
 
+    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_kill_triggers_completion_check(self, MockCQ, mock_get_spec, mock_check):
+        """Killing a matching mob triggers _check_quest_completion."""
+        from world.quest_engine import check_kill_objectives
+
+        char = MagicMock()
+        mob = MagicMock()
+        mob.db.mob_template = "sewer_rat"
+        mob.db.mob_id = None
+
+        cq = _make_cq("rat_quest", progress={})
+        MockCQ.objects.filter.return_value = [cq]
+
+        mock_get_spec.return_value = {
+            "quest_id": "rat_quest",
+            "objectives": [{"type": "kill", "target": "sewer_rat", "count": 1}],
+        }
+
+        check_kill_objectives(char, mob)
+
+        mock_check.assert_called_once()
+
+    @patch("world.quest_engine._get_quest_spec", return_value=None)
+    @patch("world.quest_engine.CharacterQuest")
+    def test_kill_skips_quest_with_no_spec(self, MockCQ, mock_get_spec):
+        """check_kill_objectives skips quests whose spec is not found."""
+        from world.quest_engine import check_kill_objectives
+
+        char = MagicMock()
+        mob = MagicMock()
+        mob.db.mob_template = "wolf"
+        mob.db.mob_id = None
+
+        cq = _make_cq("orphan_quest", progress={})
+        MockCQ.objects.filter.return_value = [cq]
+
+        # Should not crash when spec is None
+        check_kill_objectives(char, mob)
+
+        cq.save.assert_not_called()
+
 
 # ---------------------------------------------------------------------------
 # Test: check_collect_objectives
@@ -357,6 +516,33 @@ class TestCheckCollectObjectives(unittest.TestCase):
         self.assertEqual(cq.progress.get("collect_fang", 0), 1)
 
 
+    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_collect_no_match_no_increment(self, MockCQ, mock_get_spec, mock_check):
+        """Picking up a non-matching item does not increment progress."""
+        from world.quest_engine import check_collect_objectives
+
+        char = MagicMock()
+        item = MagicMock()
+        item.db.item_tag = "junk"
+        item.tags = MagicMock()
+        item.tags.get.return_value = None
+
+        cq = _make_cq("fang_quest", progress={})
+        MockCQ.objects.filter.return_value = [cq]
+
+        mock_get_spec.return_value = {
+            "quest_id": "fang_quest",
+            "objectives": [{"type": "collect", "target": "fang", "count": 5}],
+        }
+
+        check_collect_objectives(char, item)
+
+        self.assertEqual(cq.progress.get("collect_fang", 0), 0)
+        mock_check.assert_not_called()
+
+
 # ---------------------------------------------------------------------------
 # Test: check_investigate_objectives
 # ---------------------------------------------------------------------------
@@ -386,6 +572,54 @@ class TestCheckInvestigateObjectives(unittest.TestCase):
         check_investigate_objectives(char, room)
 
         self.assertEqual(cq.progress.get("investigate_hidden_chamber", 0), 1)
+
+    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_investigate_idempotent(self, MockCQ, mock_get_spec, mock_check):
+        """Re-entering the room does not re-trigger investigate (already 1)."""
+        from world.quest_engine import check_investigate_objectives
+
+        char = MagicMock()
+        room = MagicMock()
+        room.db.room_id = "hidden_chamber"
+
+        cq = _make_cq("explore_quest", progress={"investigate_hidden_chamber": 1})
+        MockCQ.objects.filter.return_value = [cq]
+
+        mock_get_spec.return_value = {
+            "quest_id": "explore_quest",
+            "objectives": [{"type": "investigate", "target": "hidden_chamber", "count": 1}],
+        }
+
+        check_investigate_objectives(char, room)
+
+        # Progress stays at 1, no save call for idempotent check
+        self.assertEqual(cq.progress.get("investigate_hidden_chamber"), 1)
+
+    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_investigate_wrong_room_no_effect(self, MockCQ, mock_get_spec, mock_check):
+        """Entering a non-target room does not affect investigate objective."""
+        from world.quest_engine import check_investigate_objectives
+
+        char = MagicMock()
+        room = MagicMock()
+        room.db.room_id = "random_room"
+
+        cq = _make_cq("explore_quest", progress={})
+        MockCQ.objects.filter.return_value = [cq]
+
+        mock_get_spec.return_value = {
+            "quest_id": "explore_quest",
+            "objectives": [{"type": "investigate", "target": "hidden_chamber", "count": 1}],
+        }
+
+        check_investigate_objectives(char, room)
+
+        self.assertEqual(cq.progress.get("investigate_hidden_chamber", 0), 0)
+        mock_check.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -488,6 +722,30 @@ class TestCheckTalkToObjectives(unittest.TestCase):
 
         self.assertEqual(cq.progress.get("talk_to_npc_elder", 0), 1)
 
+    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_talk_to_wrong_npc_no_effect(self, MockCQ, mock_get_spec, mock_check):
+        """Talking to a non-target NPC does not affect talk_to objective."""
+        from world.quest_engine import check_talk_to_objectives
+
+        char = MagicMock()
+        npc = MagicMock()
+        npc.db.npc_id = "npc_barkeep"
+
+        cq = _make_cq("talk_quest", progress={})
+        MockCQ.objects.filter.return_value = [cq]
+
+        mock_get_spec.return_value = {
+            "quest_id": "talk_quest",
+            "objectives": [{"type": "talk_to", "target": "npc_elder", "count": 1}],
+        }
+
+        check_talk_to_objectives(char, npc)
+
+        self.assertEqual(cq.progress.get("talk_to_npc_elder", 0), 0)
+        mock_check.assert_not_called()
+
 
 # ---------------------------------------------------------------------------
 # Test: _check_quest_completion
@@ -556,6 +814,168 @@ class TestCheckQuestCompletion(unittest.TestCase):
 
         self.assertEqual(cq.status, "complete")
         self.assertEqual(char.ndb.pending_quest_offer, "q2_sequel")
+
+    @patch("world.quest_engine._pay_rewards")
+    def test_multi_objective_requires_all_met(self, mock_pay):
+        """Quest with 2 objectives does NOT complete when only 1 is met."""
+        from world.quest_engine import _check_quest_completion
+
+        char = MagicMock()
+        cq = _make_cq("q_multi", progress={"kill_wolf": 5, "collect_fang": 1})
+
+        spec = {
+            "quest_id": "q_multi",
+            "objectives": [
+                {"type": "kill", "target": "wolf", "count": 5},
+                {"type": "collect", "target": "fang", "count": 3},
+            ],
+        }
+
+        _check_quest_completion(char, cq, spec)
+
+        self.assertEqual(cq.status, "active")
+        mock_pay.assert_not_called()
+
+    @patch("world.quest_engine._pay_rewards")
+    def test_multi_objective_completes_when_all_met(self, mock_pay):
+        """Quest with 2 objectives completes when both are met."""
+        from world.quest_engine import _check_quest_completion
+
+        char = MagicMock()
+        cq = _make_cq("q_multi", progress={"kill_wolf": 5, "collect_fang": 3})
+
+        spec = {
+            "quest_id": "q_multi",
+            "name": "Wolf and Fang",
+            "objectives": [
+                {"type": "kill", "target": "wolf", "count": 5},
+                {"type": "collect", "target": "fang", "count": 3},
+            ],
+            "rewards": [],
+        }
+
+        _check_quest_completion(char, cq, spec)
+
+        self.assertEqual(cq.status, "complete")
+        self.assertIsNotNone(cq.completed_at)
+        mock_pay.assert_called_once()
+
+    @patch("world.quest_engine._pay_rewards")
+    def test_completion_sets_completed_at(self, mock_pay):
+        """Completed quest has completed_at set to a timestamp."""
+        from world.quest_engine import _check_quest_completion
+
+        char = MagicMock()
+        cq = _make_cq("q_done", progress={"talk_to_elder": 1})
+
+        spec = {
+            "quest_id": "q_done",
+            "name": "Talk to Elder",
+            "objectives": [{"type": "talk_to", "target": "elder", "count": 1}],
+            "rewards": [],
+        }
+
+        _check_quest_completion(char, cq, spec)
+
+        self.assertEqual(cq.status, "complete")
+        self.assertIsNotNone(cq.completed_at)
+
+    @patch("world.quest_engine._pay_rewards")
+    def test_no_chain_when_next_quest_id_missing(self, mock_pay):
+        """Completion without next_quest_id does NOT set pending_quest_offer."""
+        from world.quest_engine import _check_quest_completion
+
+        char = MagicMock()
+        char.ndb = MagicMock(spec=[])  # ndb has no pending_quest_offer
+        cq = _make_cq("q1", progress={"kill_wolf": 5})
+
+        spec = {
+            "quest_id": "q1",
+            "name": "Solo Hunt",
+            "objectives": [{"type": "kill", "target": "wolf", "count": 5}],
+            "rewards": [],
+        }
+
+        _check_quest_completion(char, cq, spec)
+
+        self.assertEqual(cq.status, "complete")
+
+
+# ---------------------------------------------------------------------------
+# Test: _pay_rewards
+# ---------------------------------------------------------------------------
+
+class TestPayRewards(unittest.TestCase):
+    """Tests for _pay_rewards function (D-20)."""
+
+    @patch("world.action_vocabulary.execute_action")
+    def test_pays_all_rewards(self, mock_exec):
+        """_pay_rewards calls execute_action for each reward dict."""
+        from world.quest_engine import _pay_rewards
+
+        char = MagicMock()
+        char.location = MagicMock()
+        mock_exec.return_value = (True, "")
+
+        spec = {
+            "rewards": [
+                {"action_type": "give_scales", "amount": 100},
+                {"action_type": "echo", "message": "Well done!"},
+            ],
+        }
+
+        _pay_rewards(char, spec)
+
+        self.assertEqual(mock_exec.call_count, 2)
+        # First reward
+        first_call = mock_exec.call_args_list[0]
+        self.assertEqual(first_call[0][0]["action_type"], "give_scales")
+        # Second reward
+        second_call = mock_exec.call_args_list[1]
+        self.assertEqual(second_call[0][0]["action_type"], "echo")
+
+    @patch("world.action_vocabulary.execute_action")
+    def test_pays_nothing_when_no_rewards(self, mock_exec):
+        """_pay_rewards with empty rewards list does nothing."""
+        from world.quest_engine import _pay_rewards
+
+        char = MagicMock()
+        char.location = MagicMock()
+
+        spec = {"rewards": []}
+        _pay_rewards(char, spec)
+
+        mock_exec.assert_not_called()
+
+    @patch("world.action_vocabulary.execute_action")
+    def test_pays_nothing_when_rewards_key_missing(self, mock_exec):
+        """_pay_rewards handles missing rewards key gracefully."""
+        from world.quest_engine import _pay_rewards
+
+        char = MagicMock()
+        char.location = MagicMock()
+
+        spec = {}
+        _pay_rewards(char, spec)
+
+        mock_exec.assert_not_called()
+
+    @patch("world.action_vocabulary.execute_action")
+    def test_context_has_character_and_room(self, mock_exec):
+        """_pay_rewards passes character and room in context to execute_action."""
+        from world.quest_engine import _pay_rewards
+
+        char = MagicMock()
+        room = MagicMock()
+        char.location = room
+        mock_exec.return_value = (True, "")
+
+        spec = {"rewards": [{"action_type": "give_scales", "amount": 50}]}
+        _pay_rewards(char, spec)
+
+        context = mock_exec.call_args[0][1]
+        self.assertEqual(context["character"], char)
+        self.assertEqual(context["room"], room)
 
 
 # ---------------------------------------------------------------------------
@@ -627,6 +1047,121 @@ class TestGetAvailableQuestForNpc(unittest.TestCase):
 
         self.assertIsNone(result)
 
+    @patch("world.quest_engine.CharacterQuest")
+    @patch("world.quest_engine._get_all_quest_specs")
+    def test_returns_none_for_one_chance_failed(self, mock_all_specs, MockCQ):
+        """Returns None if NPC's quest is one_chance and character failed it (D-03)."""
+        from world.quest_engine import get_available_quest_for_npc
+
+        npc = MagicMock()
+        npc.db.npc_id = "npc_barkeep"
+        char = MagicMock()
+
+        mock_all_specs.return_value = [
+            {"quest_id": "q1", "quest_giver": "npc_barkeep", "one_chance": True},
+        ]
+
+        existing_qs = MagicMock()
+        active_qs = MagicMock()
+        active_qs.values_list.return_value = []
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = []
+        failed_qs = MagicMock()
+        failed_qs.values_list.return_value = ["q1"]
+
+        def filter_side_effect(**kwargs):
+            if "status" not in kwargs:
+                return existing_qs
+            if kwargs.get("status") == "active":
+                return active_qs
+            if kwargs.get("status") == "complete":
+                return complete_qs
+            if kwargs.get("status") == "failed":
+                return failed_qs
+            return MagicMock(values_list=MagicMock(return_value=[]))
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+        existing_qs.filter.side_effect = filter_side_effect
+
+        result = get_available_quest_for_npc(npc, char)
+
+        self.assertIsNone(result)
+
+    @patch("world.quest_engine.CharacterQuest")
+    @patch("world.quest_engine._get_all_quest_specs")
+    def test_returns_none_for_completed_quest(self, mock_all_specs, MockCQ):
+        """Returns None if NPC's quest is already complete."""
+        from world.quest_engine import get_available_quest_for_npc
+
+        npc = MagicMock()
+        npc.db.npc_id = "npc_barkeep"
+        char = MagicMock()
+
+        mock_all_specs.return_value = [
+            {"quest_id": "q1", "quest_giver": "npc_barkeep"},
+        ]
+
+        existing_qs = MagicMock()
+        active_qs = MagicMock()
+        active_qs.values_list.return_value = []
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = ["q1"]
+        failed_qs = MagicMock()
+        failed_qs.values_list.return_value = []
+
+        def filter_side_effect(**kwargs):
+            if "status" not in kwargs:
+                return existing_qs
+            if kwargs.get("status") == "active":
+                return active_qs
+            if kwargs.get("status") == "complete":
+                return complete_qs
+            if kwargs.get("status") == "failed":
+                return failed_qs
+            return MagicMock(values_list=MagicMock(return_value=[]))
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+        existing_qs.filter.side_effect = filter_side_effect
+
+        result = get_available_quest_for_npc(npc, char)
+
+        self.assertIsNone(result)
+
+    @patch("world.quest_engine.CharacterQuest")
+    @patch("world.quest_engine._get_all_quest_specs")
+    def test_returns_none_for_npc_with_no_quests(self, mock_all_specs, MockCQ):
+        """Returns None when no quest specs reference this NPC."""
+        from world.quest_engine import get_available_quest_for_npc
+
+        npc = MagicMock()
+        npc.db.npc_id = "npc_nobody"
+        char = MagicMock()
+
+        mock_all_specs.return_value = [
+            {"quest_id": "q1", "quest_giver": "npc_barkeep"},
+        ]
+
+        existing_qs = MagicMock()
+        existing_qs.filter.return_value.values_list.return_value = []
+        MockCQ.objects.filter.return_value = existing_qs
+
+        result = get_available_quest_for_npc(npc, char)
+
+        self.assertIsNone(result)
+
+    @patch("world.quest_engine.CharacterQuest")
+    def test_returns_none_for_npc_without_npc_id(self, MockCQ):
+        """Returns None when NPC has no npc_id set."""
+        from world.quest_engine import get_available_quest_for_npc
+
+        npc = MagicMock()
+        npc.db.npc_id = None
+        char = MagicMock()
+
+        result = get_available_quest_for_npc(npc, char)
+
+        self.assertIsNone(result)
+
 
 # ---------------------------------------------------------------------------
 # Test: get_active_quests / get_quest_detail
@@ -672,6 +1207,32 @@ class TestQuestQueries(unittest.TestCase):
         self.assertIn("objectives", result)
         self.assertEqual(result["objectives"][0]["progress"], 3)
         self.assertEqual(result["objectives"][0]["count"], 5)
+
+    @patch("world.quest_engine.CharacterQuest")
+    def test_get_quest_detail_returns_none_for_nonexistent(self, MockCQ):
+        """get_quest_detail returns None when quest not found."""
+        from world.quest_engine import get_quest_detail
+
+        char = MagicMock()
+        MockCQ.objects.filter.return_value.first.return_value = None
+
+        result = get_quest_detail(char, "nonexistent_q")
+
+        self.assertIsNone(result)
+
+    @patch("world.quest_engine._get_quest_spec", return_value=None)
+    @patch("world.quest_engine.CharacterQuest")
+    def test_get_quest_detail_returns_none_if_spec_missing(self, MockCQ, mock_spec):
+        """get_quest_detail returns None when spec is not found in zone data."""
+        from world.quest_engine import get_quest_detail
+
+        char = MagicMock()
+        cq = _make_cq("orphan_q")
+        MockCQ.objects.filter.return_value.first.return_value = cq
+
+        result = get_quest_detail(char, "orphan_q")
+
+        self.assertIsNone(result)
 
 
 # ---------------------------------------------------------------------------
