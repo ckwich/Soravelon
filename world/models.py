@@ -311,3 +311,44 @@ class CharacterAbility(models.Model):
 
     def __str__(self):
         return f"{self.character.db_key}:{self.ability_id}"
+
+
+class CharacterQuest(models.Model):
+    """
+    Tracks a character's progress on a specific quest.
+
+    Per D-01: character FK, quest_id (str), status, progress (JSONField dict),
+    started_at, completed_at.
+    Per D-04: Three terminal states: complete, failed, abandoned. Active = in-progress.
+    Progress uses a dict keyed by objective key (e.g. {"kill_ash_wolf": 4, "collect_fang": 2})
+    so multi-objective quests track each objective independently.
+    """
+
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("complete", "Complete"),
+        ("failed", "Failed"),
+        ("abandoned", "Abandoned"),
+    ]
+
+    character = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.CASCADE,
+        related_name="character_quests",
+    )
+    quest_id = models.CharField(max_length=128, db_index=True)
+    status = models.CharField(
+        max_length=16, choices=STATUS_CHOICES, default="active"
+    )
+    progress = models.JSONField(default=dict)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["character", "status"]),
+            models.Index(fields=["character", "quest_id"]),
+        ]
+
+    def __str__(self):
+        return f"{self.character.db_key}:{self.quest_id}={self.status}"
