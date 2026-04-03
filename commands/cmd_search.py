@@ -100,7 +100,7 @@ class CmdSearch(Command):
         lore_frags = room.db.lore_fragments or []
         for frag in lore_frags:
             if frag.get("discovery_method") == "search":
-                frag_id = frag.get("id", "unknown")
+                frag_id = frag.get("fragment_id", "unknown")
                 collected = list(char.db.collected_lore_ids or [])
                 collected_set = set(collected)
                 if frag_id not in collected_set:
