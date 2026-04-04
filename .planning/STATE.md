@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Phase 13 context gathered
-last_updated: "2026-04-04T01:53:01.920Z"
+status: Ready to execute
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-04-04T02:48:10.679Z"
 progress:
-  total_phases: 10
+  total_phases: 11
   completed_phases: 9
-  total_plans: 53
-  completed_plans: 51
+  total_plans: 60
+  completed_plans: 52
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 12 — launch-polish-help
+**Current focus:** Phase 13 — gathering-and-refining
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
+Phase: 13 (gathering-and-refining) — EXECUTING
+Plan: 2 of 7
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Plan: Not started
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
+| Phase 13 P01 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,7 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
+- [Phase 13]: Hide processing uses workbench (not forge); gathering flags are persistent (None duration); Sense priority below combat flags
 
 ### Pending Todos
 
@@ -152,6 +154,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T01:53:01.916Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-gathering-and-refining/13-CONTEXT.md
+Last session: 2026-04-04T02:48:10.674Z
+Stopped at: Completed 13-01-PLAN.md
+Resume file: None
