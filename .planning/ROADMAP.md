@@ -209,8 +209,8 @@ Plans:
 - [x] 13-01-PLAN.md — Material registry + new gathering skills + room state flags + item_tag fix
 - [x] 13-02-PLAN.md — GatheringNode typeclass + gathering_engine.py + GatheringPoolScript + AreaBuilder DSL
 - [x] 13-03-PLAN.md — Processing recipes in RECIPE_REGISTRY + crafting engine conversion ratio extension
-- [ ] 13-04-PLAN.md — Gathering commands (_BaseGatherCmd + mine/harvest/chop/forage/butcher) + corpse butcher
-- [ ] 13-05-PLAN.md — Fishing system (CmdFish active + idle modes, CmdReel)
+- [x] 13-04-PLAN.md — Gathering commands (_BaseGatherCmd + mine/harvest/chop/forage/butcher) + corpse butcher
+- [x] 13-05-PLAN.md — Fishing system (CmdFish active + idle modes, CmdReel)
 - [ ] 13-06-PLAN.md — Prospect/survey + Sense gathering hints + tool repair + command registration
 - [ ] 13-07-PLAN.md — Test suite: test_gathering.py + test_fishing.py
 
@@ -234,4 +234,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
 | 12. Launch Polish and Help | 1/3 | Complete    | 2026-04-03 |
-| 13. Gathering and Refining | 3/7 | In Progress|  |
+| 13. Gathering and Refining | 5/7 | In Progress|  |
