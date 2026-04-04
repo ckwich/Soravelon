@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 14-01-PLAN.md
-last_updated: "2026-04-04T05:32:01.040Z"
+stopped_at: Completed 14-03-PLAN.md
+last_updated: "2026-04-04T05:32:11.529Z"
 progress:
   total_phases: 12
   completed_phases: 10
@@ -81,6 +81,7 @@ Plan: 4 of 4
 | Phase 13 P07 | 3 | 2 tasks | 2 files |
 | Phase 14 P01 | 164 | 2 tasks | 3 files |
 | Phase 14 P02 | 2 | 2 tasks | 4 files |
+| Phase 14 P03 | 185 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -163,6 +164,8 @@ Recent decisions affecting current work:
 - [Phase 14]: get_quest_modifier supports both dict-keyed and scalar disposition_modifier in quest specs
 - [Phase 14]: Affix modifier merging: multiplicative for damage_multiplier, additive for flat/bonus, max for others
 - [Phase 14]: push_quest_update builds full active_quests list on every push (no incremental deltas)
+- [Phase 14]: Lore entry category changed from Commands to World (lore is world info, not a command)
+- [Phase 14]: Attuned variant check uses room node tags first, then zone_type from zone object
 
 ### Roadmap Evolution
 
@@ -181,6 +184,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T05:31:54.404Z
-Stopped at: Completed 14-01-PLAN.md
+Last session: 2026-04-04T05:32:11.524Z
+Stopped at: Completed 14-03-PLAN.md
 Resume file: None
