@@ -913,17 +913,54 @@ HELP_ENTRY_DICTS = [
             "  > quest the sunken ward"
         ),
     },
-    # -- Lore (placeholder for Plan 03) --
+    # -- Lore --
     {
         "key": "lore",
-        "category": "Commands",
+        "aliases": ["world lore", "history"],
+        "category": "World",
         "locks": "read:all()",
         "text": (
-            "|wUsage:|n lore\n\n"
-            "Review lore fragments you have collected through exploration. "
-            "Lore fragments provide insight into the world's history, "
-            "the Dragon Curse, and the factions vying for power.\n\n"
-            "|yThis system is being expanded.|n"
+            "|wThe World of Soravelon|n\n\n"
+            "|wThe Dragon Curse|n\n"
+            "One thousand years ago the dragons of Soravelon were struck by\n"
+            "a curse of unknown origin. Overnight, creatures that had shaped\n"
+            "continents and raised civilizations were reduced to animal\n"
+            "intelligence -- feral beasts roosting in the ruins of their own\n"
+            "workshops. The magical infrastructure they built still functions,\n"
+            "but the peoples who inherited it understand only fragments of its\n"
+            "design. Nodes that once channeled power across entire regions now\n"
+            "flicker, fail, and reshape the land when they collapse.\n\n"
+            "|wRemnance|n\n"
+            "The residual magical energy left by the Curse is called Remnance.\n"
+            "It saturates the soil, the water, and the air near failed nodes,\n"
+            "warping flora and fauna into twisted forms. Some scholars believe\n"
+            "Remnance is the Curse itself, still alive and spreading. Others\n"
+            "harvest it as raw fuel for crafting and enchantment. Zones of\n"
+            "heavy Remnance saturation are dangerous but rich in rare materials.\n\n"
+            "|wThe Five Great Factions|n\n"
+            "  |cThe Ironblood Covenant|n -- Militant survivalists who believe\n"
+            "    strength alone determines who inherits the dragons' legacy.\n"
+            "  |cThe Hollow Tribunal|n -- Secretive judges who enforce an ancient\n"
+            "    legal code written before the Curse, by any means necessary.\n"
+            "  |cThe Verdant Accord|n -- Druids and naturalists working to heal\n"
+            "    the land by restoring failed nodes to their original function.\n"
+            "  |cThe Ashen Compact|n -- Pragmatic traders and alchemists who\n"
+            "    profit from Remnance extraction regardless of consequence.\n"
+            "  |cThe Consortium of Coin|n -- A banking and mercantile guild that\n"
+            "    controls commerce across every major settlement.\n\n"
+            "|wNode Failure and the Shifting World|n\n"
+            "Dragon-built nodes regulate weather, gravity, fauna, and the\n"
+            "flow of magical energy through each zone. When a node degrades\n"
+            "from healthy to stressed, failing, or collapsed, the zone around\n"
+            "it transforms: rooms shift, new passages open, creatures mutate,\n"
+            "and environmental hazards appear. Restoring a collapsed node is\n"
+            "one of the greatest challenges an adventurer can undertake.\n\n"
+            "|wYour Role|n\n"
+            "You arrive in Soravelon unaligned -- bound to no faction, attuned\n"
+            "to no domain, carrying no legacy. The choices you make will define\n"
+            "your standing with each faction, your mastery across ten domains\n"
+            "of skill, and ultimately the subclass identity that sets you apart\n"
+            "from every other traveler in this broken, beautiful world."
         ),
     },
     # =========================================================================
