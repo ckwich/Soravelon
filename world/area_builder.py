@@ -946,6 +946,44 @@ class AreaBuilder:
         self._zone_obj.db.material_definitions = current
 
     # ------------------------------------------------------------------
+    # gathering_pool()
+    # ------------------------------------------------------------------
+
+    def gathering_pool(self, pool_type, rooms, materials, **kwargs):
+        """
+        Register a gathering pool definition on this zone (per D-02).
+
+        Args:
+            pool_type: Category string from GATHERING_CATEGORIES (ore, herb, wood, forage, fish, hide)
+            rooms: List of room_id strings (must be defined via room() first)
+            materials: List of material_id strings from MATERIAL_REGISTRY
+            **kwargs: max_active (default 3), respawn_minutes (default 15),
+                      respawn_variance (default 5), tier_floor (default 1), tier_ceiling (default 3)
+
+        Returns: self (for chaining)
+        """
+        if not self._zone_obj:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' -- gathering_pool() called before zone()"
+            )
+
+        pool_def = {
+            "pool_type": pool_type,
+            "room_ids": rooms,
+            "materials": materials,
+            "max_active": kwargs.get("max_active", 3),
+            "respawn_minutes": kwargs.get("respawn_minutes", 15),
+            "respawn_variance": kwargs.get("respawn_variance", 5),
+            "tier_floor": kwargs.get("tier_floor", 1),
+            "tier_ceiling": kwargs.get("tier_ceiling", 3),
+        }
+        # SaverDict copy pattern (critical rule #1 from area-builder skill)
+        current = list(self._zone_obj.db.gathering_pools or [])
+        current.append(pool_def)
+        self._zone_obj.db.gathering_pools = current
+        return self
+
+    # ------------------------------------------------------------------
     # lore_fragment()
     # ------------------------------------------------------------------
 
@@ -1011,6 +1049,12 @@ class AreaBuilder:
             self._zone_obj.db.quest_definitions = []
         if not self._zone_obj.db.material_definitions:
             self._zone_obj.db.material_definitions = []
+        if not self._zone_obj.db.gathering_pools:
+            self._zone_obj.db.gathering_pools = []
+
+        # 5. Initialize gathering pools
+        from world.gathering_engine import initialize_zone_gathering
+        initialize_zone_gathering(self._zone_obj)
 
         return {
             "zone_id": self._zone_id,
