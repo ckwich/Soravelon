@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 13-05-PLAN.md
-last_updated: "2026-04-04T02:59:01.139Z"
+stopped_at: Completed 13-04-PLAN.md
+last_updated: "2026-04-04T02:59:21.014Z"
 progress:
   total_phases: 11
   completed_phases: 9
   total_plans: 60
-  completed_plans: 55
+  completed_plans: 56
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 13 (gathering-and-refining) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Plan: 5 of 7
 | Phase 13 P02 | 191 | 2 tasks | 3 files |
 | Phase 13 P03 | 3 | 2 tasks | 2 files |
 | Phase 13 P05 | 2 | 1 tasks | 2 files |
+| Phase 13 P04 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,7 @@ Recent decisions affecting current work:
 - [Phase 13]: Extended all 18 materials into processing recipes; output uses item_id-based dict for processing vs template_id for standard crafting
 - [Phase 13]: CmdReel delegates to CmdFish()._on_reel for single state machine owner
 - [Phase 13]: Fishing state on ndb.fishing_state dict; movement interrupt in at_after_move
+- [Phase 13]: Butcher uses can_butcher() not can_loot() for corpse eligibility with butchered-flag guard
 
 ### Pending Todos
 
@@ -163,6 +165,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T02:59:01.135Z
-Stopped at: Completed 13-05-PLAN.md
+Last session: 2026-04-04T02:59:21.010Z
+Stopped at: Completed 13-04-PLAN.md
 Resume file: None
