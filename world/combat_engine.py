@@ -468,6 +468,10 @@ def handle_player_death(character):
     character.ndb.hp = 0
     msg = f"|r{character.key} has fallen!|n"
 
+    # Death penalty: drop 20% Scales to corpse, wipe uncommitted session XP
+    from world.banking import on_character_death
+    on_character_death(character, room)
+
     # D-14: Respawn at medic building via tag lookup
     _respawn_player(character)
 

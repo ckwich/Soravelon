@@ -284,8 +284,50 @@ def banking_payment_tick(*args, **kwargs):
 
 
 def on_character_death(character, location):
-    pass  # STUB
+    """
+    Handle financial and XP penalties on player death.
+
+    Drops 20% of carried Scales into the player's corpse (lootable by others)
+    and wipes all uncommitted session XP.
+
+    Args:
+        character: The player character who died.
+        location: The room where death occurred (corpse is here).
+    """
+    dropped = handle_carried_scales_on_death(character)
+
+    # Place dropped Scales on corpse if any
+    if dropped > 0 and location:
+        corpse_key = f"remains of {character.key}"
+        for obj in location.contents:
+            if obj.key == corpse_key:
+                obj.db.scales = dropped
+                break
+
+    # Wipe uncommitted session XP (committed XP on db is safe)
+    character.ndb.session_xp = {}
+
+    # Notify the player
+    if dropped > 0:
+        character.msg(
+            f"|rYou lost {dropped} Scales and any uncommitted experience.|n"
+        )
+    else:
+        character.msg("|rYou lost any uncommitted experience.|n")
 
 
 def handle_carried_scales_on_death(character):
-    pass  # STUB
+    """
+    Calculate and apply the 20% carried Scales death penalty.
+
+    Args:
+        character: The player character who died.
+
+    Returns:
+        int: The number of Scales dropped (removed from carried).
+    """
+    carried = character.db.currency_scales or 0
+    dropped = int(carried * 0.20)
+    if dropped > 0:
+        character.db.currency_scales = carried - dropped
+    return dropped
