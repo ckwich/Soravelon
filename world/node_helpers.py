@@ -89,13 +89,13 @@ def count_players_in_zone(zone_id):
 
 
 def count_scholars_studying(zone_id):
-    """STUB — Returns 0 until Milestone 2."""
+    """Returns 0. Scholar tracking deferred to Milestone 2."""
     _, scholars, _, _ = count_zone_actors(zone_id)
     return scholars
 
 
 def count_active_stabilizers(zone_id):
-    """STUB — Returns 0 until Milestone 2."""
+    """Returns 0. Stabilizer tracking deferred to Milestone 2."""
     _, _, stabilizers, _ = count_zone_actors(zone_id)
     return stabilizers
 

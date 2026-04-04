@@ -9,10 +9,10 @@ Message types and debounce intervals (DEBOUNCE_INTERVALS):
   map_update      — zone room graph, player position, fog-of-war
   node_event      — zone node state transition (no debounce)
   flight_progress — Dragon Courier leg tracking
-  combat_update   — combat state (Phase 6 placeholder)
+  combat_update   — combat round state, combatants, HP
   quest_update    — quest state (active quests + event notifications)
   inventory_update — carried items + encumbrance
-  stat_update     — HP / resource bars (Phase 6 placeholder)
+  stat_update     — HP, stamina, resource bars
 
 Wire format (Evennia native):
   character.msg(status_update={"key": "val"})
@@ -149,7 +149,7 @@ def _resolve_combatant(cid):
 
 
 def _safe_ndb_value(holder, attr, default=None):
-    """Read an ndb attribute without leaking MagicMock placeholders into payloads."""
+    """Read an ndb attribute without leaking MagicMock values into payloads."""
     try:
         value = getattr(holder.ndb, attr, default)
     except Exception:
@@ -160,7 +160,7 @@ def _safe_ndb_value(holder, attr, default=None):
 
 
 def _safe_value(value, default=None):
-    """Collapse MagicMock placeholder values to a default."""
+    """Collapse MagicMock sentinel values to a default."""
     if type(value).__module__.startswith("unittest.mock"):
         return default
     return value
