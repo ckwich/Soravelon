@@ -174,6 +174,50 @@ def learn_recipe(character, recipe_id, learned_from=""):
     return (True, f"|g[Recipe learned: {recipe['name']}]|n")
 
 
+# --- Conversion Ratio (D-08) ---
+
+def get_conversion_quantity(character, recipe):
+    """
+    Calculate ingredient quantity needed based on skill for processing recipes (D-08).
+
+    Returns adjusted quantity if recipe has conversion_ratio, else None.
+    Thresholds: [30, 60, 85] -> quantities [3, 2, 1] (low -> mid -> high skill).
+    """
+    conversion = recipe.get("conversion_ratio")
+    if not conversion:
+        return None
+
+    from world.skill_engine import get_skill_value
+
+    skill = get_skill_value(character, recipe["skill"])
+    thresholds = conversion["thresholds"]
+    quantities = conversion["quantities"]
+
+    for i, threshold in enumerate(thresholds):
+        if skill < threshold:
+            return quantities[i]
+    return quantities[-1]
+
+
+# --- Processing Quality (D-07) ---
+
+def calculate_processing_quality(character_skill, recipe_difficulty, raw_quality="standard", has_station=False):
+    """
+    Quality propagation for processing recipes (D-07).
+
+    Raw material quality sets a floor. Processing skill can raise but not lower quality.
+    Returns a quality tier string from QUALITY_TIERS.
+    """
+    base_quality = calculate_craft_quality(character_skill, recipe_difficulty, has_station)
+
+    raw_index = QUALITY_TIERS.index(raw_quality) if raw_quality in QUALITY_TIERS else 1
+    base_index = QUALITY_TIERS.index(base_quality)
+
+    # Final quality is average of raw and skill-based, rounded down (floor influence)
+    final_index = (raw_index + base_index) // 2
+    return QUALITY_TIERS[final_index]
+
+
 # --- Ingredient Checking ---
 
 def _check_ingredients(character, recipe):
@@ -187,9 +231,14 @@ def _check_ingredients(character, recipe):
     contents = character.contents
     items_to_consume = []
 
+    # Processing recipe conversion ratio (D-08)
+    conversion_qty = get_conversion_quantity(character, recipe)
+
     for ingredient in recipe.get("ingredients", []):
         tag = ingredient["item_tag"]
         needed = ingredient["quantity"]
+        if conversion_qty is not None:
+            needed = conversion_qty  # skill-based override for processing recipes
         matched = []
 
         for obj in contents:
@@ -326,7 +375,26 @@ def craft_item(character, recipe_id):
     # 6. Consume ingredients
     _consume_ingredients(items_to_consume)
 
-    # 7. Create item
+    # 7. Create item — processing recipes use inline output dict (Phase 13)
+    if recipe.get("recipe_type") == "processing" and recipe.get("output", {}).get("item_id"):
+        from world.item_spawner import create_item_from_template
+
+        output_def = dict(recipe["output"])  # copy to avoid mutation
+        output_def["quality"] = quality
+        item = create_item_from_template(output_def, location=character)
+        if item:
+            item.tags.add(output_def["item_id"], category="item_tag")
+            if quality != "standard":
+                quality_display = QUALITY_DISPLAY.get(quality, quality)
+                item.key = f"{quality_display} {item.key}"
+            accumulate_skill_use(character, skill_id, count=1)
+            return (
+                True,
+                f"|gYou produce: {QUALITY_DISPLAY.get(quality, quality)} |w{recipe['name']}|n",
+            )
+        return (False, "|rSomething went wrong creating the item.|n")
+
+    # Standard crafting item creation
     item = _create_crafted_item(character, recipe, quality)
     if not item:
         return (
