@@ -10,7 +10,7 @@ Message types and debounce intervals (DEBOUNCE_INTERVALS):
   node_event      — zone node state transition (no debounce)
   flight_progress — Dragon Courier leg tracking
   combat_update   — combat state (Phase 6 placeholder)
-  quest_update    — quest state (future placeholder)
+  quest_update    — quest state (active quests + event notifications)
   inventory_update — carried items + encumbrance
   stat_update     — HP / resource bars (Phase 6 placeholder)
 
@@ -427,13 +427,74 @@ def push_combat_update(character, data=None):
     _send(character, "combat_update", payload)
 
 
-def push_quest_update(character, data):
+def push_quest_update(character, data=None):
     """
-    Push quest state to the character (placeholder passthrough).
+    Push quest state to the character.
 
-    Quest field schema is TBD when the quest system is built.
+    Payload shape:
+        {
+            "active_quests": [
+                {
+                    "quest_id": str,
+                    "title": str,
+                    "status": str,  # "active", "completed", "failed"
+                    "objectives": [
+                        {
+                            "type": str,
+                            "target": str,
+                            "current": int,
+                            "required": int,
+                            "complete": bool,
+                        }
+                    ],
+                }
+            ],
+            "event": str or None,  # "accepted", "completed", "failed", "progress", None
+            "event_quest_id": str or None,  # which quest the event is about
+        }
+
+    If data is provided (event-driven push), merges event info with the
+    full active quest list. If data is None (full refresh), sends the
+    active quest list with no event.
     """
-    _send(character, "quest_update", data)
+    from world.quest_engine import get_active_quests, _get_quest_spec, _make_obj_key
+
+    # Build active_quests list from quest_engine
+    active_quests = []
+    for cq in get_active_quests(character):
+        spec = _get_quest_spec(cq.quest_id)
+        progress = dict(cq.progress or {})
+        objectives = []
+        for obj in (spec.get("objectives") or [] if spec else []):
+            key = _make_obj_key(obj["type"], obj["target"])
+            required = obj.get("count", 1)
+            current = progress.get(key, 0)
+            objectives.append({
+                "type": obj["type"],
+                "target": obj["target"],
+                "current": current,
+                "required": required,
+                "complete": current >= required,
+            })
+        active_quests.append({
+            "quest_id": cq.quest_id,
+            "title": spec.get("name", cq.quest_id) if spec else cq.quest_id,
+            "status": cq.status,
+            "objectives": objectives,
+        })
+
+    payload = {
+        "active_quests": active_quests,
+        "event": None,
+        "event_quest_id": None,
+    }
+
+    # Merge event info from data arg if provided
+    if data:
+        payload["event"] = data.get("event") or data.get("status")
+        payload["event_quest_id"] = data.get("event_quest_id") or data.get("quest_id")
+
+    _send(character, "quest_update", payload)
 
 
 def push_inventory_update(character):
