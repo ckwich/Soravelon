@@ -12,7 +12,7 @@ per mob_type via zone_obj.db.loot_table_overrides.
 
 Public API:
     roll_loot(mob, killer) -> list[dict]  — item_def dicts, may be empty
-    get_loot_modifiers(mob) -> dict       — rarity modifiers (preserved from stub)
+    get_loot_modifiers(mob) -> dict       — rarity modifiers
 """
 
 import random
@@ -36,7 +36,7 @@ def get_material_tier(skill_score):
 
 
 # ---------------------------------------------------------------------------
-# Rarity modifiers (stub values — preserved)
+# Rarity modifiers
 # ---------------------------------------------------------------------------
 
 LOOT_TIER_MODIFIERS = {

@@ -102,7 +102,7 @@ def _build_dialogue_context(npc, character):
     Build the full context dict for condition evaluation.
 
     Lazy-imports get_character_context_packet to avoid circular deps.
-    Adds quest state stubs and standing tier for condition checks.
+    Adds quest state and standing tier for condition checks.
     This is the same interface future LLM will consume (NPC-03).
     """
     from world.world_state import get_character_context_packet
@@ -143,7 +143,7 @@ def _check_condition(condition, context):
     if condition in tier_conditions:
         return context.get("standing_tier") == condition
 
-    # Quest conditions (stubs — return False until quest system)
+    # Quest conditions (wired to quest_engine via context packet)
     if condition == "quest_active":
         return len(context.get("active_quests") or []) > 0
     if condition == "quest_complete":
@@ -378,7 +378,7 @@ def extract_topic(text, available_topics):
 
 
 # ---------------------------------------------------------------------------
-# Quest stubs
+# Quest integration
 # ---------------------------------------------------------------------------
 
 def has_available_quest(npc, character):

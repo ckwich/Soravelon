@@ -1906,7 +1906,7 @@ def build():
                respawn_minutes=20, respawn_variance=5)
 
     # ==================================================================
-    #  NPCs (D-22, D-23: field NPCs with quest stubs)
+    #  NPCs (D-22, D-23: field NPCs with quest hooks)
     # ==================================================================
 
     # NPC 1: Warden Ranger at the outpost

@@ -391,7 +391,7 @@ def execute_sequence_action(action, mob, combat_handler):
     Action types:
         - "echo": Return text for room display.
         - "ability": Force mob to use a specific ability (bypass weight selection).
-        - "spawn": Placeholder for mid-combat mob spawn.
+        - "spawn": Mid-combat mob spawn (delegated to CombatScript).
         - "call_for_help": Find same-type mobs nearby and add to combat.
         - "modify_behavior": Change mob.db.base_aggression mid-combat.
         - "zone_echo": Send message to adjacent rooms.
@@ -428,7 +428,7 @@ def execute_sequence_action(action, mob, combat_handler):
         }
 
     elif action_type == "spawn":
-        # Placeholder -- CombatScript handles actual mob creation
+        # CombatScript handles actual mob creation from this action dict
         return {
             "type": "spawn",
             "mob_key": action.get("mob_key"),

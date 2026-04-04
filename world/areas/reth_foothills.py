@@ -2094,7 +2094,7 @@ def build():
     )
 
     # ==================================================================
-    #  FIELD NPCs (D-22: 3 NPCs with dialogue and quest hook stubs)
+    #  FIELD NPCs (D-22: 3 NPCs with dialogue and quest hooks)
     # ==================================================================
 
     # 1. Mining Foreman (Consortium faction) -- quest hook about lost miners

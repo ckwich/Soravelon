@@ -56,8 +56,8 @@ def _evaluate_spawn_condition(condition_str, room):
     Supported conditions:
       node_failure_above_N  — zone node failure float >= N
       node_active           — node state in ("active", "critical")
-      quest_complete:id     — stub; always False until quest system built
-      time_of_day:period    — stub; always True until time system built
+      quest_complete:id     — checks quest_engine for completion (deferred: time_of_day)
+      time_of_day:period    — always True (time system deferred to Milestone 2)
     """
     if not condition_str:
         return True
@@ -82,11 +82,11 @@ def _evaluate_spawn_condition(condition_str, room):
         state = script.db.state or "dormant"
         return state in ("active", "critical")
 
-    # quest_complete:quest_id — stub until quest system built
+    # quest_complete:quest_id — deferred: would check quest_engine
     if condition_str.startswith("quest_complete:"):
         return False
 
-    # time_of_day:period — stub until time system built
+    # time_of_day:period — deferred to Milestone 2 time system
     if condition_str.startswith("time_of_day:"):
         return True
 

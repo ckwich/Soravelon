@@ -2,7 +2,7 @@
 Global data-driven ability registry.
 
 ABILITIES dict keyed by ability_id, same constant-dict pattern as
-GUILDS/SUBCLASSES in guild_engine.py. Phase 5a populates ~20 stub entries
+GUILDS/SUBCLASSES in guild_engine.py. Phase 5a populated initial entries
 for dispatcher validation; Phase 5b fills all 330 entries.
 
 Derived lookups (DOMAIN_ABILITIES, SUBCLASS_SIGNATURES) are built at module
@@ -48,12 +48,12 @@ ABILITY_TIERS = {
 #   application_chance, description, room_flag_written, attuned_variants,
 #   subclass_id
 #
-# Phase 5a: ~20 stub entries covering all 10 domains and all 10 effect types.
+# Phase 5a: initial entries covering all 10 domains and all 10 effect types.
 # Phase 5b: full 330 entries.
 # ---------------------------------------------------------------------------
 
 ABILITIES = {
-    # (All Phase 5a stubs removed -- replaced by full domain pools below)
+    # (All Phase 5a initial entries replaced by full domain pools below)
     # ===================================================================
     # COMBAT DOMAIN POOL (15 abilities) -- resource_type: momentum
     # Fingerprint: PRESS -- sustained aggression, always moving forward
