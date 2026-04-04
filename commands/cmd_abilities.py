@@ -168,13 +168,41 @@ class CmdUseAbility(Command):
             ok, msg = use_ability(character, ability_id, target)
             character.msg(msg)
 
-        # D-23 stub: attuned variant informational text
+        # Attuned variant display (D-23)
         ability = ABILITIES.get(ability_id, {})
-        if ability.get("attuned_variants"):
-            character.msg(
-                "|c[An attuned variant of this ability may be available "
-                "in certain environments.]|n"
-            )
+        variants = ability.get("attuned_variants")
+        if variants:
+            # Determine current environment from zone_type or room node tags
+            current_env = None
+            loc = character.location
+            if loc:
+                # Check room tags for node type first (more specific)
+                for env_key in variants:
+                    if loc.tags.get(env_key, category="node_type"):
+                        current_env = env_key
+                        break
+                # Fall back to zone_type from the zone object
+                if not current_env:
+                    zone_id = loc.db.zone_id
+                    if zone_id:
+                        from world.zone_scaling import get_zone_obj_for_room
+                        zone_obj = get_zone_obj_for_room(loc)
+                        if zone_obj:
+                            zt = zone_obj.db.zone_type
+                            if zt and zt in variants:
+                                current_env = zt
+            if current_env:
+                variant_name = variants[current_env]
+                character.msg(
+                    f"|c[Attuned: {variant_name} -- this ability is "
+                    f"enhanced in this environment.]|n"
+                )
+            else:
+                env_names = ", ".join(sorted(variants.keys()))
+                character.msg(
+                    f"|C[This ability has attuned variants in: "
+                    f"{env_names}.]|n"
+                )
 
     def _resolve_ability_and_target(self, raw_args, known_ids):
         """
