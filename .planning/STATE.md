@@ -157,6 +157,11 @@ Recent decisions affecting current work:
 - [Phase 13]: Sense gathering hints already wired via SENSE_DISPLAY in room_state.py -- no cmd_sense.py changes needed
 - [Phase 13]: Used pure unittest.TestCase + MagicMock for all gathering/fishing tests (no EvenniaTest DB dependencies)
 
+### Roadmap Evolution
+
+- Phase 13 added: Gathering and Refining (resource gathering nodes, material processing, fishing, tools)
+- Phase 14 added: All TBD/TODOs implemented
+
 ### Pending Todos
 
 None yet.

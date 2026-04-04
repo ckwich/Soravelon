@@ -235,3 +235,13 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
 | 12. Launch Polish and Help | 1/3 | Complete    | 2026-04-03 |
 | 13. Gathering and Refining | 7/7 | Complete    | 2026-04-04 |
+
+### Phase 14: All TBD/TODOs implemented
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 13
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 14 to break down)
