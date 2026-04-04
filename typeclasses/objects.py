@@ -239,6 +239,52 @@ class SoravelonEquipment(SoravelonItem):
         return True, None
 
 
+class GatheringNode(SoravelonObject):
+    """
+    A harvestable resource node in a room. Created by GatheringPoolScript.
+
+    Not an item -- cannot be picked up. Players interact via gathering
+    commands (mine, harvest, chop, forage, fish, butcher).
+    """
+
+    def at_object_creation(self):
+        super().at_object_creation()
+        self.db.node_type = ""          # category from GATHERING_CATEGORIES (ore, herb, wood, etc.)
+        self.db.material_id = ""        # key into MATERIAL_REGISTRY
+        self.db.gathers_remaining = 4   # randomized 2-6 at spawn per D-03
+        self.db.tier = 1                # material tier 1-5
+        self.db.zone_id = ""            # zone this node belongs to
+        self.db.pool_id = ""            # which pool definition spawned this
+        self.db.visibility = "low"      # "low"/"mid"/"high" per D-21
+        self.locks.add("get:false()")   # cannot pick up nodes
+
+    def get_display_name(self, looker=None, **kwargs):
+        """Skill-gated visibility. Returns None if looker can't see this node."""
+        if looker and self.db.visibility != "low":
+            from world.material_definitions import VISIBILITY_THRESHOLDS, GATHERING_CATEGORIES
+            cat = GATHERING_CATEGORIES.get(self.db.node_type, {})
+            skill_name = cat.get("skill", "")
+            if skill_name:
+                from world.skill_engine import get_skill_value
+                skill_val = get_skill_value(looker, skill_name)
+                threshold = VISIBILITY_THRESHOLDS.get(self.db.visibility, 0)
+                if skill_val < threshold:
+                    return None
+        return super().get_display_name(looker, **kwargs)
+
+    def return_appearance(self, looker, **kwargs):
+        """Show gathers remaining hint."""
+        base = super().return_appearance(looker, **kwargs)
+        remaining = self.db.gathers_remaining or 0
+        if remaining > 4:
+            hint = "It looks rich with resources."
+        elif remaining > 2:
+            hint = "Some resources remain here."
+        else:
+            hint = "This deposit is nearly exhausted."
+        return f"{base}\n{hint}"
+
+
 class SoravelonKeyringItem(SoravelonItem):
     """
     A credential item — key, token, faction badge.
