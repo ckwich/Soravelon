@@ -216,6 +216,27 @@ Plans:
 
 **Canonical refs**: world/crafting_engine.py, world/crafting_definitions.py, commands/cmd_crafting.py, world/item_spawner.py, world/loot_tables.py, world/mob_spawner.py, world/skill_definitions.py
 
+### Phase 14: All TBD/TODOs Implemented
+**Goal**: Implement all stub functions and placeholder handlers left by Phases 1-13: death penalty (20% Scales drop on corpse + uncommitted XP loss), combat affix hooks (rarity damage multipliers + status effect mapping), quest stub wiring to Phase 11's quest engine, WorldEventScript behavior, Lore help entry, OOB quest_update payload, attuned variant text, and zone tier reference cleanup
+**Depends on**: Phase 13 (gathering system complete), Phase 11 (quest engine exists)
+**Requirements**: SC-1, SC-2, SC-3, SC-4, SC-5, SC-6, SC-7, SC-8
+**Success Criteria** (what must be TRUE):
+  1. on_character_death() drops 20% of carried Scales into the player's corpse container and wipes uncommitted session XP
+  2. check_mob_damage_modifiers() returns rarity-based multipliers (1.0/1.15/1.3/1.5); check_mob_on_hit_effects() and check_mob_per_round_effects() apply status effects from affix definitions
+  3. set_quest_flag and open_dialogue action handlers call into quest_engine instead of _stub_handler
+  4. Dialogue engine pulls active quest hints instead of returning empty stubs
+  5. WorldEventScript has real event tracking behavior; Lore help entry has real content
+  6. quest_update OOB message has a defined payload shape with quest progress data
+  7. No TODO/STUB/placeholder comments remain in production source (excluding tests)
+  8. No references to "zone tier" as a game concept remain in source code
+**Plans**: 4 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Death penalty (Scales drop + XP loss) + combat affix hooks (rarity multipliers + status effects)
+- [ ] 14-02-PLAN.md — Quest stub wiring (action vocabulary + dialogue hints + OOB payload + mob disposition)
+- [ ] 14-03-PLAN.md — WorldEventScript + Lore help entry + attuned variant text
+- [ ] 14-04-PLAN.md — Final sweep: STUB/placeholder cleanup + zone tier removal + test updates
+
 ## Progress
 
 **Execution Order:**
@@ -235,13 +256,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
 | 12. Launch Polish and Help | 1/3 | Complete    | 2026-04-03 |
 | 13. Gathering and Refining | 7/7 | Complete    | 2026-04-04 |
-
-### Phase 14: All TBD/TODOs implemented
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 13
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 14 to break down)
+| 14. All TBD/TODOs Implemented | 0/4 | Not started | - |
