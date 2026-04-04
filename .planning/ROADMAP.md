@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 5: Ancestry Engine and Ability System** - 4 playable ancestries and all 90 subclasses with 360+ ability definitions
 - [ ] **Phase 6: Combat, Skills, and NPC Templates** - Ability-driven combat engine, proficiency skill tracks, and world-state NPC dialogue system
 - [ ] **Phase 7: Milestone 1 Content** - Hub City 1, 4 starter zones (3 Layer 0 + 1 Layer 1), and basic equipment authored via GUI builder
-- [ ] **Phase 13: Gathering and Refining** - Resource gathering nodes, material processing pipeline, fishing system, tool requirements, and scalable 5-tier material registry
+- [x] **Phase 13: Gathering and Refining** - Resource gathering nodes, material processing pipeline, fishing system, tool requirements, and scalable 5-tier material registry (completed 2026-04-04)
 
 ## Phase Details
 
@@ -212,7 +212,7 @@ Plans:
 - [x] 13-04-PLAN.md — Gathering commands (_BaseGatherCmd + mine/harvest/chop/forage/butcher) + corpse butcher
 - [x] 13-05-PLAN.md — Fishing system (CmdFish active + idle modes, CmdReel)
 - [x] 13-06-PLAN.md — Prospect/survey + Sense gathering hints + tool repair + command registration
-- [ ] 13-07-PLAN.md — Test suite: test_gathering.py + test_fishing.py
+- [x] 13-07-PLAN.md — Test suite: test_gathering.py + test_fishing.py
 
 **Canonical refs**: world/crafting_engine.py, world/crafting_definitions.py, commands/cmd_crafting.py, world/item_spawner.py, world/loot_tables.py, world/mob_spawner.py, world/skill_definitions.py
 
@@ -234,4 +234,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
 | 12. Launch Polish and Help | 1/3 | Complete    | 2026-04-03 |
-| 13. Gathering and Refining | 6/7 | In Progress|  |
+| 13. Gathering and Refining | 7/7 | Complete   | 2026-04-04 |
