@@ -5,11 +5,10 @@ Shared dispatch module for all trigger-driven and command-driven game events.
 Every action type in the game routes through execute_action().
 
 16 action types (D-07, D-24):
-  Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
+  All 16 implemented: teleport, teleport_to_mob, echo, give_item, take_item,
                modify_standing, modify_attunement, log_world_event, despawn_self,
                spawn_mob, add_room_flag, give_scales, give_skill_xp,
-               modify_node_failure
-  Stubs (D-05): set_quest_flag, open_dialogue
+               modify_node_failure, set_quest_flag, open_dialogue
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
 execute_action() enforces a trigger chain depth limit of 3 (D-19).
@@ -294,10 +293,85 @@ def _handle_modify_node_failure(action_dict, context, _depth):
     return True, ""
 
 
-def _stub_handler(action_dict, context, _depth):
-    """Placeholder for not-yet-implemented actions."""
-    action_type = action_dict.get("action_type", "unknown")
-    return False, f"Action '{action_type}' not yet implemented."
+def _handle_set_quest_flag(action_dict, context, _depth):
+    """
+    Set a quest flag for a character's active quest.
+
+    action_dict keys:
+        quest_id (str): ID of the quest to update
+        flag_name (str): name of the flag to set
+
+    If the flag represents an investigation milestone (flag_name starts with
+    'investigate_'), delegates to check_investigate_objectives. Otherwise,
+    sets the flag directly on the quest's progress dict.
+    """
+    character = context.get("character")
+    if not character:
+        return False, "No character in context"
+    quest_id = action_dict.get("quest_id")
+    flag_name = action_dict.get("flag_name")
+    if not quest_id or not flag_name:
+        return False, "set_quest_flag: missing quest_id or flag_name"
+
+    from world.quest_engine import get_quest_detail
+
+    detail = get_quest_detail(character, quest_id)
+    if not detail or detail.get("status") != "active":
+        return False, "No active quest found."
+
+    # Investigation milestone delegation
+    if flag_name.startswith("investigate_"):
+        from world.quest_engine import check_investigate_objectives
+        room = context.get("room") or (character.location if character else None)
+        if room:
+            check_investigate_objectives(character, room)
+        return True, f"Quest flag '{flag_name}' set."
+
+    # Generic flag — update progress dict directly via CharacterQuest model
+    from world.quest_engine import get_active_quests
+    for cq in get_active_quests(character):
+        if cq.quest_id == quest_id:
+            progress = dict(cq.progress or {})
+            progress[flag_name] = 1
+            cq.progress = progress
+            cq.save(update_fields=["progress"])
+            return True, f"Quest flag '{flag_name}' set."
+
+    return False, "No active quest found."
+
+
+def _handle_open_dialogue(action_dict, context, _depth):
+    """
+    Open dialogue with an NPC, checking for available quest offers.
+
+    action_dict keys:
+        npc (object, optional): the NPC to talk to (falls back to context)
+
+    If the NPC has a quest available, auto-accepts it for the character.
+    Sends the NPC greeting to the character regardless.
+    """
+    character = context.get("character")
+    if not character:
+        return False, "No character in context"
+
+    npc = action_dict.get("npc") or context.get("mob") or context.get("npc")
+    if not npc:
+        return False, "open_dialogue: no NPC in context"
+
+    from world.quest_engine import get_available_quest_for_npc, accept_quest
+    from world.dialogue_engine import resolve_greeting
+
+    # Check for quest offer
+    quest_spec = get_available_quest_for_npc(npc, character)
+    if quest_spec:
+        quest_id = quest_spec.get("quest_id")
+        accept_quest(character, quest_id, quest_spec)
+
+    # Send NPC greeting
+    greeting_text, _tier = resolve_greeting(npc, character)
+    character.msg(greeting_text)
+
+    return True, "Dialogue opened."
 
 
 # ---------------------------------------------------------------------------
@@ -314,8 +388,8 @@ ACTION_HANDLERS = {
     "modify_attunement": _handle_modify_attunement,
     "log_world_event": _handle_log_world_event,
     "despawn_self": _handle_despawn_self,
-    "set_quest_flag": _stub_handler,
-    "open_dialogue": _stub_handler,
+    "set_quest_flag": _handle_set_quest_flag,
+    "open_dialogue": _handle_open_dialogue,
     "spawn_mob": _handle_spawn_mob,
     "add_room_flag": _action_add_room_flag,
     "give_scales": _handle_give_scales,

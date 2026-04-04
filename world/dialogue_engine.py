@@ -113,8 +113,10 @@ def _build_dialogue_context(npc, character):
     # Standing tier for condition matching
     context["standing_tier"] = get_standing_tier(character, npc)
 
-    # Quest state stubs — wired when quest system is built
-    context["active_quests"] = []
+    # Quest state — pull from quest_engine
+    from world.quest_engine import get_active_quests
+    active_cqs = get_active_quests(character)
+    context["active_quests"] = [cq.quest_id for cq in active_cqs]
     context["completed_quests"] = []
     context["failed_quests"] = []
 
@@ -229,9 +231,13 @@ def get_npc_hints(npc, character):
     tier_hints = npc.db.dialogue_tier_hints or {}
     hints.extend(tier_hints.get(tier, []))
 
-    # Quest hints (stub — no active quests yet)
-    # quest_hints = npc.db.dialogue_quest_hints or {}
-    # for quest_id in active_quests: hints.extend(quest_hints.get(quest_id, []))
+    # Quest hints — show hints for active quests this NPC knows about
+    from world.quest_engine import get_active_quests
+    active_cqs = get_active_quests(character)
+    active_quest_ids = [cq.quest_id for cq in active_cqs]
+    quest_hints = npc.db.dialogue_quest_hints or {}
+    for quest_id in active_quest_ids:
+        hints.extend(quest_hints.get(quest_id, []))
 
     # Network hints — available when character has high Network dimension
     context = _build_dialogue_context(npc, character)

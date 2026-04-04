@@ -94,7 +94,29 @@ def get_trust_modifier(character, faction_id, pre_trust_disposition):
 
 
 def get_quest_modifier(character, quest_modifier_id):
-    """STUB — quest system not yet built. Always returns 0.0."""
+    """
+    Return disposition modifier from active quests referencing this modifier ID.
+
+    Searches the character's active quests for a quest spec containing
+    a 'disposition_modifier' field keyed by quest_modifier_id. Returns
+    the float value if found, otherwise 0.0.
+    """
+    from world.quest_engine import get_active_quests, _get_quest_spec
+
+    for cq in get_active_quests(character):
+        spec = _get_quest_spec(cq.quest_id)
+        if not spec:
+            continue
+        modifier = spec.get("disposition_modifier")
+        if isinstance(modifier, dict):
+            # Dict keyed by modifier_id -> float
+            val = modifier.get(quest_modifier_id)
+            if val is not None:
+                return float(val)
+        elif isinstance(modifier, (int, float)):
+            # Single modifier applies if quest_modifier_id matches quest_id
+            if cq.quest_id == quest_modifier_id:
+                return float(modifier)
     return 0.0
 
 
@@ -124,7 +146,7 @@ def get_mob_disposition(mob, character):
             character, mob.db.faction, disposition
         )
 
-    # Quest modifier (stub)
+    # Quest modifier — reads from active quests via quest_engine
     if getattr(mob.db, 'quest_modifier', None):
         disposition += get_quest_modifier(
             character, mob.db.quest_modifier
