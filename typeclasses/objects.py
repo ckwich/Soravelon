@@ -120,6 +120,8 @@ class CorpseContainer(SoravelonContainer):
         self.db.mob_rarity = "normal"
         self.db.decay_at = None
         self.db.item_type = "corpse"
+        self.db.butcherable = True
+        self.db.butchered = False
         self.locks.add("get:false()")
 
     def can_loot(self, character):
@@ -153,6 +155,22 @@ class CorpseContainer(SoravelonContainer):
                 return True, ""
 
         return False, "This corpse's loot is still being claimed by the killer."
+
+    def can_butcher(self, butcher):
+        """
+        Check if this corpse can be butchered.
+
+        Returns False if already butchered, decayed, or if the butcher
+        cannot access the corpse (respects killer lock / grace period).
+
+        Returns:
+            (bool, str): Success and message.
+        """
+        if self.db.butchered:
+            return False, "This corpse has already been butchered."
+        if (self.db.loot_phase or "locked") == "decayed":
+            return False, "The corpse has decayed beyond salvaging."
+        return self.can_loot(butcher)
 
 
 class SoravelonEquipment(SoravelonItem):

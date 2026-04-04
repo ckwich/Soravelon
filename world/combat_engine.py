@@ -535,6 +535,8 @@ def spawn_corpse(mob, killer):
     corpse.db.killer_id = killer.id
     corpse.db.mob_key = mob.key
     corpse.db.mob_rarity = mob.db.rarity or "normal"
+    corpse.db.butcherable = True
+    corpse.db.butchered = False
 
     # Group leader for group loot access
     group_leader_id = getattr(killer.ndb, "group_leader_id", None)
