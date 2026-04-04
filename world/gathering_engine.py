@@ -437,6 +437,59 @@ def _set_room_flags_for_pool(pool_type, eligible_room_ids):
             add_room_flag(room, flag_name, duration=-1)
 
 
+# ---------------------------------------------------------------------------
+# Prospect scan (D-22) — straight-line node discovery
+# ---------------------------------------------------------------------------
+
+CARDINAL_DIRECTIONS = ["north", "south", "east", "west"]
+
+
+def prospect_scan(character, max_range):
+    """
+    Scan straight lines from character's room for gathering nodes (D-22).
+
+    IMPORTANT: This is straight-line walking, NOT BFS. Each cardinal direction
+    is followed through exits until no matching exit is found or max_range reached.
+
+    Args:
+        character: The scanning character (skill checked for visibility)
+        max_range: Max rooms to scan in each direction
+
+    Returns:
+        list of dicts: [{"direction": str, "distance": int, "node": GatheringNode}, ...]
+    """
+    from typeclasses.objects import GatheringNode
+
+    results = []
+    room = character.location
+
+    for direction in CARDINAL_DIRECTIONS:
+        current = room
+        for distance in range(1, max_range + 1):
+            # Find exit in this direction
+            exit_obj = None
+            for ex in current.exits:
+                if ex.key.lower() == direction:
+                    exit_obj = ex
+                    break
+
+            if not exit_obj or not exit_obj.destination:
+                break
+
+            current = exit_obj.destination
+
+            # Check for gathering nodes in this room
+            for obj in current.contents:
+                if isinstance(obj, GatheringNode):
+                    results.append({
+                        "direction": direction,
+                        "distance": distance,
+                        "node": obj,
+                    })
+
+    return results
+
+
 def initialize_zone_gathering(zone_obj):
     """
     Initialize all gathering pools defined on a zone object.
