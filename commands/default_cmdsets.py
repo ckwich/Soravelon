@@ -108,6 +108,21 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdHelp())
         from commands.cmd_lore import CmdLore
         self.add(CmdLore())
+        # Gathering commands (Phase 13)
+        from commands.cmd_gathering import (
+            CmdMine, CmdHarvest, CmdChop, CmdForage, CmdButcher,
+        )
+        self.add(CmdMine())
+        self.add(CmdHarvest())
+        self.add(CmdChop())
+        self.add(CmdForage())
+        self.add(CmdButcher())
+        from commands.cmd_fishing import CmdFish, CmdReel
+        self.add(CmdFish())
+        self.add(CmdReel())
+        from commands.cmd_prospect import CmdProspect, CmdRepair
+        self.add(CmdProspect())
+        self.add(CmdRepair())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
