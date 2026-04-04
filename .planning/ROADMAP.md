@@ -191,25 +191,35 @@ Plans:
 **Plans**: TBD
 
 ### Phase 13: Gathering and Refining
-**Goal**: Resource gathering nodes spawn stochastically in flagged rooms with zone-wide pool limits, players use skill-specific commands (mine, harvest, chop, forage, fish, butcher) to extract raw materials, processing recipes convert raw materials into crafting ingredients (ore→ingot, fiber→thread→cloth), a fishing mini-game and idle mode exist, tools with durability are required, and a scalable 5-tier MATERIAL_REGISTRY organizes all materials
+**Goal**: Resource gathering nodes spawn stochastically in flagged rooms with zone-wide pool limits, players use skill-specific commands (mine, harvest, chop, forage, fish, butcher) to extract raw materials, processing recipes convert raw materials into crafting ingredients (ore->ingot, fiber->thread->cloth), a fishing mini-game and idle mode exist, tools with durability are required, and a scalable 5-tier MATERIAL_REGISTRY organizes all materials
 **Depends on**: Phase 6c (crafting system must exist), Phase 9 (trainers and zone content must be wired)
-**Requirements**: TBD
+**Requirements**: SC-1, SC-2, SC-3, SC-4, SC-5, SC-6, SC-7, SC-8
 **Success Criteria** (what must be TRUE):
   1. Gathering nodes spawn randomly in eligible rooms per zone-level gathering_pool() definitions with max_active limits; depleted nodes respawn in different eligible rooms
   2. Players use mine/harvest/chop/forage/fish/butcher commands with required tools; gathering delay varies by tier and is reduced by skill (min 40% of base)
-  3. Processing recipes in RECIPE_REGISTRY convert raw materials to crafting ingredients with skill-based conversion ratios (3:1→2:1→1:1) and quality propagation
+  3. Processing recipes in RECIPE_REGISTRY convert raw materials to crafting ingredients with skill-based conversion ratios (3:1->2:1->1:1) and quality propagation
   4. MATERIAL_REGISTRY in world/material_definitions.py defines all materials with 5 expandable tiers, categories, and skill mappings
-  5. Fishing has an active mini-game (cast→bite→reel) with full rewards and an idle mode with diminished returns
+  5. Fishing has an active mini-game (cast->bite->reel) with full rewards and an idle mode with diminished returns
   6. Tools degrade with use and are repairable via smithing; no tool = cannot gather
   7. Prospect/survey reveals nodes in straight lines with directional indicators; Sense gives vague hints; tiered visibility gates mid/high-tier nodes by skill
   8. Mob loot drops (hides, bones, silk) feed into the processing pipeline as raw materials
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Material registry + new gathering skills + room state flags + item_tag fix
+- [ ] 13-02-PLAN.md — GatheringNode typeclass + gathering_engine.py + GatheringPoolScript + AreaBuilder DSL
+- [ ] 13-03-PLAN.md — Processing recipes in RECIPE_REGISTRY + crafting engine conversion ratio extension
+- [ ] 13-04-PLAN.md — Gathering commands (_BaseGatherCmd + mine/harvest/chop/forage/butcher) + corpse butcher
+- [ ] 13-05-PLAN.md — Fishing system (CmdFish active + idle modes, CmdReel)
+- [ ] 13-06-PLAN.md — Prospect/survey + Sense gathering hints + tool repair + command registration
+- [ ] 13-07-PLAN.md — Test suite: test_gathering.py + test_fishing.py
+
 **Canonical refs**: world/crafting_engine.py, world/crafting_definitions.py, commands/cmd_crafting.py, world/item_spawner.py, world/loot_tables.py, world/mob_spawner.py, world/skill_definitions.py
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b → 6c → 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -224,4 +234,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 3.1 → 4 → 5 → 6a → 6b
 | 6c. NPC Dialogue & Crafting | 0/TBD | Not started | - |
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
 | 12. Launch Polish and Help | 1/3 | Complete    | 2026-04-03 |
-| 13. Gathering and Refining | 0/TBD | Not started | - |
+| 13. Gathering and Refining | 0/7 | Not started | - |
