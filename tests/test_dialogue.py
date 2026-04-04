@@ -514,11 +514,16 @@ class TestContextPacketInterface(unittest.TestCase):
 
     @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
     @patch("world.world_state.get_character_context_packet")
-    def test_quest_stubs_present(self, mock_packet, mock_tier):
-        """Quest state stubs are empty lists until quest system is built."""
+    @patch("world.quest_engine.get_active_quests")
+    def test_quest_hints_from_active_quests(self, mock_active, mock_packet, mock_tier):
+        """Quest state populated from quest_engine; active_quests contains quest IDs."""
         from world.dialogue_engine import _build_dialogue_context
 
         mock_packet.return_value = {}
+
+        cq1 = MagicMock()
+        cq1.quest_id = "wolves_hunt"
+        mock_active.return_value = [cq1]
 
         npc = MagicMock()
         npc.db.zone_id = "test_zone"
@@ -526,6 +531,6 @@ class TestContextPacketInterface(unittest.TestCase):
         char = MagicMock()
 
         context = _build_dialogue_context(npc, char)
-        self.assertEqual(context["active_quests"], [])
-        self.assertEqual(context["completed_quests"], [])
-        self.assertEqual(context["failed_quests"], [])
+        self.assertIn("wolves_hunt", context["active_quests"])
+        self.assertIn("completed_quests", context)
+        self.assertIn("failed_quests", context)

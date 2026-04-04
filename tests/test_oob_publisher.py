@@ -148,13 +148,13 @@ class TestPushStatUpdate(unittest.TestCase):
         kwargs = self.char.msg.call_args.kwargs
         self.assertIn("stat_update", kwargs)
 
-    def test_placeholder_fields(self):
+    def test_stat_fields_present(self):
         from world.oob_publisher import push_stat_update
         push_stat_update(self.char)
         data = self.char.msg.call_args.kwargs["stat_update"]
-        self.assertIsNone(data["hp"])
-        self.assertIsNone(data["hp_max"])
-        self.assertEqual(data["conditions"], [])
+        self.assertIn("hp", data)
+        self.assertIn("hp_max", data)
+        self.assertIn("conditions", data)
 
     def test_no_send_disconnected(self):
         from world.oob_publisher import push_stat_update
@@ -248,13 +248,25 @@ class TestPushQuestUpdate(unittest.TestCase):
     def setUp(self):
         self.char = _make_char()
 
-    def test_sends_quest_update(self):
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    def test_sends_quest_update(self, mock_quests):
         from world.oob_publisher import push_quest_update
-        payload = {"quest_id": "wolves_hunt", "progress": 5}
+        payload = {"quest_id": "wolves_hunt", "event": "accepted"}
         push_quest_update(self.char, payload)
         self.char.msg.assert_called_once()
         data = self.char.msg.call_args.kwargs["quest_update"]
-        self.assertEqual(data["quest_id"], "wolves_hunt")
+        self.assertEqual(data["event_quest_id"], "wolves_hunt")
+
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    def test_quest_update_payload_shape(self, mock_quests):
+        """quest_update payload has active_quests list, event, and event_quest_id fields."""
+        from world.oob_publisher import push_quest_update
+        push_quest_update(self.char, {"event": "progress", "quest_id": "q1"})
+        data = self.char.msg.call_args.kwargs["quest_update"]
+        self.assertIn("active_quests", data)
+        self.assertIsInstance(data["active_quests"], list)
+        self.assertIn("event", data)
+        self.assertIn("event_quest_id", data)
 
 
 # ---------------------------------------------------------------------------

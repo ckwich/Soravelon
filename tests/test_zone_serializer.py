@@ -156,7 +156,7 @@ class TestValidationGating(ZoneSerializerTestBase):
         from world.area_validator import ValidationError
 
         # Patch validate_zone to return a warning (not an error)
-        warning = ValidationError(severity="warning", field_path="zone.tier", message="tier missing")
+        warning = ValidationError(severity="warning", field_path="zone.name", message="name missing")
         with patch("world.zone_serializer.validate_zone", return_value=[warning]):
             # Should NOT raise
             report = load_zone_from_json(_minimal_zone_data())

@@ -31,7 +31,7 @@ class TestValidationErrorDataclass(unittest.TestCase):
 
     def test_warning_severity(self):
         """ValidationError accepts 'warning' severity."""
-        err = ValidationError(severity="warning", field_path="zone.tier", message="tier low")
+        err = ValidationError(severity="warning", field_path="zone.name", message="name low")
         self.assertEqual(err.severity, "warning")
 
 

@@ -203,19 +203,64 @@ class TestTeleportToMobAction(EvenniaTest):
         self.assertFalse(success)
 
 
-class TestStubActions(EvenniaTest):
-    """Stub actions return (False, descriptive message) without crashing."""
+class TestSetQuestFlagCallsQuestEngine(EvenniaTest):
+    """set_quest_flag handler wires into quest_engine for real quest flag operations."""
 
-    def test_set_quest_flag_stub(self):
-        """set_quest_flag returns (False, not-implemented message)."""
+    def test_set_quest_flag_calls_quest_engine(self):
+        """set_quest_flag calls quest_engine.get_quest_detail and sets flag on active quest."""
         from world.action_vocabulary import execute_action
 
-        success, msg = execute_action({"action_type": "set_quest_flag"}, {})
-        self.assertFalse(success)
-        self.assertIn("not", msg.lower())
+        char = MagicMock()
+        detail = {"status": "active", "quest_id": "wolves_hunt"}
 
-    def test_open_dialogue_stub(self):
-        """open_dialogue returns (False, not-implemented message)."""
+        with patch("world.quest_engine.get_quest_detail", return_value=detail) as mock_detail:
+            cq = MagicMock()
+            cq.quest_id = "wolves_hunt"
+            cq.progress = {}
+            with patch("world.quest_engine.get_active_quests", return_value=[cq]):
+                success, msg = execute_action(
+                    {"action_type": "set_quest_flag", "quest_id": "wolves_hunt", "flag_name": "talked_to_guard"},
+                    {"character": char},
+                )
+
+        self.assertTrue(success)
+        mock_detail.assert_called_once_with(char, "wolves_hunt")
+
+    def test_set_quest_flag_no_character_fails(self):
+        """set_quest_flag without character in context returns failure."""
+        from world.action_vocabulary import execute_action
+
+        success, msg = execute_action(
+            {"action_type": "set_quest_flag", "quest_id": "q1", "flag_name": "f1"}, {}
+        )
+        self.assertFalse(success)
+
+
+class TestOpenDialogueCallsQuestEngine(EvenniaTest):
+    """open_dialogue handler wires into quest_engine and dialogue_engine."""
+
+    def test_open_dialogue_calls_quest_engine(self):
+        """open_dialogue checks for available quest via quest_engine and sends greeting."""
+        from world.action_vocabulary import execute_action
+
+        char = MagicMock()
+        npc = MagicMock()
+        quest_spec = {"quest_id": "wolves_hunt", "name": "Hunt the Wolves"}
+
+        with patch("world.quest_engine.get_available_quest_for_npc", return_value=quest_spec) as mock_avail, \
+             patch("world.quest_engine.accept_quest") as mock_accept, \
+             patch("world.dialogue_engine.resolve_greeting", return_value=("Hello!", "neutral")):
+            success, msg = execute_action(
+                {"action_type": "open_dialogue"},
+                {"character": char, "npc": npc},
+            )
+
+        self.assertTrue(success)
+        mock_avail.assert_called_once_with(npc, char)
+        mock_accept.assert_called_once_with(char, "wolves_hunt", quest_spec)
+
+    def test_open_dialogue_no_character_fails(self):
+        """open_dialogue without character in context returns failure."""
         from world.action_vocabulary import execute_action
 
         success, msg = execute_action({"action_type": "open_dialogue"}, {})
