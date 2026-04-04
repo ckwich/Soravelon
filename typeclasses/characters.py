@@ -208,6 +208,17 @@ class Character(ObjectParent, DefaultCharacter):
     def at_after_move(self, source_location, **kwargs):
         """Track visited rooms and push map_update on movement."""
         super().at_after_move(source_location, **kwargs)
+
+        # Clear fishing state on move (Pitfall 6: cancel ghost timers)
+        fishing_state = getattr(self.ndb, "fishing_state", None)
+        if fishing_state:
+            for key in ("bite_deferred", "reel_deferred", "idle_deferred"):
+                d = fishing_state.get(key)
+                if d and hasattr(d, "active") and d.active():
+                    d.cancel()
+            self.ndb.fishing_state = None
+            self.msg("|rFishing interrupted by movement.|n")
+
         # Track visited room (for fog-of-war, Pitfall 5)
         if self.location:
             room_id = self.location.tags.get(category="room_id")
