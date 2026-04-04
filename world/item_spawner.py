@@ -69,4 +69,9 @@ def create_item_from_template(item_def, location=None):
         if k not in _RESERVED_KEYS:
             setattr(item.db, k, v)
 
+    # Set item_tag for crafting ingredient matching (Phase 13 requirement)
+    item_id = item_def.get("item_id")
+    if item_id:
+        item.tags.add(item_id, category="item_tag")
+
     return item

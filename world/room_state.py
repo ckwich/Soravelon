@@ -225,6 +225,33 @@ FLAG_VOCABULARY = {
                     "Resonance resource build rate +50%",
                     "Resonance Sense"],
     },
+
+    # --- Gathering flags (Phase 13, D-23) ---
+
+    "mineral_deposits": {
+        "description": "This area shows signs of mineral wealth in the surrounding rock.",
+        "typical_duration": None,
+        "writers": ["gathering_pool (ore)"],
+        "readers": ["Sense command", "CmdProspect"],
+    },
+    "rich_soil": {
+        "description": "The soil here is dark and fertile, nurturing plant growth.",
+        "typical_duration": None,
+        "writers": ["gathering_pool (herb/forage)"],
+        "readers": ["Sense command", "CmdProspect"],
+    },
+    "dense_foliage": {
+        "description": "Thick vegetation and mature trees surround this area.",
+        "typical_duration": None,
+        "writers": ["gathering_pool (wood)"],
+        "readers": ["Sense command", "CmdProspect"],
+    },
+    "water_source": {
+        "description": "Running or standing water is accessible here.",
+        "typical_duration": None,
+        "writers": ["gathering_pool (fish)"],
+        "readers": ["Sense command", "CmdFish"],
+    },
 }
 
 
@@ -370,6 +397,10 @@ SENSE_PRIORITY = [
     "unsettled",
     "fortified",
     "scouted",
+    "mineral_deposits",
+    "rich_soil",
+    "dense_foliage",
+    "water_source",
     "still",
 ]
 
@@ -405,5 +436,9 @@ SENSE_DISPLAY = {
     "node_critical":    ("The world is holding its breath here. "
                          "Something is very wrong."),
     "node_calming":     "A tension you didn't notice is releasing.",
+    "mineral_deposits": "The rock here is veined with color. Worth a closer look.",
+    "rich_soil":        "The earth is dark and damp. Things grow well here.",
+    "dense_foliage":    "Mature trees and thick undergrowth press in around you.",
+    "water_source":     "You can hear water moving nearby.",
     None:               "",
 }

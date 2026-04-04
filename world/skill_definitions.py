@@ -347,6 +347,51 @@ SKILL_DEFINITIONS = {
             100: "Nothing stays hidden from your scrutiny",
         },
     },
+
+    # --- Gathering Skills (Phase 13, D-13) ---
+
+    "mining": {
+        "name": "Mining",
+        "skill_type": "general",
+        "description": "Extract ores and minerals from rock formations.",
+        "domain_bonus": "combat",
+        "trainer_required_above": 50,
+        "thresholds": {
+            25: "Common ores extracted reliably",
+            50: "Dense deposits and hidden veins located",
+            75: "Rare ores mined with minimal waste",
+            90: "Dragon-era mineral caches unearthed",
+            100: "The stone yields its deepest treasures to you",
+        },
+    },
+    "woodcutting": {
+        "name": "Woodcutting",
+        "skill_type": "general",
+        "description": "Fell trees and harvest quality lumber.",
+        "domain_bonus": "naturalism",
+        "trainer_required_above": 50,
+        "thresholds": {
+            25: "Softwoods harvested cleanly",
+            50: "Hardwoods felled without splitting",
+            75: "Ancient trees yield premium timber",
+            90: "Petrified and node-touched wood harvested safely",
+            100: "Every cut reveals the wood's hidden grain",
+        },
+    },
+    "skinning": {
+        "name": "Skinning",
+        "skill_type": "general",
+        "description": "Harvest hides, bones, and materials from creature remains.",
+        "domain_bonus": "naturalism",
+        "trainer_required_above": 50,
+        "thresholds": {
+            25: "Basic hides stripped without damage",
+            50: "Bones, sinew, and specialty parts extracted",
+            75: "Rare creature materials preserved intact",
+            90: "Dragon-era beast remnants handled safely",
+            100: "No creature's remains hold secrets from you",
+        },
+    },
 }
 
 # --- Ancestry Skill Seeds (D-20) ---
