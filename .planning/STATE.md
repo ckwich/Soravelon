@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Phase 14 context gathered
-last_updated: "2026-04-04T04:30:47.203Z"
+status: Ready to execute
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-04-04T05:32:01.040Z"
 progress:
   total_phases: 12
   completed_phases: 10
-  total_plans: 60
-  completed_plans: 58
+  total_plans: 64
+  completed_plans: 61
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 13 — gathering-and-refining
+**Current focus:** Phase 14 — all-tbd-todos-implemented
 
 ## Current Position
 
-Phase: 13
-Plan: Not started
+Phase: 14 (all-tbd-todos-implemented) — EXECUTING
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -79,6 +79,8 @@ Plan: Not started
 | Phase 13 P04 | 2 | 2 tasks | 4 files |
 | Phase 13 P06 | 2 | 2 tasks | 3 files |
 | Phase 13 P07 | 3 | 2 tasks | 2 files |
+| Phase 14 P01 | 164 | 2 tasks | 3 files |
+| Phase 14 P02 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -156,6 +158,11 @@ Recent decisions affecting current work:
 - [Phase 13]: Butcher uses can_butcher() not can_loot() for corpse eligibility with butchered-flag guard
 - [Phase 13]: Sense gathering hints already wired via SENSE_DISPLAY in room_state.py -- no cmd_sense.py changes needed
 - [Phase 13]: Used pure unittest.TestCase + MagicMock for all gathering/fishing tests (no EvenniaTest DB dependencies)
+- [Phase 14]: open_dialogue handler auto-accepts quest if NPC has one available (simple MVP flow)
+- [Phase 14]: Corpse Scales stored as corpse.db.scales integer, lootable by other players
+- [Phase 14]: get_quest_modifier supports both dict-keyed and scalar disposition_modifier in quest specs
+- [Phase 14]: Affix modifier merging: multiplicative for damage_multiplier, additive for flat/bonus, max for others
+- [Phase 14]: push_quest_update builds full active_quests list on every push (no incremental deltas)
 
 ### Roadmap Evolution
 
@@ -174,6 +181,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T04:30:47.199Z
-Stopped at: Phase 14 context gathered
-Resume file: .planning/phases/14-all-tbd-todos-implemented/14-CONTEXT.md
+Last session: 2026-04-04T05:31:54.404Z
+Stopped at: Completed 14-01-PLAN.md
+Resume file: None

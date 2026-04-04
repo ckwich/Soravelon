@@ -232,9 +232,9 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 14-01-PLAN.md — Death penalty (Scales drop + XP loss) + combat affix hooks (rarity multipliers + status effects)
-- [ ] 14-02-PLAN.md — Quest stub wiring (action vocabulary + dialogue hints + OOB payload + mob disposition)
-- [ ] 14-03-PLAN.md — WorldEventScript + Lore help entry + attuned variant text
+- [x] 14-01-PLAN.md — Death penalty (Scales drop + XP loss) + combat affix hooks (rarity multipliers + status effects)
+- [x] 14-02-PLAN.md — Quest stub wiring (action vocabulary + dialogue hints + OOB payload + mob disposition)
+- [x] 14-03-PLAN.md — WorldEventScript + Lore help entry + attuned variant text
 - [ ] 14-04-PLAN.md — Final sweep: STUB/placeholder cleanup + zone tier removal + test updates
 
 ## Progress
@@ -256,4 +256,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 7. Milestone 1 Content | 0/TBD | Not started | - |
 | 12. Launch Polish and Help | 1/3 | Complete    | 2026-04-03 |
 | 13. Gathering and Refining | 7/7 | Complete    | 2026-04-04 |
-| 14. All TBD/TODOs Implemented | 0/4 | Not started | - |
+| 14. All TBD/TODOs Implemented | 3/4 | In Progress|  |
