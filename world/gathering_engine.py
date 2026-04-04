@@ -451,3 +451,52 @@ def initialize_zone_gathering(zone_obj):
     pools = zone_obj.db.gathering_pools or []
     for pool_def in pools:
         spawn_gathering_pool(zone_obj, pool_def)
+
+
+# ---------------------------------------------------------------------------
+# Butcher yields
+# ---------------------------------------------------------------------------
+
+BUTCHER_YIELDS = {
+    "boar": [
+        {"material_id": "boar_hide", "display_name": "Boar Hide", "value": 8},
+        {"material_id": "raw_meat", "display_name": "Raw Meat", "value": 3},
+    ],
+    "ash_wolf": [
+        {"material_id": "ash_wolf_pelt", "display_name": "Ash Wolf Pelt", "value": 15},
+        {"material_id": "bone_fragment", "display_name": "Bone Fragment", "value": 2},
+    ],
+    "spider": [
+        {"material_id": "spider_silk_thread", "display_name": "Spider Silk Thread", "value": 12},
+    ],
+    "drake": [
+        {"material_id": "drake_scale", "display_name": "Drake Scale", "value": 25},
+        {"material_id": "raw_meat", "display_name": "Raw Meat", "value": 3},
+    ],
+}
+
+
+def get_butcher_yields(mob_key):
+    """
+    Get butcherable materials from a mob type.
+
+    Tries exact mob_key match first, then base name (before first underscore).
+    Falls back to generic meat + bone if no specific yields defined.
+
+    Args:
+        mob_key: The mob's key string (e.g., "boar", "ash_wolf").
+
+    Returns:
+        List of yield definition dicts with material_id, display_name, value.
+    """
+    yields = BUTCHER_YIELDS.get(mob_key)
+    if not yields:
+        # Try base name (e.g., "ash_wolf_alpha" -> "ash_wolf", then "ash")
+        mob_base = mob_key.rsplit("_", 1)[0] if "_" in mob_key else mob_key
+        yields = BUTCHER_YIELDS.get(mob_base)
+    if not yields:
+        yields = [
+            {"material_id": "raw_meat", "display_name": "Raw Meat", "value": 3},
+            {"material_id": "bone_fragment", "display_name": "Bone Fragment", "value": 2},
+        ]
+    return yields
