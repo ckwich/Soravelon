@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 06a-06-PLAN.md
-last_updated: "2026-03-26T22:33:50.301Z"
+stopped_at: Completed 15-03-PLAN.md
+last_updated: "2026-04-05T07:46:37.623Z"
 progress:
   total_phases: 10
   completed_phases: 6
@@ -72,6 +72,7 @@ Plan: Not started
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
+| Phase 15 P03 | 3533 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,8 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
+- [Phase 15]: Compound burst damage uses initial_duration field for first-tick detection
+- [Phase 15]: took_damage_this_round flag set in both resolve_ability_damage and resolve_basic_attack
 
 ### Pending Todos
 
@@ -152,6 +155,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T19:24:34.441Z
-Stopped at: Completed 06a-06-PLAN.md
+Last session: 2026-04-05T07:46:37.618Z
+Stopped at: Completed 15-03-PLAN.md
 Resume file: None
