@@ -113,6 +113,18 @@ def _save_effects(target, effects):
     target.ndb.active_effects = list(effects)
 
 
+def _find_effect(effects, effect_type):
+    """Find an effect entry by type.
+
+    Returns:
+        (dict or None, int): (entry, index) or (None, -1) if not found.
+    """
+    for idx, entry in enumerate(effects):
+        if entry["type"] == effect_type:
+            return entry, idx
+    return None, -1
+
+
 def _has_immunity(target, effect_type):
     """Check if target is immune to an effect type (mob immunity support)."""
     immunities = target.ndb.immunities if hasattr(target.ndb, "immunities") else None
@@ -176,11 +188,7 @@ def _apply_stackable(effects, effect_type, duration, magnitude, source_id):
     spec = STACKABLE_EFFECTS[effect_type]
     max_stacks = spec["max_stacks"]
 
-    existing = None
-    for entry in effects:
-        if entry["type"] == effect_type:
-            existing = entry
-            break
+    existing, _ = _find_effect(effects, effect_type)
 
     if existing:
         old_stacks = existing["stacks"]
@@ -206,13 +214,7 @@ def _apply_stackable(effects, effect_type, duration, magnitude, source_id):
 
 def _apply_non_stackable(effects, effect_type, duration, magnitude, source_id):
     """Apply or replace a non-stackable effect. Mutates effects list in place."""
-    existing = None
-    existing_idx = None
-    for idx, entry in enumerate(effects):
-        if entry["type"] == effect_type:
-            existing = entry
-            existing_idx = idx
-            break
+    existing, existing_idx = _find_effect(effects, effect_type)
 
     if existing:
         if existing["magnitude"] >= magnitude:

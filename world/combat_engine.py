@@ -115,6 +115,39 @@ def apply_elite_boss_scaling(damage, mob_rarity, is_incoming=True):
 
 
 # ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+def _compute_raw_damage(attacker, weapon):
+    """Compute base raw damage for character or mob attacker.
+
+    Characters use equipped weapon (or bare hands) + strength modifier.
+    Mobs use ref_damage_min/max range.
+
+    Returns:
+        (int, str): (raw_damage, element).
+    """
+    attacker_stats = attacker.db.base_stats
+    if attacker_stats:
+        strength = attacker_stats.get("strength", 10)
+        if weapon:
+            w_min = weapon.db.damage_min or BARE_HANDS_MIN
+            w_max = weapon.db.damage_max or BARE_HANDS_MAX
+            element = weapon.db.element or "physical"
+        else:
+            w_min = BARE_HANDS_MIN
+            w_max = BARE_HANDS_MAX
+            element = "physical"
+        raw = random.randint(w_min, w_max) + int(strength * 0.5)
+    else:
+        raw_min = attacker.db.ref_damage_min or 8
+        raw_max = attacker.db.ref_damage_max or 14
+        raw = random.randint(raw_min, raw_max)
+        element = attacker.db.element or "physical"
+    return raw, element
+
+
+# ---------------------------------------------------------------------------
 # Basic attack resolution (D-19)
 # ---------------------------------------------------------------------------
 
@@ -148,24 +181,7 @@ def resolve_basic_attack(attacker, target, weapon=None):
 
     attacker_stats = attacker.db.base_stats
 
-    if attacker_stats:
-        # Character attacking
-        strength = attacker_stats.get("strength", 10)
-        if weapon:
-            w_min = weapon.db.damage_min or BARE_HANDS_MIN
-            w_max = weapon.db.damage_max or BARE_HANDS_MAX
-            element = weapon.db.element or "physical"
-        else:
-            w_min = BARE_HANDS_MIN
-            w_max = BARE_HANDS_MAX
-            element = "physical"
-        raw = random.randint(w_min, w_max) + int(strength * 0.5)
-    else:
-        # Mob attacking
-        raw_min = attacker.db.ref_damage_min or 8
-        raw_max = attacker.db.ref_damage_max or 14
-        raw = random.randint(raw_min, raw_max)
-        element = attacker.db.element or "physical"
+    raw, element = _compute_raw_damage(attacker, weapon)
 
     # Critical hit
     is_crit, crit_mult = roll_crit(attacker)
