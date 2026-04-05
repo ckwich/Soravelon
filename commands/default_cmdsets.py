@@ -75,6 +75,15 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdBrew())
         self.add(CmdCraft())
         self.add(CmdRecipes())
+        # Vendor commands
+        from commands.cmd_vendor import (
+            CmdBuy, CmdSell, CmdAppraise, CmdList, CmdView,
+        )
+        self.add(CmdBuy())
+        self.add(CmdSell())
+        self.add(CmdAppraise())
+        self.add(CmdList())
+        self.add(CmdView())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
