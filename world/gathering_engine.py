@@ -507,6 +507,83 @@ def initialize_zone_gathering(zone_obj):
 
 
 # ---------------------------------------------------------------------------
+# Gather completion logic (extracted from cmd_gathering.py per D-06)
+# ---------------------------------------------------------------------------
+
+def complete_gather(character, node, tool, skill_name, skill_val):
+    """
+    Complete a gathering action. Handles node depletion, item creation,
+    quality calc, bonus quantity, tool durability, and skill XP.
+
+    Args:
+        character: Character performing the gather
+        node: GatheringNode instance
+        tool: Tool item (or None for no-tool gathering like forage)
+        skill_name: Skill name string (e.g., "mining", "herbalism")
+        skill_val: Pre-calculated skill value (passed from command delay)
+
+    Returns:
+        (bool, str, list[item], bool) -- success, message, created items,
+        tool_broken.
+        On failure: (False, message, [], False).
+    """
+    from world.crafting_definitions import QUALITY_DISPLAY
+    from world.crafting_engine import calculate_craft_quality
+    from world.item_spawner import create_item_from_template
+    from world.material_definitions import MATERIAL_REGISTRY
+    from world.skill_engine import accumulate_skill_use
+
+    # Perform gather (decrements gathers_remaining)
+    success, result = gather_from_node(character, node)
+    if not success:
+        return (False, "|rThe resource is depleted.|n", [], False)
+
+    material_id = result
+    mat = MATERIAL_REGISTRY.get(material_id, {})
+    tier_difficulty = (node.db.tier or 1) * 15  # tier 1=15, tier 5=75
+    quality = calculate_craft_quality(skill_val, tier_difficulty)
+
+    item_def = {
+        "item_id": material_id,
+        "key": mat.get("display_name", material_id.replace("_", " ").title()),
+        "item_type": "item",
+        "weight": 0.5,
+        "desc": f"Raw {mat.get('display_name', material_id)}.",
+        "value": (node.db.tier or 1) * 5,
+        "quality": quality,
+    }
+    item = create_item_from_template(item_def, location=character)
+    items = [item]
+
+    q_display = QUALITY_DISPLAY.get(quality, "")
+    msg = f"|gYou gather {q_display} {item.key}.|n"
+
+    # Bonus quantity at high skill (D-04): 25% chance at skill 50+, 50% at skill 80+
+    bonus_chance = 0
+    if skill_val >= 80:
+        bonus_chance = 0.5
+    elif skill_val >= 50:
+        bonus_chance = 0.25
+    if bonus_chance and random.random() < bonus_chance:
+        bonus_item = create_item_from_template(item_def, location=character)
+        items.append(bonus_item)
+        msg += f"\n|gYour skill yields an extra {bonus_item.key}!|n"
+
+    # Tool durability loss (D-20)
+    tool_broken = False
+    if tool and tool.db.durability is not None:
+        tool.db.durability -= 1
+        if tool.db.durability <= 0:
+            msg += f"\n|y{tool.key} has broken from use!|n"
+            tool_broken = True
+
+    # Skill progression
+    accumulate_skill_use(character, skill_name)
+
+    return (True, msg, items, tool_broken)
+
+
+# ---------------------------------------------------------------------------
 # Fish catch logic (extracted from cmd_fishing.py per D-05)
 # ---------------------------------------------------------------------------
 
