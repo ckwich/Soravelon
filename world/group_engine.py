@@ -302,6 +302,78 @@ def get_members_in_proximity(character, radius=3):
     return nearby_members
 
 
+# ---------------------------------------------------------------------------
+# Loot distribution (D-27)
+# ---------------------------------------------------------------------------
+
+def get_designated_looter(character, corpse):
+    """
+    Determine who should loot based on group loot mode.
+    Returns the designated character, or None if anyone can loot.
+
+    personal mode: only the killer
+    ffa mode: anyone (return None)
+    round_robin mode: next in rotation
+    need_pass mode: not implemented yet (treat as personal)
+    """
+    if not is_in_group(character):
+        return None
+
+    leader = _get_leader(character)
+    if not leader:
+        return None
+
+    state = _get_group_state(leader)
+    if not state:
+        return None
+
+    mode = state.get("loot_mode", "personal")
+
+    if mode == "ffa":
+        return None  # Anyone can loot
+
+    if mode == "personal":
+        # Only killer
+        killer_id = corpse.db.killer_id
+        if killer_id == character.id:
+            return character
+        # Find killer in group
+        members = _get_group_members(leader)
+        for m in members:
+            if m.id == killer_id:
+                return m
+        return character  # fallback
+
+    if mode == "round_robin":
+        members = _get_group_members(leader)
+        if not members:
+            return character
+        idx = state.get("round_robin_index", 0) % len(members)
+        return members[idx]
+
+    # need_pass: fallback to personal
+    return None
+
+
+def advance_round_robin(character):
+    """Advance round robin index after successful loot."""
+    leader = _get_leader(character)
+    if not leader:
+        return
+    state = _get_group_state(leader)
+    if not state or state.get("loot_mode") != "round_robin":
+        return
+    members = _get_group_members(leader)
+    if not members:
+        return
+    state["round_robin_index"] = (state.get("round_robin_index", 0) + 1) % len(members)
+    leader.ndb.group_state = state
+
+
+# ---------------------------------------------------------------------------
+# Disconnect cleanup
+# ---------------------------------------------------------------------------
+
 def on_member_disconnect(character):
     if not is_in_group(character):
         return

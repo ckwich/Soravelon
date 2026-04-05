@@ -31,7 +31,7 @@ def _handle_damage(character, ability, target):
     """Resolve direct damage via combat_engine."""
     from world.combat_engine import resolve_ability_damage
     ok, msg, dmg = resolve_ability_damage(character, ability, target)
-    return msg
+    return ok, msg
 
 
 def _handle_dot(character, ability, target):
@@ -45,7 +45,7 @@ def _handle_dot(character, ability, target):
         target, effect_type, duration, magnitude, character.id
     )
     ability_name = ability["name"]
-    return f"{character.key} applies {ability_name}. {msg}"
+    return ok, f"{character.key} applies {ability_name}. {msg}"
 
 
 def _handle_buff(character, ability, target):
@@ -59,7 +59,7 @@ def _handle_buff(character, ability, target):
         character, effect_type, duration, magnitude, character.id
     )
     ability_name = ability["name"]
-    return f"{character.key} activates {ability_name}. {msg}"
+    return ok, f"{character.key} activates {ability_name}. {msg}"
 
 
 def _handle_debuff(character, ability, target):
@@ -74,7 +74,7 @@ def _handle_debuff(character, ability, target):
     )
     ability_name = ability["name"]
     target_name = target.key if target else "the air"
-    return f"{character.key} casts {ability_name} on {target_name}. {msg}"
+    return ok, f"{character.key} casts {ability_name} on {target_name}. {msg}"
 
 
 def _handle_utility(character, ability, target):
@@ -86,7 +86,7 @@ def _handle_utility(character, ability, target):
         status_effects.apply_effect(
             character, "haste", 2, 1.0, character.id
         )
-        return f"{character.key} uses {ability['name']} to gain a burst of speed."
+        return True, f"{character.key} uses {ability['name']} to gain a burst of speed."
     elif utility_action == "reveal":
         # Reveal a mob's affix (if target is a mob)
         if target and hasattr(target, "reveal_affix"):
@@ -94,15 +94,16 @@ def _handle_utility(character, ability, target):
             for affix_tag in affixes:
                 reveal_msg = target.reveal_affix(character, affix_tag)
                 if reveal_msg:
-                    return f"{character.key} uses {ability['name']}. {reveal_msg}"
-        return f"{character.key} uses {ability['name']} to scan the area."
-    return f"{character.key} uses {ability['name']}."
+                    return True, f"{character.key} uses {ability['name']}. {reveal_msg}"
+        return True, f"{character.key} uses {ability['name']} to scan the area."
+    return True, f"{character.key} uses {ability['name']}."
 
 
 def _handle_social(character, ability, target):
     """Apply charm or social influence to the target."""
     from world import status_effects
     params = ability.get("effect_params", {})
+    ok = True
     if target and target.db.base_stats is None:
         # Mob target: apply charm effect
         duration = params.get("duration") or ability.get("effect_duration", 2)
@@ -117,7 +118,7 @@ def _handle_social(character, ability, target):
         msg = "Social influence applied."
     from world.base_attributes import record_stat_use
     record_stat_use(character, "social_ability")
-    return f"{character.key} invokes {ability['name']}. {msg}"
+    return ok, f"{character.key} invokes {ability['name']}. {msg}"
 
 
 def _handle_tactical(character, ability, target):
@@ -143,7 +144,7 @@ def _handle_tactical(character, ability, target):
                         member, buff_type, duration, magnitude, character.id
                     )
                 record_stat_use(character, "social_ability")
-                return (
+                return True, (
                     f"{character.key} rallies the group with {ability['name']}! "
                     f"{len(members)} allies buffed."
                 )
@@ -152,7 +153,21 @@ def _handle_tactical(character, ability, target):
         character, buff_type, duration, magnitude, character.id
     )
     record_stat_use(character, "social_ability")
-    return f"{character.key} deploys {ability['name']}."
+    return True, f"{character.key} deploys {ability['name']}."
+
+
+def _handle_compound_trigger(character, ability, target):
+    """Check and trigger compound effects on the target."""
+    from world.status_effects import check_compound_triggers
+    compounds = check_compound_triggers(target)
+    ability_name = ability["name"]
+    if compounds:
+        triggered = ", ".join(compounds)
+        return True, (
+            f"{character.key} triggers {ability_name}! "
+            f"Compound effects: {triggered}!"
+        )
+    return True, f"{character.key} triggers {ability_name}, but no compounds activate."
 
 
 
@@ -161,7 +176,7 @@ def _handle_heal(character, ability, target):
     from world.combat_engine import resolve_heal
     heal_target = target or character
     ok, msg, healed = resolve_heal(character, ability, heal_target)
-    return msg
+    return ok, msg
 
 
 def _handle_status(character, ability, target):
@@ -174,7 +189,7 @@ def _handle_status(character, ability, target):
     magnitude = params.get("magnitude") or ability.get("effect_magnitude", 1.0)
 
     if random.random() > chance:
-        return (
+        return False, (
             f"{character.key} uses {ability['name']} on "
             f"{target.key if target else 'the air'}, "
             f"but the effect is resisted!"
@@ -184,7 +199,7 @@ def _handle_status(character, ability, target):
         target, effect_type, duration, magnitude, character.id
     )
     ability_name = ability["name"]
-    return f"{character.key} uses {ability_name}. {msg}"
+    return ok, f"{character.key} uses {ability_name}. {msg}"
 
 
 EFFECT_HANDLERS = {
@@ -702,7 +717,7 @@ def use_ability(character, ability_id, target=None):
     if not handler:
         return False, f"Unhandled effect type: {ability['effect_type']}"
 
-    result = handler(character, ability, target)
+    ok, msg = handler(character, ability, target)
 
     # Post-ability resource hooks
     _post_ability_resource_hook(character, ability, result)
@@ -728,4 +743,4 @@ def use_ability(character, ability_id, target=None):
     except Exception:
         pass  # Non-fatal -- counter is informational
 
-    return True, result
+    return ok, msg

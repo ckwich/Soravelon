@@ -147,6 +147,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdSleep())
         self.add(CmdWake())
         self.add(CmdBlessing())
+        # Loot commands (Phase 15)
+        from commands.cmd_loot import CmdLoot
+        self.add(CmdLoot())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

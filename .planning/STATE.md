@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-04-05T09:26:13.456Z"
+status: Ready to plan
+stopped_at: Completed 15-03-PLAN.md
+last_updated: "2026-04-05T07:46:37.623Z"
 progress:
-  total_phases: 13
-  completed_phases: 11
-  total_plans: 69
-  completed_plans: 63
+  total_phases: 10
+  completed_phases: 6
+  total_plans: 33
+  completed_plans: 31
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 14 — all-tbd-todos-implemented
+**Current focus:** Phase 06a — base-attributes-and-combat
 
 ## Current Position
 
-Phase: 14
+Phase: 06b
 Plan: Not started
 
 ## Performance Metrics
@@ -72,18 +72,7 @@ Plan: Not started
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
-| Phase 13 P01 | 2 | 2 tasks | 4 files |
-| Phase 13 P02 | 191 | 2 tasks | 3 files |
-| Phase 13 P03 | 3 | 2 tasks | 2 files |
-| Phase 13 P05 | 2 | 1 tasks | 2 files |
-| Phase 13 P04 | 2 | 2 tasks | 4 files |
-| Phase 13 P06 | 2 | 2 tasks | 3 files |
-| Phase 13 P07 | 3 | 2 tasks | 2 files |
-| Phase 14 P01 | 164 | 2 tasks | 3 files |
-| Phase 14 P02 | 2 | 2 tasks | 4 files |
-| Phase 14 P03 | 185 | 2 tasks | 3 files |
-| Phase 14 P04 | 3 | 2 tasks | 7 files |
-| Phase 15 P02 | 3487 | 2 tasks | 7 files |
+| Phase 15 P03 | 3533 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -151,30 +140,8 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
-- [Phase 13]: Hide processing uses workbench (not forge); gathering flags are persistent (None duration); Sense priority below combat flags
-- [Phase 13]: GatheringPoolScript uses dynamic type() subclass to avoid Evennia import-time typeclass resolution
-- [Phase 13]: Room state flags set with duration=-1 for persistent gathering hints
-- [Phase 13]: Pool ID generated as zone_id + pool_type for uniqueness
-- [Phase 13]: Extended all 18 materials into processing recipes; output uses item_id-based dict for processing vs template_id for standard crafting
-- [Phase 13]: CmdReel delegates to CmdFish()._on_reel for single state machine owner
-- [Phase 13]: Fishing state on ndb.fishing_state dict; movement interrupt in at_after_move
-- [Phase 13]: Butcher uses can_butcher() not can_loot() for corpse eligibility with butchered-flag guard
-- [Phase 13]: Sense gathering hints already wired via SENSE_DISPLAY in room_state.py -- no cmd_sense.py changes needed
-- [Phase 13]: Used pure unittest.TestCase + MagicMock for all gathering/fishing tests (no EvenniaTest DB dependencies)
-- [Phase 14]: open_dialogue handler auto-accepts quest if NPC has one available (simple MVP flow)
-- [Phase 14]: Corpse Scales stored as corpse.db.scales integer, lootable by other players
-- [Phase 14]: get_quest_modifier supports both dict-keyed and scalar disposition_modifier in quest specs
-- [Phase 14]: Affix modifier merging: multiplicative for damage_multiplier, additive for flat/bonus, max for others
-- [Phase 14]: push_quest_update builds full active_quests list on every push (no incremental deltas)
-- [Phase 14]: Lore entry category changed from Commands to World (lore is world info, not a command)
-- [Phase 14]: Attuned variant check uses room node tags first, then zone_type from zone object
-- [Phase 14]: MagicMock helper docstrings use sentinel instead of placeholder to avoid false-positive grep matches
-- [Phase 15]: Recovery state stored on ndb (volatile), fortify/vigor added as non-stackable status effects
-
-### Roadmap Evolution
-
-- Phase 13 added: Gathering and Refining (resource gathering nodes, material processing, fishing, tools)
-- Phase 14 added: All TBD/TODOs implemented
+- [Phase 15]: Compound burst damage uses initial_duration field for first-tick detection
+- [Phase 15]: took_damage_this_round flag set in both resolve_ability_damage and resolve_basic_attack
 
 ### Pending Todos
 
@@ -188,6 +155,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T09:26:13.450Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-04-05T07:46:37.618Z
+Stopped at: Completed 15-03-PLAN.md
 Resume file: None
