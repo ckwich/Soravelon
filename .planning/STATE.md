@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Completed 14-04-PLAN.md
-last_updated: "2026-04-04T05:44:36.265Z"
+status: Ready to execute
+stopped_at: Completed 15-04-PLAN.md
+last_updated: "2026-04-05T06:58:08.107Z"
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 11
-  total_plans: 64
-  completed_plans: 62
+  total_plans: 69
+  completed_plans: 63
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 14 — all-tbd-todos-implemented
+**Current focus:** Phase 15 — implement-missing-gameplay-gap-systems
 
 ## Current Position
 
-Phase: 14
-Plan: Not started
+Phase: 15 (implement-missing-gameplay-gap-systems) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -83,6 +83,7 @@ Plan: Not started
 | Phase 14 P02 | 2 | 2 tasks | 4 files |
 | Phase 14 P03 | 185 | 2 tasks | 3 files |
 | Phase 14 P04 | 3 | 2 tasks | 7 files |
+| Phase 15 P04 | 10 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -168,11 +169,14 @@ Recent decisions affecting current work:
 - [Phase 14]: Lore entry category changed from Commands to World (lore is world info, not a command)
 - [Phase 14]: Attuned variant check uses room node tags first, then zone_type from zone object
 - [Phase 14]: MagicMock helper docstrings use sentinel instead of placeholder to avoid false-positive grep matches
+- [Phase 15]: Used at_pre_msg (not at_pre_channel_msg) for Evennia 6.0 DomainChannel hook
+- [Phase 15]: Created minimal skill_engine.py stub for appraisal checks; full system deferred
 
 ### Roadmap Evolution
 
 - Phase 13 added: Gathering and Refining (resource gathering nodes, material processing, fishing, tools)
 - Phase 14 added: All TBD/TODOs implemented
+- Phase 15 added: Implement missing gameplay gap systems (vendor/shop, HP regen, item inspection, who, global chat)
 
 ### Pending Todos
 
@@ -186,6 +190,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T05:37:12.458Z
-Stopped at: Completed 14-04-PLAN.md
+Last session: 2026-04-05T06:58:08.099Z
+Stopped at: Completed 15-04-PLAN.md
 Resume file: None
