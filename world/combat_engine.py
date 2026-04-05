@@ -115,6 +115,39 @@ def apply_elite_boss_scaling(damage, mob_rarity, is_incoming=True):
 
 
 # ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+def _compute_raw_damage(attacker, weapon):
+    """Compute base raw damage for character or mob attacker.
+
+    Characters use equipped weapon (or bare hands) + strength modifier.
+    Mobs use ref_damage_min/max range.
+
+    Returns:
+        (int, str): (raw_damage, element).
+    """
+    attacker_stats = attacker.db.base_stats
+    if attacker_stats:
+        strength = attacker_stats.get("strength", 10)
+        if weapon:
+            w_min = weapon.db.damage_min or BARE_HANDS_MIN
+            w_max = weapon.db.damage_max or BARE_HANDS_MAX
+            element = weapon.db.element or "physical"
+        else:
+            w_min = BARE_HANDS_MIN
+            w_max = BARE_HANDS_MAX
+            element = "physical"
+        raw = random.randint(w_min, w_max) + int(strength * 0.5)
+    else:
+        raw_min = attacker.db.ref_damage_min or 8
+        raw_max = attacker.db.ref_damage_max or 14
+        raw = random.randint(raw_min, raw_max)
+        element = attacker.db.element or "physical"
+    return raw, element
+
+
+# ---------------------------------------------------------------------------
 # Basic attack resolution (D-19)
 # ---------------------------------------------------------------------------
 
@@ -148,24 +181,7 @@ def resolve_basic_attack(attacker, target, weapon=None):
 
     attacker_stats = attacker.db.base_stats
 
-    if attacker_stats:
-        # Character attacking
-        strength = attacker_stats.get("strength", 10)
-        if weapon:
-            w_min = weapon.db.damage_min or BARE_HANDS_MIN
-            w_max = weapon.db.damage_max or BARE_HANDS_MAX
-            element = weapon.db.element or "physical"
-        else:
-            w_min = BARE_HANDS_MIN
-            w_max = BARE_HANDS_MAX
-            element = "physical"
-        raw = random.randint(w_min, w_max) + int(strength * 0.5)
-    else:
-        # Mob attacking
-        raw_min = attacker.db.ref_damage_min or 8
-        raw_max = attacker.db.ref_damage_max or 14
-        raw = random.randint(raw_min, raw_max)
-        element = attacker.db.element or "physical"
+    raw, element = _compute_raw_damage(attacker, weapon)
 
     # Critical hit
     is_crit, crit_mult = roll_crit(attacker)
@@ -439,15 +455,22 @@ def handle_mob_death(mob, killer):
     """
     mob_name = mob.key
 
+    # Snapshot room contents BEFORE at_death to avoid sweeping unrelated items
+    room = mob.location
+    pre_death_ids = set(obj.id for obj in room.contents) if room else set()
+
     # Call existing at_death hook (handles loot drops, triggers, respawn)
     mob.at_death(killer=killer)
 
     # Spawn corpse container for loot access
     corpse = spawn_corpse(mob, killer)
 
-    # Move any loot dropped to room by at_death into the corpse
-    if mob.location and corpse:
-        _move_room_loot_to_corpse(mob.location, corpse, mob_name)
+    # Move ONLY newly dropped loot (items that appeared after at_death) into corpse
+    if room and corpse:
+        _move_room_loot_to_corpse(room, corpse, mob_name, pre_death_ids)
+
+    # Remove defeated mob from the game world
+    mob.delete()
 
     msg = f"|r{mob_name} has been slain!|n"
     return msg
@@ -467,9 +490,17 @@ def handle_player_death(character):
     room = character.location
     if room:
         corpse = _spawn_player_corpse(character, room)
-        # Move all carried items into corpse
+        # Move all carried items into corpse and clean up inventory records
+        item_ids = [item.id for item in character.contents]
         for item in list(character.contents):
             item.move_to(corpse, quiet=True)
+        # Delete InventoryItem rows for transferred items
+        if item_ids:
+            from world.models import InventoryItem
+            InventoryItem.objects.filter(
+                character_id=character.id,
+                item_id__in=item_ids,
+            ).delete()
 
     character.ndb.hp = 0
     msg = f"|r{character.key} has fallen!|n"
@@ -500,7 +531,7 @@ def _respawn_player(character):
     else:
         return  # nowhere to go
 
-    character.move_to(destination, quiet=True)
+    character.move_to(destination, quiet=True, move_hooks=False)
     # Restore partial HP on respawn
     character.ndb.hp = max(1, derive_max_hp(character) // 4)
     character.ndb.stamina = derive_max_stamina(character) // 4
@@ -610,18 +641,18 @@ def _transition_corpse(corpse_id, new_phase):
         corpse.db.loot_phase = new_phase
 
 
-def _move_room_loot_to_corpse(room, corpse, mob_name):
+def _move_room_loot_to_corpse(room, corpse, mob_name, pre_death_ids=None):
     """
     Move recently spawned loot items from room into corpse.
 
-    Items dropped by at_death land in the room. We move items that
-    are SoravelonItem instances (not exits, characters, etc.) that
-    were just created (within last 2 seconds).
+    Only moves items that appeared AFTER at_death (not in pre_death_ids).
+    This prevents sweeping unrelated items that were already in the room.
     """
     from typeclasses.objects import SoravelonItem
 
+    pre_death_ids = pre_death_ids or set()
     for obj in list(room.contents):
-        if isinstance(obj, SoravelonItem) and obj != corpse:
-            # Heuristic: move items that aren't characters/rooms
-            # Only move items that aren't locked to a specific owner
+        if (isinstance(obj, SoravelonItem)
+                and obj != corpse
+                and obj.id not in pre_death_ids):
             obj.move_to(corpse, quiet=True)
