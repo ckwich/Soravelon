@@ -52,6 +52,38 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUseAbility())
         from commands.combat_commands import CmdAttack
         self.add(CmdAttack())
+        from commands.skill_commands import CmdSkills, CmdPractice, CmdTrain
+        self.add(CmdSkills())
+        self.add(CmdPractice())
+        self.add(CmdTrain())
+        # Dialogue commands
+        from commands.cmd_dialogue import (
+            CmdTalk, CmdAsk, CmdSay, CmdTell, CmdAccept, CmdDecline,
+        )
+        self.add(CmdTalk())
+        self.add(CmdAsk())
+        self.add(CmdSay())  # overrides Evennia default CmdSay
+        self.add(CmdTell())
+        self.add(CmdAccept())
+        self.add(CmdDecline())
+        # Crafting commands
+        from commands.cmd_crafting import (
+            CmdCook, CmdSmith, CmdBrew, CmdCraft, CmdRecipes,
+        )
+        self.add(CmdCook())
+        self.add(CmdSmith())
+        self.add(CmdBrew())
+        self.add(CmdCraft())
+        self.add(CmdRecipes())
+        # Vendor commands
+        from commands.cmd_vendor import (
+            CmdBuy, CmdSell, CmdAppraise, CmdList, CmdView,
+        )
+        self.add(CmdBuy())
+        self.add(CmdSell())
+        self.add(CmdAppraise())
+        self.add(CmdList())
+        self.add(CmdView())
         # Social commands (Phase 15)
         from commands.cmd_social import CmdWho, CmdShout, CmdWhisper
         self.add(CmdWho())

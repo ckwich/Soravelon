@@ -687,16 +687,32 @@ def build():
     # Market District NPCs
 
     # 6. Weapon vendor
-    area.npc(mk_weapon_shop, "npc_weaponsmith_brenna", faction=None)
+    _brenna = area.npc(mk_weapon_shop, "npc_weaponsmith_brenna", faction=None)
+    _brenna.db.is_vendor = True
+    _brenna.db.vendor_accepts = ["equipment"]
+    _brenna.db.vendor_faction = None
+    _brenna.db.player_stock = {}
 
     # 7. Armor vendor
-    area.npc(mk_armor_shop, "npc_armorsmith_derik", faction=None)
+    _derik = area.npc(mk_armor_shop, "npc_armorsmith_derik", faction=None)
+    _derik.db.is_vendor = True
+    _derik.db.vendor_accepts = ["equipment"]
+    _derik.db.vendor_faction = None
+    _derik.db.player_stock = {}
 
     # 8. Potion vendor
-    area.npc(mk_potion_shop, "npc_apothecary_ystra", faction=None)
+    _ystra = area.npc(mk_potion_shop, "npc_apothecary_ystra", faction=None)
+    _ystra.db.is_vendor = True
+    _ystra.db.vendor_accepts = ["consumable", "ingredient"]
+    _ystra.db.vendor_faction = None
+    _ystra.db.player_stock = {}
 
     # 9. General goods vendor
-    area.npc(mk_general_store, "npc_shopkeep_haldric", faction=None)
+    _haldric = area.npc(mk_general_store, "npc_shopkeep_haldric", faction=None)
+    _haldric.db.is_vendor = True
+    _haldric.db.vendor_accepts = ["item", "material"]
+    _haldric.db.vendor_faction = None
+    _haldric.db.player_stock = {}
 
     # 10. Smith (forge master)
     area.npc(mk_forge, "npc_smith_goram", faction=None)
@@ -715,6 +731,13 @@ def build():
 
     # 15. Spice merchant
     area.npc(mk_spice_stall, "npc_spice_merchant_zara", faction=None)
+
+    # 16b. Tanner vendor
+    _tanner = area.npc(mk_tanner, "npc_tanner_blackhide", faction=None)
+    _tanner.db.is_vendor = True
+    _tanner.db.vendor_accepts = ["hide"]
+    _tanner.db.vendor_faction = None
+    _tanner.db.player_stock = {}
 
     # ==================================================================
     #  DISTRICT 3: GUILD QUARTER (~20 rooms)
