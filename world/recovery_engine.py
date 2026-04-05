@@ -76,6 +76,19 @@ def push_stat_update(character):
     _push(character)
 
 
+def spend_stamina(character, amount):
+    """
+    Deduct stamina and push stat update. Returns (bool, str).
+    Fails if character has insufficient stamina.
+    """
+    stamina = getattr(character.ndb, "stamina", 0) or 0
+    if stamina < amount:
+        return (False, f"|rNot enough stamina (need {amount}, have {stamina}).|n")
+    character.ndb.stamina = stamina - amount
+    push_stat_update(character)
+    return (True, "")
+
+
 def _regen_tick(character):
     """Periodic regen tick. Called every REGEN_INTERVAL seconds."""
     from world.base_attributes import derive_max_hp, derive_max_stamina

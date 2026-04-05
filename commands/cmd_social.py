@@ -8,7 +8,7 @@ Who shows online players (D-19).
 
 import evennia
 from commands.command import Command
-from world.oob_publisher import push_stat_update
+
 
 SHOUT_STAMINA_COST = 10
 
@@ -84,17 +84,12 @@ class CmdShout(Command):
         character = self.caller
         message = self.args.strip()
 
-        # Check stamina
-        stamina = character.ndb.stamina or 0
-        if stamina < SHOUT_STAMINA_COST:
-            character.msg(
-                f"You're too exhausted to shout (need {SHOUT_STAMINA_COST} stamina)."
-            )
+        # Check and deduct stamina
+        from world.recovery_engine import spend_stamina
+        ok, msg = spend_stamina(character, SHOUT_STAMINA_COST)
+        if not ok:
+            character.msg(f"|rYou're too exhausted to shout.|n")
             return
-
-        # Deduct stamina
-        character.ndb.stamina = stamina - SHOUT_STAMINA_COST
-        push_stat_update(character)
 
         # Find all characters in same zone
         if not character.location:
