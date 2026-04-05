@@ -45,11 +45,11 @@ def _handle_teleport(action_dict, context, _depth):
     if target_room_id is None:
         return False, "teleport: missing target_room_id"
     import evennia
-    results = evennia.search_object(dbref=target_room_id)
+    results = evennia.search_object(f"#{target_room_id}")
     if not results:
         return False, f"teleport: room not found (id={target_room_id})"
     target_room = results[0]
-    character.move_to(target_room, quiet=False)
+    character.move_to(target_room, quiet=False, move_hooks=False)
     return True, ""
 
 
@@ -69,7 +69,7 @@ def _handle_teleport_to_mob(action_dict, context, _depth):
     target_room = mob_obj.location
     if not target_room:
         return False, f"teleport_to_mob: mob '{mob_key}' has no location"
-    character.move_to(target_room, quiet=False)
+    character.move_to(target_room, quiet=False, move_hooks=False)
     return True, ""
 
 
@@ -106,7 +106,7 @@ def _handle_give_item(action_dict, context, _depth):
     if item_id is None:
         return False, "give_item: missing item_id or template_id"
     import evennia
-    results = evennia.search_object(dbref=item_id)
+    results = evennia.search_object(f"#{item_id}")
     if not results:
         return False, f"give_item: item not found (id={item_id})"
     item = results[0]
@@ -123,7 +123,7 @@ def _handle_take_item(action_dict, context, _depth):
     if item_id is None:
         return False, "take_item: missing item_id"
     import evennia
-    results = evennia.search_object(dbref=item_id)
+    results = evennia.search_object(f"#{item_id}")
     if not results:
         return False, f"take_item: item not found (id={item_id})"
     item = results[0]
@@ -227,6 +227,8 @@ def _handle_spawn_mob(action_dict, context, _depth):
     }
     from world.mob_spawner import spawn_single_mob
     mob = spawn_single_mob(spawn_def, target_room)
+    if not mob:
+        return False, "spawn_mob: failed to create mob"
     return True, f"Spawned {mob.key}"
 
 
@@ -238,7 +240,7 @@ def _action_add_room_flag(action_dict, context, _depth):
     if character and character.location and flag:
         from world.room_state import add_room_flag
         add_room_flag(character.location, flag, duration)
-    return True, None
+    return True, ""
 
 
 
@@ -281,7 +283,14 @@ def _handle_modify_node_failure(action_dict, context, _depth):
     zone_objs = evennia.search_tag(zone_id, category="zone_id")
     if not zone_objs:
         return False, f"modify_node_failure: zone '{zone_id}' not found"
-    zone_obj = zone_objs[0]
+    # Filter to actual zone object, not rooms/mobs that share the zone_id tag
+    zone_obj = None
+    for obj in zone_objs:
+        if obj.tags.get("zone_object", category="object_type"):
+            zone_obj = obj
+            break
+    if not zone_obj:
+        return False, f"modify_node_failure: zone object for '{zone_id}' not found"
     scripts = zone_obj.scripts.get("node_script")
     if not scripts:
         return False, f"modify_node_failure: no node_script on zone '{zone_id}'"
@@ -365,13 +374,49 @@ def _handle_open_dialogue(action_dict, context, _depth):
     quest_spec = get_available_quest_for_npc(npc, character)
     if quest_spec:
         quest_id = quest_spec.get("quest_id")
-        accept_quest(character, quest_id, quest_spec)
+        success, msg = accept_quest(character, quest_id, quest_spec)
+        if not success:
+            character.msg(f"|y{msg}|n")
 
     # Send NPC greeting
     greeting_text, _tier = resolve_greeting(npc, character)
     character.msg(greeting_text)
 
     return True, "Dialogue opened."
+
+
+def _handle_learn_recipe(action_dict, context, _depth):
+    """
+    Teach the character a crafting recipe.
+
+    action_dict keys:
+        recipe_id (str): ID of the recipe in RECIPE_REGISTRY
+        learned_from (str, optional): Name of the NPC who taught it
+        message (str, optional): Custom message to display
+    """
+    character = context.get("character")
+    if not character:
+        return False, "No character in context"
+
+    recipe_id = action_dict.get("recipe_id")
+    if not recipe_id:
+        return False, "learn_recipe: no recipe_id"
+
+    from world.models import CharacterRecipe
+
+    _obj, created = CharacterRecipe.objects.get_or_create(
+        character=character,
+        recipe_id=recipe_id,
+        defaults={"learned_from": action_dict.get("learned_from", "")},
+    )
+
+    if created:
+        msg = action_dict.get("message") or f"|gYou learned the recipe: {recipe_id}.|n"
+        character.msg(msg)
+        return True, f"Learned recipe {recipe_id}"
+    else:
+        character.msg(f"|yYou already know the recipe: {recipe_id}.|n")
+        return True, f"Already knew recipe {recipe_id}"
 
 
 # ---------------------------------------------------------------------------
@@ -395,6 +440,7 @@ ACTION_HANDLERS = {
     "give_scales": _handle_give_scales,
     "give_skill_xp": _handle_give_skill_xp,
     "modify_node_failure": _handle_modify_node_failure,
+    "learn_recipe": _handle_learn_recipe,
 }
 
 

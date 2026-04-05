@@ -2,7 +2,7 @@
 Equipment commands: equip, unequip, gear (show equipped items).
 """
 
-from evennia import Command
+from commands.command import Command
 
 
 class CmdEquip(Command):
@@ -24,7 +24,7 @@ class CmdEquip(Command):
     def func(self):
         character = self.caller
         if not self.args:
-            character.msg("Equip what?")
+            character.msg("|yEquip what?|n")
             return
 
         item_name = self.args.strip()
@@ -55,7 +55,7 @@ class CmdUnequip(Command):
     def func(self):
         character = self.caller
         if not self.args:
-            character.msg("Unequip what?")
+            character.msg("|yUnequip what?|n")
             return
 
         item_name = self.args.strip()
@@ -93,7 +93,7 @@ class CmdGear(Command):
         ).order_by("equipment_slot")
 
         if not equipped:
-            character.msg("You have nothing equipped.")
+            character.msg("|yYou have nothing equipped.|n")
             return
 
         lines = ["|wEquipped Gear:|n"]

@@ -30,7 +30,7 @@ class CmdLoot(Command):
         # Find corpse in room
         corpse = self._find_corpse(character)
         if not corpse:
-            character.msg("There is nothing to loot here.")
+            character.msg("|yThere is nothing to loot here.|n")
             return
 
         # Check loot phase
@@ -69,7 +69,7 @@ class CmdLoot(Command):
                 from world.group_engine import advance_round_robin
                 advance_round_robin(character)
         else:
-            character.msg("The corpse is empty.")
+            character.msg("|yThe corpse is empty.|n")
 
     def _find_corpse(self, character):
         """Find a CorpseContainer in character's room, optionally matching args."""

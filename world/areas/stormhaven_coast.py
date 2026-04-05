@@ -1880,7 +1880,7 @@ def build():
     area.exit(cs_south_junction, cs_cliff_face, "north")
 
     # Cross-zone exit: south to plains zone
-    area.exit(cs_south_junction, "ashreach_expanse:ae_north_trail", "south")
+    area.exit(cs_south_junction, "ashreach_plains:outpost_01", "south")
 
     # ==================================================================
     #  SUB-AREA 10: STORM BLUFFS (~6 rooms)

@@ -963,6 +963,21 @@ def build():
     area.exit(ruins_09, ruins_15, "down")
     area.exit(ruins_15, ruins_09, "up")
 
+    ashreach_ancient_ruins = area.room(
+        "ashreach_ancient_ruins",
+        name="Ancient Ruins - Buried Archive",
+        desc=(
+            "Beneath the wind-scoured surface, a half-collapsed chamber opens "
+            "into what was once a records hall. Stone tablets line the walls, "
+            "their inscriptions worn but legible to a trained eye. The script "
+            "predates the Dragon Empire by centuries. Ash has drifted into the "
+            "corners, but the dry air has preserved the carvings remarkably well."
+        ),
+        room_type="ruins",
+    )
+    area.exit(ruins_13, ashreach_ancient_ruins, "down")
+    area.exit(ashreach_ancient_ruins, ruins_13, "up")
+
     # -- Ruins spawns --
     area.spawn(ruins_01, "dust_beetle", count_min=1, count_max=2,
                respawn_minutes=12, respawn_variance=4)
@@ -1871,9 +1886,9 @@ def build():
     area.exit(outpost_16, outpost_01, "southeast")
 
     # -- Cross-zone exits (D-25) --
-    area.exit(outpost_12, "coastal_zone:coast_entry", "east")     # east to coast
-    area.exit(outpost_16, "cantera_forest:forest_entry", "west")  # west to forest
-    area.exit(ash_road_16, "coastal_zone:coast_crossroads", "east")  # crossroads east
+    area.exit(outpost_12, "stormhaven_coast:hr_junction", "east")       # east to coast
+    area.exit(outpost_16, "cantera_edge:fe_trailhead", "west")         # west to forest
+    area.exit(ash_road_16, "stormhaven_coast:cn_trailhead", "east")    # crossroads east
 
     # -- Outpost spawns --
     area.spawn(outpost_02, "plains_viper", count_min=1, count_max=1,
@@ -1918,6 +1933,40 @@ def build():
     # NPC 3: Traveling merchant on the Ashway
     area.npc(ash_road_09, "npc_merchant_reva", faction="consortium")
 
+    # NPC 4: Warden outpost commander (delivery target for vc_q_warden_report)
+    area.npc(
+        outpost_07, "npc_warden_outpost_commander",
+        name="Commander Harven",
+        title="Warden Field Commander",
+        desc=(
+            "A broad-shouldered man in scarred Warden leathers, greying "
+            "at the temples. Deep lines frame his eyes -- the kind earned "
+            "by years of squinting across open plains. A battered field "
+            "desk is covered in patrol reports and requisition forms. He "
+            "manages the outpost with quiet, methodical authority."
+        ),
+        faction="wardens",
+        dialogue={
+            "greeting": (
+                "Harven looks up from a stack of reports. 'If you are here "
+                "to deliver something, set it on the desk. If you are here "
+                "to complain, get in line behind the rest of the Ashreach.'"
+            ),
+            "topics": {
+                "outpost": (
+                    "'This post is the last Warden presence before the deep "
+                    "plains. Everything east of here is wolf country and worse. "
+                    "We hold the line with what we have -- which is never enough.'"
+                ),
+                "report": (
+                    "'Vael's Crossing sends reports when they remember we exist. "
+                    "Field intelligence is what keeps this outpost running, not "
+                    "paperwork from the garrison.'"
+                ),
+            },
+        },
+    )
+
     # ==================================================================
     #  QUESTS (enriched specs — D-21/D-22)
     # ==================================================================
@@ -1960,7 +2009,7 @@ def build():
         rewards=[
             {"action_type": "give_scales", "amount": 100},
             {"action_type": "modify_standing", "faction_id": "wardens", "delta": 300},
-            {"action_type": "give_skill_xp", "skill_id": "combat", "count": 3},
+            {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 3},
             {"action_type": "echo", "message": "|gAshwyn clasps your arm in the Warden salute. \"The Ashway breathes easier tonight. You've done the Wardens a true service.\"|n"},
         ],
         # Legacy fields (backward compat)
@@ -2055,6 +2104,29 @@ def build():
         [{"action_type": "echo", "message": "|yThe wind carries the scent of ash and dry grass. The Ashreach stretches before you -- an endless expanse of golden plains scarred by ancient fires. In the distance, smoke rises from what might be a campfire or another burn.|n"}],
         trigger_id="ashreach_first_entry",
         once_per_character=True,
+    )
+
+    # ==================================================================
+    #  GATHERING POOLS
+    # ==================================================================
+
+    area.gathering_pool(
+        "ore",
+        rooms=["ridge_03", "ridge_05", "ridge_06", "ruins_01", "ruins_03"],
+        materials=["flint_shard", "iron_ore"],
+        max_active=3, respawn_minutes=12, respawn_variance=4,
+    )
+    area.gathering_pool(
+        "herb",
+        rooms=["grass_01", "grass_02", "grass_03", "grass_05", "grass_13"],
+        materials=["wolfsbane"],
+        max_active=3, respawn_minutes=10, respawn_variance=3,
+    )
+    area.gathering_pool(
+        "forage",
+        rooms=["grass_07", "grass_09", "grass_10", "grass_17", "grass_18"],
+        materials=["ashgrass_fiber"],
+        max_active=3, respawn_minutes=8, respawn_variance=3,
     )
 
     # ==================================================================

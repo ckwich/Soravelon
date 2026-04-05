@@ -84,6 +84,10 @@ class Character(ObjectParent, DefaultCharacter):
         self.db.base_stats = {stat: 10 for stat in STAT_NAMES}
         self.db.stat_xp = {stat: 0.0 for stat in STAT_NAMES}
 
+        # HP/stamina persistence across sessions
+        self.db._saved_hp = None
+        self.db._saved_stamina = None
+
         # Tag for queryset filtering
         self.tags.add("player_character", category="character_type")
 
@@ -113,8 +117,11 @@ class Character(ObjectParent, DefaultCharacter):
         self.ndb.active_effects = []
         self.ndb.actions_remaining = 0
         self.ndb.ability_used_this_turn = False
-        self.ndb.hp = derive_max_hp(self)
-        self.ndb.stamina = derive_max_stamina(self)
+        self.ndb.hp = self.db._saved_hp if self.db._saved_hp is not None else derive_max_hp(self)
+        self.ndb.stamina = self.db._saved_stamina if self.db._saved_stamina is not None else derive_max_stamina(self)
+        # Clear saved values after restore
+        self.db._saved_hp = None
+        self.db._saved_stamina = None
         self.ndb.charged_ability = None
 
         # Start per-character session script (XP flush + debt countdown).
@@ -182,7 +189,8 @@ class Character(ObjectParent, DefaultCharacter):
 
         # Step 3: no active quests (ancestry + guild both set)
         if self.db.guild_id is not None:
-            active_quests = self.db.active_quest_ids or []
+            from world.quest_engine import get_active_quests
+            active_quests = get_active_quests(self)
             if not active_quests:
                 self.msg("|y[Hint]|n Speak with the townsfolk in Vael's Crossing. "
                          "Type |wtalk|n near an NPC to begin a conversation.")
@@ -203,17 +211,41 @@ class Character(ObjectParent, DefaultCharacter):
         from world.recovery_engine import stop_regen
         stop_regen(self)
 
+        # Preserve HP/stamina across reconnect (F4: disconnect exploit fix)
+        self.db._saved_hp = self.ndb.hp
+        self.db._saved_stamina = self.ndb.stamina
+
         # Flush stat growth accumulators before logout
         commit_stat_growth(self)
 
+        # Flush ALL accumulators consistently on logout (F6 fix)
+        commit_stat_growth(self)
         commit_session_xp(self)
+        from world.skill_engine import commit_skill_accumulators
+        commit_skill_accumulators(self)
+
         on_member_disconnect(self)
 
+        # Fishing cleanup — cancel pending deferreds on disconnect
+        fishing_state = getattr(self.ndb, "fishing_state", None)
+        if fishing_state:
+            for key in ("bite_deferred", "reel_deferred", "idle_deferred"):
+                d = fishing_state.get(key)
+                if d and hasattr(d, "active") and d.active():
+                    d.cancel()
+            self.ndb.fishing_state = None
+
+        # Crafting cleanup — cancel pending craft deferred on disconnect
+        craft_d = getattr(self.ndb, "craft_deferred", None)
+        if craft_d and hasattr(craft_d, "active") and craft_d.active():
+            craft_d.cancel()
+        self.ndb.craft_deferred = None
+
         # Combat cleanup — remove from active combat on disconnect
-        if self.ndb.combat_handler:
+        if getattr(self.ndb, "combat_handler", None):
             try:
                 self.ndb.combat_handler.remove_combatant(self)
-            except Exception:
+            except (AttributeError, RuntimeError):
                 pass  # combat handler may already be cleaned up
             self.ndb.combat_handler = None
 
@@ -227,6 +259,10 @@ class Character(ObjectParent, DefaultCharacter):
         if getattr(self.ndb, "recovery_state", "active") != "active":
             from world.recovery_engine import cancel_recovery
             cancel_recovery(self)
+
+        # Break node stabilization on move (D-10)
+        from world.node_helpers import break_stabilization_on_move
+        break_stabilization_on_move(self)
 
         # Clear fishing state on move (Pitfall 6: cancel ghost timers)
         fishing_state = getattr(self.ndb, "fishing_state", None)
@@ -247,7 +283,7 @@ class Character(ObjectParent, DefaultCharacter):
                     visited.add(room_id)
                     self.db.visited_room_ids = visited
         # Skip map_update during Dragon Courier flight — _arrive_final pushes it instead (Pitfall 6)
-        if self.ndb.in_flight:
+        if getattr(self.ndb, "in_flight", False):
             return
         from world import oob_publisher
         oob_publisher.push_map_update(self)
@@ -300,7 +336,7 @@ class Character(ObjectParent, DefaultCharacter):
 
     def at_before_move(self, destination, **kwargs):
         """Block movement during Dragon Courier flight (D-12) or when overloaded."""
-        if self.ndb.in_flight:
+        if getattr(self.ndb, "in_flight", False):
             self.msg("You cannot move while aboard the Dragon Courier.")
             return False
         from world.inventory_helpers import get_carry_state

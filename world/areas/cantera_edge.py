@@ -455,7 +455,7 @@ def build():
     # Cross-zone exits from forest edge
     area.exit(fe_trailhead, "vaels_crossing:hg_west_road", "east",
               desc="The Cantera Trail leads east toward Vael's Crossing.")
-    area.exit(fe_south_plains_exit, "ashreach_expanse:ae_north_treeline", "south",
+    area.exit(fe_south_plains_exit, "ashreach_plains:ash_road_01", "south",
               desc="A game trail descends south into the Ashreach plains.")
 
     # Region 1 spawns
@@ -2298,6 +2298,76 @@ def build():
         },
     )
 
+    # 4. Warden supply sergeant (delivery target for cantera_resupply)
+    area.npc(
+        fe_warden_post, "npc_warden_supply_sergeant",
+        name="Sergeant Voss",
+        title="Warden Supply Sergeant",
+        desc=(
+            "A stocky woman in reinforced Warden leathers, her sleeves "
+            "rolled past thick forearms. Crates and canvas bundles are "
+            "stacked in neat rows behind her -- the product of a mind "
+            "that treats logistics like a battlefield. She checks a "
+            "manifest against a dwindling pile of supplies, frowning."
+        ),
+        faction="wardens",
+        dialogue={
+            "greeting": (
+                "Voss barely glances up from her manifest. 'If you are "
+                "carrying supply crates, stack them there. If you are not, "
+                "stay out of the way -- I have three outposts running on "
+                "fumes and the last resupply runner never came back.'"
+            ),
+            "topics": {
+                "supplies": (
+                    "'We need rations, binding salve, and fire oil. In that "
+                    "order. The corruption makes everything spoil faster -- "
+                    "half what we requisition goes bad before it arrives.'"
+                ),
+                "corruption": (
+                    "'The forest eats supply lines. Paths shift, landmarks "
+                    "move. I have started marking trees with iron nails -- "
+                    "the corruption does not seem to touch iron. Yet.'"
+                ),
+            },
+        },
+    )
+
+    # 5. Ranger at forest edge (talk_to target for cantera_lost_traveler)
+    area.npc(
+        fe_trailhead, "npc_ranger_forest_edge",
+        name="Ranger Taen",
+        title="Forest Edge Ranger",
+        desc=(
+            "A lean figure in mottled green and brown, so still against "
+            "the treeline that you almost miss him. His eyes track the "
+            "canopy with the patience of someone who has learned that "
+            "the forest rewards silence. A short bow and a coil of rope "
+            "hang from his belt."
+        ),
+        faction="wardens",
+        dialogue={
+            "greeting": (
+                "Taen nods once, barely moving. 'Heading in? Stay on the "
+                "marked trail and do not follow sounds off the path. The "
+                "forest plays tricks when the resonance is high.'"
+            ),
+            "topics": {
+                "trail": (
+                    "'I keep the first mile of trail clear and marked. Beyond "
+                    "that, you are on your own. The corruption has not reached "
+                    "this far yet, but the wildlife is restless.'"
+                ),
+                "traveler": (
+                    "'We get lost ones stumbling out every few days. Most are "
+                    "just disoriented. Some... are not the same when they come "
+                    "back. If you find someone in there, get them to the trail "
+                    "and head east. Do not linger.'"
+                ),
+            },
+        },
+    )
+
     # ------------------------------------------------------------------
     # Quests (enriched specs -- D-21/D-22)
     # ------------------------------------------------------------------
@@ -2658,15 +2728,40 @@ def build():
     )
 
     # ------------------------------------------------------------------
-    # Quest Item Triggers (15-05: wire quest items to world sources)
+    # Gathering Pools
     # ------------------------------------------------------------------
 
-    # resonance_sample — found by examining the Resonance Heart node center
-    area.trigger(
-        rs_node_center, "on_examine",
-        actions=[{"action_type": "give_item", "item_id": "resonance_sample"}],
-        trigger_id="cantera_resonance_sample",
-        once_per_character=True,
+    # Forest timber and pala wood
+    area.gathering_pool(
+        "wood",
+        rooms=["fe_split_oak", "dc_fallen_giant", "dc_canopy_tunnel", "bh_pala_heart", "bh_fallen_pala"],
+        materials=["cantera_timber", "pala_bark"],
+        max_active=3, respawn_minutes=12, respawn_variance=4,
+        tier_floor=1, tier_ceiling=2,
+    )
+    # Forest floor forage (mushrooms, berries, shelf fungus, pala sap)
+    area.gathering_pool(
+        "forage",
+        rooms=["fe_fern_glade", "fe_mushroom_hollow", "dc_fungal_garden", "dc_druid_marker",
+               "dc_charcoal_clearing", "bh_sap_pool", "rs_sap_convergence"],
+        materials=["nightcap_mushroom", "bramble_berry", "shelf_fungus", "cave_mushroom", "pala_sap"],
+        max_active=4, respawn_minutes=10, respawn_variance=3,
+        tier_floor=1, tier_ceiling=3,
+    )
+    # Cave ores and crystals
+    area.gathering_pool(
+        "ore",
+        rooms=["rc_drip_chamber", "rc_crystal_vein", "rc_root_nexus", "rc_deep_pool", "dc_amber_seep"],
+        materials=["cantera_amber", "resonance_crystal"],
+        max_active=2, respawn_minutes=18, respawn_variance=5,
+        tier_floor=2, tier_ceiling=3,
+    )
+    # Spider silk from web-heavy areas
+    area.gathering_pool(
+        "hide",
+        rooms=["dc_webbed_clearing", "dc_spider_nest", "rc_spider_den"],
+        materials=["spider_silk"],
+        max_active=2, respawn_minutes=15, respawn_variance=5,
     )
 
     # ------------------------------------------------------------------

@@ -27,6 +27,7 @@ class SoravelonMob(DefaultCharacter):
         self.db.trust_sensitive = False
         self.db.quest_modifier = None
         self.db.prestige_modifier = 1.0
+        self.db.threat_level = "solo"
 
         # Stat ranges (authored at REFERENCE_LEVEL = backend 10)
         self.db.hp_min = 80
@@ -65,12 +66,21 @@ class SoravelonMob(DefaultCharacter):
         from world.zone_scaling import initialize_mob_combat_stats
         initialize_mob_combat_stats(self)
 
+    # Threat level display tags
+    THREAT_TAGS = {
+        "elite": "|!y|530[Elite]|n",
+        "boss": "|r[Boss]|n",
+    }
+
     def get_display_name(self, looker=None, **kwargs):
-        """Prepend star prefix based on rarity."""
+        """Prepend star prefix and threat tag based on rarity and threat_level."""
         base_name = super().get_display_name(looker, **kwargs)
         prefix = get_star_prefix(self.db.rarity)
         if prefix:
-            return f"{prefix} {base_name}"
+            base_name = f"{prefix} {base_name}"
+        threat = self.THREAT_TAGS.get(self.db.threat_level)
+        if threat:
+            base_name = f"{threat} {base_name}"
         return base_name
 
     def reveal_affix(self, looker, affix_tag):

@@ -1289,7 +1289,7 @@ def build():
     area.exit(wr_peak_trail, wr_eagles_nest, "down")
 
     # Cross-zone exit west to forest zone
-    area.exit(wr_treeline, "cantera_approach:ca_mountain_trail", "west")
+    area.exit(wr_treeline, "cantera_edge:fe_trailhead", "west")
 
     # ==================================================================
     #  SUB-AREA 6: MOUNTAIN OVERLOOKS (~10 rooms)
@@ -1700,6 +1700,22 @@ def build():
     area.exit(dc_deep_pool, dc_warmth_vent, "up")
     area.exit(dc_old_nest, dc_mineral_seep, "south")
     area.exit(dc_mineral_seep, dc_old_nest, "north")
+
+    rf_mountain_passage = area.room(
+        "rf_mountain_passage",
+        name="Collapsed Mountain Passage",
+        desc=(
+            "The passage narrows here, the walls scarred by recent pick-marks "
+            "and surveyor's chalk. A rope line leads deeper but ends abruptly "
+            "where the ceiling has caved in. Scattered equipment -- a lantern, "
+            "a half-drawn map, a spilled water skin -- tells the story of a "
+            "hasty retreat. Or something worse."
+        ),
+        room_type="underground",
+        indoor=True,
+    )
+    area.exit(gm_deep_crosscut, rf_mountain_passage, "down")
+    area.exit(rf_mountain_passage, gm_deep_crosscut, "up")
 
     # ==================================================================
     #  SUB-AREA 8: EASTERN DESCENT (~12 rooms)
@@ -2222,7 +2238,7 @@ def build():
         rewards=[
             {"action_type": "give_scales", "amount": 120},
             {"action_type": "modify_standing", "faction_id": "wardens", "delta": 250},
-            {"action_type": "give_skill_xp", "skill_id": "combat", "count": 4},
+            {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 4},
             {"action_type": "echo", "message": "|gSerra examines the troll-tooth trophies with a soldier's eye. \"Five less to worry about. The foothills won't thank you, but the miners will.\"|n"},
         ],
         # Legacy fields (backward compat)
@@ -2307,23 +2323,20 @@ def build():
     )
 
     # ==================================================================
-    #  QUEST ITEM TRIGGERS (15-05: wire quest items to world sources)
+    #  GATHERING POOLS
     # ==================================================================
 
-    # rare_herb_bundle — found at the herb ledge gathering spot
-    area.trigger(
-        ls_herb_ledge, "on_examine",
-        actions=[{"action_type": "give_item", "item_id": "rare_herb_bundle"}],
-        trigger_id="reth_rare_herb_bundle",
-        once_per_character=True,
+    area.gathering_pool(
+        "ore",
+        rooms=["gm_iron_face", "gm_copper_chamber", "gm_deep_crosscut", "gm_north_drift", "cn_crystal_alcove"],
+        materials=["copper_ore", "iron_ore"],
+        max_active=3, respawn_minutes=12, respawn_variance=4,
     )
-
-    # rare_alpine_ingredient — found at high-altitude alpine meadow
-    area.trigger(
-        ls_herb_ledge, "on_enter",
-        actions=[{"action_type": "give_item", "item_id": "rare_alpine_ingredient"}],
-        trigger_id="reth_rare_alpine_ingredient",
-        once_per_character=True,
+    area.gathering_pool(
+        "herb",
+        rooms=["ls_herb_ledge", "ra_spring", "ra_scrub_flat", "ed_lower_meadow", "mo_high_meadow"],
+        materials=["mountain_herb"],
+        max_active=3, respawn_minutes=10, respawn_variance=3,
     )
 
     # ==================================================================

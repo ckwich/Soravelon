@@ -84,7 +84,7 @@ class CmdTools(Command):
             return
         tool_slot = getattr(item.db, "tool_slot", None)
         if not tool_slot or tool_slot not in VALID_TOOL_SLOTS:
-            character.msg("That's not a gathering tool.")
+            character.msg("|rThat's not a gathering tool.|n")
             return
         # Copy dict to trigger SaverDict persistence
         equipped = dict(character.db.equipped_tools or {})
@@ -95,11 +95,11 @@ class CmdTools(Command):
     def _unequip_tool(self, character, slot_name):
         slot = FRIENDLY_NAME_TO_SLOT.get(slot_name, slot_name)
         if slot not in VALID_TOOL_SLOTS:
-            character.msg(f"Unknown tool slot: {slot_name}")
+            character.msg(f"|rUnknown tool slot: {slot_name}|n")
             return
         equipped = dict(character.db.equipped_tools or {})
         if slot not in equipped:
-            character.msg("Nothing equipped in that slot.")
+            character.msg("|yNothing equipped in that slot.|n")
             return
         del equipped[slot]
         character.db.equipped_tools = equipped

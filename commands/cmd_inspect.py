@@ -85,7 +85,7 @@ class CmdInspect(Command):
 
     def func(self):
         if not self.args:
-            self.caller.msg("Inspect what?")
+            self.caller.msg("|yInspect what?|n")
             return
 
         # Search inventory and room
@@ -131,7 +131,7 @@ class CmdCompare(Command):
 
     def func(self):
         if not self.args:
-            self.caller.msg("Usage: compare <item1> to <item2>")
+            self.caller.msg("|yUsage: compare <item1> to <item2>|n")
             return
 
         # Parse args: "item1 to item2" or "item1 item2"
@@ -141,7 +141,7 @@ class CmdCompare(Command):
         else:
             parts = args.rsplit(" ", 1)
             if len(parts) < 2:
-                self.caller.msg("Usage: compare <item1> to <item2>")
+                self.caller.msg("|yUsage: compare <item1> to <item2>|n")
                 return
             name1, name2 = parts
 

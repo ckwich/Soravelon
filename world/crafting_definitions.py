@@ -190,7 +190,7 @@ RECIPE_REGISTRY = {
             {"item_tag": "clean_water", "quantity": 1},
         ],
         "output": {
-            "template_id": "antidote",
+            "template_id": "antidote_potion",
             "base_item_type": "consumable",
             "quality_affects": "effect_amount",
         },
@@ -833,5 +833,48 @@ RECIPE_REGISTRY = {
         "command": "smith",
         "craft_time": 8,
         "craft_echo": "You treat the drake scale with oils and careful heat until it gleams...",
+    },
+
+    # ===== Quest-Reward Alchemy Recipes =====
+
+    "healing_draught": {
+        "name": "Healing Draught",
+        "skill": "alchemy",
+        "difficulty": 25,
+        "station": "alchemy_bench",
+        "ingredients": [
+            {"item_tag": "wild_herb", "quantity": 2},
+            {"item_tag": "thornroot", "quantity": 1},
+            {"item_tag": "clean_water", "quantity": 1},
+        ],
+        "output": {
+            "template_id": "healing_draught",
+            "base_item_type": "consumable",
+            "quality_affects": "effect_amount",
+        },
+        "default_known": False,
+        "command": "brew",
+        "craft_time": 5,
+        "craft_echo": "You blend the herbs into a poultice, then steep them in warmed water...",
+    },
+    "mountain_tonic": {
+        "name": "Mountain Tonic",
+        "skill": "alchemy",
+        "difficulty": 40,
+        "station": "alchemy_bench",
+        "ingredients": [
+            {"item_tag": "mountain_herb", "quantity": 2},
+            {"item_tag": "clean_water", "quantity": 1},
+            {"item_tag": "wild_mushroom", "quantity": 1},
+        ],
+        "output": {
+            "template_id": "mountain_tonic",
+            "base_item_type": "consumable",
+            "quality_affects": "effect_amount",
+        },
+        "default_known": False,
+        "command": "brew",
+        "craft_time": 6,
+        "craft_echo": "You follow the old formula, grinding the mountain herbs with mortar and stone...",
     },
 }

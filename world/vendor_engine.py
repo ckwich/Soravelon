@@ -88,7 +88,7 @@ def buy_item(character, vendor_npc, item_id):
     character.db.carried_scales = carried - price
 
     # Remove from player_stock if it was player-sold (one copy)
-    player_stock = vendor_npc.db.player_stock or {}
+    player_stock = dict(vendor_npc.db.player_stock or {})
     if item_id in player_stock and item_id not in CATALOG:
         del player_stock[item_id]
         vendor_npc.db.player_stock = player_stock
