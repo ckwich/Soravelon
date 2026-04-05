@@ -585,12 +585,18 @@ class CombatScript:
         from world.ability_engine import decrement_cooldowns
         from world.combat_engine import check_death, handle_mob_death, handle_player_death
 
+        # Reset took_damage_this_round at round end before tick processing.
+        # The flag was set during the round's damage resolution and is consumed
+        # by tick_effects (petrify break-on-damage check).  After ticking, reset
+        # so it's clean for the next round.
         dead = []
         for combatant in self._resolve_combatants():
             if combatant is None:
                 continue
-            # Tick effects
+            # Tick effects (reads took_damage_this_round for petrify)
             tick_effects(combatant)
+            # Reset the flag after tick processing for the next round
+            combatant.ndb.took_damage_this_round = False
             # Decrement cooldowns
             decrement_cooldowns(combatant)
             # Check for DoT kills

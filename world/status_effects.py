@@ -330,6 +330,7 @@ def check_compound_triggers(target):
                 "type": result_name,
                 "stacks": 1,
                 "duration": compound_duration,
+                "initial_duration": compound_duration,
                 "magnitude": 1.0,
                 "source_id": None,
                 "max_stacks": 1,
@@ -395,9 +396,25 @@ def tick_effects(target):
 
         # Steam burst damage (consuming compound result)
         elif etype == "steam":
-            # Burst damage is percentage-based, applied once on creation tick
-            # Subsequent ticks just maintain the armor reduction / action penalty
-            pass
+            # Burst damage on first tick only (when duration equals initial_duration)
+            initial = entry.get("initial_duration", entry["duration"])
+            if entry["duration"] >= initial:
+                max_hp = getattr(target.ndb, "max_hp", 100) or 100
+                burst = max(1, int(max_hp * 0.15))
+                current_hp = target.ndb.hp or 0
+                target.ndb.hp = max(0, current_hp - burst)
+                messages.append(f"Steam scalds for {burst} damage!")
+
+        # Discharge burst damage (compound result)
+        elif etype == "discharge":
+            # Burst damage on first tick only
+            initial = entry.get("initial_duration", entry["duration"])
+            if entry["duration"] >= initial:
+                max_hp = getattr(target.ndb, "max_hp", 100) or 100
+                burst = max(1, int(max_hp * 0.20))
+                current_hp = target.ndb.hp or 0
+                target.ndb.hp = max(0, current_hp - burst)
+                messages.append(f"Electrical discharge deals {burst} damage!")
 
         # Decrement duration
         entry["duration"] -= 1

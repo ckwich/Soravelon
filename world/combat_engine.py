@@ -212,6 +212,9 @@ def resolve_basic_attack(attacker, target, weapon=None):
     current_hp = target.ndb.hp or 0
     target.ndb.hp = max(0, current_hp - final)
 
+    # Flag for petrify break-on-damage check
+    target.ndb.took_damage_this_round = True
+
     # Record stat use
     if attacker_stats:
         from world.base_attributes import record_stat_use
@@ -302,6 +305,9 @@ def resolve_ability_damage(character, ability, target):
     # Reduce target HP
     current_hp = target.ndb.hp or 0
     target.ndb.hp = max(0, current_hp - final)
+
+    # Flag for petrify break-on-damage check
+    target.ndb.took_damage_this_round = True
 
     # Record stat use
     from world.base_attributes import record_stat_use
