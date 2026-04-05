@@ -2658,6 +2658,18 @@ def build():
     )
 
     # ------------------------------------------------------------------
+    # Quest Item Triggers (15-05: wire quest items to world sources)
+    # ------------------------------------------------------------------
+
+    # resonance_sample — found by examining the Resonance Heart node center
+    area.trigger(
+        rs_node_center, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "resonance_sample"}],
+        trigger_id="cantera_resonance_sample",
+        once_per_character=True,
+    )
+
+    # ------------------------------------------------------------------
     # Build
     # ------------------------------------------------------------------
     return area.build()

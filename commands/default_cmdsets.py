@@ -150,6 +150,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         # Loot commands (Phase 15)
         from commands.cmd_loot import CmdLoot
         self.add(CmdLoot())
+        # Tool slot management
+        from commands.cmd_tools import CmdTools
+        self.add(CmdTools())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

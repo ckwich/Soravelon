@@ -2516,6 +2516,26 @@ def build():
     )
 
     # ==================================================================
+    #  QUEST ITEM TRIGGERS (15-05: wire quest items to world sources)
+    # ==================================================================
+
+    # outstanding_debt_token — given by bank teller NPC room on first visit
+    area.trigger(
+        cq_bank, "on_first_visit",
+        actions=[{"action_type": "give_item", "item_id": "outstanding_debt_token"}],
+        trigger_id="vc_debt_token_grant",
+        once_per_character=True,
+    )
+
+    # warden_supplies — given by warden office on examine (accept supply run)
+    area.trigger(
+        iq_warden_office, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "warden_supplies"}],
+        trigger_id="vc_warden_supplies_grant",
+        once_per_character=True,
+    )
+
+    # ==================================================================
     #  MATERIALS (zone-level harvestable materials)
     # ==================================================================
 
