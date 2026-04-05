@@ -49,7 +49,7 @@ def _make_spawn_record(
     record_id=1,
     room_id=100,
     spawn_index=0,
-    mob_template="Wolf",
+    mob_template_key="Wolf",
     active_mob_ids=None,
     respawn_at=None,
     is_named=False,
@@ -60,7 +60,7 @@ def _make_spawn_record(
     record.id = record_id
     record.room_id = room_id
     record.spawn_index = spawn_index
-    record.mob_template = mob_template
+    record.mob_template_key = mob_template_key
     record.active_mob_ids = active_mob_ids or []
     record.respawn_at = respawn_at
     record.is_named = is_named
@@ -359,7 +359,7 @@ class TestSpawnRecordModel(unittest.TestCase):
         from world.models import SpawnRecord
 
         field_names = [f.name for f in SpawnRecord._meta.get_fields()]
-        for expected in ("room_id", "spawn_index", "mob_template",
+        for expected in ("room_id", "spawn_index", "mob_template_key",
                          "active_mob_ids", "respawn_at", "is_named", "named_id"):
             self.assertIn(expected, field_names, f"Missing field: {expected}")
 

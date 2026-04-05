@@ -1654,6 +1654,7 @@ def apply_mob_template(mob, template_key):
     mob.db.desc = template["desc"]
 
     # Identity
+    mob.db.mob_template_key = template_key
     mob.db.mob_type = template["mob_type"]
 
     # Stats

@@ -375,7 +375,7 @@ class SpawnRecord(models.Model):
 
     room_id = models.IntegerField(db_index=True)
     spawn_index = models.IntegerField()
-    mob_template = models.CharField(max_length=64)
+    mob_template_key = models.CharField(max_length=64)
     active_mob_ids = models.JSONField(default=list)
     respawn_at = models.DateTimeField(null=True, db_index=True)
     is_named = models.BooleanField(default=False)
@@ -389,7 +389,7 @@ class SpawnRecord(models.Model):
         ]
 
     def __str__(self):
-        return f"room={self.room_id}:idx={self.spawn_index}:{self.mob_template}"
+        return f"room={self.room_id}:idx={self.spawn_index}:{self.mob_template_key}"
 
 
 class CharacterRecipe(models.Model):

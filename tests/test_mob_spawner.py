@@ -151,7 +151,7 @@ class TestCountRoomMobs(unittest.TestCase):
         spawn_def = _make_spawn_def(mob="named_wolf", is_named=True)
         count = self.spawner._count_room_mobs(room, spawn_def)
         self.assertEqual(count, 1)
-        self.evennia_stub.search_tag.assert_called_with("named_wolf", category="mob_id")
+        self.evennia_stub.search_tag.assert_called_with("named_wolf", category="mob_instance_id")
 
     def test_counts_only_soravelon_mob_instances(self):
         """Non-mob objects in room contents are ignored."""
@@ -245,9 +245,9 @@ class TestSpawnNamedMob(unittest.TestCase):
             if "mob_spawner" in key:
                 del sys.modules[key]
 
-    def test_tags_mob_with_mob_id_category(self):
+    def test_tags_mob_with_mob_instance_id_category(self):
         self.spawner.spawn_named_mob(self.spawn_def, self.room)
-        self.mob.tags.add.assert_called_with("dire_wolf", category="mob_id")
+        self.mob.tags.add.assert_called_with("dire_wolf", category="mob_instance_id")
 
     def test_sets_prestige_modifier(self):
         self.spawner.spawn_named_mob(self.spawn_def, self.room)

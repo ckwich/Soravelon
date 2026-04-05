@@ -196,8 +196,8 @@ def _handle_spawn_mob(action_dict, context, _depth):
         flee_threshold (int, optional): flee HP threshold (default 20)
     """
     room = context.get("room")
-    mob_template = action_dict.get("mob")
-    if not mob_template:
+    mob_template_key = action_dict.get("mob")
+    if not mob_template_key:
         return False, "spawn_mob: missing 'mob' key"
     target_room = room
     room_id = action_dict.get("room_id")
@@ -209,7 +209,7 @@ def _handle_spawn_mob(action_dict, context, _depth):
     if not target_room:
         return False, "spawn_mob: no target room"
     spawn_def = {
-        "mob": mob_template,
+        "mob": mob_template_key,
         "count_min": 1,
         "count_max": 1,
         "is_named": False,
