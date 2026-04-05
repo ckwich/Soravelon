@@ -259,6 +259,19 @@ Plans:
 - [ ] 15-04-PLAN.md — Social systems (who/shout/whisper, OOC/domain channels) + item inspection/compare
 - [ ] 15-05-PLAN.md — Missing content (gathering tools, fish pools, loot tables, crafting outputs, quest items)
 
+### Phase 16: Architectural Refactoring
+**Goal**: Codebase structure is clean and maintainable — typeclass hooks are thin delegates to world/ orchestrators, command logic is extracted to engine modules, duplicate code is consolidated, naming is consistent (mob_template_key/mob_instance_id), SaverDict mutations are safe, return types are enforced, and imports are hygienic
+**Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11, D-12, D-13, D-14, D-15, D-16, D-17, D-18, D-19
+**Depends on:** Phase 15
+**Plans:** 5 plans
+
+Plans:
+- [ ] 16-01-PLAN.md — Lifecycle orchestrators (session/movement/death) + thin typeclass delegates
+- [ ] 16-02-PLAN.md — Command logic extraction (catch_fish + complete_gather to gathering_engine)
+- [ ] 16-03-PLAN.md — Duplicate consolidation (weapon damage helper + effect search helper)
+- [ ] 16-04-PLAN.md — Naming renames (mob_template_key + mob_instance_id + Django migration)
+- [ ] 16-05-PLAN.md — SaverDict audit + return type enforcement + import hygiene
+
 ## Progress
 
 **Execution Order:**
@@ -280,13 +293,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 13. Gathering and Refining | 7/7 | Complete    | 2026-04-04 |
 | 14. All TBD/TODOs Implemented | 4/4 | Complete    | 2026-04-04 |
 | 15. Implement Missing Gameplay Gap Systems | 1/5 | Complete    | 2026-04-05 |
-
-### Phase 16: Architectural refactoring
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 15
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 16 to break down)
+| 16. Architectural Refactoring | 0/5 | Not started | - |
