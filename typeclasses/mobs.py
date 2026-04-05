@@ -6,8 +6,6 @@ Handles affix display, affix reveal in combat, and loot tier.
 """
 
 from evennia.objects.objects import DefaultCharacter
-from world.mob_affix_roller import apply_affixes_to_mob, get_star_prefix
-from world.mob_affixes import MOB_AFFIXES
 
 
 class SoravelonMob(DefaultCharacter):
@@ -52,6 +50,7 @@ class SoravelonMob(DefaultCharacter):
 
     def spawn_with_affixes(self, room):
         """Roll and apply affixes. Call after creation, not in at_object_creation."""
+        from world.mob_affix_roller import apply_affixes_to_mob
         return apply_affixes_to_mob(self, room)
 
     def initialize_for_spawn(self, room):
@@ -60,12 +59,14 @@ class SoravelonMob(DefaultCharacter):
         Rolls affixes AND combat stats. Replaces spawn_with_affixes
         for new code — spawn_with_affixes kept for backward compat.
         """
+        from world.mob_affix_roller import apply_affixes_to_mob
         apply_affixes_to_mob(self, room)
         from world.zone_scaling import initialize_mob_combat_stats
         initialize_mob_combat_stats(self)
 
     def get_display_name(self, looker=None, **kwargs):
         """Prepend star prefix based on rarity."""
+        from world.mob_affix_roller import get_star_prefix
         base_name = super().get_display_name(looker, **kwargs)
         prefix = get_star_prefix(self.db.rarity)
         if prefix:
@@ -84,6 +85,7 @@ class SoravelonMob(DefaultCharacter):
             return None
 
         self.ndb.revealed_affixes.add(affix_tag)
+        from world.mob_affixes import MOB_AFFIXES
         affix_def = MOB_AFFIXES.get(affix_tag)
         if not affix_def:
             return None
@@ -93,6 +95,7 @@ class SoravelonMob(DefaultCharacter):
 
     def get_combat_modifiers(self):
         """Return merged dict of all active combat modifiers from affixes."""
+        from world.mob_affixes import MOB_AFFIXES
         modifiers = {}
         for affix_tag in (self.db.affix_list or []):
             affix_def = MOB_AFFIXES.get(affix_tag, {})
