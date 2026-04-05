@@ -16,6 +16,7 @@ import django
 django.setup()
 
 
+
 class _MockDB:
     """Simple attribute bag that mimics Evennia's db handler."""
 
