@@ -47,6 +47,8 @@ NON_STACKABLE_EFFECTS = {
         "burn_magnitude_reduction": 0.25,
         "action_penalty_on_apply": 1,
     },
+    "fortify": {"damage_reduction": 0.15},  # 15% damage reduction (medic blessing)
+    "vigor": {"damage_bonus": 0.15},  # 15% damage bonus (medic blessing)
 }
 
 # All known effect types for quick membership checks
@@ -518,5 +520,9 @@ def get_effect_modifiers(target):
         elif etype == "discharge":
             # Compound: action penalty (wet + shocked)
             modifiers["action_budget_penalty"] += 1
+        elif etype == "fortify":
+            modifiers["damage_reduction"] += NON_STACKABLE_EFFECTS["fortify"]["damage_reduction"]
+        elif etype == "vigor":
+            modifiers["damage_bonus"] = modifiers.get("damage_bonus", 0.0) + NON_STACKABLE_EFFECTS["vigor"]["damage_bonus"]
 
     return modifiers
