@@ -280,3 +280,13 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 13. Gathering and Refining | 7/7 | Complete    | 2026-04-04 |
 | 14. All TBD/TODOs Implemented | 4/4 | Complete    | 2026-04-04 |
 | 15. Implement Missing Gameplay Gap Systems | 1/5 | Complete    | 2026-04-05 |
+
+### Phase 16: Architectural refactoring
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 15
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 16 to break down)

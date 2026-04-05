@@ -178,6 +178,13 @@ Recent decisions affecting current work:
 - [Phase 15]: Tool slots (D-20) separate from combat VALID_SLOTS, stored as character.db.equipped_tools
 - [Phase 15]: Quest items wired via area.trigger() give_item action, fish materials via area.material() DSL
 
+### Roadmap Evolution
+
+- Phase 13 added: Gathering and Refining (resource gathering nodes, material processing, fishing, tools)
+- Phase 14 added: All TBD/TODOs implemented
+- Phase 15 added: Implement missing gameplay gap systems (vendor/shop, HP regen, item inspection, who, global chat)
+- Phase 16 added: Architectural refactoring (god methods, duplicate logic, naming consistency)
+
 ### Pending Todos
 
 None yet.
