@@ -254,9 +254,9 @@ Plans:
 
 Plans:
 - [ ] 15-01-PLAN.md — Vendor engine + CATALOG extraction + vendor commands + NPC wiring
-- [ ] 15-02-PLAN.md — Recovery engine (regen ticks, rest/sleep, medic blessings) + commands + character wiring
+- [x] 15-02-PLAN.md — Recovery engine (regen ticks, rest/sleep, medic blessings) + commands + character wiring
 - [ ] 15-03-PLAN.md — Combat fixes (ability return normalization, compound effects, corpse loot, group loot)
-- [x] 15-04-PLAN.md — Social systems (who/shout/whisper, OOC/domain channels) + item inspection/compare
+- [ ] 15-04-PLAN.md — Social systems (who/shout/whisper, OOC/domain channels) + item inspection/compare
 - [ ] 15-05-PLAN.md — Missing content (gathering tools, fish pools, loot tables, crafting outputs, quest items)
 
 ## Progress

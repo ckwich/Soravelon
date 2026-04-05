@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-04-05T06:58:42.525Z"
+status: Milestone complete
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-04-05T09:26:13.456Z"
 progress:
-  total_phases: 12
-  completed_phases: 9
-  total_plans: 63
-  completed_plans: 59
+  total_phases: 13
+  completed_phases: 11
+  total_plans: 69
+  completed_plans: 63
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 07 — milestone-1-content
+**Current focus:** Phase 14 — all-tbd-todos-implemented
 
 ## Current Position
 
-Phase: 07
-Plan: 03 complete
+Phase: 14
+Plan: Not started
 
 ## Performance Metrics
 
@@ -72,20 +72,18 @@ Plan: 03 complete
 | Phase 06a P04 | 123 | 1 tasks | 1 files |
 | Phase 06a P05 | 5 | 2 tasks | 1 files |
 | Phase 06a P06 | 6 | 2 tasks | 5 files |
-| Phase 06c P02 | 3 | 2 tasks | 2 files |
-| Phase 06c P04 | 6 | 2 tasks | 4 files |
-| Phase 06c P05 | 10 | 2 tasks | 2 files |
-| Phase 05b P02 | 4min | 2 tasks | 1 files |
-| Phase 05b P03 | 6min | 2 tasks | 1 files |
-| Phase 05b P04 | 317 | 2 tasks | 1 files |
-| Phase 05b P05 | 6min | 2 tasks | 1 files |
-| Phase 05b P06 | 1 | 1 tasks | 0 files |
-| Phase 5c P02 | 6 | 2 tasks | 3 files |
-| Phase 5c P03 | 8 | 1 tasks | 1 files |
-| Phase 5c P04 | 7 | 1 tasks | 3 files |
-| Phase 07 P02 | 3 | 1 tasks | 3 files |
-| Phase 07 P06 | 11 | 1 tasks | 3 files |
-| Phase 15 P01 | 634 | 2 tasks | 6 files |
+| Phase 13 P01 | 2 | 2 tasks | 4 files |
+| Phase 13 P02 | 191 | 2 tasks | 3 files |
+| Phase 13 P03 | 3 | 2 tasks | 2 files |
+| Phase 13 P05 | 2 | 1 tasks | 2 files |
+| Phase 13 P04 | 2 | 2 tasks | 4 files |
+| Phase 13 P06 | 2 | 2 tasks | 3 files |
+| Phase 13 P07 | 3 | 2 tasks | 2 files |
+| Phase 14 P01 | 164 | 2 tasks | 3 files |
+| Phase 14 P02 | 2 | 2 tasks | 4 files |
+| Phase 14 P03 | 185 | 2 tasks | 3 files |
+| Phase 14 P04 | 3 | 2 tasks | 7 files |
+| Phase 15 P02 | 3487 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -153,30 +151,30 @@ Recent decisions affecting current work:
 - [Phase 06a]: CombatCmdSet import moved from cmd_abilities to combat_commands (cleaner separation)
 - [Phase 06a]: push_combat_update accepts optional data arg for backward compat with CombatScript direct calls
 - [Phase 06a]: Auto-engage joins all aggressive mobs into same combat encounter (not separate)
-- [Phase 06c]: Quality gap thresholds: <0=flawed, <15=standard, <30=fine, <50=superior, 50+=masterwork; random variance +/-1 tier center-biased
-- [Phase 06c]: Crafting station check via room.tags.has(crafting_{station}, category=crafting_station)
-- [Phase 06c]: CmdSay overrides Evennia default with same key/aliases; broadcasts to room then extracts NPC keywords (cap 2 responders, sorted by Standing tier)
-- [Phase 06c]: Crafting uses evennia.utils.delay with ndb.crafting_in_progress flag; cancelled if character moves during delay
-- [Phase 06c]: NPC lookup uses case-insensitive partial match (startswith) on npc_name db attr or key
-- [Phase 06c]: Patch lazy imports at source module for dialogue test mocking (world.mob_disposition, world.world_state)
-- [Phase 06c]: Statistical assertions (50+ iterations) for crafting quality variance tests to handle random.choices
-- [Phase 05b]: Subterfuge pool uses debuff stacking + chain damage payoffs; Diplomacy pool balances solo damage with group buff utility
-- [Phase 05b]: Arcana pool: charge_turns dominant, mana costs 15-70 for cross-encounter rationing
-- [Phase 05b]: Resonance pool: all abilities have attuned_variants, T1=builders(0 cost), T2-T4=spenders(60-100)
-- [Phase 05b]: Sealwright Seal Break = highest single-target burst in Resonance guild (base 250, +80% resonant)
-- [Phase 05b]: Naturalism Balance costs 10-55 (spectrum shifts); Alchemy Reagent costs T1:5-8, T2:12-15, T3:18-25, T4:30-45 (finite stock)
-- [Phase 05b]: Engineering companion IS the domain identity; Remnance uses excavation language exclusively; Sealbreaker Curse Break is most dangerous ability (charge_turns=2, damage_base=250); runewright_forge key for Eng+Res subclass
-- [Phase 05b]: No fixes required -- all 330 abilities passed all 10 structural validation checks on first run
-- [Phase 5c]: Resource handlers use function dispatch table (RESOURCE_HANDLERS dict) matching EFFECT_HANDLERS pattern
-- [Phase 5c]: Balance scaling: linear interpolation 1.0 at center, 1.5x at extremes (Feral for damage, Calm for heals)
-- [Phase 5c]: Added django.setup() to ability engine tests for guild_engine imports
-- [Phase 5c]: Typed resource variants: reagent_type (volatile/curative/toxic) and component_type (gear/conduit/plating) added to effect_params; handlers read but do not change spend logic
-- [Phase 07]: Sentinel pattern for flee_threshold: spawn_def explicit value overrides template, absent key uses template default
-- [Phase 07]: Template abilities copied (list()) to avoid shared mutation across spawned mobs
-- [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
-- [Phase 07]: Grandmother Spider as named mob in deepest cave; 8 sub-areas for geographic variety; dragon-era notation threading in lore
-- [Phase 15]: CATALOG dict is single source of truth for equipment items; build() iterates it
-- [Phase 15]: Vendors use carried_scales (not bank); 33% sell-back; type restrictions via vendor_accepts
+- [Phase 13]: Hide processing uses workbench (not forge); gathering flags are persistent (None duration); Sense priority below combat flags
+- [Phase 13]: GatheringPoolScript uses dynamic type() subclass to avoid Evennia import-time typeclass resolution
+- [Phase 13]: Room state flags set with duration=-1 for persistent gathering hints
+- [Phase 13]: Pool ID generated as zone_id + pool_type for uniqueness
+- [Phase 13]: Extended all 18 materials into processing recipes; output uses item_id-based dict for processing vs template_id for standard crafting
+- [Phase 13]: CmdReel delegates to CmdFish()._on_reel for single state machine owner
+- [Phase 13]: Fishing state on ndb.fishing_state dict; movement interrupt in at_after_move
+- [Phase 13]: Butcher uses can_butcher() not can_loot() for corpse eligibility with butchered-flag guard
+- [Phase 13]: Sense gathering hints already wired via SENSE_DISPLAY in room_state.py -- no cmd_sense.py changes needed
+- [Phase 13]: Used pure unittest.TestCase + MagicMock for all gathering/fishing tests (no EvenniaTest DB dependencies)
+- [Phase 14]: open_dialogue handler auto-accepts quest if NPC has one available (simple MVP flow)
+- [Phase 14]: Corpse Scales stored as corpse.db.scales integer, lootable by other players
+- [Phase 14]: get_quest_modifier supports both dict-keyed and scalar disposition_modifier in quest specs
+- [Phase 14]: Affix modifier merging: multiplicative for damage_multiplier, additive for flat/bonus, max for others
+- [Phase 14]: push_quest_update builds full active_quests list on every push (no incremental deltas)
+- [Phase 14]: Lore entry category changed from Commands to World (lore is world info, not a command)
+- [Phase 14]: Attuned variant check uses room node tags first, then zone_type from zone object
+- [Phase 14]: MagicMock helper docstrings use sentinel instead of placeholder to avoid false-positive grep matches
+- [Phase 15]: Recovery state stored on ndb (volatile), fortify/vigor added as non-stackable status effects
+
+### Roadmap Evolution
+
+- Phase 13 added: Gathering and Refining (resource gathering nodes, material processing, fishing, tools)
+- Phase 14 added: All TBD/TODOs implemented
 
 ### Pending Todos
 
@@ -190,6 +188,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T06:58:42.517Z
-Stopped at: Completed 15-01-PLAN.md
+Last session: 2026-04-05T09:26:13.450Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None

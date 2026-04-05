@@ -62,6 +62,7 @@ Skills document the game's major systems. Invoke via Skill tool when working in 
 | **Wander System** | Stochastic zone-bounded mob wandering | `.claude/skills/wander-system/skill.md` |
 | **Zone Scaling** | Per-player scaling, mob HP, damage math, loot tiers | `.claude/skills/zone-scaling/skill.md` |
 | **Combat System** | Damage resolution, crits, mob AI, targeting, corpses | `.claude/skills/combat-system/skill.md` |
+| **Recovery Engine** | HP/stamina regen tiers, rest/sleep, medic blessings | `.claude/skills/recovery-engine/skill.md` |
 | **Banking** | Deposits, withdrawals, drafts, debt, payments | `.claude/skills/banking/skill.md` |
 | **Inventory Engine** | Pickup, drop, equip, containers, encumbrance | `.claude/skills/inventory-engine/skill.md` |
 | **Item Typeclasses** | SoravelonItem, Container, Equipment, KeyringItem | `.claude/skills/item-typeclasses/skill.md` |

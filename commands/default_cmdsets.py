@@ -75,6 +75,39 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdBrew())
         self.add(CmdCraft())
         self.add(CmdRecipes())
+        # Equipment commands
+        from commands.cmd_equipment import CmdEquip, CmdUnequip, CmdGear
+        self.add(CmdEquip())
+        self.add(CmdUnequip())
+        self.add(CmdGear())
+        # Node interaction
+        from world.node_commands import CmdStabilize
+        self.add(CmdStabilize())
+        # Player surface commands (Phase 8)
+        from commands.cmd_status import CmdStatus
+        self.add(CmdStatus())
+        from commands.cmd_sense import CmdSense
+        self.add(CmdSense())
+        from commands.cmd_bank import CmdBank, CmdDeposit, CmdWithdraw
+        self.add(CmdBank())
+        self.add(CmdDeposit())
+        self.add(CmdWithdraw())
+        from commands.cmd_group import CmdGroup
+        self.add(CmdGroup())
+        from commands.cmd_loadout import CmdLoadout
+        self.add(CmdLoadout())
+        from commands.cmd_map import CmdMap
+        self.add(CmdMap())
+        from commands.cmd_search import CmdSearch
+        self.add(CmdSearch())
+        # Quest commands (Phase 11)
+        from commands.cmd_quest import CmdQuest
+        self.add(CmdQuest())
+        # Launch polish (Phase 12)
+        from commands.cmd_help import CmdHelp
+        self.add(CmdHelp())
+        from commands.cmd_lore import CmdLore
+        self.add(CmdLore())
         # Vendor commands
         from commands.cmd_vendor import (
             CmdBuy, CmdSell, CmdAppraise, CmdList, CmdView,
@@ -93,6 +126,27 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         from commands.cmd_inspect import CmdInspect, CmdCompare
         self.add(CmdInspect())
         self.add(CmdCompare())
+        # Gathering commands
+        from commands.cmd_gathering import (
+            CmdMine, CmdHarvest, CmdChop, CmdForage, CmdButcher,
+        )
+        self.add(CmdMine())
+        self.add(CmdHarvest())
+        self.add(CmdChop())
+        self.add(CmdForage())
+        self.add(CmdButcher())
+        from commands.cmd_fishing import CmdFish, CmdReel
+        self.add(CmdFish())
+        self.add(CmdReel())
+        from commands.cmd_prospect import CmdProspect, CmdRepair
+        self.add(CmdProspect())
+        self.add(CmdRepair())
+        # Recovery commands (Phase 15)
+        from commands.cmd_recovery import CmdRest, CmdSleep, CmdWake, CmdBlessing
+        self.add(CmdRest())
+        self.add(CmdSleep())
+        self.add(CmdWake())
+        self.add(CmdBlessing())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
