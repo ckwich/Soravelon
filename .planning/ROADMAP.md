@@ -254,7 +254,7 @@ Plans:
 
 Plans:
 - [ ] 15-01-PLAN.md — Vendor engine + CATALOG extraction + vendor commands + NPC wiring
-- [ ] 15-02-PLAN.md — Recovery engine (regen ticks, rest/sleep, medic blessings) + commands + character wiring
+- [x] 15-02-PLAN.md — Recovery engine (regen ticks, rest/sleep, medic blessings) + commands + character wiring
 - [ ] 15-03-PLAN.md — Combat fixes (ability return normalization, compound effects, corpse loot, group loot)
 - [ ] 15-04-PLAN.md — Social systems (who/shout/whisper, OOC/domain channels) + item inspection/compare
 - [ ] 15-05-PLAN.md — Missing content (gathering tools, fish pools, loot tables, crafting outputs, quest items)
@@ -279,4 +279,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 12. Launch Polish and Help | 1/3 | Complete    | 2026-04-03 |
 | 13. Gathering and Refining | 7/7 | Complete    | 2026-04-04 |
 | 14. All TBD/TODOs Implemented | 4/4 | Complete    | 2026-04-04 |
-| 15. Implement Missing Gameplay Gap Systems | 0/5 | Not started | - |
+| 15. Implement Missing Gameplay Gap Systems | 1/5 | In Progress|  |

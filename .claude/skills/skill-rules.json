@@ -823,6 +823,58 @@
         ]
       }
     },
+    "recovery-engine": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/recovery_engine.py",
+        "commands/cmd_recovery.py",
+        "typeclasses/characters.py",
+        "tests/test_recovery_engine.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "recovery",
+          "regen",
+          "rest",
+          "sleep",
+          "wake",
+          "heal",
+          "blessing",
+          "medic",
+          "fortify",
+          "vigor",
+          "purify",
+          "recovery state",
+          "regen tick",
+          "bed",
+          "is_medic",
+          "engine",
+          "recovery engine",
+          "hp/stamina",
+          "4-tier",
+          "world",
+          "recovery_engine",
+          "commands",
+          "cmd_recovery",
+          "typeclasses",
+          "characters",
+          "tests",
+          "test_recovery_engine"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*recovery state",
+          "recovery state.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*regen tick",
+          "regen tick.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*recovery engine",
+          "recovery engine.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
     "room-state": {
       "type": "domain",
       "enforcement": "suggest",

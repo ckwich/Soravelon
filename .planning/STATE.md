@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Milestone complete
-stopped_at: Completed 14-04-PLAN.md
-last_updated: "2026-04-04T05:44:36.265Z"
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-04-05T09:26:13.456Z"
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 11
-  total_plans: 64
-  completed_plans: 62
+  total_plans: 69
+  completed_plans: 63
 ---
 
 # Project State
@@ -83,6 +83,7 @@ Plan: Not started
 | Phase 14 P02 | 2 | 2 tasks | 4 files |
 | Phase 14 P03 | 185 | 2 tasks | 3 files |
 | Phase 14 P04 | 3 | 2 tasks | 7 files |
+| Phase 15 P02 | 3487 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -168,6 +169,7 @@ Recent decisions affecting current work:
 - [Phase 14]: Lore entry category changed from Commands to World (lore is world info, not a command)
 - [Phase 14]: Attuned variant check uses room node tags first, then zone_type from zone object
 - [Phase 14]: MagicMock helper docstrings use sentinel instead of placeholder to avoid false-positive grep matches
+- [Phase 15]: Recovery state stored on ndb (volatile), fortify/vigor added as non-stackable status effects
 
 ### Roadmap Evolution
 
@@ -186,6 +188,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T05:37:12.458Z
-Stopped at: Completed 14-04-PLAN.md
+Last session: 2026-04-05T09:26:13.450Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
