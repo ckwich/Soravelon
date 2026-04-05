@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
+status: Executing Phase 16
 stopped_at: Phase 16 context gathered
-last_updated: "2026-04-05T17:31:51.973Z"
+last_updated: "2026-04-05T17:51:21.427Z"
 progress:
   total_phases: 14
   completed_phases: 12
-  total_plans: 69
+  total_plans: 74
   completed_plans: 67
 ---
 
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 07 — milestone-1-content
+**Current focus:** Phase 16 — architectural-refactoring
 
 ## Current Position
 
-Phase: 15
-Plan: Not started
+Phase: 16 (architectural-refactoring) — EXECUTING
+Plan: 1 of 5
 
 ## Performance Metrics
 
@@ -177,6 +177,7 @@ Recent decisions affecting current work:
 - [Phase 07]: Grandmother Spider as named mob in deepest cave; 8 sub-areas for geographic variety; dragon-era notation threading in lore
 - [Phase 15]: Tool slots (D-20) separate from combat VALID_SLOTS, stored as character.db.equipped_tools
 - [Phase 15]: Quest items wired via area.trigger() give_item action, fish materials via area.material() DSL
+- [Phase 16]: No threshold patterns duplicated across world/*.py modules (D-09 scan clean); private helpers stay in owning module per D-10
 
 ### Roadmap Evolution
 
@@ -197,6 +198,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T17:31:51.968Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-architectural-refactoring/16-CONTEXT.md
+Last session: 2026-04-05T17:55:00Z
+Stopped at: Completed 16-03-PLAN.md
+Resume file: None
