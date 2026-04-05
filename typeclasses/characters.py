@@ -150,6 +150,10 @@ class Character(ObjectParent, DefaultCharacter):
             from world.ability_engine import initialize_domain_resource
             initialize_domain_resource(self)
 
+        # Start passive HP/stamina regen (Phase 15 recovery engine)
+        from world.recovery_engine import start_regen
+        start_regen(self)
+
         # New player guidance (after all init is complete)
         self._send_new_player_guidance()
 
@@ -183,11 +187,21 @@ class Character(ObjectParent, DefaultCharacter):
                 self.msg("|y[Hint]|n Speak with the townsfolk in Vael's Crossing. "
                          "Type |wtalk|n near an NPC to begin a conversation.")
 
+    def at_look(self, target=None, **kwargs):
+        """Override look to handle sleep blindness."""
+        if getattr(self.ndb, "is_sleeping", False):
+            return "You are asleep. Use |wwake|n to open your eyes."
+        return super().at_look(target, **kwargs)
+
     def at_pre_unpuppet(self):
         """Called just before a player disconnects from this character."""
         from world.world_state import commit_session_xp
         from world.base_attributes import commit_stat_growth
         from world.group_engine import on_member_disconnect
+
+        # Stop regen on disconnect
+        from world.recovery_engine import stop_regen
+        stop_regen(self)
 
         # Flush stat growth accumulators before logout
         commit_stat_growth(self)
@@ -208,6 +222,11 @@ class Character(ObjectParent, DefaultCharacter):
     def at_after_move(self, source_location, **kwargs):
         """Track visited rooms and push map_update on movement."""
         super().at_after_move(source_location, **kwargs)
+
+        # Cancel rest/sleep on movement (D-07)
+        if getattr(self.ndb, "recovery_state", "active") != "active":
+            from world.recovery_engine import cancel_recovery
+            cancel_recovery(self)
 
         # Clear fishing state on move (Pitfall 6: cancel ghost timers)
         fishing_state = getattr(self.ndb, "fishing_state", None)

@@ -123,6 +123,12 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         from commands.cmd_prospect import CmdProspect, CmdRepair
         self.add(CmdProspect())
         self.add(CmdRepair())
+        # Recovery commands (Phase 15)
+        from commands.cmd_recovery import CmdRest, CmdSleep, CmdWake, CmdBlessing
+        self.add(CmdRest())
+        self.add(CmdSleep())
+        self.add(CmdWake())
+        self.add(CmdBlessing())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

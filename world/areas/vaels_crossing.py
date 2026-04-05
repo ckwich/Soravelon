@@ -1530,8 +1530,9 @@ def build():
 
     # Imperial Quarter NPCs
 
-    # 34. Medic
-    area.npc(iq_medic_building, "npc_medic_surgeon_adela", faction="empire")
+    # 34. Medic (is_medic flag enables CmdBlessing interaction)
+    _medic = area.npc(iq_medic_building, "npc_medic_surgeon_adela", faction="empire")
+    _medic.db.is_medic = True
 
     # 35. Courier agent
     area.npc(iq_courier_platform, "npc_courier_agent_renn", faction="consortium")
