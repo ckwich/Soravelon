@@ -45,11 +45,29 @@ BASE_EXIT_TYPECLASS = "typeclasses.exits.SoravelonExit"
 BASE_SCRIPT_TYPECLASS = "typeclasses.scripts.SoravelonScript"
 BASE_ACCOUNT_TYPECLASS = "typeclasses.accounts.SoravelonAccount"
 
+# Channel configuration — OOC global chat for all players
+DEFAULT_CHANNELS = [
+    {
+        "key": "Public",
+        "aliases": ("pub",),
+        "desc": "Public discussion",
+        "locks": "control:perm(Admin);listen:all();send:all()",
+    },
+    {
+        "key": "MudInfo",
+        "aliases": "",
+        "desc": "Connection log",
+        "locks": "control:perm(Admin);listen:perm(Admin);send:false()",
+    },
+    {
+        "key": "OOC",
+        "aliases": ("ooc",),
+        "desc": "Server-wide out-of-character chat",
+        "locks": "control:perm(Admin);listen:all();send:all()",
+        "typeclass": "typeclasses.channels.OOCChannel",
+    },
+]
 
-# D-11: New characters spawn in Vael's Crossing greeter room.
-# Tag-based lookup in Character.at_object_creation() is the primary
-# mechanism; this setting is the Evennia-level fallback.
-START_LOCATION = "#2"  # Limbo fallback; tag lookup overrides in practice
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
