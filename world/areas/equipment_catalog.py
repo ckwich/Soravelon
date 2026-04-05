@@ -497,4 +497,121 @@ def build():
               weight=0.2, rarity="normal", value=5,
               desc="A roll of clean linen for binding wounds. Heals slowly over time.")
 
+    # ==================================================================
+    # GATHERING TOOLS — tool slots (D-20, separate from combat VALID_SLOTS)
+    # ==================================================================
+
+    area.item("pickaxe", key="Iron Pickaxe", item_type="tool",
+              tool_slot="tool_pickaxe", tool_tag="pickaxe",
+              weight=4.0, rarity="normal", value=15,
+              desc="A sturdy iron pickaxe for mining ore deposits.")
+    area.item("sickle", key="Iron Sickle", item_type="tool",
+              tool_slot="tool_sickle", tool_tag="sickle",
+              weight=1.5, rarity="normal", value=10,
+              desc="A curved iron sickle for harvesting herbs and plants.")
+    area.item("hatchet", key="Iron Hatchet", item_type="tool",
+              tool_slot="tool_hatchet", tool_tag="hatchet",
+              weight=2.5, rarity="normal", value=12,
+              desc="A small iron hatchet for chopping wood.")
+    area.item("skinning_knife", key="Skinning Knife", item_type="tool",
+              tool_slot="tool_knife", tool_tag="skinning_knife",
+              weight=0.5, rarity="normal", value=8,
+              desc="A sharp, narrow blade for skinning hides from corpses.")
+    area.item("fishing_rod", key="Fishing Rod", item_type="tool",
+              tool_slot="tool_rod", tool_tag="fishing_rod",
+              weight=1.0, rarity="normal", value=10,
+              desc="A simple rod and reel for freshwater and saltwater fishing.")
+
+    # ==================================================================
+    # BAIT (consumable, stackable)
+    # ==================================================================
+
+    area.item("bait", key="Fishing Bait", item_type="consumable",
+              weight=0.1, rarity="normal", value=2,
+              stackable=True,
+              desc="A wriggling worm on a hook. Attracts fish.")
+
+    # ==================================================================
+    # CRAFTING OUTPUTS — consumables and equipment (D-21)
+    # ==================================================================
+
+    area.item("basic_healing_draught", key="Basic Healing Draught",
+              item_type="consumable", weight=0.3, rarity="normal", value=8,
+              stackable=True, heal_amount=25,
+              desc="A cloudy potion that restores a small amount of health.")
+    area.item("cooked_meat", key="Cooked Meat",
+              item_type="consumable", weight=0.5, rarity="normal", value=3,
+              stackable=True, heal_amount=10, stamina_restore=15,
+              desc="Simple roasted meat. Filling and nourishing.")
+    area.item("healing_draught", key="Healing Draught",
+              item_type="consumable", weight=0.3, rarity="normal", value=20,
+              stackable=True, heal_amount=50,
+              desc="A clear red potion that significantly restores health.")
+    area.item("hearty_stew", key="Hearty Stew",
+              item_type="consumable", weight=0.8, rarity="normal", value=6,
+              stackable=True, heal_amount=15, stamina_restore=25,
+              desc="A thick, savory stew packed with vegetables and herbs.")
+    area.item("herb_poultice", key="Herb Poultice",
+              item_type="consumable", weight=0.2, rarity="normal", value=5,
+              stackable=True, heal_over_time=30, hot_duration=30,
+              desc="A compress of crushed herbs that slowly mends wounds.")
+    area.item("iron_chainmail", key="Iron Chainmail",
+              item_type="equipment", equip_slot="chest", armor_value=12,
+              stat_bonuses={"endurance": 1}, material_tier=1,
+              weight=8.0, rarity="normal", value=35,
+              desc="Interlocking iron rings forming a protective mail shirt.")
+    area.item("mountain_tonic", key="Mountain Tonic",
+              item_type="consumable", weight=0.3, rarity="normal", value=12,
+              stackable=True, stamina_restore=40,
+              desc="A bracing tonic brewed from alpine herbs. Restores stamina.")
+    area.item("spiced_fish", key="Spiced Fish",
+              item_type="consumable", weight=0.4, rarity="normal", value=5,
+              stackable=True, heal_amount=12, stamina_restore=12,
+              desc="A fillet of fish seasoned with coastal spices.")
+    area.item("stamina_tonic", key="Stamina Tonic",
+              item_type="consumable", weight=0.3, rarity="normal", value=15,
+              stackable=True, stamina_restore=50,
+              desc="A fizzing green draught that replenishes stamina.")
+    area.item("trail_rations", key="Trail Rations",
+              item_type="consumable", weight=1.0, rarity="normal", value=2,
+              stackable=True, heal_amount=5, stamina_restore=10,
+              desc="Dried meat, hardtack, and nuts. Keeps you going on the road.")
+
+    # ==================================================================
+    # QUEST ITEMS (D-23) — 8 items with world sources
+    # ==================================================================
+
+    area.item("outstanding_debt_token", key="Outstanding Debt Token",
+              item_type="item", weight=0.1, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="A stamped clay token representing an unpaid debt to the Consortium.")
+    area.item("commissioned_blade", key="Commissioned Blade",
+              item_type="item", weight=2.0, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="A blade forged to order, awaiting delivery to its commissioner.")
+    area.item("stolen_artifact", key="Stolen Artifact",
+              item_type="item", weight=0.5, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="An ancient relic, clearly pilfered from a museum or private collection.")
+    area.item("rare_herb_bundle", key="Rare Herb Bundle",
+              item_type="item", weight=0.3, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="A carefully bound collection of rare medicinal herbs.")
+    area.item("rare_alpine_ingredient", key="Rare Alpine Ingredient",
+              item_type="item", weight=0.2, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="A frost-touched mountain herb that grows only above the treeline.")
+    area.item("resonance_sample", key="Resonance Sample",
+              item_type="item", weight=0.4, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="A crystallized fragment of raw magical resonance, warm to the touch.")
+    area.item("contraband_package", key="Contraband Package",
+              item_type="item", weight=1.5, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="A tightly wrapped parcel sealed with unmarked wax. Best not to ask.")
+    area.item("warden_supplies", key="Warden Supplies",
+              item_type="item", weight=3.0, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="A crate of patrol supplies: rations, rope, signal flares, and bandages.")
+
     return area.build()

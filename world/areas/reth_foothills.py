@@ -2222,6 +2222,26 @@ def build():
                   profession_bonus={"herbalism": 0.08, "alchemy": 0.05})
 
     # ==================================================================
+    #  QUEST ITEM TRIGGERS (15-05: wire quest items to world sources)
+    # ==================================================================
+
+    # rare_herb_bundle — found at the herb ledge gathering spot
+    area.trigger(
+        ls_herb_ledge, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "rare_herb_bundle"}],
+        trigger_id="reth_rare_herb_bundle",
+        once_per_character=True,
+    )
+
+    # rare_alpine_ingredient — found at high-altitude alpine meadow
+    area.trigger(
+        ls_herb_ledge, "on_enter",
+        actions=[{"action_type": "give_item", "item_id": "rare_alpine_ingredient"}],
+        trigger_id="reth_rare_alpine_ingredient",
+        once_per_character=True,
+    )
+
+    # ==================================================================
     #  BUILD
     # ==================================================================
 

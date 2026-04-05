@@ -2143,6 +2143,14 @@ def build():
     area.material("coral_fragment", tier=1, terrain="cave",
                   profession_bonus={"alchemy": 0.1})
 
+    # --- Fish (D-20: coastal fish gathering pools) ---
+    area.material("common_fish", tier=1, terrain="water",
+                  profession_bonus={"cooking": 0.1})
+    area.material("coastal_fish", tier=2, terrain="water",
+                  profession_bonus={"cooking": 0.15})
+    area.material("deep_fish", tier=3, terrain="water",
+                  profession_bonus={"cooking": 0.2, "alchemy": 0.05})
+
     # ==================================================================
     #  LORE FRAGMENTS (D-24: maritime history in caves and shipwreck)
     # ==================================================================
@@ -2245,6 +2253,18 @@ def build():
                objective_type="deliver",
                objective_target="contraband_package",
                objective_count=1)
+
+    # ==================================================================
+    #  QUEST ITEM TRIGGERS (15-05: wire quest items to world sources)
+    # ==================================================================
+
+    # contraband_package — found in smuggler cache room
+    area.trigger(
+        sc_smuggler_cache, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "contraband_package"}],
+        trigger_id="sc_contraband_package",
+        once_per_character=True,
+    )
 
     # ==================================================================
     #  BUILD

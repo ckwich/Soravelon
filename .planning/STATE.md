@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 07-06-PLAN.md
-last_updated: "2026-03-30T00:33:07.741Z"
+stopped_at: Completed 15-05-PLAN.md
+last_updated: "2026-04-05T12:07:50.585Z"
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 63
-  completed_plans: 54
+  completed_plans: 59
 ---
 
 # Project State
@@ -85,6 +85,7 @@ Plan: 03 complete
 | Phase 5c P04 | 7 | 1 tasks | 3 files |
 | Phase 07 P02 | 3 | 1 tasks | 3 files |
 | Phase 07 P06 | 11 | 1 tasks | 3 files |
+| Phase 15 P05 | 8931 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -174,6 +175,8 @@ Recent decisions affecting current work:
 - [Phase 07]: Template abilities copied (list()) to avoid shared mutation across spawned mobs
 - [Phase 07]: Template does not override base_disposition or trust_sensitive (those come from spawn_def)
 - [Phase 07]: Grandmother Spider as named mob in deepest cave; 8 sub-areas for geographic variety; dragon-era notation threading in lore
+- [Phase 15]: Tool slots (D-20) separate from combat VALID_SLOTS, stored as character.db.equipped_tools
+- [Phase 15]: Quest items wired via area.trigger() give_item action, fish materials via area.material() DSL
 
 ### Pending Todos
 
@@ -187,6 +190,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T00:33:07.738Z
-Stopped at: Completed 07-06-PLAN.md
+Last session: 2026-04-05T12:07:42.629Z
+Stopped at: Completed 15-05-PLAN.md
 Resume file: None

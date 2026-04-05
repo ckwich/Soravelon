@@ -75,6 +75,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdBrew())
         self.add(CmdCraft())
         self.add(CmdRecipes())
+        # Tool slot management
+        from commands.cmd_tools import CmdTools
+        self.add(CmdTools())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
