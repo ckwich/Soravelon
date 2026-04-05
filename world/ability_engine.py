@@ -584,8 +584,8 @@ def initialize_domain_resource(character):
         current = character.db.component_stock or 50
         pool_max = 100
     elif resource_type == "echoes":
-        bonus = character.db.echoes_investigation_bonus
-        investigation_bonus = bonus.get("amount", 0) if bonus else 0
+        bonus = getattr(character.db, "echoes_investigation_bonus", None)
+        investigation_bonus = bonus.get("amount", 0) if isinstance(bonus, dict) else 0
         current = investigation_bonus
         pool_max = 100
     elif resource_type == "momentum":
@@ -720,7 +720,7 @@ def use_ability(character, ability_id, target=None):
     ok, msg = handler(character, ability, target)
 
     # Post-ability resource hooks
-    _post_ability_resource_hook(character, ability, result)
+    _post_ability_resource_hook(character, ability, ok)
 
     # Set cooldown (D-12)
     if ability.get("cooldown", 0) > 0:

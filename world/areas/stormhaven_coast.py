@@ -1181,6 +1181,23 @@ def build():
     area.exit(sc_shell_graveyard, sc_deep_pool, "east")
     area.exit(sc_deep_pool, sc_shell_graveyard, "west")
 
+    sc_deep_sea_cave = area.room(
+        "sc_deep_sea_cave",
+        name="Deep Sea Cave",
+        desc=(
+            "Beyond the deep pool, a narrow passage opens into a vaulted "
+            "cavern where the sea breathes. The walls are slick with brine "
+            "and etched with symbols that seem too regular to be natural -- "
+            "spirals within spirals, worn smooth by centuries of tide. A low "
+            "resonance pulses through the stone, felt more than heard. Old "
+            "Korrin was right. Something is down here."
+        ),
+        room_type="cave",
+        indoor=True,
+    )
+    area.exit(sc_deep_pool, sc_deep_sea_cave, "down")
+    area.exit(sc_deep_sea_cave, sc_deep_pool, "up")
+
     # ==================================================================
     #  SUB-AREA 6: SMUGGLER'S COVE (~10 rooms)
     #  Hidden criminal hideout. Coastal raider territory.
@@ -2128,6 +2145,41 @@ def build():
     # 3. Imperial coastguard patrol captain
     area.npc(lh_base, "npc_coastguard_captain_aldren", faction="empire", trainer_id="npc_trainer_swimming_stormhaven")
 
+    # 4. Dock contact (delivery target for sc_q_smuggler_delivery)
+    area.npc(
+        sv_dock, "npc_dock_contact",
+        name="Kellan",
+        title="Dock Hand",
+        desc=(
+            "A wiry figure leaning against a stack of crates, arms folded. "
+            "His clothes are plain -- deliberately so -- and his eyes move "
+            "constantly between the harbor mouth and the dock road. He has "
+            "the look of someone who knows exactly when to be somewhere "
+            "and when not to be."
+        ),
+        faction=None,
+        dialogue={
+            "greeting": (
+                "Kellan gives you a flat look. 'I do not know you. If "
+                "someone sent you, say the name. Otherwise, I am just a "
+                "dock hand minding cargo.'"
+            ),
+            "topics": {
+                "cargo": (
+                    "'Cargo moves through here every day. Most of it is "
+                    "fish and timber. Some of it is not. I do not ask "
+                    "questions and neither should you.'"
+                ),
+                "veyra": (
+                    "Kellan's expression does not change, but his voice "
+                    "drops. 'If Veyra sent you, put the package in the "
+                    "third crate from the left. Blue mark on the lid. "
+                    "Then walk away. We never spoke.'"
+                ),
+            },
+        },
+    )
+
     # ==================================================================
     #  MATERIALS (D-24: salt, driftwood, sea glass, coral fragments)
     # ==================================================================
@@ -2140,14 +2192,6 @@ def build():
                   profession_bonus={"alchemy": 0.05})
     area.material("coral_fragment", tier=1, terrain="cave",
                   profession_bonus={"alchemy": 0.1})
-
-    # --- Fish (D-20: coastal fish gathering pools) ---
-    area.material("common_fish", tier=1, terrain="water",
-                  profession_bonus={"cooking": 0.1})
-    area.material("coastal_fish", tier=2, terrain="water",
-                  profession_bonus={"cooking": 0.15})
-    area.material("deep_fish", tier=3, terrain="water",
-                  profession_bonus={"cooking": 0.2, "alchemy": 0.05})
 
     # ==================================================================
     #  LORE FRAGMENTS (D-24: maritime history in caves and shipwreck)
@@ -2243,7 +2287,7 @@ def build():
         rewards=[
             {"action_type": "give_scales", "amount": 100},
             {"action_type": "modify_standing", "faction_id": "wardens", "delta": 250},
-            {"action_type": "give_skill_xp", "skill_id": "combat", "count": 4},
+            {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 4},
             {"action_type": "echo", "message": "|gAldren crosses the last name off his bounty list. \"Ten less raiders on the water. The fishing fleet can breathe again. Your bounty, well earned.\"|n"},
         ],
         # Legacy fields (backward compat)
@@ -2312,15 +2356,33 @@ def build():
     )
 
     # ==================================================================
-    #  QUEST ITEM TRIGGERS (15-05: wire quest items to world sources)
+    #  GATHERING POOLS
     # ==================================================================
 
-    # contraband_package — found in smuggler cache room
-    area.trigger(
-        sc_smuggler_cache, "on_examine",
-        actions=[{"action_type": "give_item", "item_id": "contraband_package"}],
-        trigger_id="sc_contraband_package",
-        once_per_character=True,
+    area.gathering_pool(
+        "forage",
+        rooms=["tf_tide_pool_1", "tf_tide_pool_2", "tf_kelp_strand", "tf_sea_glass_cove", "tf_mudflat"],
+        materials=["salt", "sea_glass"],
+        max_active=3, respawn_minutes=8, respawn_variance=3,
+    )
+    area.gathering_pool(
+        "wood",
+        rooms=["cs_driftwood_shelter", "tf_flotsam_beach", "tf_upper_beach", "hr_overlook"],
+        materials=["driftwood"],
+        max_active=2, respawn_minutes=15, respawn_variance=5,
+    )
+    area.gathering_pool(
+        "ore",
+        rooms=["sc_coral_chamber", "sc_grotto", "sc_salt_formation", "sc_fossil_wall"],
+        materials=["coral_fragment"],
+        max_active=2, respawn_minutes=15, respawn_variance=5,
+    )
+
+    area.gathering_pool(
+        "fish",
+        rooms=["sv_harbor", "tf_tide_pool_1", "tf_tide_pool_2", "cn_descent_beach", "tf_kelp_strand"],
+        materials=["river_trout", "cave_eel"],
+        max_active=3, respawn_minutes=10, respawn_variance=4,
     )
 
     # ==================================================================

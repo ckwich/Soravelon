@@ -154,7 +154,13 @@ class _BaseGatherCmd(Command):
         accumulate_skill_use(character, self.gather_skill)
 
     def _find_tool(self, character):
-        """Find required tool in character inventory."""
+        """Find required tool in equipped tool slots or inventory."""
+        # Check equipped tool slots first (CmdTools equip system)
+        equipped = character.db.equipped_tools or {}
+        for slot_item in equipped.values():
+            if slot_item and slot_item.tags.has(self.required_tool, category="item_tag"):
+                return slot_item
+        # Fallback to inventory search
         for item in character.contents:
             if item.tags.has(self.required_tool, category="item_tag"):
                 return item
@@ -263,17 +269,26 @@ class CmdButcher(_BaseGatherCmd):
     target_category = "hide"
 
     def _find_node(self, character):
-        """Find a butcherable corpse in the room."""
-        from typeclasses.objects import CorpseContainer
+        """Find a butcherable corpse OR a hide gathering node in the room."""
+        from typeclasses.objects import CorpseContainer, GatheringNode
 
         target_name = self.args.strip().lower() if self.args else None
+
+        # First check for corpses (primary butcher target)
         for obj in character.location.contents:
             if isinstance(obj, CorpseContainer):
                 if target_name and target_name not in obj.key.lower():
                     continue
-                # Check corpse can be butchered (respects grace period and butchered flag)
                 can, msg = obj.can_butcher(character)
                 if can:
+                    return obj
+
+        # Fall back to hide gathering nodes if no corpse found
+        for obj in character.location.contents:
+            if isinstance(obj, GatheringNode):
+                if getattr(obj.db, "node_type", "") == "hide":
+                    if target_name and target_name not in obj.key.lower():
+                        continue
                     return obj
         return None
 
