@@ -237,6 +237,28 @@ Plans:
 - [x] 14-03-PLAN.md — WorldEventScript + Lore help entry + attuned variant text
 - [x] 14-04-PLAN.md — Final sweep: STUB/placeholder cleanup + zone tier removal + test updates
 
+### Phase 15: Implement Missing Gameplay Gap Systems
+**Goal**: Game is fully playable end-to-end — vendor economy closes the Scales loop, HP/stamina recovery enables between-fight healing, item inspection gives stat visibility, social commands enable multiplayer communication, combat bugs are fixed, and all missing content (tools, loot tables, crafting outputs, quest items) is authored
+**Depends on**: Phase 14 (all stubs implemented)
+**Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11, D-12, D-13, D-14, D-15, D-16, D-17, D-18, D-19, D-20, D-21, D-22, D-23, D-24, D-25, D-26, D-27, D-28
+**Success Criteria** (what must be TRUE):
+  1. Players can buy/sell items at vendor NPCs with type restrictions, 33% sell-back, and faction price adjustments
+  2. HP/stamina regenerates passively out of combat; rest/sleep accelerates recovery; medic blessings heal for Scales
+  3. All ability effect handlers return (bool, str) tuples; compound effects (steam/discharge/petrify) work correctly
+  4. Custom loot command respects corpse phase checks; group loot distributes per mode
+  5. Players can see who's online, shout zone-wide, whisper privately, and use OOC/domain channels
+  6. Item inspection gated by appraisal skill; compare shows side-by-side stats
+  7. 5 gathering tools equippable in separate tool slots; fish pools in coastal zones
+  8. Rat/bandit loot tables, 10 crafting output definitions, and 8 quest items with sources all authored
+**Plans**: 5 plans
+
+Plans:
+- [ ] 15-01-PLAN.md — Vendor engine + CATALOG extraction + vendor commands + NPC wiring
+- [ ] 15-02-PLAN.md — Recovery engine (regen ticks, rest/sleep, medic blessings) + commands + character wiring
+- [ ] 15-03-PLAN.md — Combat fixes (ability return normalization, compound effects, corpse loot, group loot)
+- [ ] 15-04-PLAN.md — Social systems (who/shout/whisper, OOC/domain channels) + item inspection/compare
+- [ ] 15-05-PLAN.md — Missing content (gathering tools, fish pools, loot tables, crafting outputs, quest items)
+
 ## Progress
 
 **Execution Order:**
@@ -257,3 +279,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 12. Launch Polish and Help | 1/3 | Complete    | 2026-04-03 |
 | 13. Gathering and Refining | 7/7 | Complete    | 2026-04-04 |
 | 14. All TBD/TODOs Implemented | 4/4 | Complete    | 2026-04-04 |
+| 15. Implement Missing Gameplay Gap Systems | 0/5 | Not started | - |
