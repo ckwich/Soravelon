@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 07-06-PLAN.md
+stopped_at: Completed 16-04-PLAN.md
 last_updated: "2026-03-30T00:33:07.741Z"
 progress:
   total_phases: 12
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 07 — milestone-1-content
+**Current focus:** Phase 16 — architectural-refactoring
 
 ## Current Position
 
-Phase: 07
-Plan: 03 complete
+Phase: 16
+Plan: 04 complete
 
 ## Performance Metrics
 
@@ -85,6 +85,7 @@ Plan: 03 complete
 | Phase 5c P04 | 7 | 1 tasks | 3 files |
 | Phase 07 P02 | 3 | 1 tasks | 3 files |
 | Phase 07 P06 | 11 | 1 tasks | 3 files |
+| Phase 16 P04 | 15 | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,7 @@ Plan: 03 complete
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 16]: mob_template renamed to mob_template_key (D-11); mob_id tag category renamed to mob_instance_id with MOB_INSTANCE_TAG_CATEGORY constant (D-12); combat local vars use combatant_db_id for integer PK
 - Roadmap: Phase 4 (fingerprints) gates Phase 5 (abilities) — no ability can be authored before all 10 domain mechanical verbs are locked in a design document
 - Roadmap: Phase 3 (GUI builder) gates Phase 7 (content) — all zone content authored through builder, not hand-coded
 - Roadmap: Phase 2 (OOB publisher) gates Phase 3 (desktop client) — typed envelope protocol defined before any client event handler is written
@@ -187,6 +189,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T00:33:07.738Z
-Stopped at: Completed 07-06-PLAN.md
+Last session: 2026-04-05T18:07:00Z
+Stopped at: Completed 16-04-PLAN.md
 Resume file: None
