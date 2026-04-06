@@ -518,11 +518,11 @@ def resolve_pending_casts(combat_handler):
     resolved_actions = []
     still_pending = {}
 
-    for mob_id, cast_info in pending.items():
+    for combatant_db_id, cast_info in pending.items():
         cast_info["rounds_left"] -= 1
         if cast_info["rounds_left"] <= 0:
             # Cast completes -- check for interrupt
-            mob = _resolve_combatant(mob_id, combat_handler)
+            mob = _resolve_combatant(combatant_db_id, combat_handler)
             if mob is None:
                 continue  # mob died during cast
             from world.status_effects import has_effect
@@ -546,25 +546,25 @@ def resolve_pending_casts(combat_handler):
                 "application_chance": ability.get("application_chance", 1.0),
                 "cooldown": ability.get("cooldown", 0),
                 "target_id": cast_info["target_id"],
-                "mob_id": mob_id,
+                "combatant_db_id": combatant_db_id,
                 "from_cast": True,
             })
         else:
-            still_pending[mob_id] = cast_info
+            still_pending[combatant_db_id] = cast_info
 
     combat_handler.ndb.pending_mob_casts = still_pending
     return resolved_actions
 
 
-def _resolve_combatant(mob_id, combat_handler):
+def _resolve_combatant(combatant_db_id, combat_handler):
     """Find a mob object from the combat handler's combatant lists by ID."""
     combatant_ids = getattr(combat_handler.db, "combatant_ids", None) or []
-    if mob_id not in combatant_ids:
+    if combatant_db_id not in combatant_ids:
         return None
     # Use the combat_script's resolver pattern
     if hasattr(combat_handler, "_resolve_combatants"):
         for c in combat_handler._resolve_combatants():
-            if c is not None and c.id == mob_id:
+            if c is not None and c.id == combatant_db_id:
                 return c
     return None
 
@@ -677,7 +677,7 @@ def process_mob_turn(mob, combat_handler):
     if _should_flee(mob):
         actions.append({
             "type": "flee",
-            "mob_id": mob.id,
+            "combatant_db_id": mob.id,
         })
         return actions
 

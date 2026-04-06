@@ -116,14 +116,14 @@ def load_zone_from_json(zone_data: dict) -> dict:
 
     # 7. named_mobs
     for nm_def in zone_data.get("named_mobs", []):
-        mob_id = nm_def["mob_id"]
+        mob_instance_id = nm_def["mob_instance_id"]
         room_id = nm_def["room"]
         room_obj = rooms_lookup.get(room_id)
         if not room_obj:
             area._build_warnings.append(f"named_mob: room '{room_id}' not found")
             continue
-        nm_kwargs = {k: v for k, v in nm_def.items() if k not in ("mob_id", "room")}
-        area.named_mob(mob_id, room_obj, **nm_kwargs)
+        nm_kwargs = {k: v for k, v in nm_def.items() if k not in ("mob_instance_id", "room")}
+        area.named_mob(mob_instance_id, room_obj, **nm_kwargs)
 
     # 8. patrols (mob_key + optional mob placement)
     for patrol_def in zone_data.get("patrols", []):

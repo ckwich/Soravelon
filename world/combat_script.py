@@ -54,7 +54,7 @@ class CombatScript:
         # Volatile state (ndb)
         self.ndb.turn_timer_id = None
         self.ndb.pending_charged = {}  # {char_id: {ability_id, rounds_left, target_id}}
-        self.ndb.pending_mob_casts = {}  # {mob_id: {ability, target_id, rounds_left}}
+        self.ndb.pending_mob_casts = {}  # {combatant_db_id: {ability, target_id, rounds_left}}
         self.ndb.call_for_help_count = 0
 
     def at_start(self):
@@ -735,10 +735,10 @@ class CombatScript:
         interrupted. Resolves damage/effects via ability_engine.
 
         Args:
-            cast_action: Action dict from resolve_pending_casts() with mob_id,
+            cast_action: Action dict from resolve_pending_casts() with combatant_db_id,
                         target_id, ability_id, and ability parameters.
         """
-        mob = _resolve_by_id(cast_action.get("mob_id"))
+        mob = _resolve_by_id(cast_action.get("combatant_db_id"))
         target = _resolve_by_id(cast_action.get("target_id"))
         if mob is None or target is None:
             return

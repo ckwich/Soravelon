@@ -374,8 +374,8 @@ class TestCheckKillObjectives(unittest.TestCase):
 
         char = MagicMock()
         mob = MagicMock()
-        mob.db.mob_template = "sewer_rat"
-        mob.db.mob_id = None
+        mob.db.mob_template_key = "sewer_rat"
+        mob.db.mob_instance_id = None
 
         cq = _make_cq("rat_quest", progress={})
         MockCQ.objects.filter.return_value = [cq]
@@ -394,14 +394,14 @@ class TestCheckKillObjectives(unittest.TestCase):
     @patch("world.quest_engine._check_quest_completion")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
-    def test_kill_matches_mob_id(self, MockCQ, mock_get_spec, mock_check):
-        """Kill objective also matches mob.db.mob_id for named mobs."""
+    def test_kill_matches_mob_instance_id(self, MockCQ, mock_get_spec, mock_check):
+        """Kill objective also matches mob.db.mob_instance_id for named mobs."""
         from world.quest_engine import check_kill_objectives
 
         char = MagicMock()
         mob = MagicMock()
-        mob.db.mob_template = "generic_wolf"
-        mob.db.mob_id = "alpha_wolf_boss"
+        mob.db.mob_template_key = "generic_wolf"
+        mob.db.mob_instance_id = "alpha_wolf_boss"
 
         cq = _make_cq("wolf_quest", progress={})
         MockCQ.objects.filter.return_value = [cq]
@@ -424,8 +424,8 @@ class TestCheckKillObjectives(unittest.TestCase):
 
         char = MagicMock()
         mob = MagicMock()
-        mob.db.mob_template = "bandit"
-        mob.db.mob_id = None
+        mob.db.mob_template_key = "bandit"
+        mob.db.mob_instance_id = None
 
         cq = _make_cq("rat_quest", progress={})
         MockCQ.objects.filter.return_value = [cq]
@@ -448,8 +448,8 @@ class TestCheckKillObjectives(unittest.TestCase):
 
         char = MagicMock()
         mob = MagicMock()
-        mob.db.mob_template = "sewer_rat"
-        mob.db.mob_id = None
+        mob.db.mob_template_key = "sewer_rat"
+        mob.db.mob_instance_id = None
 
         cq = _make_cq("rat_quest", progress={})
         MockCQ.objects.filter.return_value = [cq]
@@ -471,8 +471,8 @@ class TestCheckKillObjectives(unittest.TestCase):
 
         char = MagicMock()
         mob = MagicMock()
-        mob.db.mob_template = "wolf"
-        mob.db.mob_id = None
+        mob.db.mob_template_key = "wolf"
+        mob.db.mob_instance_id = None
 
         cq = _make_cq("orphan_quest", progress={})
         MockCQ.objects.filter.return_value = [cq]
@@ -559,7 +559,7 @@ class TestCheckInvestigateObjectives(unittest.TestCase):
 
         char = MagicMock()
         room = MagicMock()
-        room.db.room_id = "hidden_chamber"
+        room.tags.get.side_effect = lambda category=None, **kw: "hidden_chamber" if category == "room_id" else None
 
         cq = _make_cq("explore_quest", progress={})
         MockCQ.objects.filter.return_value = [cq]
@@ -582,7 +582,7 @@ class TestCheckInvestigateObjectives(unittest.TestCase):
 
         char = MagicMock()
         room = MagicMock()
-        room.db.room_id = "hidden_chamber"
+        room.tags.get.side_effect = lambda category=None, **kw: "hidden_chamber" if category == "room_id" else None
 
         cq = _make_cq("explore_quest", progress={"investigate_hidden_chamber": 1})
         MockCQ.objects.filter.return_value = [cq]
@@ -638,11 +638,11 @@ class TestCheckDeliverObjectives(unittest.TestCase):
 
         char = MagicMock()
         npc = MagicMock()
-        npc.db.npc_id = "npc_warden"
+        npc.tags.get.side_effect = lambda category=None, **kw: "npc_warden" if category == "npc_id" else None
 
-        # Character has the delivery item
+        # Character has the delivery item (tags-based matching)
         item = MagicMock()
-        item.db.item_tag = "warden_report"
+        item.tags.get.side_effect = lambda category=None, **kw: "warden_report" if category == "item_tag" else None
         char.contents = [item]
 
         cq = _make_cq("deliver_quest", progress={})
@@ -671,7 +671,7 @@ class TestCheckDeliverObjectives(unittest.TestCase):
 
         char = MagicMock()
         npc = MagicMock()
-        npc.db.npc_id = "npc_warden"
+        npc.tags.get.side_effect = lambda category=None, **kw: "npc_warden" if category == "npc_id" else None
         char.contents = []  # No items
 
         cq = _make_cq("deliver_quest", progress={})
@@ -708,7 +708,7 @@ class TestCheckTalkToObjectives(unittest.TestCase):
 
         char = MagicMock()
         npc = MagicMock()
-        npc.db.npc_id = "npc_elder"
+        npc.tags.get.side_effect = lambda category=None, **kw: "npc_elder" if category == "npc_id" else None
 
         cq = _make_cq("talk_quest", progress={})
         MockCQ.objects.filter.return_value = [cq]
@@ -731,7 +731,7 @@ class TestCheckTalkToObjectives(unittest.TestCase):
 
         char = MagicMock()
         npc = MagicMock()
-        npc.db.npc_id = "npc_barkeep"
+        npc.tags.get.side_effect = lambda category=None, **kw: "npc_barkeep" if category == "npc_id" else None
 
         cq = _make_cq("talk_quest", progress={})
         MockCQ.objects.filter.return_value = [cq]
@@ -813,7 +813,9 @@ class TestCheckQuestCompletion(unittest.TestCase):
         _check_quest_completion(char, cq, spec)
 
         self.assertEqual(cq.status, "complete")
-        self.assertEqual(char.ndb.pending_quest_offer, "q2_sequel")
+        offer = char.ndb.pending_quest_offer
+        self.assertIsInstance(offer, dict)
+        self.assertEqual(offer["quest"]["quest_id"], "q2_sequel")
 
     @patch("world.quest_engine._pay_rewards")
     def test_multi_objective_requires_all_met(self, mock_pay):

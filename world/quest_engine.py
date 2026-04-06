@@ -213,13 +213,13 @@ def check_kill_objectives(character, mob):
     Check active quests for kill objectives matching this mob (D-07/D-19).
 
     Called from typeclasses/mobs.py at_death().
-    Matches on mob.db.mob_template or mob.db.mob_id.
+    Matches on mob.db.mob_template_key or mob.db.mob_instance_id.
     """
     _ensure_model()
 
-    mob_template = mob.db.mob_template or ""
-    mob_id = mob.db.mob_id or ""
-    identifiers = {id for id in (mob_template, mob_id) if id}
+    mob_template_key = mob.db.mob_template_key or ""
+    mob_instance_id = mob.db.mob_instance_id or ""
+    identifiers = {id for id in (mob_template_key, mob_instance_id) if id}
 
     if not identifiers:
         return
@@ -306,7 +306,7 @@ def check_investigate_objectives(character, room):
     """
     _ensure_model()
 
-    room_id = getattr(room.db, "room_id", None) or ""
+    room_id = room.tags.get(category="room_id") or ""
     if not room_id:
         return
 
@@ -327,10 +327,12 @@ def check_investigate_objectives(character, room):
                 continue
 
             key = _make_obj_key("investigate", target)
+            required = obj.get("count", 1)
             cq.refresh_from_db()
             progress = dict(cq.progress or {})
-            if progress.get(key, 0) < 1:
-                progress[key] = 1
+            current = progress.get(key, 0)
+            if current < required:
+                progress[key] = current + 1
                 cq.progress = progress
                 cq.save(update_fields=["progress"])
                 updated = True
@@ -348,7 +350,8 @@ def check_deliver_objectives(character, npc):
     """
     _ensure_model()
 
-    npc_id = getattr(npc.db, "npc_id", None) or ""
+    npc_id = npc.tags.get(category="npc_id") if hasattr(npc, "tags") else ""
+    npc_id = npc_id or ""
     if not npc_id:
         return
 
@@ -374,17 +377,19 @@ def check_deliver_objectives(character, npc):
                 continue
 
             has_item = any(
-                getattr(getattr(c, "db", None), "item_tag", None) == item_tag
+                (c.tags.get(category="item_tag") if hasattr(c, "tags") else None) == item_tag
                 for c in (character.contents or [])
             )
             if not has_item:
                 continue
 
             key = _make_obj_key("deliver", target)
+            required = obj.get("count", 1)
             cq.refresh_from_db()
             progress = dict(cq.progress or {})
-            if progress.get(key, 0) < 1:
-                progress[key] = 1
+            current = progress.get(key, 0)
+            if current < required:
+                progress[key] = current + 1
                 cq.progress = progress
                 cq.save(update_fields=["progress"])
                 updated = True
@@ -401,7 +406,8 @@ def check_talk_to_objectives(character, npc):
     """
     _ensure_model()
 
-    npc_id = getattr(npc.db, "npc_id", None) or ""
+    npc_id = npc.tags.get(category="npc_id") if hasattr(npc, "tags") else ""
+    npc_id = npc_id or ""
     if not npc_id:
         return
 
@@ -475,7 +481,11 @@ def _check_quest_completion(character, cq, quest_spec):
     # Chain auto-offer (D-05)
     next_id = quest_spec.get("next_quest_id")
     if next_id:
-        character.ndb.pending_quest_offer = next_id
+        next_spec = _get_quest_spec(next_id)
+        character.ndb.pending_quest_offer = {
+            "npc": None,  # NPC not in scope at completion — CmdAccept handles gracefully
+            "quest": next_spec or {"quest_id": next_id},
+        }
 
     # Push OOB update if available
     try:

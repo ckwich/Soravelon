@@ -61,16 +61,30 @@ def on_mob_death(mob, killer=None):
             add_room_flag(room, "fading_life")
 
         # Named/boss mob death
-        is_named = mob.tags.get("mob_id", category="mob_id") is not None
+        from world.mob_spawner import MOB_INSTANCE_TAG_CATEGORY
+        is_named = mob.tags.get(category=MOB_INSTANCE_TAG_CATEGORY) is not None
         is_boss = mob.db.rarity == "legendary"
         if is_named or is_boss:
             add_room_flag(room, "power_vacuum")
 
-    # Schedule respawn from matching spawn_definition on the room
-    if room and room.db.spawn_definitions:
-        from world.mob_spawner import _schedule_respawn
-        mob_key = mob.key
-        for spawn_def in room.db.spawn_definitions:
-            if spawn_def.get("mob") == mob_key:
-                _schedule_respawn(spawn_def, room)
-                break
+    # Named mob death: write WorldEventLog entry (D-05)
+    from world.mob_spawner import MOB_INSTANCE_TAG_CATEGORY
+    is_named = mob.tags.get(category=MOB_INSTANCE_TAG_CATEGORY) is not None
+    if is_named and killer:
+        from world.models import WorldEventLog
+        WorldEventLog.objects.create(
+            event_type="named_mob_death",
+            zone_id=mob.db.zone_id or "",
+            character_id=killer.id if killer else None,
+            description=f"{mob.key} was slain by {killer.key}",
+            data={"named_id": mob.db.named_id or mob.key, "mob_key": mob.key},
+        )
+
+    # Quest progress: kill objectives (D-07, D-19)
+    if killer and hasattr(killer, 'account') and killer.account:
+        from world.quest_engine import check_kill_objectives
+        check_kill_objectives(killer, mob)
+
+    # Schedule respawn via SpawnRecord (replaces callLater)
+    from world.mob_spawner import schedule_respawn_from_death
+    schedule_respawn_from_death(mob)
