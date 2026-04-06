@@ -6,6 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
+        ("world", "0006_characterquest"),
         ("world", "0006_knowntopicrecord_characterrecipe"),
         ("world", "0006_spawnrecord"),
     ]

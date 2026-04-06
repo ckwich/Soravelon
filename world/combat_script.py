@@ -376,14 +376,17 @@ class CombatScript:
                 # Apply status effect if ability has one
                 status = action.get("status_effect")
                 if status and ok:
-                    from world.status_effects import apply_effect
-                    apply_effect(
-                        target, status,
-                        duration=action.get("effect_duration", 2),
-                        magnitude=action.get("effect_magnitude", 1),
-                        source=mob,
-                        chance=action.get("application_chance", 1.0),
-                    )
+                    # Check application chance before applying
+                    import random
+                    app_chance = action.get("application_chance", 1.0)
+                    if random.random() <= app_chance:
+                        from world.status_effects import apply_effect
+                        apply_effect(
+                            target, status,
+                            duration=action.get("effect_duration", 2),
+                            magnitude=action.get("effect_magnitude", 1),
+                            source_id=mob.id if mob else None,
+                        )
                 # Set cooldown on mob
                 cooldown = action.get("cooldown", 0)
                 if cooldown and ability_id:
@@ -489,7 +492,14 @@ class CombatScript:
             if target is None:
                 character.msg("|rNo valid target.|n")
                 return
-            ok, msg, dmg = resolve_basic_attack(character, target)
+            # Look up equipped main-hand weapon (Fix 3.8)
+            from world.inventory_engine import get_equipped_items
+            weapon = None
+            for item, record in get_equipped_items(character):
+                if record.equipment_slot in ("main_hand", "weapon"):
+                    weapon = item
+                    break
+            ok, msg, dmg = resolve_basic_attack(character, target, weapon=weapon)
             character.msg(f"|w{msg}|n")
             if self.obj:
                 self.obj.msg_contents(msg, exclude=[character])
@@ -637,7 +647,14 @@ class CombatScript:
         target = _get_default_target(character, self)
         if target:
             character.msg("|yTime's up! Auto-attacking...|n")
-            ok, msg, dmg = resolve_basic_attack(character, target)
+            # Look up equipped main-hand weapon (Fix 3.8)
+            from world.inventory_engine import get_equipped_items
+            weapon = None
+            for item, record in get_equipped_items(character):
+                if record.equipment_slot in ("main_hand", "weapon"):
+                    weapon = item
+                    break
+            ok, msg, dmg = resolve_basic_attack(character, target, weapon=weapon)
             if self.obj:
                 self.obj.msg_contents(msg)
             if check_death(target):
@@ -788,10 +805,12 @@ class CombatScript:
             if combatant is None:
                 continue
 
+            # Clear effects on all combatants (players and mobs)
+            clear_all_effects(combatant)
+
             if _is_player(combatant):
                 _remove_combat_cmdset(combatant)
                 clear_encounter_cooldowns(combatant)
-                clear_all_effects(combatant)
                 on_encounter_end_resources(combatant)
 
             combatant.ndb.combat_handler = None
@@ -810,6 +829,11 @@ class CombatScript:
         self.ndb.pending_mob_casts = {}
 
         # Cancel active timers
+        if self.ndb.turn_timer_id:
+            try:
+                self.ndb.turn_timer_id.cancel()
+            except Exception:
+                pass
         self.ndb.turn_timer_id = None
         self.ndb.call_for_help_count = 0
 
@@ -865,9 +889,13 @@ def start_combat(room, initiator, targets):
         autostart=True,
     )
 
+    # Break node stabilization on combat entry (D-10)
+    from world.node_helpers import break_stabilization_on_combat
+
     # Add all combatants
     all_combatants = [initiator] + list(targets)
     for combatant in all_combatants:
+        break_stabilization_on_combat(combatant)
         script.add_combatant(combatant)
 
     # Check group combat

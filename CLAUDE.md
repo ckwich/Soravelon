@@ -71,11 +71,16 @@ Skills document the game's major systems. Invoke via Skill tool when working in 
 | **Skill Engine** | Skill progression, practice, trainers, discovery | `.claude/skills/skill-engine/skill.md` |
 | **Dialogue System** | NPC greetings, topics, hints, keyword extraction | `.claude/skills/dialogue-system/skill.md` |
 | **Crafting System** | Recipes, quality tiers, stations, ingredients | `.claude/skills/crafting-system/skill.md` |
+| **Material Registry** | Material taxonomy, gathering categories, tiers, tools | `.claude/skills/material-registry/skill.md` |
+| **Gathering Engine** | Gathering node lifecycle, pool spawning, depletion | `.claude/skills/gathering-engine/skill.md` |
 | **Area Builder** | Declarative zone DSL, rooms, exits, spawns, validation | `.claude/skills/area-builder/skill.md` |
 | **Flight System** | Dragon Courier flights, fare discounts, BFS routing | `.claude/skills/flight-system/skill.md` |
 | **Patrol System** | Mob patrols, BFS pathfinding, encounter checks | `.claude/skills/patrol-system/skill.md` |
 | **OOB Publisher** | Server-to-client push, debounce, 8 message types | `.claude/skills/oob-publisher/skill.md` |
 | **Server Conf** | Lifecycle hooks, tickers, settings, connections | `.claude/skills/server-conf/skill.md` |
+| **Help System** | CmdHelp override, dynamic ability help, 92 file-based entries | `.claude/skills/help-system/skill.md` |
+| **Social System** | Who/shout/whisper commands, OOC and Domain channels | `.claude/skills/social-system/skill.md` |
+| **Item Inspection** | Inspect/compare commands, appraisal skill gating | `.claude/skills/item-inspection/skill.md` |
 
 ## Conventions
 

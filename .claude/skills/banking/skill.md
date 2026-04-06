@@ -11,7 +11,7 @@ This skill triggers when editing these files:
 - `commands/bank*.py`
 - `tests/test_banking.py`
 
-Keywords: banking, bank, deposit, withdraw, scales, draft, debt, recurring payment
+Keywords: banking, bank, deposit, withdraw, scales, draft, debt, recurring payment, death penalty
 
 ---
 
@@ -31,6 +31,7 @@ You are working on **Soravelon's banking engine** (`world/banking.py`).
 - **Recurring payments:** `payment_type` keyed per character. Failed payment enters grace period (1 interval). Second failure sets `lapsed=True, active=False`.
 - **Underworld debt:** Playtime-based countdown (`deadline_playtime_seconds`). One active debt per character (app-level check). Timer hits 0 → status becomes `"hunted"`.
 - **Transaction log:** Every balance change creates an immutable `BankTransaction` with `balance_after` snapshot.
+- **Death penalty:** `on_character_death()` drops 20% of `carried_scales` into the player's corpse (lootable) and wipes all uncommitted session XP (`ndb.session_xp`). Called from `combat_engine.handle_player_death()`. Banked Scales are safe.
 
 ## Critical Rules
 1. **Always use `F()` expressions** for balance updates — never read-modify-write. Withdrawal uses `filter(balance__gte=amount).update()` for atomic overdraft protection.
@@ -40,12 +41,13 @@ You are working on **Soravelon's banking engine** (`world/banking.py`).
 5. **Debt status values:** `"active"`, `"paid"`, `"hunted"`, `"forgiven"` — only one `"active"` debt per character at a time.
 6. **Draft lifecycle:** deduct → create object + InventoryItem → on redeem: credit + delete both object and InventoryItem.
 7. **`banking_payment_tick`** is registered as a server periodic callback — do not call `process_recurring_payments` from commands directly.
-8. **Death handlers are stubs** — `on_character_death` and `handle_carried_scales_on_death` are not yet implemented.
+8. **Death penalty only hits carried Scales** — banked balance is untouched. `handle_carried_scales_on_death()` computes `int(carried * 0.20)` and deducts from `db.carried_scales`. Dropped Scales are placed on the corpse object (`obj.db.scales`).
 
 ## References
 - **Models:** `world/models.py` (lines 171-256)
 - **Tests:** `tests/test_banking.py`
 - **Server hooks:** `server/conf/at_server_startstop.py`
+- **Combat integration:** `world/combat_engine.py` — `handle_player_death()` calls `on_character_death()`
 
 ---
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-04-04

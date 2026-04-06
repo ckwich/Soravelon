@@ -415,6 +415,8 @@ def session_xp_safety_flush(*args, **kwargs):
         char = char_db.typeclass
         if char.is_connected:
             commit_session_xp(char)
-            # Flush skill accumulators alongside domain XP
+            # Flush ALL accumulators consistently (F6 fix)
             from world.skill_engine import commit_skill_accumulators
             commit_skill_accumulators(char)
+            from world.base_attributes import commit_stat_growth
+            commit_stat_growth(char)

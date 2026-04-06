@@ -30,6 +30,7 @@ class CmdStabilize(Command):
     """
 
     key = "stabilize"
+    locks = "cmd:all()"
     help_category = "Node"
 
     # Cooldown in seconds (5 minutes) — D-11

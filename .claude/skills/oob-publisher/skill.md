@@ -31,23 +31,24 @@ You are working on **the OOB publisher** (`world/oob_publisher.py`) — the sing
 - **`push_node_event`** — Zone node state transition (no debounce — must not drop)
 - **`push_flight_progress`** — Dragon Courier leg tracking (called by FlightScript)
 - **`push_combat_update`** — Phase 6 placeholder passthrough
-- **`push_quest_update`** — Future placeholder passthrough
+- **`push_quest_update`** — Merges event payload with `quest_engine.get_active_quests()` list. Sends `event`, `event_quest_id`, and full `active_quests` snapshot
 - **`push_inventory_update`** — Items stub + live encumbrance via `get_carry_state()`
-- **`push_stat_update`** — HP/resource bars (Phase 6 placeholder)
+- **`push_stat_update`** — HP/resource bars including `hp`, `hp_max`, and `conditions`
 
 ## Critical Rules
 1. **Never call `character.msg()` for OOB directly** — always go through `push_*` functions in this module
 2. **SaverDict copy pattern for debounce** — `_mark_sent()` copies `ndb.oob_debounce` to plain dict, mutates, reassigns
 3. **Session check before send** — `_send()` guards with `character.sessions.all()`. Never skip this
 4. **Room filtering in map_update** — only include objects whose `db_typeclass_path` ends with `rooms.SoravelonRoom`. Zone tags match exits, zone objects, and mobs too
-5. **Lazy imports throughout** — `world_state`, `group_engine`, `inventory_helpers`, `evennia` imported inside functions to avoid circular deps
+5. **Lazy imports throughout** — `world_state`, `group_engine`, `inventory_helpers`, `quest_engine`, `evennia` imported inside functions to avoid circular deps
 6. **`node_event` has 0s debounce** — state transitions are rare and must never be dropped
 
 ## References
 - **World State:** `world/world_state.py` — `get_character_context_packet()` feeds `push_status_update`
 - **Group Engine:** `world/group_engine.py` — `get_group_state()` feeds map group markers
 - **Inventory Helpers:** `world/inventory_helpers.py` — `get_carry_state()` feeds `push_inventory_update`
+- **Quest Engine:** `world/quest_engine.py` — `get_active_quests()` feeds `push_quest_update`
 - **Tests:** `tests/test_oob_publisher.py` — Full coverage with MagicMock characters
 
 ---
-**Last Updated:** 2026-03-25
+**Last Updated:** 2026-04-04

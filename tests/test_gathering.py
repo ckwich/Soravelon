@@ -315,7 +315,7 @@ class TestProcessingRecipes(unittest.TestCase):
             },
         }
 
-    @patch("world.crafting_engine.get_skill_value", return_value=10)
+    @patch("world.skill_engine.get_skill_value", return_value=10)
     def test_conversion_ratio_low_skill(self, mock_skill):
         """skill=10 with thresholds [30,60,85] should return 3."""
         from world.crafting_engine import get_conversion_quantity
@@ -325,7 +325,7 @@ class TestProcessingRecipes(unittest.TestCase):
         result = get_conversion_quantity(char, recipe)
         self.assertEqual(result, 3)
 
-    @patch("world.crafting_engine.get_skill_value", return_value=45)
+    @patch("world.skill_engine.get_skill_value", return_value=45)
     def test_conversion_ratio_mid_skill(self, mock_skill):
         """skill=45 should return 2."""
         from world.crafting_engine import get_conversion_quantity
@@ -335,7 +335,7 @@ class TestProcessingRecipes(unittest.TestCase):
         result = get_conversion_quantity(char, recipe)
         self.assertEqual(result, 2)
 
-    @patch("world.crafting_engine.get_skill_value", return_value=90)
+    @patch("world.skill_engine.get_skill_value", return_value=90)
     def test_conversion_ratio_high_skill(self, mock_skill):
         """skill=90 should return 1."""
         from world.crafting_engine import get_conversion_quantity

@@ -289,14 +289,18 @@ def _create_crafted_item(character, recipe, quality):
     try:
         from world.item_spawner import create_item_from_template
 
-        item = create_item_from_template(
-            template_id,
-            location=character,
-            quality=quality,
-        )
+        # Build a proper item_def dict from recipe output + quality metadata
+        item_def = dict(output)  # copy to avoid mutating recipe
+        item_def["quality"] = quality
+        item_def["quality_modifier"] = get_quality_modifier(quality)
+        item_def["crafted"] = True
+        item_def.setdefault("key", item_name)
+        item_def.setdefault("item_type", output.get("base_item_type", "item"))
+
+        item = create_item_from_template(item_def, location=character)
         if item:
             return item
-    except (ImportError, Exception):
+    except ImportError:
         pass
 
     # Fallback: create a basic Evennia object with crafting metadata
@@ -372,27 +376,26 @@ def craft_item(character, recipe_id):
     difficulty = recipe.get("difficulty", 10)
     quality = calculate_craft_quality(skill_value, difficulty)
 
-    # 6. Consume ingredients
-    _consume_ingredients(items_to_consume)
-
-    # 7. Create item — processing recipes use inline output dict (Phase 13)
+    # 6. Create item FIRST — only consume ingredients on success
+    # Processing recipes use inline output dict (Phase 13)
     if recipe.get("recipe_type") == "processing" and recipe.get("output", {}).get("item_id"):
         from world.item_spawner import create_item_from_template
 
         output_def = dict(recipe["output"])  # copy to avoid mutation
         output_def["quality"] = quality
         item = create_item_from_template(output_def, location=character)
-        if item:
-            item.tags.add(output_def["item_id"], category="item_tag")
-            if quality != "standard":
-                quality_display = QUALITY_DISPLAY.get(quality, quality)
-                item.key = f"{quality_display} {item.key}"
-            accumulate_skill_use(character, skill_id, count=1)
-            return (
-                True,
-                f"|gYou produce: {QUALITY_DISPLAY.get(quality, quality)} |w{recipe['name']}|n",
-            )
-        return (False, "|rSomething went wrong creating the item.|n")
+        if not item:
+            return (False, "|rSomething went wrong creating the item.|n")
+        _consume_ingredients(items_to_consume)
+        item.tags.add(output_def["item_id"], category="item_tag")
+        if quality != "standard":
+            quality_display = QUALITY_DISPLAY.get(quality, quality)
+            item.key = f"{quality_display} {item.key}"
+        accumulate_skill_use(character, skill_id, count=1)
+        return (
+            True,
+            f"|gYou produce: {QUALITY_DISPLAY.get(quality, quality)} |w{recipe['name']}|n",
+        )
 
     # Standard crafting item creation
     item = _create_crafted_item(character, recipe, quality)
@@ -401,6 +404,7 @@ def craft_item(character, recipe_id):
             False,
             "|rSomething went wrong creating the item.|n",
         )
+    _consume_ingredients(items_to_consume)
 
     # 8. Accumulate skill use for passive gain
     accumulate_skill_use(character, skill_id, count=1)

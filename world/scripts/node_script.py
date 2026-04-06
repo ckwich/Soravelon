@@ -33,6 +33,7 @@ class NodeScript(DefaultScript):
     """
 
     def at_script_creation(self):
+        super().at_script_creation()
         self.key = "node_script"
         self.persistent = True
         self.interval = 0  # NOT self-ticking
@@ -236,7 +237,7 @@ class NodeScript(DefaultScript):
 
             # Apply L1 override names and descriptions (D-04, D-05)
             layer1_room.db.original_name = layer1_room.key
-            room_key = layer0_room.db.room_id or layer0_room.key
+            room_key = layer0_room.tags.get(category="room_id") or layer0_room.key
             override = overrides.get(str(room_key))
             if override:
                 layer1_room.key = override.get("name", layer1_room.key)
@@ -255,7 +256,7 @@ class NodeScript(DefaultScript):
             for obj in list(layer0_room.contents):
                 if hasattr(obj, 'account') and obj.account:
                     obj.db.layer0_room_id = layer0_room.id
-                    obj.move_to(layer1_room, quiet=False)
+                    obj.move_to(layer1_room, quiet=False, move_hooks=False)
                     obj.msg(
                         "\nThe air shifts. The world you know "
                         "becomes something else."
@@ -278,7 +279,7 @@ class NodeScript(DefaultScript):
                             "#" + str(layer0_id)
                         )
                         if layer0_objs:
-                            obj.move_to(layer0_objs[0], quiet=False)
+                            obj.move_to(layer0_objs[0], quiet=False, move_hooks=False)
                             obj.msg(
                                 "\nThe world reasserts itself. "
                                 "You are where you were."

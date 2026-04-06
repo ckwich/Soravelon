@@ -10,7 +10,7 @@ This skill triggers when editing these files:
 - `world/mob_affix_roller.py`
 - `typeclasses/mobs.py`
 
-Keywords: affix, rarity, mob spawn, pack, combat modifier, immunity, reveal
+Keywords: affix, rarity, mob spawn, pack, combat modifier, immunity, reveal, threat level, elite, boss
 
 ---
 
@@ -23,6 +23,7 @@ You are working on **the mob affix system** — rarity tiers, affix rolling, pac
 
 ## Key Concepts
 - **Rarity tiers:** normal(850)/magic(120)/rare(25)/legendary(5) weights. Normal = 0 affixes, magic=1, rare=2, legendary=3
+- **Threat level display:** `SoravelonMob.db.threat_level` (default `"solo"`) controls threat prefix in display name. `THREAT_TAGS` class dict maps `"elite"` → `|!y|530[Elite]|n` and `"boss"` → `|r[Boss]|n`. Threat tag is prepended before star prefix in `get_display_name()`
 - **Affix pools:** Node-type pools (`NODE_AFFIX_POOLS`) used when room has `mob_affixes_active` tag (category `node_effect`) + matching `db.node_type`. Falls back to `GENERAL_AFFIX_POOL`
 - **Forbidden combos:** Sets in `FORBIDDEN_COMBINATIONS` — if candidate set is superset, affix rejected
 - **Defensive limit:** Max 1 defensive affix per mob (`DEFENSIVE_LIMIT`). Defensive set: armored, regenerating, warding, evasive
@@ -45,4 +46,4 @@ You are working on **the mob affix system** — rarity tiers, affix rolling, pac
 - **Mob Disposition:** `world/mob_disposition.py`
 
 ---
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-04-05

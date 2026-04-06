@@ -20,4 +20,3 @@ class SoravelonAccount(DefaultAccount):
         self.db.inv_sort = "type"
         self.db.combine_stacks = True
         self.db.prompt_format = "default"
-        self.db.command_aliases = {}

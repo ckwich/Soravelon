@@ -19,20 +19,25 @@ from commands.command import Command
 # NPC lookup helper (shared by all commands)
 # ---------------------------------------------------------------------------
 
+MAX_DIALOGUE_LENGTH = 500  # Cap player dialogue input to prevent spam/DOS
+
+
 def _find_npc_in_room(character, npc_name):
     """
     Search room.contents for an NPC matching npc_name.
 
-    Looks for objects with db.is_npc == True. Case-insensitive,
+    Validates typeclass (SoravelonMob with is_npc flag). Case-insensitive,
     partial match accepted (startswith). Returns first match or None.
     """
     if not character.location or not npc_name:
         return None
 
+    from typeclasses.mobs import SoravelonMob
+
     npc_name_lower = npc_name.strip().lower()
 
     for obj in character.location.contents:
-        if not obj.db.is_npc:
+        if not isinstance(obj, SoravelonMob) or not obj.db.is_npc:
             continue
         obj_name = (obj.db.npc_name or obj.key or "").lower()
         if obj_name == npc_name_lower:
@@ -154,7 +159,7 @@ class CmdAsk(Command):
         )
 
         character = self.caller
-        args = self.args.strip()
+        args = self.args.strip()[:MAX_DIALOGUE_LENGTH]
 
         if not args:
             character.msg("|yAsk whom about what? Usage: ask <npc> about <topic>|n")
@@ -240,7 +245,7 @@ class CmdSay(Command):
         )
 
         character = self.caller
-        text = self.args.strip()
+        text = self.args.strip()[:MAX_DIALOGUE_LENGTH]
 
         if not text:
             character.msg("|ySay what?|n")
@@ -336,6 +341,7 @@ class CmdTell(Command):
             character.msg("|yTell whom? Usage: tell <npc> <text>|n")
             return
 
+        args = args[:MAX_DIALOGUE_LENGTH]
         parts = args.split(None, 1)
         npc_name = parts[0]
         text = parts[1].strip() if len(parts) > 1 else ""
@@ -411,7 +417,8 @@ class CmdAccept(Command):
         quest_data = offer.get("quest")
 
         # Validate NPC still in same room (Pitfall 4)
-        if not npc or npc.location != character.location:
+        # Chain offers from quest completion may have npc=None — skip room check
+        if npc is not None and npc.location != character.location:
             character.msg(
                 "|rThe one who offered that quest is no longer here.|n"
             )

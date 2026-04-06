@@ -158,7 +158,7 @@ class FlightScript(SoravelonScript):
         import evennia
         stop_rooms = evennia.search_object(f"#{leg['to_room_id']}", exact=True)
         if stop_rooms:
-            character.move_to(stop_rooms[0], quiet=True)
+            character.move_to(stop_rooms[0], quiet=True, move_hooks=False)
             character.msg("Your dragon circles and lands at the courier stop.")
 
         # Advance leg counter

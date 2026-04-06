@@ -135,6 +135,15 @@ def fire_triggers(source_obj, event_name, character, context=None, _depth=0):
         # Execute each action in the trigger's action list
         for action in trigger.get("actions", []):
             from world.action_vocabulary import execute_action
-            execute_action(action, ctx, _depth=_depth)
+            success, msg = execute_action(action, ctx, _depth=_depth)
+            if not success:
+                try:
+                    from evennia.utils import logger
+                    logger.log_warn(
+                        f"trigger_engine: action failed in trigger "
+                        f"'{trigger_id}': {action.get('action_type', '?')} — {msg}"
+                    )
+                except Exception:
+                    pass  # Logging unavailable (e.g., unit test without Django)
 
         _record_fired(character, trigger_id, trigger)

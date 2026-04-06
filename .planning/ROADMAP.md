@@ -263,7 +263,7 @@ Plans:
 **Goal**: Codebase structure is clean and maintainable — typeclass hooks are thin delegates to world/ orchestrators, command logic is extracted to engine modules, duplicate code is consolidated, naming is consistent (mob_template_key/mob_instance_id), SaverDict mutations are safe, return types are enforced, and imports are hygienic
 **Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11, D-12, D-13, D-14, D-15, D-16, D-17, D-18, D-19
 **Depends on:** Phase 15
-**Plans:** 5 plans
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 16-01-PLAN.md — Lifecycle orchestrators (session/movement/death) + thin typeclass delegates
@@ -293,4 +293,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 13. Gathering and Refining | 7/7 | Complete    | 2026-04-04 |
 | 14. All TBD/TODOs Implemented | 4/4 | Complete    | 2026-04-04 |
 | 15. Implement Missing Gameplay Gap Systems | 1/5 | Complete    | 2026-04-05 |
-| 16. Architectural Refactoring | 0/5 | Not started | - |
+| 16. Architectural Refactoring | 0/5 | Complete    | 2026-04-06 |

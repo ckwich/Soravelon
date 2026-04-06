@@ -94,7 +94,8 @@ def _evaluate_spawn_condition(condition_str, room):
         return True
 
     # Unknown condition — log warning, spawn anyway
-    print(f"[mob_spawner] Unknown spawn_condition: {condition_str!r}")
+    from evennia.utils import logger
+    logger.log_warn(f"[mob_spawner] Unknown spawn_condition: {condition_str!r}")
     return True
 
 
@@ -124,7 +125,8 @@ def _count_room_mobs(room, spawn_def):
 
     return sum(
         1 for obj in room.contents
-        if isinstance(obj, SoravelonMob) and obj.key == mob_key
+        if isinstance(obj, SoravelonMob)
+        and getattr(obj.db, "mob_template", None) == mob_key
     )
 
 
@@ -432,6 +434,11 @@ def spawn_tick():
         try:
             _process_spawn_record(record)
         except Exception:
+            from evennia.utils import logger
+            logger.log_trace(
+                f"[mob_spawner] spawn_tick error processing record "
+                f"room={record.room_id} idx={record.spawn_index}"
+            )
             continue
 
 

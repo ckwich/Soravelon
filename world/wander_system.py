@@ -80,8 +80,8 @@ def wander_mob(mob):
     if patrol_scripts:
         return False
 
-    # Guard: dead
-    if mob.db.is_dead:
+    # Guard: dead or deleted
+    if not mob.pk or mob.db.is_dead:
         return False
 
     # Guard: no location

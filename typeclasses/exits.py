@@ -15,6 +15,39 @@ class SoravelonExit(DefaultExit):
         self.db.lock_tag = None
 
     def at_traverse(self, traversing_object, target_location, **kwargs):
+        # Enforce authored exit requirements (ancestry, standing, quest)
+        req_ancestry = self.db.requires_ancestry
+        if req_ancestry and getattr(traversing_object.db, "ancestry", None) != req_ancestry:
+            traversing_object.msg(
+                f"|rOnly those of {req_ancestry} ancestry may pass this way.|n"
+            )
+            return False
+
+        req_standing = self.db.requires_standing
+        if req_standing:
+            faction = req_standing.get("faction", "")
+            minimum = req_standing.get("minimum", 0)
+            if faction:
+                from world.world_state import get_standing
+                current = get_standing(traversing_object, faction)
+                if current < minimum:
+                    traversing_object.msg(
+                        f"|rYour standing with {faction} is too low to pass.|n"
+                    )
+                    return False
+
+        req_quest = self.db.requires_quest
+        if req_quest:
+            from world.models import CharacterQuest
+            has_quest = CharacterQuest.objects.filter(
+                character=traversing_object, quest_id=req_quest, status="complete"
+            ).exists()
+            if not has_quest:
+                traversing_object.msg(
+                    "|rYou have not yet earned passage here.|n"
+                )
+                return False
+
         if target_location and (target_location.db.action_budget_penalty or 0):
             traversing_object.ndb.gravity_penalty = (
                 target_location.db.action_budget_penalty

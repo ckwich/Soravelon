@@ -27,7 +27,8 @@ You are working on **soravelon's NPC dialogue system** — Standing-based greeti
 ## Key Concepts
 - **Standing tiers:** Disposition float maps to 8 tiers (exalted→hostile + betrayal). Tier drives greeting selection and hint pools
 - **NPC data on db attrs:** `dialogue_greeting_tiers`, `dialogue_topics`, `dialogue_base_hints`, `dialogue_tier_hints`, `ambient_idle_echoes`, `ambient_reactive_echoes` — all set by AreaBuilder
-- **Context packet interface (NPC-03):** `_build_dialogue_context()` wraps `get_character_context_packet()` with standing tier and quest stubs — same interface future LLM will consume
+- **Context packet interface (NPC-03):** `_build_dialogue_context()` wraps `get_character_context_packet()` with standing tier and quest state from `quest_engine` — same interface future LLM will consume
+- **Quest state in dialogue context:** `_build_dialogue_context()` populates `active_quests`, `completed_quests`, and `failed_quests` from `quest_engine.get_active_quests()` and related calls
 - **Hint re-surfacing:** `KnownTopicRecord` stores a `context_hash`. When character's standing/reputation/guild changes, hash changes and previously-known topics reappear as hints
 - **Keyword extraction:** 4-stage pipeline — direct match → synonym → partial word → None. Used by both CmdAsk and CmdSay
 - **CmdSay overrides Evennia default:** Same `key="say"`, `aliases=["'", '"']`. Broadcasts to room, then extracts NPC keywords (cap 2 responders, sorted by Standing tier)
@@ -38,7 +39,7 @@ You are working on **soravelon's NPC dialogue system** — Standing-based greeti
 1. **NPC lookup is partial-match** — `_find_npc_in_room` uses case-insensitive `startswith` on `npc_name` db attr or key. Exact match takes priority
 2. **CmdSay caps NPC responses at 2** — sorted by Standing tier (friendlier first). Don't increase without considering spam
 3. **CmdAccept validates NPC still in room** — stale `pending_quest_offer` where NPC has moved is rejected
-4. **Quest functions are stubs** — `has_available_quest()` returns False, `get_quest_offer()` returns None. Interface ready for quest system
+4. **Quest integration is live** — `_build_dialogue_context()` reads from `quest_engine` (active/completed/failed quests). `open_dialogue` action checks `get_available_quest_for_npc()` and auto-accepts via `accept_quest()`
 5. **Lazy imports throughout** — all `world.*` imports inside functions to avoid circular deps
 6. **All engine functions return `(bool, str)` or explicit tuples** — follows repo-wide convention
 7. **NPC tag category is `character_type`** — `ambient_npc_tick()` uses `search_tag("npc", category="character_type")`, NOT `object_type`
@@ -46,7 +47,8 @@ You are working on **soravelon's NPC dialogue system** — Standing-based greeti
 ## References
 - **Mob Disposition:** `world/mob_disposition.py` — Standing tier computed from disposition float
 - **World State:** `world/world_state.py` — `get_character_context_packet()` feeds dialogue context
+- **Quest Engine:** `world/quest_engine.py` — `get_active_quests()`, `get_available_quest_for_npc()`, `accept_quest()` feed dialogue and action vocabulary
 - **Area Builder:** `world/area_builder.py` — Sets NPC dialogue db attrs during zone initialization
 
 ---
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-04-04

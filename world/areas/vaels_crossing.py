@@ -333,6 +333,23 @@ def build():
     area.exit(hg_north_road, hg_plaza_north, "south")
     area.exit(hg_plaza_north, hg_north_road, "north")
 
+    ashwatch_tower_ruins = area.room(
+        "ashwatch_tower_ruins",
+        name="Ashwatch Tower Ruins",
+        desc=(
+            "The crumbling base of a tower far older than Vael's Crossing "
+            "itself. Blackened stone rises two stories before ending in a "
+            "jagged break where the upper floors collapsed long ago. Faded "
+            "ward-glyphs are carved into the foundation stones, their edges "
+            "still faintly warm to the touch. The air hums with residual "
+            "Remnance energy -- whatever protections were laid here are "
+            "failing."
+        ),
+        room_type="ruins",
+    )
+    area.exit(hg_south_road, ashwatch_tower_ruins, "west")
+    area.exit(ashwatch_tower_ruins, hg_south_road, "east")
+
     # Harbor Gate NPCs
 
     # 1. Greeter NPC (D-11 onboarding)
@@ -1278,6 +1295,22 @@ def build():
     area.exit(cq_import_dock, cq_warehouse, "west")
     area.exit(cq_merchant_row, cq_private_garden, "west")
     area.exit(cq_private_garden, cq_merchant_row, "east")
+
+    vc_warehouse_district = area.room(
+        "vc_warehouse_district",
+        name="Warehouse Loading Bay",
+        desc=(
+            "A cavernous loading bay behind the main warehouse, open to the "
+            "sky on one side where cargo wagons back in for unloading. Crates "
+            "are stacked high along the walls, many bearing Consortium seals. "
+            "One section has been roped off -- recently disturbed crates, a "
+            "broken seal, and fresh boot prints in the dust suggest someone "
+            "has been here who shouldn't have been."
+        ),
+        room_type="building",
+    )
+    area.exit(cq_warehouse, vc_warehouse_district, "south")
+    area.exit(vc_warehouse_district, cq_warehouse, "north")
 
     # Consortium Quarter NPCs
 
@@ -2440,7 +2473,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "arcanists", "delta": 150},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 150},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
             {"action_type": "echo", "message": "|gMorwen studies your findings with furrowed brows. \"The wards are weaker than I feared. This data is invaluable -- the Guild owes you a debt.\"|n"},
         ],
@@ -2545,6 +2578,23 @@ def build():
                   profession_bonus={"herbalism": 0.05, "alchemy": 0.05})
     area.material("rough_leather", tier=1, terrain="building",
                   profession_bonus={"smithing": 0.05})
+
+    # ==================================================================
+    #  GATHERING POOLS
+    # ==================================================================
+
+    area.gathering_pool(
+        "herb",
+        rooms=["rd_garden_plot", "rd_herbalist", "gq_alchemy_lab"],
+        materials=["common_herb"],
+        max_active=2, respawn_minutes=8, respawn_variance=3,
+    )
+    area.gathering_pool(
+        "hide",
+        rooms=["mk_tanner", "mk_cloth_row"],
+        materials=["rough_leather"],
+        max_active=2, respawn_minutes=12, respawn_variance=4,
+    )
 
     # ==================================================================
     #  BUILD

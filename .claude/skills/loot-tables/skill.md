@@ -30,7 +30,7 @@ You are working on **soravelon's loot system** — skill-based tiered drops reso
 - **Zone overrides:** `_resolve_loot_table()` checks `zone_obj.db.loot_table_overrides` first (keyed by mob_type), falling back to module-level `LOOT_TABLES`
 - **Weighted random selection:** `_pick_drop()` uses `weight_in_pool` for weighted random among drops in a table
 - **Item def output:** `_build_item_def()` produces a dict with `item_id`, `key`, `item_type`, `weight`, `rarity`, `value`, `desc` — ready for `item_spawner.create_item_from_template()`
-- **Registered tables:** shore_crab, sea_serpent, coastal_raider, cliff_harpy, salt_lurker, wolf, ash_wolf, plains_viper, ashreach_bandit, dust_beetle, steppe_hawk, alpha_ash_wolf, forest_spider, wild_boar, cantera_wolf, vine_creeper, forest_bandit
+- **Registered tables:** shore_crab, sea_serpent, coastal_raider, cliff_harpy, salt_lurker, wolf, ash_wolf, plains_viper, ashreach_bandit, dust_beetle, steppe_hawk, alpha_ash_wolf, forest_spider, wild_boar, cantera_wolf, vine_creeper, forest_bandit, void_wisp, blighted_stag, heartwood_ancient, mountain_troll, sea_raider, rat, bandit
 - **Loot modes:** Group loot defaults to "personal". Quest drops and Scales are ALWAYS personal regardless of mode
 - **Groups are session-only (`ndb`)** — loot mode dissolves when leader disconnects
 
@@ -50,4 +50,4 @@ You are working on **soravelon's loot system** — skill-based tiered drops reso
 - **Item Spawner:** `world/item_spawner.py` — `create_item_from_template()` consumes item_def dicts
 
 ---
-**Last Updated:** 2026-03-30
+**Last Updated:** 2026-04-05

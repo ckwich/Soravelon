@@ -259,6 +259,8 @@ def deplete_node(node, pool_script):
     delay = max(delay, 30)  # minimum 30s floor
 
     def _do_respawn():
+        if not pool_script or not pool_script.pk:
+            return  # Pool script was deleted; skip respawn
         spawn_node_in_pool(pool_script, exclude_room_id=depleted_room_id)
 
     evennia.utils.delay(delay, _do_respawn)
@@ -390,12 +392,24 @@ def spawn_gathering_pool(zone_obj, pool_def):
     pool_script.db.respawn_variance = pool_def.get("respawn_variance", 5)
     pool_script.db.tier_floor = pool_def.get("tier_floor", 1)
     pool_script.db.tier_ceiling = pool_def.get("tier_ceiling", 3)
-    pool_script.db.active_node_ids = []
-    pool_script.db.last_depleted_room_id = None
+    # Reconcile existing nodes instead of blindly resetting
+    existing_ids = list(pool_script.db.active_node_ids or [])
+    valid_ids = []
+    for nid in existing_ids:
+        try:
+            results = evennia.search_object("#" + str(nid))
+            if results and results[0].pk:
+                valid_ids.append(nid)
+        except Exception:
+            pass
+    pool_script.db.active_node_ids = valid_ids
+    if not pool_script.db.last_depleted_room_id:
+        pool_script.db.last_depleted_room_id = None
 
-    # Spawn initial nodes up to max_active
+    # Spawn nodes only up to max_active minus already-existing valid nodes
     max_active = pool_def.get("max_active", 3)
-    for _ in range(max_active):
+    to_spawn = max(0, max_active - len(valid_ids))
+    for _ in range(to_spawn):
         node = spawn_node_in_pool(pool_script)
         if node is None:
             break

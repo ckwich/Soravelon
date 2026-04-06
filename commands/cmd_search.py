@@ -55,12 +55,26 @@ class CmdSearch(Command):
                 del cooldowns[room_key]
                 char.ndb.search_cooldowns = cooldowns
 
-        search_dc = room.db.search_dc
-        if not search_dc:
+        # Scan room for hidden exits and lore to determine search_dc
+        from typeclasses.exits import HiddenExit
+
+        hidden_exits = [
+            ex for ex in room.exits
+            if isinstance(ex, HiddenExit) and getattr(ex.db, "hidden", False)
+        ]
+        lore_frags = room.db.lore_fragments or []
+        searchable_lore = [f for f in lore_frags if f.get("discovery_method") == "search"]
+
+        if not hidden_exits and not searchable_lore:
             char.msg("You search carefully but find nothing of interest.")
             return
 
-        # D-10: Roll investigation skill + random(1,20) vs search_dc
+        # D-10: Determine search_dc from the hardest hidden exit in room
+        search_dc = max(
+            (getattr(ex.db, "search_dc", 30) for ex in hidden_exits),
+            default=20,
+        )
+
         from world.skill_engine import get_skill_value, accumulate_skill_use
 
         skill = get_skill_value(char, "investigation")
@@ -83,16 +97,15 @@ class CmdSearch(Command):
 
         found_something = False
 
-        # Reveal hidden exits
-        hidden_exits = room.db.hidden_exits or []
+        # Reveal hidden exits by scanning actual HiddenExit objects in room
         discovered = list(char.db.discovered_exits or [])
-        discovered_set = set(str(e) for e in discovered)
-        for exit_ref in hidden_exits:
-            if str(exit_ref) not in discovered_set:
-                discovered.append(exit_ref)
-                discovered_set.add(str(exit_ref))
+        discovered_set = set(discovered)
+        for ex in hidden_exits:
+            if ex.id not in discovered_set:
+                discovered.append(ex.id)
+                discovered_set.add(ex.id)
                 found_something = True
-                char.msg("|yYou discover a hidden passage!|n")
+                char.msg(f"|yYou discover a hidden passage: {ex.key}!|n")
         if discovered != list(char.db.discovered_exits or []):
             char.db.discovered_exits = discovered
 

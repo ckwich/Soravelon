@@ -304,8 +304,19 @@ def on_character_death(character, location):
                 obj.db.scales = dropped
                 break
 
-    # Wipe uncommitted session XP (committed XP on db is safe)
+    # Wipe ALL uncommitted progression accumulators
     character.ndb.session_xp = {}
+    # Clear domain XP accumulators (domain_xp_combat, domain_xp_subterfuge, etc.)
+    from world.world_state import DOMAIN_NAMES
+    for domain in DOMAIN_NAMES:
+        setattr(character.ndb, f"domain_xp_{domain}", 0.0)
+    # Clear skill use accumulators
+    for attr in list(vars(character.ndb)):
+        if attr.startswith("skill_use_"):
+            setattr(character.ndb, attr, 0.0)
+    # Clear stat growth accumulators
+    from world.base_attributes import STAT_NAMES
+    character.ndb.stat_xp_accumulators = {stat: 0.0 for stat in STAT_NAMES}
 
     # Notify the player
     if dropped > 0:
@@ -326,8 +337,8 @@ def handle_carried_scales_on_death(character):
     Returns:
         int: The number of Scales dropped (removed from carried).
     """
-    carried = character.db.currency_scales or 0
+    carried = character.db.carried_scales or 0
     dropped = int(carried * 0.20)
     if dropped > 0:
-        character.db.currency_scales = carried - dropped
+        character.db.carried_scales = carried - dropped
     return dropped

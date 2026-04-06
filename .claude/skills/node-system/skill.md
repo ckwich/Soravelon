@@ -20,7 +20,7 @@ You are working on the **node failure system** — a zone-level state machine th
 
 ## Key Files
 - `world/scripts/node_script.py` — `NodeScript`: state machine (dormant→awakening→active→critical) driven by failure 0–100
-- `world/node_helpers.py` — Global tick (`node_failure_tick`), BFS radius search, zone actor counting, server-start recovery
+- `world/node_helpers.py` — Global tick (`node_failure_tick`), BFS radius search, zone actor counting, server-start recovery, `break_stabilization_on_move()`
 - `world/nodes/node_effects.py` — `NODE_TYPE_TAGS` dict maps 5 node types to room effect tags (interface contract for combat/mob systems)
 - `world/zone_object.py` — `initialize_node()`: creates Layer 1 rooms and attaches NodeScript to a ZoneObject
 - `typeclasses/rooms.py` — `SoravelonRoom` (L0) and `Layer1Room` (L1, starts tagged `inactive`)
@@ -32,6 +32,7 @@ You are working on the **node failure system** — a zone-level state machine th
 - **Session cap:** Each tick caps failure contribution at 5.0 per session (`db.session_failure_added`), reset on deactivation
 - **Node types:** resonance, thermal, cognitive, gravity, temporal — effects are room tags in `node_effect` category
 - **BFS radius:** `get_rooms_in_radius()` respects zone boundaries (`zone_id` match only)
+- **Stabilization breaks on move:** `Character.at_after_move()` calls `break_stabilization_on_move()` from `world/node_helpers.py` — moving rooms cancels any in-progress node stabilization attempt
 
 ## Critical Rules
 1. **Never make NodeScript self-ticking** — `interval` must stay 0. The global `node_failure_tick` is the single driver
@@ -46,6 +47,7 @@ You are working on the **node failure system** — a zone-level state machine th
 - **Room typeclasses:** `typeclasses/rooms.py`
 - **Node effects contract:** `world/nodes/node_effects.py` (`NODE_TYPE_TAGS` dict)
 - **Zone init:** `world/zone_object.py` (`initialize_node()`)
+- **Character hooks:** `typeclasses/characters.py` — `at_after_move()` calls `break_stabilization_on_move()`
 
 ---
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-04-05

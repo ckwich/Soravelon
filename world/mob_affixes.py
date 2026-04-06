@@ -350,7 +350,7 @@ def check_mob_per_round_effects(mob):
         if per_round == "heal_self":
             # Regenerating affix: heal percentage of max HP per round
             regen_pct = combat_mods.get("regen_pct_per_round", 0.03)
-            max_hp = mob.db.max_hp or 100
+            max_hp = mob.db.hp_max or 100
             heal_amount = int(regen_pct * max_hp)
             if heal_amount > 0:
                 current_hp = mob.ndb.hp or 0

@@ -289,13 +289,12 @@ class AreaBuilder:
         room_obj.db.grid_x = kwargs.get("grid_x", None)
         room_obj.db.grid_y = kwargs.get("grid_y", None)
 
-        # Initialize list attrs only if not already present
-        if not room_obj.db.spawn_definitions:
-            room_obj.db.spawn_definitions = []
-        if not room_obj.db.npc_definitions:
-            room_obj.db.npc_definitions = []
-        if not room_obj.db.lore_fragments:
-            room_obj.db.lore_fragments = []
+        # Reset authored list attrs on every build to prevent stale data
+        room_obj.db.spawn_definitions = []
+        room_obj.db.npc_definitions = []
+        room_obj.db.lore_fragments = kwargs.get("lore_fragments", [])
+        room_obj.db.triggers = []
+        room_obj.db.custom_commands = []
 
         # Crafting station tags (NPC-02)
         crafting_stations = kwargs.get("crafting_stations", [])
@@ -540,6 +539,7 @@ class AreaBuilder:
         npc_obj.db.combat_enabled = False
         npc_obj.db.zone_id = self._zone_id
         npc_obj.db.faction = kwargs.get("faction")
+        npc_obj.db.npc_id = npc_id
 
         # Tags for queryset filtering
         npc_obj.tags.add(npc_id, category="npc_id")
@@ -696,7 +696,7 @@ class AreaBuilder:
 
         Args:
             source_obj_or_id: Room object, room_id string, mob object, or mob key string
-            event: "on_enter" | "on_exit" | "on_first_visit" | "on_mob_death" | "on_examine"
+            event: "on_enter" | "on_exit" | "on_first_visit" | "on_mob_death"
             actions: List of action dicts, e.g. [{"action_type": "echo", "message": "hello"}]
             trigger_id: Unique string ID for once-per and cooldown tracking. Auto-generated if None.
             once_per_character: Fire at most once per character (D-07)
@@ -704,7 +704,7 @@ class AreaBuilder:
         Returns:
             self (for method chaining)
         """
-        VALID_EVENTS = {"on_enter", "on_exit", "on_first_visit", "on_mob_death", "on_examine"}
+        VALID_EVENTS = {"on_enter", "on_exit", "on_first_visit", "on_mob_death"}
         if event not in VALID_EVENTS:
             raise AreaBuilderValidationError(
                 f"trigger() event must be one of {VALID_EVENTS}; got '{event}'"
@@ -1166,7 +1166,12 @@ class AreaBuilder:
             mob.db.patrol = patrol_def
             mob.db.combat_enabled = patrol_def["combat_enabled"]
             from world.scripts.patrol_script import PatrolScript
-            script = mob.scripts.add(PatrolScript, key="patrol_script", persistent=True)
+            # Check for existing patrol script before creating (F8 idempotency)
+            existing_patrols = mob.scripts.get("patrol_script")
+            if existing_patrols:
+                script = existing_patrols[0]
+            else:
+                script = mob.scripts.add(PatrolScript, key="patrol_script", persistent=True)
             # SaverDict copy pattern — assign as new list
             script.db.route_ids = list(route_rooms)
             script.db.route_index = 0

@@ -14,14 +14,14 @@ This skill triggers when editing these files:
 - `commands/combat_commands.py`
 - `typeclasses/mobs.py`
 
-Keywords: combat, damage, crit, critical hit, death, corpse, combat AI, mob turn, ability selection, targeting, scripted sequence, flee, basic attack, CombatCmdSet, combat command, ability, momentum, command resource, effect_params, respawn
+Keywords: combat, damage, crit, critical hit, death, corpse, combat AI, mob turn, ability selection, targeting, scripted sequence, flee, basic attack, CombatCmdSet, combat command, ability, momentum, command resource, effect_params, respawn, death penalty
 
 ---
 
 You are working on **soravelon's combat system** — damage resolution in `world/combat_engine.py`, mob turn AI in `world/combat_ai.py`, ability execution in `world/ability_engine.py`, and player combat commands in `commands/combat_commands.py`.
 
 ## Key Files
-- `world/combat_engine.py` — Damage math: `resolve_basic_attack`, `resolve_ability_damage`, `resolve_heal`, crit system, elite/boss scaling, death handling, corpse spawning, player respawn
+- `world/combat_engine.py` — Damage math: `resolve_basic_attack`, `resolve_ability_damage`, `resolve_heal`, crit system, elite/boss scaling, death handling, corpse spawning, player respawn, `_compute_raw_damage` helper
 - `world/combat_ai.py` — Mob turn AI: `process_mob_turn`, `select_mob_action`, `get_mob_target`, `check_scripted_sequence`, `execute_sequence_action`, condition vocabulary
 - `world/combat_script.py` — `CombatScript` turn manager: `start_combat()`, turn order, `process_player_action()`, dynamic CombatCmdSet add/remove
 - `world/ability_engine.py` — Ability dispatcher: `use_ability()`, cooldown management, domain resource (build/spend/get), effect handlers delegate to `combat_engine` and `status_effects`
@@ -33,6 +33,7 @@ You are working on **soravelon's combat system** — damage resolution in `world
 ## Key Concepts
 - **Action dicts, not side effects:** `combat_ai.py` returns action dicts for CombatScript to dispatch — it does NOT resolve damage directly. `combat_engine.py` resolves damage and mutates HP.
 - **Ability registry is pure data:** 16-field dicts per ability. Derived lookups (`DOMAIN_ABILITIES`, `SUBCLASS_SIGNATURES`) auto-built at module level. Add new abilities to `ABILITIES` dict only.
+- **`_compute_raw_damage` helper:** Shared private function for base damage calculation. Characters use weapon + strength modifier; mobs use `ref_damage_min/max`. Called by `resolve_basic_attack` and available for other damage paths.
 - **`effect_params` dict pattern:** Effect handlers (`_handle_dot`, `_handle_buff`, `_handle_debuff`, `_handle_utility`, `_handle_social`, `_handle_tactical`, `_handle_status`) and `resolve_ability_damage` read from `ability["effect_params"]` first, falling back to top-level ability keys for backwards compat. New ability definitions should put `damage_base`, `status_effect`, `duration`, `magnitude`, `buff_type`, `debuff_type`, `tactical_action`, `utility_action` inside `effect_params`.
 - **Domain resource types:** Combat=`momentum`, Tactics=`command`, Subterfuge=`focus`, Diplomacy=`influence`, Arcana=`mana`, Resonance=`resonance`, Naturalism=`balance`, Alchemy=`reagents`, Engineering=`components`, Remnance=`echoes`. Each domain has a single resource type. Resource is volatile (`ndb`), managed by `ability_engine.py`.
 - **Subterfuge Focus combo points:** Focus is a combo point system capped at 0-5. Builders (`is_builder: True` in `effect_params`) have `resource_cost: 0` and generate 1 Focus on hit. Spenders cost 1-5 Focus. Some capstones have `consumes_all_focus: True` — damage scales with Focus spent. Miss resets Focus to 0. Skipping a Subterfuge turn resets Focus to 0.
@@ -49,7 +50,8 @@ You are working on **soravelon's combat system** — damage resolution in `world
 - **DOMAIN_TO_STAT mapping:** Maps 10 domain names to base attribute stat names for ability scaling formula: `ability_base * (1 + primary_stat*0.02 + secondary_stat*0.01)`.
 - **Crit system (D-20):** Characters: 5% base + Acuity×0.002. Mobs: `db.crit_chance` or 3% flat. Multiplier 2.0×.
 - **Scripted sequences:** Named mob triggers (combat_start, hp_below_X, round_N, target_flees, on_death). Fire-once via `ndb.fired_sequence_triggers` set.
-- **Player death respawn (D-14):** `handle_player_death()` calls `_respawn_player()` which teleports to the `respawn_point` tagged room (category `spawn_point`) via `search_tag`. Falls back to `character.home`. Restores 25% max HP and stamina. Equipment stays on corpse at death location.
+- **Mob death flow:** `handle_mob_death()` snapshots room contents (`pre_death_ids`) BEFORE calling `mob.at_death()`, then spawns corpse, moves only newly-dropped loot (items not in `pre_death_ids`) into corpse, and explicitly calls `mob.delete()` to remove the mob from the game world.
+- **Player death flow (D-14):** `handle_player_death()` → death penalty via `banking.on_character_death()` (20% carried Scales dropped to corpse, session XP wiped) → items moved to corpse with `InventoryItem` DB rows cleaned up → `_respawn_player()` teleports to `respawn_point` tagged room (with `move_hooks=False` to skip movement triggers) → restores 25% max HP and stamina.
 - **Corpse lifecycle:** `spawn_corpse()` → grace period → open → decayed (deleted). Player corpses skip grace. `delay()` drives transitions.
 
 ## Authored Domain Pools
@@ -71,13 +73,17 @@ All 10 domains are fully authored (15 base + 18 subclass signatures each):
 3. **Flee check runs before ability selection** — low-HP mobs escape without wasting an ability
 4. **Call-for-help capped at 3 per encounter** — tracked via `combat_handler.ndb.call_for_help_count`
 5. **CmdAttack is in BOTH CharacterCmdSet and CombatCmdSet** — CharacterCmdSet copy initiates combat; CombatCmdSet copy performs in-combat attacks
-6. **Lazy imports throughout** — `base_attributes`, `status_effects`, `zone_scaling` imported inside functions to avoid circular deps
+6. **Lazy imports throughout** — `base_attributes`, `status_effects`, `zone_scaling`, `banking` imported inside functions to avoid circular deps
 7. **Elite/boss scaling applies AFTER resistance** — order matters in damage pipeline
 8. **Ability `room_flag_written` must be in `FLAG_VOCABULARY`** — abilities set room flags on use; flags not in vocabulary are silently ignored with a warning
 9. **Effect params use fallback pattern** — always `params.get("key") or ability.get("key", default)`. This preserves backwards compat with old top-level keys while preferring `effect_params`
 10. **Subterfuge `is_builder` and `consumes_all_focus` flags live in `effect_params`** — builders have `resource_cost: 0` with `"is_builder": True`; capstone spenders have `"consumes_all_focus": True` for Focus-scaled damage
 11. **Naturalism `balance_shift` and `balance_type` live in `effect_params`** — `resource_cost` is always 0; `balance_shift` (int, positive=toward Calm, negative=toward Feral) and `balance_type` (`"feral"` or `"calm"`) control the pendulum
-12. **Respawn uses tag lookup** — `_respawn_player()` finds destination via `search_tag("respawn_point", category="spawn_point")`. Falls back to `character.home`, then no-ops. Never hardcode room dbrefs
+12. **Respawn uses tag lookup + move_hooks=False** — `_respawn_player()` finds destination via `search_tag("respawn_point", category="spawn_point")`. Falls back to `character.home`, then no-ops. Uses `move_hooks=False` to skip movement triggers (e.g. room enter effects). Never hardcode room dbrefs
+13. **Death penalty order matters** — `on_character_death()` runs BEFORE `_respawn_player()` so corpse receives dropped Scales at death location, not respawn location
+14. **Pre-death snapshot for mob loot** — `handle_mob_death()` captures `pre_death_ids` before `at_death()` runs, so `_move_room_loot_to_corpse()` only sweeps newly-dropped items. Never use time-based heuristics for loot identification
+15. **Player death cleans up InventoryItem rows** — `handle_player_death()` deletes `InventoryItem` records for items transferred to corpse, keeping Django model in sync with Evennia object locations
+16. **`handle_mob_death()` explicitly deletes the mob** — `mob.delete()` is called after loot is moved to corpse. Do not rely on `at_death()` to remove the mob object
 
 ## References
 - **Ability Registry:** `world/ability_registry.py` — all ability definitions and derived lookups
@@ -86,6 +92,8 @@ All 10 domains are fully authored (15 base + 18 subclass signatures each):
 - **Status Effects:** `world/status_effects.py` — effect checks and modifiers
 - **Base Attributes:** `world/base_attributes.py` — HP derivation, stat recording
 - **Mob Typeclasses:** `typeclasses/mobs.py` — mob attribute schema
+- **Banking:** `world/banking.py` — `on_character_death()` for death penalty (Scales drop + XP wipe)
+- **Inventory Model:** `world/models.py` — `InventoryItem` records cleaned up during player death
 
 ---
-**Last Updated:** 2026-03-30
+**Last Updated:** 2026-04-05

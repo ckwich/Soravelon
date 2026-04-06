@@ -289,9 +289,21 @@ def _grant_starter_kit(character, ancestry_id):
         logger.warning("ancestry_engine: item_spawner not available, skipping starter kit")
         return
 
+    from world.models import InventoryItem
+
     for item_def in kit:
         try:
-            create_item_from_template(item_def, location=character)
+            item = create_item_from_template(item_def, location=character)
+            if item:
+                # Create authoritative inventory record (matches inventory_engine contract)
+                InventoryItem.objects.get_or_create(
+                    character_id=character.id,
+                    item_id=item.id,
+                    defaults={
+                        "quantity": 1,
+                        "is_quest_item": bool(item_def.get("is_quest_item")),
+                    },
+                )
         except Exception as err:
             logger.warning("ancestry_engine: failed to create starter item %s: %s",
                            item_def.get("item_id", "unknown"), err)

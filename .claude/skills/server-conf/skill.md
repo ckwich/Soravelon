@@ -12,16 +12,16 @@ This skill triggers when editing these files:
 - `server/conf/connection_screens.py`
 - `server/conf/**/*.py`
 
-Keywords: settings, ticker, server start, server stop, lifecycle, TICKER_HANDLER, connection screen, MSSP, START_LOCATION, spawn
+Keywords: settings, ticker, server start, server stop, lifecycle, TICKER_HANDLER, connection screen, MSSP, START_LOCATION, spawn, DEFAULT_CHANNELS
 
 ---
 
 You are working on **soravelon's server configuration layer** (`server/conf/`).
 
 ## Key Files
-- `settings.py` — Minimal overrides: SERVERNAME, INSTALLED_APPS (+world), all 6 BASE_*_TYPECLASS paths, START_LOCATION, imports `secret_settings`
+- `settings.py` — Minimal overrides: SERVERNAME, INSTALLED_APPS (+world), all 6 BASE_*_TYPECLASS paths, START_LOCATION, DEFAULT_CHANNELS (with OOC), FILE_HELP_ENTRY_MODULES, imports `secret_settings`
 - `at_server_startstop.py` — Registers 4 tickers in `at_server_start()` + initializes node pool
-- `connection_screens.py` — Login screen using `settings.SERVERNAME` + Evennia version
+- `connection_screens.py` — Dark fantasy themed login screen with Soravelon lore excerpt, ANSI colors, and connect/create instructions
 - `secret_settings.py` — Server-specific secrets (DB creds, etc.) — **never commit**
 - `mssp.py` — MUD listing metadata (still has defaults, not yet customized)
 
@@ -36,6 +36,14 @@ All background ticks register here via `TICKER_HANDLER.add()` with `persistent=T
 
 After tickers: `initialize_node_pool()` recovers orphaned Layer 1 rooms.
 
+## Channel Configuration
+`DEFAULT_CHANNELS` defines auto-created channels:
+- **Public** — default Evennia public discussion channel
+- **MudInfo** — admin-only connection log
+- **OOC** — server-wide out-of-character chat using `typeclasses.channels.OOCChannel` typeclass
+
+Domain-specific channels (`DomainChannel`) are created on-demand, not via DEFAULT_CHANNELS.
+
 ## Spawn & Respawn Location Tags
 - **`START_LOCATION = "#2"`** — Evennia-level fallback only. Actual spawn uses tag-based lookup in `Character.at_object_creation()`: `search_tag("greeter_room", category="spawn_point")` sets both `home` and `location`
 - **Death respawn** uses `search_tag("respawn_point", category="spawn_point")` in `combat_engine._respawn_player()`
@@ -49,6 +57,7 @@ After tickers: `initialize_node_pool()` recovers orphaned Layer 1 rooms.
 5. **Don't copy defaults** — only override what you change in `settings.py` to avoid blocking upstream updates
 6. **Stub files are inactive** — `cmdparser.py`, `serversession.py`, `at_search.py`, `inlinefuncs.py`, `inputfuncs.py` need explicit settings to activate (e.g., `COMMAND_PARSER = "server.conf.cmdparser.cmdparser"`)
 7. **Spawn location is tag-based, not dbref-based** — `START_LOCATION` is a fallback only; the real mechanism is `greeter_room` tag lookup in character creation
+8. **OOC channel uses custom typeclass** — `typeclasses.channels.OOCChannel` with `[OOC]` prefix. Adding new default channels requires matching typeclass in `typeclasses/channels.py`
 
 ## References
 - **Evennia Settings Defaults:** `evennia/settings_default.py` (upstream)
@@ -56,6 +65,7 @@ After tickers: `initialize_node_pool()` recovers orphaned Layer 1 rooms.
 - **Node System:** `world/node_helpers.py`
 - **Banking Engine:** `world/banking.py`
 - **Character Creation:** `typeclasses/characters.py` — spawn point tag lookup
+- **Channel Typeclasses:** `typeclasses/channels.py` — OOCChannel, DomainChannel
 
 ---
-**Last Updated:** 2026-03-30
+**Last Updated:** 2026-04-05

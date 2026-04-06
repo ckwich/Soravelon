@@ -115,10 +115,20 @@ def _build_dialogue_context(npc, character):
 
     # Quest state — pull from quest_engine
     from world.quest_engine import get_active_quests
+    from world.models import CharacterQuest
+
     active_cqs = get_active_quests(character)
     context["active_quests"] = [cq.quest_id for cq in active_cqs]
-    context["completed_quests"] = []
-    context["failed_quests"] = []
+    context["completed_quests"] = list(
+        CharacterQuest.objects.filter(
+            character=character, status="complete"
+        ).values_list("quest_id", flat=True)
+    )
+    context["failed_quests"] = list(
+        CharacterQuest.objects.filter(
+            character=character, status="failed"
+        ).values_list("quest_id", flat=True)
+    )
 
     return context
 
@@ -155,11 +165,14 @@ def _check_condition(condition, context):
     if condition == "scholar_present":
         primary = (context.get("primary_domain") or "").lower()
         subclass = (context.get("subclass") or "").lower()
-        return primary == "scholar" or "scholar" in subclass
+        # Scholar maps to remnance domain; subclass names include "Scholar" variants
+        return primary == "remnance" or "scholar" in subclass
 
     if condition == "warden_present":
         guild = (context.get("guild") or "").lower()
-        return guild == "wardens"
+        subclass = (context.get("subclass") or "").lower()
+        # Wardens map to warcraft guild; subclass names include "Warden" variants
+        return guild == "warcraft" or "warden" in subclass
 
     if condition == "dragon_present":
         return (context.get("companion_type") or "").lower() == "dragon"

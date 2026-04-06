@@ -22,6 +22,7 @@
           "set_ancestry",
           "ancestry trait",
           "starting standing",
+          "starter kit",
           "engine",
           "ancestry engine",
           "four",
@@ -39,8 +40,8 @@
           "ancestry trait.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*starting standing",
           "starting standing.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
-          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*ancestry engine",
-          "ancestry engine.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*starter kit",
+          "starter kit.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
         ]
       }
     },
@@ -77,6 +78,7 @@
           "trigger",
           "quest",
           "material",
+          "gathering pool",
           "lore fragment",
           "validate zone",
           "area validator",
@@ -130,6 +132,7 @@
           "draft",
           "debt",
           "recurring payment",
+          "death penalty",
           "engine",
           "deposits",
           "withdrawals",
@@ -142,7 +145,9 @@
         ],
         "intentPatterns": [
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*recurring payment",
-          "recurring payment.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+          "recurring payment.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*death penalty",
+          "death penalty.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
         ]
       }
     },
@@ -201,6 +206,7 @@
           "command resource",
           "effect_params",
           "respawn",
+          "death penalty",
           "system",
           "combat system",
           "engine",
@@ -254,6 +260,7 @@
           "forge",
           "workbench",
           "alchemy bench",
+          "learn recipe",
           "system",
           "crafting system",
           "engine",
@@ -269,9 +276,10 @@
         "intentPatterns": [
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*alchemy bench",
           "alchemy bench.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*learn recipe",
+          "learn recipe.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*crafting system",
-          "crafting system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
-          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*crafting.*system"
+          "crafting system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
         ]
       }
     },
@@ -406,6 +414,78 @@
         ]
       }
     },
+    "gathering-engine": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/gathering_engine.py",
+        "commands/cmd_gathering.py",
+        "commands/cmd_prospect.py",
+        "commands/cmd_fishing.py",
+        "commands/cmd_tools.py",
+        "typeclasses/objects.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "gathering",
+          "gather",
+          "node",
+          "mining",
+          "herbalism",
+          "woodcutting",
+          "foraging",
+          "fishing",
+          "skinning",
+          "harvest",
+          "chop",
+          "forage",
+          "fish",
+          "butcher",
+          "mine",
+          "prospect",
+          "survey",
+          "repair",
+          "GatheringNode",
+          "GatheringPoolScript",
+          "gathering pool",
+          "deplete",
+          "respawn node",
+          "butcher yields",
+          "gathering command",
+          "prospect_scan",
+          "tool repair",
+          "tool slot",
+          "equip tool",
+          "unequip tool",
+          "equipped_tools",
+          "engine",
+          "gathering engine",
+          "lifecycle",
+          "zone-wide",
+          "pool",
+          "world",
+          "gathering_engine",
+          "commands",
+          "cmd_gathering",
+          "cmd_prospect",
+          "cmd_fishing",
+          "cmd_tools",
+          "typeclasses",
+          "objects"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*gathering pool",
+          "gathering pool.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*respawn node",
+          "respawn node.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*butcher yields",
+          "butcher yields.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
     "group-system": {
       "type": "domain",
       "enforcement": "suggest",
@@ -443,6 +523,45 @@
           "group engine.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*group system",
           "group system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "help-system": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "commands/cmd_help.py",
+        "world/help_entries.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "help",
+          "help system",
+          "help entry",
+          "CmdHelp",
+          "help entries",
+          "ability help",
+          "help category",
+          "system",
+          "custom",
+          "dynamic",
+          "ability",
+          "lookup",
+          "commands",
+          "cmd_help",
+          "world",
+          "help_entries"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*help system",
+          "help system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*help entry",
+          "help entry.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*help entries",
+          "help entries.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
         ]
       }
     },
@@ -490,6 +609,41 @@
         ]
       }
     },
+    "item-inspection": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "commands/cmd_inspect.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "inspect",
+          "compare",
+          "appraise",
+          "appraisal",
+          "item stats",
+          "RARITY_DC",
+          "appraisal DC",
+          "item",
+          "inspection",
+          "item inspection",
+          "comparison",
+          "commands",
+          "cmd_inspect"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*item stats",
+          "item stats.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*appraisal DC",
+          "appraisal DC.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*item inspection",
+          "item inspection.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
     "item-typeclasses": {
       "type": "domain",
       "enforcement": "suggest",
@@ -512,6 +666,7 @@
           "slot",
           "two-handed",
           "ring",
+          "gathering node",
           "typeclasses",
           "item typeclasses",
           "typeclass",
@@ -520,6 +675,8 @@
           "objects"
         ],
         "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*gathering node",
+          "gathering node.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*item typeclasses",
           "item typeclasses.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*item.*typeclasses"
@@ -568,6 +725,53 @@
         ]
       }
     },
+    "material-registry": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/material_definitions.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "material",
+          "material registry",
+          "gathering",
+          "mining",
+          "herbalism",
+          "woodcutting",
+          "foraging",
+          "fishing",
+          "skinning",
+          "ore",
+          "herb",
+          "wood",
+          "hide",
+          "fish",
+          "forage",
+          "material tier",
+          "visibility",
+          "tool durability",
+          "gather delay",
+          "registry",
+          "taxonomy",
+          "materials",
+          "across",
+          "world",
+          "material_definitions"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*material registry",
+          "material registry.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*material tier",
+          "material tier.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*tool durability",
+          "tool durability.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
     "mob-affix-system": {
       "type": "domain",
       "enforcement": "suggest",
@@ -588,6 +792,9 @@
           "combat modifier",
           "immunity",
           "reveal",
+          "threat level",
+          "elite",
+          "boss",
           "mob",
           "system",
           "mob affix system",
@@ -607,8 +814,8 @@
           "mob spawn.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*combat modifier",
           "combat modifier.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
-          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*mob affix system",
-          "mob affix system.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*threat level",
+          "threat level.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
         ]
       }
     },
@@ -852,6 +1059,7 @@
           "regen tick",
           "bed",
           "is_medic",
+          "spend stamina",
           "engine",
           "recovery engine",
           "hp/stamina",
@@ -870,8 +1078,8 @@
           "recovery state.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*regen tick",
           "regen tick.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
-          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*recovery engine",
-          "recovery engine.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*spend stamina",
+          "spend stamina.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
         ]
       }
     },
@@ -941,6 +1149,7 @@
           "MSSP",
           "START_LOCATION",
           "spawn",
+          "DEFAULT_CHANNELS",
           "server",
           "conf",
           "server conf",
@@ -999,6 +1208,100 @@
           "skill seed.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
           "(create|update|fix|add|modify|change|debug|refactor|implement|build).*passive gain",
           "passive gain.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "social-system": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "commands/cmd_social.py",
+        "typeclasses/channels.py",
+        "tests/test_social.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "social",
+          "who",
+          "shout",
+          "whisper",
+          "channel",
+          "OOC",
+          "domain channel",
+          "zone chat",
+          "private message",
+          "system",
+          "social system",
+          "commands",
+          "(who/shout/whisper)",
+          "domain",
+          "cmd_social",
+          "typeclasses",
+          "channels",
+          "tests",
+          "test_social"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*domain channel",
+          "domain channel.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*zone chat",
+          "zone chat.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*private message",
+          "private message.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
+        ]
+      }
+    },
+    "vendor-economy": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "scope": "all",
+      "alwaysActivate": false,
+      "filePatterns": [
+        "world/vendor_engine.py",
+        "commands/cmd_vendor.py",
+        "world/areas/equipment_catalog.py",
+        "tests/test_vendor_engine.py"
+      ],
+      "promptTriggers": {
+        "keywords": [
+          "vendor",
+          "buy",
+          "sell",
+          "appraise",
+          "shop",
+          "commerce",
+          "vendor stock",
+          "CATALOG",
+          "equipment catalog",
+          "vendor_accepts",
+          "carried_scales",
+          "sell ratio",
+          "economy",
+          "vendor economy",
+          "engine",
+          "buy/sell/appraise/view",
+          "catalog-sourced",
+          "stock",
+          "world",
+          "vendor_engine",
+          "commands",
+          "cmd_vendor",
+          "areas",
+          "equipment_catalog",
+          "tests",
+          "test_vendor_engine"
+        ],
+        "intentPatterns": [
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*vendor stock",
+          "vendor stock.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*equipment catalog",
+          "equipment catalog.*(create|update|fix|add|modify|change|debug|refactor|implement|build)",
+          "(create|update|fix|add|modify|change|debug|refactor|implement|build).*sell ratio",
+          "sell ratio.*(create|update|fix|add|modify|change|debug|refactor|implement|build)"
         ]
       }
     },

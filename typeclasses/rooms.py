@@ -48,6 +48,21 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
         self.db.custom_commands = []   # custom command definitions for custom_command() builder method
         self.db.flight_point_id = None  # set by area.flight_point(); truthy = Dragon Courier stop
 
+    def get_display_exits(self, looker, **kwargs):
+        """Filter out undiscovered HiddenExits from room exit display."""
+        from typeclasses.exits import HiddenExit
+
+        exits = []
+        for ex in self.exits:
+            if isinstance(ex, HiddenExit) and not ex.is_visible(looker):
+                continue
+            exits.append(ex)
+
+        if not exits:
+            return ""
+        exit_names = ", ".join(f"|w{ex.key}|n" for ex in exits)
+        return f"\n|wExits:|n {exit_names}"
+
     def return_appearance(self, looker, **kwargs):
         """
         Extend default room appearance to show custom commands marked
@@ -91,7 +106,11 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
             return
         from world.trigger_engine import fire_triggers
         fire_triggers(self, "on_enter", obj)
-        fire_triggers(self, "on_first_visit", obj)
+        # Only fire on_first_visit if character hasn't visited this room before
+        room_id = self.tags.get(category="room_id")
+        visited = set(obj.db.visited_room_ids or set())
+        if room_id and room_id not in visited:
+            fire_triggers(self, "on_first_visit", obj)
         # Auto-discover flight points on room enter (D-08)
         # db.flight_point_id initialized None in at_object_creation; truthy only when set by area.flight_point()
         flight_point_id = self.db.flight_point_id
