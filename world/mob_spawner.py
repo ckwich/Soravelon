@@ -24,6 +24,9 @@ import evennia
 # Sentinel for detecting explicit vs. missing spawn_def keys
 _SENTINEL = object()
 
+# Tag category for identifying named mob instances (used by search_tag for reload detection)
+MOB_INSTANCE_TAG_CATEGORY = "mob_instance_id"
+
 
 # ---------------------------------------------------------------------------
 # Internal: reactor accessor (allows test patching without module-level import)
@@ -96,7 +99,7 @@ def _count_room_mobs(room, spawn_def):
     """
     Count how many mobs matching spawn_def already exist in room.
 
-    For named mobs (is_named=True): uses evennia.search_tag on the mob_id
+    For named mobs (is_named=True): uses evennia.search_tag on the mob_instance_id
     category and filters by location == room. This handles reload detection.
 
     For normal mobs: iterates room.contents, counts SoravelonMob instances
@@ -109,7 +112,7 @@ def _count_room_mobs(room, spawn_def):
     mob_key = spawn_def["mob"]
 
     if spawn_def.get("is_named"):
-        tagged = evennia.search_tag(mob_key, category="mob_id")
+        tagged = evennia.search_tag(mob_key, category=MOB_INSTANCE_TAG_CATEGORY)
         return sum(1 for obj in tagged if obj.location is room)
 
     return sum(
@@ -170,7 +173,7 @@ def spawn_named_mob(spawn_def, room, is_respawn=False):
     Extends spawn_single_mob with:
       - spawn_condition check (returns None if condition not met)
       - prestige_modifier and tome_drop set on mob
-      - mob tagged with spawn_def["mob"] in category="mob_id" for reload detection
+      - mob tagged with spawn_def["mob"] in category=MOB_INSTANCE_TAG_CATEGORY for reload detection
       - Room broadcast on respawn (not first spawn)
 
     Args:
@@ -186,7 +189,7 @@ def spawn_named_mob(spawn_def, room, is_respawn=False):
     mob = spawn_single_mob(spawn_def, room)
     mob.db.prestige_modifier = spawn_def.get("prestige_modifier", 1.0)
     mob.db.tome_drop = spawn_def.get("tome_drop")
-    mob.tags.add(spawn_def["mob"], category="mob_id")
+    mob.tags.add(spawn_def["mob"], category=MOB_INSTANCE_TAG_CATEGORY)
 
     if is_respawn:
         room.msg_contents(f"|y{spawn_def['mob']} has returned.|n")

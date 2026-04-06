@@ -338,14 +338,14 @@ class TestWorldEventLogCreation(EvenniaTest):
             description="Old Guardian was slain in Cantera Forest.",
             zone_id="cantera_forest",
             character_id=self.char1.id,
-            data={"mob_id": "old_guardian", "participants": 1},
+            data={"mob_instance_id": "old_guardian", "participants": 1},
         )
 
         record = WorldEventLog.objects.latest("occurred_at")
         self.assertEqual(record.event_type, "named_mob_kill")
         self.assertEqual(record.zone_id, "cantera_forest")
         self.assertEqual(record.character_id, self.char1.id)
-        self.assertIn("mob_id", record.data)
+        self.assertIn("mob_instance_id", record.data)
 
 
 class TestWorldEventLogAllEventTypes(EvenniaTest):

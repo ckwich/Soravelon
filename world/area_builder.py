@@ -443,7 +443,7 @@ class AreaBuilder:
     # named_mob()
     # ------------------------------------------------------------------
 
-    def named_mob(self, mob_id, room, **kwargs):
+    def named_mob(self, mob_instance_id, room, **kwargs):
         """
         Register a named mob as a spawn definition.
 
@@ -452,7 +452,7 @@ class AreaBuilder:
         separate named_mob_definitions room attr.
 
         Args:
-            mob_id: Unique string ID for this named mob (also the mob template key).
+            mob_instance_id: Unique string ID for this named mob (also the mob template key).
             room: Room object where the named mob spawns.
             **kwargs: respawn_minutes (default 120), respawn_variance (default 30),
                       tome_drop, spawn_condition, sequence, prestige_modifier,
@@ -462,7 +462,7 @@ class AreaBuilder:
         """
         self.spawn(
             room,
-            mob_id,
+            mob_instance_id,
             is_named=True,
             count_min=1,
             count_max=1,

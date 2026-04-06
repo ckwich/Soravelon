@@ -176,7 +176,8 @@ class SoravelonMob(DefaultCharacter):
             create_item_from_template(tome_def, location=room)
 
         # Named mob death: write WorldEventLog entry (D-05)
-        is_named = self.tags.get("mob_id", category="mob_id") is not None
+        from world.mob_spawner import MOB_INSTANCE_TAG_CATEGORY
+        is_named = self.tags.get(category=MOB_INSTANCE_TAG_CATEGORY) is not None
         if is_named and killer:
             from world.models import WorldEventLog
             WorldEventLog.objects.create(

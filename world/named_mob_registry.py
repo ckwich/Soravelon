@@ -1,6 +1,6 @@
 """
 Global named mob registry. Updated by AreaBuilder.build().
-Maps mob_id -> {zone_id, room_id, definition}.
+Maps mob_instance_id -> {zone_id, room_id, definition}.
 
 Module-level dict, rebuilt on every server start by _load_all_zones().
 Do not persist -- treat as a startup cache.
@@ -9,24 +9,24 @@ Do not persist -- treat as a startup cache.
 _registry = {}
 
 
-def register_named_mob(mob_id, zone_id, room_obj, definition):
-    _registry[mob_id] = {
+def register_named_mob(mob_instance_id, zone_id, room_obj, definition):
+    _registry[mob_instance_id] = {
         "zone_id": zone_id,
         "room_id": room_obj.id,
         "definition": definition,
     }
 
 
-def get_named_mob(mob_id):
-    return _registry.get(mob_id)
+def get_named_mob(mob_instance_id):
+    return _registry.get(mob_instance_id)
 
 
 def get_all_named_mobs():
     return dict(_registry)
 
 
-def unregister_named_mob(mob_id):
-    _registry.pop(mob_id, None)
+def unregister_named_mob(mob_instance_id):
+    _registry.pop(mob_instance_id, None)
 
 
 def clear():
