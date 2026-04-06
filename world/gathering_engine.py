@@ -507,6 +507,166 @@ def initialize_zone_gathering(zone_obj):
 
 
 # ---------------------------------------------------------------------------
+# Gather completion logic (extracted from cmd_gathering.py per D-06)
+# ---------------------------------------------------------------------------
+
+def complete_gather(character, node, tool, skill_name, skill_val):
+    """
+    Complete a gathering action. Handles node depletion, item creation,
+    quality calc, bonus quantity, tool durability, and skill XP.
+
+    Args:
+        character: Character performing the gather
+        node: GatheringNode instance
+        tool: Tool item (or None for no-tool gathering like forage)
+        skill_name: Skill name string (e.g., "mining", "herbalism")
+        skill_val: Pre-calculated skill value (passed from command delay)
+
+    Returns:
+        (bool, str, list[item], bool) -- success, message, created items,
+        tool_broken.
+        On failure: (False, message, [], False).
+    """
+    from world.crafting_definitions import QUALITY_DISPLAY
+    from world.crafting_engine import calculate_craft_quality
+    from world.item_spawner import create_item_from_template
+    from world.material_definitions import MATERIAL_REGISTRY
+    from world.skill_engine import accumulate_skill_use
+
+    # Perform gather (decrements gathers_remaining)
+    success, result = gather_from_node(character, node)
+    if not success:
+        return (False, "|rThe resource is depleted.|n", [], False)
+
+    material_id = result
+    mat = MATERIAL_REGISTRY.get(material_id, {})
+    tier_difficulty = (node.db.tier or 1) * 15  # tier 1=15, tier 5=75
+    quality = calculate_craft_quality(skill_val, tier_difficulty)
+
+    item_def = {
+        "item_id": material_id,
+        "key": mat.get("display_name", material_id.replace("_", " ").title()),
+        "item_type": "item",
+        "weight": 0.5,
+        "desc": f"Raw {mat.get('display_name', material_id)}.",
+        "value": (node.db.tier or 1) * 5,
+        "quality": quality,
+    }
+    item = create_item_from_template(item_def, location=character)
+    items = [item]
+
+    q_display = QUALITY_DISPLAY.get(quality, "")
+    msg = f"|gYou gather {q_display} {item.key}.|n"
+
+    # Bonus quantity at high skill (D-04): 25% chance at skill 50+, 50% at skill 80+
+    bonus_chance = 0
+    if skill_val >= 80:
+        bonus_chance = 0.5
+    elif skill_val >= 50:
+        bonus_chance = 0.25
+    if bonus_chance and random.random() < bonus_chance:
+        bonus_item = create_item_from_template(item_def, location=character)
+        items.append(bonus_item)
+        msg += f"\n|gYour skill yields an extra {bonus_item.key}!|n"
+
+    # Tool durability loss (D-20)
+    tool_broken = False
+    if tool and tool.db.durability is not None:
+        tool.db.durability -= 1
+        if tool.db.durability <= 0:
+            msg += f"\n|y{tool.key} has broken from use!|n"
+            tool_broken = True
+
+    # Skill progression
+    accumulate_skill_use(character, skill_name)
+
+    return (True, msg, items, tool_broken)
+
+
+# ---------------------------------------------------------------------------
+# Fish catch logic (extracted from cmd_fishing.py per D-05)
+# ---------------------------------------------------------------------------
+
+def catch_fish(character, node, tool, bait=None, quality_multiplier=1.0):
+    """
+    Process a fish catch. Handles node depletion, quality calc, bait
+    consumption, tool durability, skill XP, and item creation.
+
+    Args:
+        character: Character performing the catch
+        node: GatheringNode (fish spot)
+        tool: Fishing rod item
+        bait: Optional bait item (consumed on use)
+        quality_multiplier: 1.0 for active, 0.5 for idle mode
+
+    Returns:
+        (bool, str, item_or_None, bool, bool) -- success flag, message,
+        created item, bait_consumed, tool_broken.
+        On failure: (False, message, None, False, False).
+    """
+    from world.crafting_definitions import QUALITY_DISPLAY, QUALITY_TIERS
+    from world.crafting_engine import calculate_craft_quality
+    from world.item_spawner import create_item_from_template
+    from world.material_definitions import MATERIAL_REGISTRY
+    from world.skill_engine import accumulate_skill_use, get_skill_value
+
+    # Gather from node (decrements gathers_remaining)
+    success, result = gather_from_node(character, node)
+    if not success:
+        return (False, "|rThe fishing spot is depleted.|n", None, False, False)
+
+    material_id = result
+    mat = MATERIAL_REGISTRY.get(material_id, {})
+
+    # Quality calculation
+    skill_val = get_skill_value(character, "fishing")
+    tier_difficulty = node.db.tier * 15
+    quality = calculate_craft_quality(skill_val, tier_difficulty)
+
+    # Idle mode quality penalty (D-16: diminished returns)
+    if quality_multiplier < 1.0:
+        qi = QUALITY_TIERS.index(quality)
+        qi = max(0, qi - 1)  # drop one quality tier for idle
+        quality = QUALITY_TIERS[qi]
+
+    # Bait quality bonus (D-18)
+    bait_consumed = False
+    if bait and bait.pk:
+        qi = QUALITY_TIERS.index(quality)
+        qi = min(len(QUALITY_TIERS) - 1, qi + 1)  # +1 tier with bait
+        quality = QUALITY_TIERS[qi]
+        # Consume bait
+        bait.delete()
+        bait_consumed = True
+
+    item_def = {
+        "item_id": material_id,
+        "key": mat.get("display_name", material_id.replace("_", " ").title()),
+        "item_type": "item",
+        "weight": 0.3,
+        "desc": f"A freshly caught {mat.get('display_name', material_id)}.",
+        "value": node.db.tier * 8,
+        "quality": quality,
+    }
+    item = create_item_from_template(item_def, location=character)
+
+    q_display = QUALITY_DISPLAY.get(quality, "")
+    msg = f"|gYou catch {q_display} {item.key}!|n"
+
+    # Tool durability (D-20)
+    tool_broken = False
+    if tool and getattr(tool.db, "durability", None) is not None:
+        tool.db.durability -= 1
+        if tool.db.durability <= 0:
+            msg += f"\n|y{tool.key} has broken from use!|n"
+            tool_broken = True
+
+    accumulate_skill_use(character, "fishing")
+
+    return (True, msg, item, bait_consumed, tool_broken)
+
+
+# ---------------------------------------------------------------------------
 # Butcher yields
 # ---------------------------------------------------------------------------
 

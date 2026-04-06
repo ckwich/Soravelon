@@ -85,82 +85,28 @@ class _BaseGatherCmd(Command):
         delay(actual_delay, self._gather_callback, character, node, tool, start_room, skill_val)
 
     def _gather_callback(self, character, node, tool, start_room, skill_val):
-        """Called after gather delay completes."""
+        """Delegate gather completion to gathering_engine.complete_gather (D-06/D-07)."""
         character.ndb.gathering_in_progress = False
 
-        # Move cancel check (same pattern as _BaseCraftCmd)
+        # Move cancel check (command-level concern)
         if character.location != start_room:
             character.msg("|rGathering interrupted by movement.|n")
             return
 
-        # Check node still exists
+        # Check node still exists (command-level validation)
         if not node or not node.pk:
             character.msg("|rThe resource has disappeared.|n")
             return
 
-        # Perform gather
-        from world.gathering_engine import gather_from_node
+        from world.gathering_engine import complete_gather
 
-        success, result = gather_from_node(character, node)
-        if not success:
-            character.msg("|rThe resource is depleted.|n")
-            return
-
-        material_id = result
-
-        # Create gathered item (D-04: skill affects quality AND quantity)
-        from world.crafting_definitions import QUALITY_DISPLAY
-        from world.crafting_engine import calculate_craft_quality
-        from world.item_spawner import create_item_from_template
-        from world.material_definitions import MATERIAL_REGISTRY
-        from world.skill_engine import accumulate_skill_use
-
-        mat = MATERIAL_REGISTRY.get(material_id, {})
-        tier_difficulty = (node.db.tier or 1) * 15  # tier 1=15, tier 5=75
-        quality = calculate_craft_quality(skill_val, tier_difficulty)
-
-        item_def = {
-            "item_id": material_id,
-            "key": mat.get("display_name", material_id.replace("_", " ").title()),
-            "item_type": "item",
-            "weight": 0.5,
-            "desc": f"Raw {mat.get('display_name', material_id)}.",
-            "value": (node.db.tier or 1) * 5,
-            "quality": quality,
-        }
-        item = create_item_from_template(item_def, location=character)
-
-        # Quality display
-        q_display = QUALITY_DISPLAY.get(quality, "")
-        character.msg(f"|gYou gather {q_display} {item.key}.|n")
-
-        # Bonus quantity at high skill (D-04): 25% chance at skill 50+, 50% at skill 80+
-        bonus_chance = 0
-        if skill_val >= 80:
-            bonus_chance = 0.5
-        elif skill_val >= 50:
-            bonus_chance = 0.25
-        if bonus_chance and random.random() < bonus_chance:
-            bonus_item = create_item_from_template(item_def, location=character)
-            character.msg(f"|gYour skill yields an extra {bonus_item.key}!|n")
-
-        # Tool durability loss (D-20)
-        if tool and tool.db.durability is not None:
-            tool.db.durability -= 1
-            if tool.db.durability <= 0:
-                character.msg(f"|y{tool.key} has broken from use!|n")
-
-        # Skill progression
-        accumulate_skill_use(character, self.gather_skill)
+        success, msg, items, tool_broken = complete_gather(
+            character, node, tool, self.gather_skill, skill_val
+        )
+        character.msg(msg)
 
     def _find_tool(self, character):
-        """Find required tool in equipped tool slots or inventory."""
-        # Check equipped tool slots first (CmdTools equip system)
-        equipped = character.db.equipped_tools or {}
-        for slot_item in equipped.values():
-            if slot_item and slot_item.tags.has(self.required_tool, category="item_tag"):
-                return slot_item
-        # Fallback to inventory search
+        """Find required tool in character inventory."""
         for item in character.contents:
             if item.tags.has(self.required_tool, category="item_tag"):
                 return item
@@ -269,26 +215,17 @@ class CmdButcher(_BaseGatherCmd):
     target_category = "hide"
 
     def _find_node(self, character):
-        """Find a butcherable corpse OR a hide gathering node in the room."""
-        from typeclasses.objects import CorpseContainer, GatheringNode
+        """Find a butcherable corpse in the room."""
+        from typeclasses.objects import CorpseContainer
 
         target_name = self.args.strip().lower() if self.args else None
-
-        # First check for corpses (primary butcher target)
         for obj in character.location.contents:
             if isinstance(obj, CorpseContainer):
                 if target_name and target_name not in obj.key.lower():
                     continue
+                # Check corpse can be butchered (respects grace period and butchered flag)
                 can, msg = obj.can_butcher(character)
                 if can:
-                    return obj
-
-        # Fall back to hide gathering nodes if no corpse found
-        for obj in character.location.contents:
-            if isinstance(obj, GatheringNode):
-                if getattr(obj.db, "node_type", "") == "hide":
-                    if target_name and target_name not in obj.key.lower():
-                        continue
                     return obj
         return None
 

@@ -224,71 +224,28 @@ class CmdFish(Command):
     # --- Shared ---
 
     def _catch_fish(self, character, state, quality_multiplier=1.0):
-        """Create a caught fish item. quality_multiplier < 1.0 for idle mode."""
-        from world.gathering_engine import gather_from_node
-        from world.material_definitions import MATERIAL_REGISTRY
-        from world.item_spawner import create_item_from_template
-        from world.crafting_engine import calculate_craft_quality
-        from world.crafting_definitions import QUALITY_DISPLAY, QUALITY_TIERS
-        from world.skill_engine import get_skill_value, accumulate_skill_use
+        """Delegate fish catch to gathering_engine.catch_fish (D-05/D-07)."""
+        from world.gathering_engine import catch_fish
 
         node = state["node"]
         tool = state["tool"]
         bait = state.get("bait")
 
-        # Gather from node (decrements gathers_remaining)
-        success, result = gather_from_node(character, node)
+        success, msg, item, bait_consumed, tool_broken = catch_fish(
+            character, node, tool, bait, quality_multiplier
+        )
+        character.msg(msg)
+
+        if bait_consumed:
+            state["bait"] = None
+
         if not success:
-            character.msg("|rThe fishing spot is depleted.|n")
             self._stop_fishing(character)
             return
 
-        material_id = result
-        mat = MATERIAL_REGISTRY.get(material_id, {})
-
-        # Quality calculation
-        skill_val = get_skill_value(character, "fishing")
-        tier_difficulty = node.db.tier * 15
-        quality = calculate_craft_quality(skill_val, tier_difficulty)
-
-        # Idle mode quality penalty (D-16: diminished returns)
-        if quality_multiplier < 1.0:
-            qi = QUALITY_TIERS.index(quality)
-            qi = max(0, qi - 1)  # drop one quality tier for idle
-            quality = QUALITY_TIERS[qi]
-
-        # Bait quality bonus (D-18)
-        if bait and bait.pk:
-            qi = QUALITY_TIERS.index(quality)
-            qi = min(len(QUALITY_TIERS) - 1, qi + 1)  # +1 tier with bait
-            quality = QUALITY_TIERS[qi]
-            # Consume bait
-            bait.delete()
-            state["bait"] = None
-
-        item_def = {
-            "item_id": material_id,
-            "key": mat.get("display_name", material_id.replace("_", " ").title()),
-            "item_type": "item",
-            "weight": 0.3,
-            "desc": f"A freshly caught {mat.get('display_name', material_id)}.",
-            "value": node.db.tier * 8,
-            "quality": quality,
-        }
-        item = create_item_from_template(item_def, location=character)
-
-        q_display = QUALITY_DISPLAY.get(quality, "")
-        character.msg(f"|gYou catch {q_display} {item.key}!|n")
-
-        # Tool durability (D-20)
-        if tool and getattr(tool.db, "durability", None) is not None:
-            tool.db.durability -= 1
-            if tool.db.durability <= 0:
-                character.msg(f"|y{tool.key} has broken from use!|n")
-                self._stop_fishing(character)
-                return
-
-        accumulate_skill_use(character, "fishing")
+        if tool_broken:
+            self._stop_fishing(character)
+            return
 
         # If active mode, restart cast for another fish
         if state.get("mode") == "active":
