@@ -27,7 +27,6 @@ class SoravelonMob(DefaultCharacter):
         self.db.trust_sensitive = False
         self.db.quest_modifier = None
         self.db.prestige_modifier = 1.0
-        self.db.threat_level = "solo"
 
         # Stat ranges (authored at REFERENCE_LEVEL = backend 10)
         self.db.hp_min = 80
@@ -50,7 +49,6 @@ class SoravelonMob(DefaultCharacter):
         self.db.combat_enabled = True  # D-03: set False for invulnerable mobs (e.g., Caldenmere)
         self.db.triggers = []          # trigger list for trigger_engine
         self.db.tome_drop = None       # D-18: item_id of tome to drop on named mob death
-        self.db.spawn_record_id = None  # SpawnRecord FK for death → respawn lookup (D-06)
 
     def spawn_with_affixes(self, room):
         """Roll and apply affixes. Call after creation, not in at_object_creation."""
@@ -66,21 +64,12 @@ class SoravelonMob(DefaultCharacter):
         from world.zone_scaling import initialize_mob_combat_stats
         initialize_mob_combat_stats(self)
 
-    # Threat level display tags
-    THREAT_TAGS = {
-        "elite": "|!y|530[Elite]|n",
-        "boss": "|r[Boss]|n",
-    }
-
     def get_display_name(self, looker=None, **kwargs):
-        """Prepend star prefix and threat tag based on rarity and threat_level."""
+        """Prepend star prefix based on rarity."""
         base_name = super().get_display_name(looker, **kwargs)
         prefix = get_star_prefix(self.db.rarity)
         if prefix:
-            base_name = f"{prefix} {base_name}"
-        threat = self.THREAT_TAGS.get(self.db.threat_level)
-        if threat:
-            base_name = f"{threat} {base_name}"
+            return f"{prefix} {base_name}"
         return base_name
 
     def reveal_affix(self, looker, affix_tag):
@@ -150,74 +139,6 @@ class SoravelonMob(DefaultCharacter):
         return get_mob_behavior(self, character)
 
     def at_death(self, killer=None):
-        """Clean up ndb on death, fire triggers, drop loot, schedule respawn via SpawnRecord."""
-        self.ndb.revealed_affixes = set()
-        if hasattr(self.ndb, 'combat_scales'):
-            self.ndb.combat_scales = {}
-
-        # Fire on_mob_death triggers (existing)
-        if self.db.triggers:
-            from world.trigger_engine import fire_triggers
-            context = {"mob": self, "room": self.location}
-            if killer and hasattr(killer, 'account') and killer.account:
-                fire_triggers(self, "on_mob_death", killer, context=context)
-
-        # Drop loot (D-35: roll_loot called from at_death)
-        room = self.location
-        if room and killer:
-            from world.loot_tables import roll_loot
-            from world.item_spawner import create_item_from_template
-            drops = roll_loot(self, killer)
-            for item_def in drops:
-                create_item_from_template(item_def, location=room)
-
-        # Drop tome if named mob (D-18: tome pre-assigned)
-        if self.db.tome_drop and room:
-            from world.item_spawner import create_item_from_template
-            tome_def = {
-                "item_id": self.db.tome_drop,
-                "key": self.db.tome_drop.replace("_", " "),
-                "item_type": "item",
-                "desc": f"A tome recovered from {self.key}.",
-                "rarity": "rare",
-                "weight": 0.5,
-                "value": 50,
-            }
-            create_item_from_template(tome_def, location=room)
-
-        # Named mob death: write WorldEventLog entry (D-05)
-        is_named = self.tags.get("mob_id", category="mob_id") is not None
-        if is_named and killer:
-            from world.models import WorldEventLog
-            WorldEventLog.objects.create(
-                event_type="named_mob_death",
-                zone_id=self.db.zone_id or "",
-                character_id=killer.id if killer else None,
-                description=f"{self.key} was slain by {killer.key}",
-                data={"named_id": self.db.named_id or self.key, "mob_key": self.key},
-            )
-
-        # Write room state flags (D-24)
-        if room:
-            from world.room_state import add_room_flag
-            add_room_flag(room, "blood_soaked")
-
-            # Nature-affinity mob death
-            if self.db.faction and self.db.faction.lower() in (
-                "verdance", "wardens", "nature"
-            ):
-                add_room_flag(room, "fading_life")
-
-            # Named/boss mob death
-            is_boss = self.db.rarity == "legendary"
-            if is_named or is_boss:
-                add_room_flag(room, "power_vacuum")
-
-        # Quest progress: kill objectives (D-07, D-19)
-        if killer and hasattr(killer, 'account') and killer.account:
-            from world.quest_engine import check_kill_objectives
-            check_kill_objectives(killer, self)
-
-        # Schedule respawn via SpawnRecord (replaces callLater)
-        from world.mob_spawner import schedule_respawn_from_death
-        schedule_respawn_from_death(self)
+        """Clean up ndb on death, fire triggers, drop loot, schedule respawn."""
+        from world.death_lifecycle import on_mob_death
+        on_mob_death(self, killer)
