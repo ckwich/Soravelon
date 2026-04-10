@@ -191,6 +191,14 @@ class CombatScript:
             self.end_combat()
             return
 
+        # Cancel turn timer if removing the active combatant
+        if was_current and self.ndb.turn_timer_id is not None:
+            try:
+                self.ndb.turn_timer_id.cancel()
+            except (AttributeError, RuntimeError):
+                pass
+            self.ndb.turn_timer_id = None
+
         # Adjust turn index if needed
         if was_current:
             # Keep index (next combatant shifts into this slot)

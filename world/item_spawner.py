@@ -61,8 +61,7 @@ def create_item_from_template(item_def, location=None):
     item.db.weight     = item_def.get("weight", 0.5)
     item.db.rarity     = item_def.get("rarity", "normal")
     item.db.desc       = item_def.get("desc", "")
-    item.db.value      = item_def.get("value", 0)
-    item.db.value_scales = item_def.get("value", 0)  # vendor/inspect read this field
+    item.db.value_scales = item_def.get("value", 0)
     item.db.equipment_slot = item_def.get("equip_slot")  # None for non-equipment
 
     # Extra attrs — anything not in the reserved key set

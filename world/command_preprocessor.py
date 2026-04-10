@@ -80,6 +80,7 @@ def expand_alias(character, alias_key, raw_args):
     Checks character.db.aliases for alias_key. Returns None if not found.
     Splits expansion by ";" and caps at 3 commands (D-16).
     Performs $1/$2/$*/$@ token substitution.
+    Tracks expansion depth to prevent infinite alias loops.
 
     Args:
         character: The Evennia character object (must have db.aliases).
@@ -89,15 +90,24 @@ def expand_alias(character, alias_key, raw_args):
     Returns:
         list[str] | None: Expanded command list, or None if alias not found.
     """
+    # Prevent infinite alias loops (max depth 3)
+    depth = getattr(character.ndb, "_alias_depth", 0)
+    if depth >= 3:
+        return None
+    character.ndb._alias_depth = depth + 1
+
     aliases = character.db.aliases or {}
     if alias_key not in aliases:
+        character.ndb._alias_depth = depth
         return None
 
     expansion = aliases[alias_key]
     # Split by semicolon, strip whitespace, cap at 3 (D-16)
     commands = [c.strip() for c in expansion.split(";") if c.strip()][:3]
     parts = raw_args.strip().split() if raw_args.strip() else []
-    return [_substitute(c, parts, raw_args) for c in commands]
+    result = [_substitute(c, parts, raw_args) for c in commands]
+    character.ndb._alias_depth = depth  # Reset depth after expansion
+    return result
 
 
 def _get_all_cmd_keys(character):

@@ -78,10 +78,14 @@ def on_logout(character):
     commit_session_xp(character)
     on_member_disconnect(character)
 
+    # Stop HP/stamina recovery ticks before disconnect
+    from world.recovery_engine import stop_regen
+    stop_regen(character)
+
     # Combat cleanup -- remove from active combat on disconnect
-    if character.ndb.combat_handler:
+    if getattr(character.ndb, "combat_handler", None):
         try:
             character.ndb.combat_handler.remove_combatant(character)
-        except Exception:
+        except (AttributeError, RuntimeError):
             pass  # combat handler may already be cleaned up
         character.ndb.combat_handler = None

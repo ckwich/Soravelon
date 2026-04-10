@@ -10,6 +10,8 @@ from django.db.models import Q, F
 from datetime import timedelta
 from world.models import BankAccount, BankTransaction, RecurringPayment, DebtRecord
 
+MAX_TRANSACTION = 100000  # Per-transaction cap to prevent economy exploits
+
 
 def get_or_create_account(character):
     account, created = BankAccount.objects.get_or_create(
@@ -29,6 +31,8 @@ def get_balance(character):
 def deposit(character, amount, description="deposit"):
     if amount <= 0:
         return False, "Amount must be positive."
+    if amount > MAX_TRANSACTION:
+        return False, f"Cannot deposit more than {MAX_TRANSACTION} Scales at once."
     carried = getattr(character.db, 'carried_scales', 0) or 0
     if carried < amount:
         return False, f"You only have {carried} Scales on you."
@@ -44,6 +48,8 @@ def deposit(character, amount, description="deposit"):
 def withdraw(character, amount, description="withdrawal"):
     if amount <= 0:
         return False, "Amount must be positive."
+    if amount > MAX_TRANSACTION:
+        return False, f"Cannot withdraw more than {MAX_TRANSACTION} Scales at once."
     account = get_or_create_account(character)
     # Atomic check-and-deduct: balance__gte ensures no overdraft even under
     # concurrent access. If rows_updated==0, balance was insufficient.

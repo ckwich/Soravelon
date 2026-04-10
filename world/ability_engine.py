@@ -688,6 +688,10 @@ def use_ability(character, ability_id, target=None):
     Checks: known, cooldown, resource, then dispatches to effect handler.
     Per D-10: effect-type dispatch, no per-ability callables.
     """
+    # Dead characters cannot use abilities
+    if getattr(character.ndb, "hp", None) is not None and character.ndb.hp <= 0:
+        return False, "|rYou cannot use abilities while dead.|n"
+
     from world.ability_registry import ABILITIES
     ability = ABILITIES.get(ability_id)
     if not ability:

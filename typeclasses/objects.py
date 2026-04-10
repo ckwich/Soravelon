@@ -47,6 +47,11 @@ class SoravelonItem(SoravelonObject):
         self.db.value_scales = 0
         self.db.lore_desc = None
 
+    def at_pre_delete(self):
+        """Clean up InventoryItem records when item is destroyed."""
+        from world.models import InventoryItem
+        InventoryItem.objects.filter(item_id=self.id).delete()
+
     def get_inventory_record(self, character):
         from world.models import InventoryItem
         try:
