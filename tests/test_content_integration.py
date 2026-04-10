@@ -165,11 +165,11 @@ class TestContentCrossReferences(unittest.TestCase):
 class TestSpawnPointTags(unittest.TestCase):
     """Verify spawn/respawn logic exists in the codebase."""
 
-    def test_character_creation_references_greeter_room(self):
-        """Character.at_object_creation should look up greeter_room tag."""
+    def test_greeter_room_tag_exists_in_zone_content(self):
+        """Vael's Crossing zone file should tag the arrival room as greeter_room."""
         import inspect
-        from typeclasses.characters import Character
-        source = inspect.getsource(Character.at_object_creation)
+        from world.areas import vaels_crossing
+        source = inspect.getsource(vaels_crossing)
         self.assertIn("greeter_room", source)
 
     def test_death_handler_references_respawn_point(self):

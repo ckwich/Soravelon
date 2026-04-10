@@ -351,8 +351,8 @@ def get_designated_looter(character, corpse):
         idx = state.get("round_robin_index", 0) % len(members)
         return members[idx]
 
-    # need_pass: fallback to personal
-    return None
+    # need_pass: not implemented, fallback to personal (killer gets loot)
+    return character
 
 
 def advance_round_robin(character):

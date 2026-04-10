@@ -126,7 +126,7 @@ def _count_room_mobs(room, spawn_def):
     return sum(
         1 for obj in room.contents
         if isinstance(obj, SoravelonMob)
-        and getattr(obj.db, "mob_template", None) == mob_key
+        and getattr(obj.db, "mob_template_key", None) == mob_key
     )
 
 
@@ -469,7 +469,7 @@ def initialize_spawn_records():
                 room_id=room.id,
                 spawn_index=idx,
                 defaults={
-                    "mob_template": spawn_def.get("mob", ""),
+                    "mob_template_key": spawn_def.get("mob", ""),
                     "active_mob_ids": [],
                     "respawn_at": None,
                     "is_named": spawn_def.get("is_named", False),

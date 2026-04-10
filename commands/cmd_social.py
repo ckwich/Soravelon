@@ -48,7 +48,13 @@ class CmdWho(Command):
             primary_domain = (
                 max(domain_scores, key=domain_scores.get) if domain_scores else "None"
             )
-            guild = char.db.guild_name or primary_domain
+            guild_id = char.db.guild_id
+            if guild_id:
+                from world.guild_engine import GUILDS
+                guild_def = GUILDS.get(guild_id, {})
+                guild = guild_def.get("name", guild_id.replace("_", " ").title())
+            else:
+                guild = primary_domain
             # Get zone from room tag
             zone = "Unknown"
             if char.location:

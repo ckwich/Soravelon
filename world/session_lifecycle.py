@@ -51,6 +51,10 @@ def on_login(character):
     oob_publisher.push_map_update(character)
     oob_publisher.push_inventory_update(character)
 
+    # Start passive HP/stamina recovery tick
+    from world.recovery_engine import start_regen
+    start_regen(character)
+
     # Ability system volatile state (D-12, D-13)
     character.ndb.ability_cooldowns = {}
     character.ndb.ancestry_ability_used = False

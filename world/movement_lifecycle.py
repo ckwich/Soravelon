@@ -25,8 +25,16 @@ def on_move(character, source_location, **kwargs):
                 visited.add(room_id)
                 character.db.visited_room_ids = visited
 
+    # Cancel recovery on movement (rest/sleep interrupted)
+    from world.recovery_engine import cancel_recovery
+    cancel_recovery(character)
+
+    # Break node stabilization on move (if character was stabilizing)
+    from world.node_helpers import break_stabilization_on_move
+    break_stabilization_on_move(character)
+
     # Skip map_update during Dragon Courier flight -- _arrive_final pushes it instead (Pitfall 6)
-    if character.ndb.in_flight:
+    if getattr(character.ndb, "in_flight", False):
         return
 
     from world import oob_publisher

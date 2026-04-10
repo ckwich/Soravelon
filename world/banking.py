@@ -313,8 +313,8 @@ def on_character_death(character, location):
     # Wipe ALL uncommitted progression accumulators
     character.ndb.session_xp = {}
     # Clear domain XP accumulators (domain_xp_combat, domain_xp_subterfuge, etc.)
-    from world.world_state import DOMAIN_NAMES
-    for domain in DOMAIN_NAMES:
+    from world.world_state import ALL_DOMAINS
+    for domain in ALL_DOMAINS:
         setattr(character.ndb, f"domain_xp_{domain}", 0.0)
     # Clear skill use accumulators
     for attr in list(vars(character.ndb)):
