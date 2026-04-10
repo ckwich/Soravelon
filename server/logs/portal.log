@@ -1,0 +1,34 @@
+|Portal| 2026-03-18 08:41:51 [..] Loaded.
+|Portal| 2026-03-18 08:41:50 [..] Loading C:\Dev\Evennia\venv\Lib\site-packages\evennia\server\portal\portal.py...
+|Portal| 2026-03-18 08:41:51 [..] Loaded.
+|Portal| 2026-03-18 08:41:51 [..] twistd 24.11.0 (C:\Dev\Evennia\venv\Scripts\python.exe 3.12.10) starting up.
+|Portal| 2026-03-18 08:41:51 [..] reactor class: twisted.internet.selectreactor.SelectReactor.
+|Portal| 2026-03-18 08:41:51 [..] AMP starting on 4006
+|Portal| 2026-03-18 08:41:51 [..] Telnet starting on 4000
+|Portal| 2026-03-18 08:41:51 [..] Websocket starting on 4002
+|Portal| 2026-03-18 08:41:51 [..] Webserver-proxy starting on 4001
+|Portal| 2026-03-18 08:41:51 [..] Portal starting server ... 
+|Portal| 2026-03-18 08:41:54 [..] Portal starting server ... 
+|Portal| 2026-03-18 08:42:05 [..] (TCP Port 4001 Closed)
+|Portal| 2026-03-18 08:42:05 [..] (TCP Port 4000 Closed)
+|Portal| 2026-03-18 08:42:05 [..] (TCP Port 4006 Closed)
+|Portal| 2026-03-18 08:42:05 [..] (TCP Port 4002 Closed)
+|Portal| 2026-03-18 08:42:05 [..] Main loop terminated.
+|Portal| 2026-03-18 08:42:05 [..] Server Shut Down.
+|Portal| 2026-03-18 08:42:05 [..] Server Shut Down.
+|Portal| 2026-03-18 08:44:31 [..] Loaded.
+|Portal| 2026-03-18 08:44:30 [..] Loading C:\Dev\Evennia\venv\Lib\site-packages\evennia\server\portal\portal.py...
+|Portal| 2026-03-18 08:44:31 [..] Loaded.
+|Portal| 2026-03-18 08:44:31 [..] twistd 24.11.0 (C:\Dev\Evennia\venv\Scripts\python.exe 3.12.10) starting up.
+|Portal| 2026-03-18 08:44:31 [..] reactor class: twisted.internet.selectreactor.SelectReactor.
+|Portal| 2026-03-18 08:44:31 [..] AMP starting on 4006
+|Portal| 2026-03-18 08:44:31 [..] Telnet starting on 4000
+|Portal| 2026-03-18 08:44:31 [..] Websocket starting on 4002
+|Portal| 2026-03-18 08:44:31 [..] Webserver-proxy starting on 4001
+|Portal| 2026-03-18 08:44:32 [..] Portal starting server ... 
+|Portal| 2026-03-18 08:46:01 [..] Timing out client: IPv4Address(type='TCP', host='127.0.0.1', port=64216)
+|Portal| 2026-03-18 08:46:01 [..] Timing out client: IPv4Address(type='TCP', host='127.0.0.1', port=64217)
+|Portal| 2026-03-18 08:46:01 [..] Timing out client: IPv4Address(type='TCP', host='127.0.0.1', port=64190)
+|Portal| 2026-03-18 08:46:01 [..] Timing out client: IPv4Address(type='TCP', host='127.0.0.1', port=64194)
+|Portal| 2026-03-18 08:46:01 [..] Timing out client: IPv4Address(type='TCP', host='127.0.0.1', port=64211)
+|Portal| 2026-03-18 08:46:02 [..] Timing out client: IPv4Address(type='TCP', host='127.0.0.1', port=64213)

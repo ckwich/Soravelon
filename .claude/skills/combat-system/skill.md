@@ -32,6 +32,8 @@ You are working on **soravelon's combat system** — damage resolution in `world
 
 ## Key Concepts
 - **Action dicts, not side effects:** `combat_ai.py` returns action dicts for CombatScript to dispatch — it does NOT resolve damage directly. `combat_engine.py` resolves damage and mutates HP.
+- **Dead character guard:** `use_ability()` checks `ndb.hp <= 0` at entry and rejects ability use while dead. This prevents dead characters from acting before respawn completes.
+- **Turn timer cleanup on combatant removal:** `CombatScript.remove_combatant()` cancels the active turn timer (`ndb.turn_timer_id`) if removing the current combatant, preventing stale timer callbacks from firing after removal.
 - **Ability registry is pure data:** 16-field dicts per ability. Derived lookups (`DOMAIN_ABILITIES`, `SUBCLASS_SIGNATURES`) auto-built at module level. Add new abilities to `ABILITIES` dict only.
 - **`_compute_raw_damage` helper:** Shared private function for base damage calculation. Characters use weapon + strength modifier; mobs use `ref_damage_min/max`. Called by `resolve_basic_attack` and available for other damage paths.
 - **`effect_params` dict pattern:** Effect handlers (`_handle_dot`, `_handle_buff`, `_handle_debuff`, `_handle_utility`, `_handle_social`, `_handle_tactical`, `_handle_status`) and `resolve_ability_damage` read from `ability["effect_params"]` first, falling back to top-level ability keys for backwards compat. New ability definitions should put `damage_base`, `status_effect`, `duration`, `magnitude`, `buff_type`, `debuff_type`, `tactical_action`, `utility_action` inside `effect_params`.
@@ -84,6 +86,8 @@ All 10 domains are fully authored (15 base + 18 subclass signatures each):
 14. **Pre-death snapshot for mob loot** — `handle_mob_death()` captures `pre_death_ids` before `at_death()` runs, so `_move_room_loot_to_corpse()` only sweeps newly-dropped items. Never use time-based heuristics for loot identification
 15. **Player death cleans up InventoryItem rows** — `handle_player_death()` deletes `InventoryItem` records for items transferred to corpse, keeping Django model in sync with Evennia object locations
 16. **`handle_mob_death()` explicitly deletes the mob** — `mob.delete()` is called after loot is moved to corpse. Do not rely on `at_death()` to remove the mob object
+17. **Dead characters cannot use abilities** — `use_ability()` checks `ndb.hp <= 0` at entry and returns failure. This prevents dead characters from acting before respawn
+18. **Turn timer cancelled on combatant removal** — `remove_combatant()` cancels `ndb.turn_timer_id` if removing the active combatant, preventing stale timer callbacks
 
 ## References
 - **Ability Registry:** `world/ability_registry.py` — all ability definitions and derived lookups
@@ -96,4 +100,4 @@ All 10 domains are fully authored (15 base + 18 subclass signatures each):
 - **Inventory Model:** `world/models.py` — `InventoryItem` records cleaned up during player death
 
 ---
-**Last Updated:** 2026-04-05
+**Last Updated:** 2026-04-10

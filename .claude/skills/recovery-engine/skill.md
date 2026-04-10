@@ -9,6 +9,7 @@ This skill triggers when editing these files:
 - `world/recovery_engine.py`
 - `commands/cmd_recovery.py`
 - `typeclasses/characters.py`
+- `world/session_lifecycle.py`
 - `tests/test_recovery_engine.py`
 
 Keywords: recovery, regen, rest, sleep, wake, heal, blessing, medic, fortify, vigor, purify, recovery state, regen tick, bed, is_medic, spend stamina
@@ -19,9 +20,10 @@ You are working on **the recovery engine** (`world/recovery_engine.py`) — HP/s
 
 ## Key Files
 - `world/recovery_engine.py` — Regen tick loop, recovery state management, `spend_stamina()`, medic blessings
+- `world/session_lifecycle.py` — `on_logout()` calls `stop_regen(character)` to halt ticks before disconnect
 - `commands/cmd_recovery.py` — 4 commands: CmdRest (`rest`/`sit`), CmdSleep (`sleep`), CmdWake (`wake`/`stand`), CmdBlessing (`blessing`/`bless`). Thin dispatchers — no game logic
 - `commands/default_cmdsets.py` — All 4 recovery commands registered in `CharacterCmdSet`
-- `typeclasses/characters.py` — `start_regen()` called in `at_object_creation()`, `stop_regen()` in `at_pre_unpuppet()`, movement cancels recovery in `at_after_move()`, `at_look()` blocks vision during sleep
+- `typeclasses/characters.py` — `start_regen()` called in `at_object_creation()`, movement cancels recovery in `at_after_move()`, `at_look()` blocks vision during sleep
 - `world/status_effects.py` — `fortify` and `vigor` non-stackable effects (15% damage reduction / bonus) applied by blessings
 - `world/base_attributes.py` — `derive_max_hp()`, `derive_max_stamina()` used for regen cap
 - `world/oob_publisher.py` — `push_stat_update()` called after HP/stamina changes
@@ -37,7 +39,8 @@ You are working on **the recovery engine** (`world/recovery_engine.py`) — HP/s
 - **Bed detection:** `_room_has_bed()` checks room contents for `obj.db.is_bed`. Upgrades sleeping rate from 6% to 10%
 - **Sleep blindness:** `character.ndb.is_sleeping` set True during sleep state. `Character.at_look()` returns a message instead of room description when sleeping
 - **Movement cancels recovery:** `Character.at_after_move()` checks `ndb.recovery_state != "active"` and calls `cancel_recovery()` to reset state
-- **Character lifecycle wiring:** `start_regen()` at end of `at_object_creation()` (login); `stop_regen()` in `at_pre_unpuppet()` (disconnect); HP/stamina saved before stop, restored on next puppet
+- **Logout lifecycle:** `session_lifecycle.on_logout()` calls `stop_regen(character)` before disconnect cleanup, ensuring regen ticks don't fire for logged-out characters
+- **Character lifecycle wiring:** `start_regen()` at end of `at_object_creation()` (login); `stop_regen()` in `session_lifecycle.on_logout()` (disconnect); HP/stamina saved before stop, restored on next puppet
 - **Four medic blessings:** `heal` (full HP, 20 Scales, 120s CD), `fortify` (defense buff, 30 Scales, 120s CD), `vigor` (offense buff, 30 Scales, 120s CD), `purify` (cleanse all effects, 40 Scales, 60s CD)
 - **Medic NPC detection:** `CmdBlessing` scans room contents for `obj.db.is_medic == True`. Medic flag set directly in zone spec (e.g. `_medic.db.is_medic = True` in vaels_crossing.py)
 - **Blessing cooldowns:** Per-blessing timestamps in `character.db.blessing_cooldowns` dict. Time-based (wall clock via `time.time()`)
@@ -54,14 +57,16 @@ You are working on **the recovery engine** (`world/recovery_engine.py`) — HP/s
 8. **Medic flag is manual** — `is_medic` is set directly on NPC db attrs in zone spec files, not through AreaBuilder DSL
 9. **HP/stamina saved as `db._saved_hp`/`db._saved_stamina`** — written in `at_pre_unpuppet()`, restored in `at_post_puppet()`, then cleared. Never read these outside the login/logout lifecycle
 10. **Use `spend_stamina()` for stamina costs** — any system that deducts stamina should call `spend_stamina()` rather than manually reading/writing `ndb.stamina`. It handles the stat push automatically
+11. **`stop_regen()` called in `session_lifecycle.on_logout()`** — not in `at_pre_unpuppet()` directly. Ensures regen stops before combat cleanup runs
 
 ## References
 - **Status Effects:** `world/status_effects.py` — `fortify`, `vigor` effect definitions and `get_effect_modifiers()`
 - **Base Attributes:** `world/base_attributes.py` — `derive_max_hp()`, `derive_max_stamina()`
 - **OOB Publisher:** `world/oob_publisher.py` — `push_stat_update()` for client notification
-- **Character Hooks:** `typeclasses/characters.py` — lifecycle wiring for start/stop regen, movement cancel, and HP/stamina persistence
+- **Session Lifecycle:** `world/session_lifecycle.py` — `on_logout()` calls `stop_regen()` before disconnect
+- **Character Hooks:** `typeclasses/characters.py` — lifecycle wiring for start regen, movement cancel, and HP/stamina persistence
 - **Item Effects:** `world/item_effects.py` — `consume_item()` uses `_apply_hp`/`_apply_stamina` helpers (similar pattern)
 - **Tests:** `tests/test_recovery_engine.py`
 
 ---
-**Last Updated:** 2026-04-05
+**Last Updated:** 2026-04-10

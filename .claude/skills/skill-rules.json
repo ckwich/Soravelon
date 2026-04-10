@@ -461,6 +461,8 @@
           "equip tool",
           "unequip tool",
           "equipped_tools",
+          "catch_fish",
+          "complete_gather",
           "engine",
           "gathering engine",
           "lifecycle",
@@ -1040,6 +1042,7 @@
         "world/recovery_engine.py",
         "commands/cmd_recovery.py",
         "typeclasses/characters.py",
+        "world/session_lifecycle.py",
         "tests/test_recovery_engine.py"
       ],
       "promptTriggers": {
@@ -1070,6 +1073,7 @@
           "cmd_recovery",
           "typeclasses",
           "characters",
+          "session_lifecycle",
           "tests",
           "test_recovery_engine"
         ],

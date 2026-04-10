@@ -30,6 +30,7 @@ ObjectParent (mixin) + DefaultObject
 - **`(bool, str)` return convention:** `can_drop()`, `can_equip()`, `can_accept()`, `can_be_sold()` all return `(False, "reason")` or `(True, None)`
 - **Lazy import:** All `world.models` imports are inside methods to avoid circular imports
 - **`get_inventory_record(character)`:** Fetches the `InventoryItem` row; returns `None` if missing (lazy creation pattern)
+- **`at_pre_delete()` cleanup:** `SoravelonItem.at_pre_delete()` deletes associated `InventoryItem` records (`InventoryItem.objects.filter(item_id=self.id).delete()`) before the item is destroyed. Prevents orphaned Django model rows when items are deleted by any system (combat corpse cleanup, crafting consumption, etc.)
 
 ## GatheringNode
 - **Extends `SoravelonObject`, NOT `SoravelonItem`** — cannot be picked up (`get:false()` lock)
@@ -63,6 +64,7 @@ ObjectParent (mixin) + DefaultObject
 6. **Equipment is never stackable** — `stackable = False` is enforced at creation
 7. **Ring auto-fill mutates `db.equipment_slot`** — `can_equip()` changes the slot from `ring1` to `ring2` in place when ring1 is occupied
 8. **GatheringNode is NOT an item** — extends `SoravelonObject`, not `SoravelonItem`. Managed by `gathering_engine`, not `inventory_engine`
+9. **`at_pre_delete()` cleans up InventoryItem rows** — any code path that deletes a `SoravelonItem` (or subclass) automatically purges its `InventoryItem` record. Do not manually clean up InventoryItem when deleting items — the hook handles it
 
 ## References
 - **Inventory Engine:** `world/inventory_engine.py`
@@ -71,4 +73,4 @@ ObjectParent (mixin) + DefaultObject
 - **Tests:** `tests/test_typeclasses.py`, `tests/test_inventory_engine.py`, `tests/test_equipment_slots.py`
 
 ---
-**Last Updated:** 2026-04-04
+**Last Updated:** 2026-04-10
