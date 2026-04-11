@@ -47,6 +47,7 @@ NON_STACKABLE_EFFECTS = {
         "burn_magnitude_reduction": 0.25,
         "action_penalty_on_apply": 1,
     },
+    "evasion": {"evasion_bonus": 0.15},  # evasion buff (subterfuge builder)
     "fortify": {"damage_reduction": 0.15},  # 15% damage reduction (medic blessing)
     "vigor": {"damage_bonus": 0.15},  # 15% damage bonus (medic blessing)
 }

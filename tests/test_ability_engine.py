@@ -59,6 +59,7 @@ def _mock_character(
         backend_level=10,
         hp=100,
         hp_max=100,
+        immunities=[],
     )
     char.location = location
     return char
