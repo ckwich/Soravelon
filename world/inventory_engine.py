@@ -219,14 +219,15 @@ def drop_item(character, item, quantity=None):
             key=item.key,
             location=character.location
         )
-        for attr_name in (
-            'weight', 'rarity', 'item_type', 'stackable',
-            'value_scales', 'desc', 'lore_desc',
-            'weight_reduction', 'weight_capacity',
-        ):
-            val = getattr(item.db, attr_name, None)
-            if val is not None:
-                setattr(dropped.db, attr_name, val)
+        # Copy ALL db attributes from original to preserve full metadata
+        # (quality, item_tag, effect payloads, quest markers, etc.)
+        for attr_obj in item.attributes.all():
+            dropped.attributes.add(attr_obj.key, attr_obj.value,
+                                   category=attr_obj.category)
+        # Copy all tags from original item
+        for tag_obj in item.tags.all(return_key_and_category=True):
+            if tag_obj and tag_obj[0]:
+                dropped.tags.add(tag_obj[0], category=tag_obj[1])
         _apply_stack_quantity(dropped, quantity)
 
         record.quantity -= quantity
@@ -307,9 +308,9 @@ def take_from_container(character, item, container=None):
 
 def equip_item(character, item):
     """Equip an item to its designated slot."""
-    can, reason = item.can_equip(character)
+    can, slot_override = item.can_equip(character)
     if not can:
-        return False, reason
+        return False, slot_override  # slot_override is the error message on failure
 
     record = item.get_inventory_record(character)
     if not record:
@@ -318,7 +319,8 @@ def equip_item(character, item):
     if record.container_id:
         return False, f"Take {item.key} out of your container first."
 
-    slot = item.db.equipment_slot
+    # Use override slot if provided (e.g. ring2 auto-fill), else item's authored slot
+    slot = slot_override if slot_override else item.db.equipment_slot
     record.is_equipped = True
     record.equipment_slot = slot
     record.save()

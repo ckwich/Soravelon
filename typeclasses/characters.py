@@ -59,13 +59,6 @@ class Character(ObjectParent, DefaultCharacter):
         # Exploration state
         self.db.discovered_exits = []
 
-        # LLM quest system — data collection (implementation post-Milestone-2)
-        # Populated by quest consequence system when branching quests complete.
-        # Format: list of {quest_id, choice, context, timestamp, arc} dicts.
-        self.db.questline_choices = []
-        # FK to SeerQuest record when a generated quest is active.
-        self.db.active_llm_quest_id = None
-
         # Command alias system (CMD-03, CMD-04, CMD-05)
         self.db.aliases = {}           # persistent alias dict: {alias_key: expansion_string}
 

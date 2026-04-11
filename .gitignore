@@ -3,3 +3,30 @@
 .claude/graph.json
 .claude/graph-index.json
 .claude/code-map.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+
+# Evennia runtime artifacts
+server/evennia.db3
+server/evennia.db3-journal
+server/logs/*.log
+server/*.pid
+
+# Django secrets
+server/conf/secret_settings.py
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+
+# Planning artifacts (local only)
+.planning/

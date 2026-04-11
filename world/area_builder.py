@@ -142,6 +142,8 @@ class AreaBuilder:
         self._zone_data = {}
         self._rooms = {}                # room_id -> Evennia room object
         self._mobs = {}                 # mob_key -> Evennia mob object
+        self._npc_ids = set()           # npc_ids from npc() calls (reconciliation)
+        self._exit_ids = set()          # exit object IDs from exit()/cross-zone (reconciliation)
         self._deferred_exits = []       # cross-zone exits to resolve later
         self._unresolved_exits = []     # exits that failed first-pass resolution
         self._deferred_patrols = []     # patrol definitions resolved in build()
@@ -296,7 +298,8 @@ class AreaBuilder:
         room_obj.db.triggers = []
         room_obj.db.custom_commands = []
 
-        # Crafting station tags (NPC-02)
+        # Crafting station tags — clear stale then re-add (D-05 reconciliation)
+        room_obj.tags.clear(category="crafting_station")
         crafting_stations = kwargs.get("crafting_stations", [])
         for station in crafting_stations:
             room_obj.tags.add(f"crafting_{station}", category="crafting_station")
@@ -371,27 +374,16 @@ class AreaBuilder:
             )
             self._exits_created += 1
 
-        # Set exit attributes
-        desc = kwargs.get("desc")
-        if desc:
-            exit_obj.db.desc = desc
-        if locked:
-            exit_obj.db.lock_tag = kwargs.get("lock_tag")
-        if hidden:
-            exit_obj.db.hidden = True
-
-        # Conditional access attributes
-        requires_ancestry = kwargs.get("requires_ancestry")
-        if requires_ancestry:
-            exit_obj.db.requires_ancestry = requires_ancestry
-        requires_standing = kwargs.get("requires_standing")
-        if requires_standing:
-            exit_obj.db.requires_standing = requires_standing
-        requires_quest = kwargs.get("requires_quest")
-        if requires_quest:
-            exit_obj.db.requires_quest = requires_quest
+        # Reset ALL exit attrs to defaults, then apply from spec (D-06)
+        exit_obj.db.desc = kwargs.get("desc", "")
+        exit_obj.db.lock_tag = kwargs.get("lock_tag") if locked else None
+        exit_obj.db.hidden = kwargs.get("hidden", False)
+        exit_obj.db.requires_ancestry = kwargs.get("requires_ancestry")
+        exit_obj.db.requires_standing = kwargs.get("requires_standing")
+        exit_obj.db.requires_quest = kwargs.get("requires_quest")
 
         exit_obj.tags.add(self._zone_id, category="zone_id")
+        self._exit_ids.add(exit_obj.id)
 
     # ------------------------------------------------------------------
     # spawn()
@@ -545,6 +537,7 @@ class AreaBuilder:
         npc_obj.tags.add(npc_id, category="npc_id")
         npc_obj.tags.add(self._zone_id, category="zone_id")
         npc_obj.tags.add("npc", category="character_type")
+        self._npc_ids.add(npc_id)
         npc_obj.tags.add("npc", category="mob_type")
 
         # Trainer binding (SKL-01)
@@ -704,7 +697,7 @@ class AreaBuilder:
         Returns:
             self (for method chaining)
         """
-        VALID_EVENTS = {"on_enter", "on_exit", "on_first_visit", "on_mob_death"}
+        VALID_EVENTS = {"on_enter", "on_exit", "on_first_visit", "on_mob_death", "on_examine"}
         if event not in VALID_EVENTS:
             raise AreaBuilderValidationError(
                 f"trigger() event must be one of {VALID_EVENTS}; got '{event}'"
@@ -1041,6 +1034,9 @@ class AreaBuilder:
         # 3.5: Assign grid coordinates to rooms without explicit coords (CLI-07)
         auto_layout_zone(self._rooms)
 
+        # 3.6: Reconcile stale objects (D-01 through D-04)
+        reconcile_report = self._reconcile_stale_objects()
+
         # 4. Register zone
         zone_registry.register_zone(self._zone_id, self._zone_obj)
 
@@ -1065,7 +1061,118 @@ class AreaBuilder:
                 {"to": e["to"], "direction": e["direction"]}
                 for e in self._unresolved_exits
             ],
+            "reconciled": reconcile_report,
         }
+
+    def _reconcile_stale_objects(self):
+        """
+        Post-build sweep: hard-delete zone-owned DB objects not in current spec.
+
+        Order: exits -> NPCs -> mobs -> rooms (rooms last because their
+        contents must be cleaned first).
+
+        Per D-04: runtime-spawned mobs (those with mob_instance_id tag)
+        are exempt — only builder-authored mob() objects are reconciled.
+        """
+        from world.mob_spawner import MOB_INSTANCE_TAG_CATEGORY
+        from typeclasses.mobs import SoravelonMob
+        from typeclasses.characters import Character
+        from django.conf import settings as django_settings
+        from evennia.utils import logger
+
+        zone_id = self._zone_id
+        spec_room_ids = set(self._rooms.keys())
+        spec_mob_keys = set(self._mobs.keys())
+        spec_npc_ids = set(self._npc_ids)
+
+        report = {"rooms_deleted": 0, "exits_deleted": 0,
+                  "npcs_deleted": 0, "mobs_deleted": 0,
+                  "players_evicted": 0}
+
+        # --- Eviction target (D-01 fallback chain) ---
+        eviction_target = None
+        for tag_key in ("respawn_point", "greeter_room"):
+            candidates = evennia.search_tag(tag_key, category="spawn_point")
+            for room in candidates:
+                if (room.db.zone_id or "") == zone_id:
+                    eviction_target = room
+                    break
+            if eviction_target:
+                break
+        if not eviction_target:
+            fallback_id = getattr(django_settings, "DEFAULT_HOME", None)
+            if fallback_id:
+                from evennia.objects.models import ObjectDB
+                try:
+                    eviction_target = ObjectDB.objects.get(id=fallback_id)
+                except ObjectDB.DoesNotExist:
+                    pass
+
+        # Collect all zone-owned objects once
+        all_zone_objects = evennia.search_tag(zone_id, category="zone_id")
+
+        # --- 1. Orphan exits (D-02) ---
+        for obj in all_zone_objects:
+            if hasattr(obj, 'destination') and obj.id not in self._exit_ids:
+                obj.delete()
+                report["exits_deleted"] += 1
+
+        # --- 2. Orphan NPCs (D-03) ---
+        for obj in all_zone_objects:
+            if not obj.pk:
+                continue
+            if getattr(obj.db, 'is_npc', False):
+                npc_id_tag = obj.tags.get(category="npc_id")
+                if npc_id_tag and npc_id_tag not in spec_npc_ids:
+                    obj.delete()
+                    report["npcs_deleted"] += 1
+
+        # --- 3. Orphan builder mob() objects (D-03, D-04) ---
+        for obj in all_zone_objects:
+            if not obj.pk:
+                continue
+            if not isinstance(obj, SoravelonMob):
+                continue
+            if getattr(obj.db, 'is_npc', False):
+                continue  # NPCs handled above
+            # Skip runtime-spawned mobs (D-04)
+            if obj.tags.has(category=MOB_INSTANCE_TAG_CATEGORY):
+                continue
+            # This is a builder mob — check if still in spec
+            if obj.key not in spec_mob_keys:
+                obj.delete()
+                report["mobs_deleted"] += 1
+
+        # --- 4. Orphan rooms (D-01) — last, after contents cleaned ---
+        for obj in all_zone_objects:
+            if not obj.pk:
+                continue
+            room_id_tag = obj.tags.get(category="room_id")
+            if not room_id_tag:
+                continue
+            if not hasattr(obj, 'exits'):
+                continue  # Not a room
+            if room_id_tag not in spec_room_ids:
+                # Evict players first
+                for content in list(obj.contents):
+                    if isinstance(content, Character) and eviction_target:
+                        content.msg(
+                            "|yYou have been moved — the area you "
+                            "were in has been restructured.|n"
+                        )
+                        content.move_to(
+                            eviction_target, quiet=True, move_hooks=False
+                        )
+                        report["players_evicted"] += 1
+                obj.delete()
+                report["rooms_deleted"] += 1
+
+        if any(v > 0 for v in report.values()):
+            logger.log_info(
+                f"[AreaBuilder] Zone '{zone_id}' reconciliation: {report}"
+            )
+
+        return report
 
     def _resolve_cross_zone_exits(self):
         """Resolve deferred cross-zone exits by tag lookup.

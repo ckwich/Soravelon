@@ -294,3 +294,22 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 3.1 -> 4 -> 5 -> 6a -> 6b -> 6c 
 | 14. All TBD/TODOs Implemented | 4/4 | Complete    | 2026-04-04 |
 | 15. Implement Missing Gameplay Gap Systems | 1/5 | Complete    | 2026-04-05 |
 | 16. Architectural Refactoring | 0/5 | Complete    | 2026-04-06 |
+
+### Phase 17: Area Reconciliation and Test Environment
+
+**Goal:** Make AreaBuilder rebuild safely reconcile stale exits/tags/NPCs/mobs against authored definitions, and standardize a reliable one-command test verification path
+**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05, REC-06, TST-01, TST-02
+**Depends on:** Phase 16
+**Success Criteria** (what must be TRUE):
+  1. Rooms removed from zone spec are hard-deleted on rebuild; players evicted to respawn_point
+  2. Stale exits, orphan NPCs, and builder-authored mob() objects are hard-deleted on rebuild
+  3. Runtime-spawned mobs (SpawnRecord/mob_instance_id) are never touched by reconciliation
+  4. Crafting station tags fully reconciled (clear then re-add) each build
+  5. Exit db attrs reset to defaults before re-applying from spec
+  6. `evennia test --settings settings tests/` produces zero failures and zero errors
+**Plans:** 3 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — AreaBuilder reconciliation sweep (tag/attr reset + post-build orphan deletion)
+- [ ] 17-02-PLAN.md — Test suite fixes (30 true failures + 437 isolation errors -> 0)
+- [ ] 17-03-PLAN.md — Reconciliation test suite + full suite green verification

@@ -15,8 +15,14 @@ def _check_mob_encounter_for_arrival(mob, character, room):
 
     Called from at_object_receive (D-02) — player enters a room containing a patrol mob.
     Triggers combat via the mob's PatrolScript if disposition warrants it.
+
+    Guards against duplicate combat initiation: if the character is already
+    in combat (e.g. from movement_lifecycle.on_move), skip.
     """
     if not mob or not mob.pk:
+        return
+    # Dedupe: if character already in combat, don't initiate again
+    if getattr(character.ndb, "combat_handler", None):
         return
     from world.patrol_engine import check_patrol_encounter
     if check_patrol_encounter(mob, room):

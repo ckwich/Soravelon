@@ -233,6 +233,8 @@ class SoravelonEquipment(SoravelonItem):
                     pass
 
         # Ring auto-fill: if slot is ring1 and occupied, try ring2
+        # Returns the chosen slot via the message field so equip_item
+        # can use it without mutating the item's authored slot.
         if slot == "ring1":
             r1_occupied = InventoryItem.objects.filter(
                 character_id=character.id,
@@ -247,8 +249,8 @@ class SoravelonEquipment(SoravelonItem):
                 ).exists()
                 if r2_occupied:
                     return False, "Both ring slots are occupied."
-                self.db.equipment_slot = "ring2"
-                return True, None
+                # Return success with the override slot — do NOT mutate db
+                return True, "ring2"
 
         occupied = InventoryItem.objects.filter(
             character_id=character.id,

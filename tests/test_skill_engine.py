@@ -212,7 +212,7 @@ class TestPracticeSkill(unittest.TestCase):
         success, msg = practice_skill(char, "lockpicking")
 
         self.assertFalse(success)
-        self.assertIn("next practice available", msg.lower())
+        self.assertIn("next practice in", msg.lower())
 
     @patch("world.skill_engine.timezone")
     @patch("world.models.CharacterSkill.objects")

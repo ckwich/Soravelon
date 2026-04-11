@@ -74,12 +74,13 @@ def on_logout(character):
     """
     from world.base_attributes import commit_stat_growth
     from world.world_state import commit_session_xp
+    from world.skill_engine import commit_skill_accumulators
     from world.group_engine import on_member_disconnect
 
-    # Flush stat growth accumulators before logout (called exactly once)
+    # Flush ALL accumulators before logout — stat growth, domain XP, skill uses
     commit_stat_growth(character)
-
     commit_session_xp(character)
+    commit_skill_accumulators(character)
     on_member_disconnect(character)
 
     # Stop HP/stamina recovery ticks before disconnect

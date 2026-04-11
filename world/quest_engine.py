@@ -552,8 +552,8 @@ def get_available_quest_for_npc(npc, character):
         if qid in active_ids:
             continue
 
-        # Skip if already complete
-        if qid in complete_ids:
+        # Skip if already complete AND one_chance (non-repeatable)
+        if qid in complete_ids and spec.get("one_chance"):
             continue
 
         # Skip if one_chance and failed

@@ -235,6 +235,93 @@ class CmdPass(Command):
 
 
 # ---------------------------------------------------------------------------
+# CmdCharge
+# ---------------------------------------------------------------------------
+
+class CmdCharge(Command):
+    """
+    Begin channeling an ability for a more powerful effect.
+
+    Usage:
+      charge <ability>
+
+    Some abilities can be charged over multiple rounds for increased
+    effect. While charging, you can still basic attack with remaining
+    actions. The ability fires automatically when charging completes.
+    """
+
+    key = "charge"
+    locks = "cmd:all()"
+    help_category = "Combat"
+
+    def func(self):
+        character = self.caller
+        handler = character.ndb.combat_handler
+
+        if not handler:
+            character.msg("|rYou can only charge abilities during combat.|n")
+            return
+
+        current = handler.get_current_combatant()
+        if current is None or current.id != character.id:
+            character.msg("|rIt's not your turn.|n")
+            return
+
+        if not self.args or not self.args.strip():
+            character.msg("Usage: charge <ability>")
+            return
+
+        raw_args = self.args.strip()
+
+        # Resolve ability by name from known abilities
+        from world.ability_registry import ABILITIES
+        from world.models import CharacterAbility
+
+        known_ids = list(
+            CharacterAbility.objects.filter(
+                character=character
+            ).values_list("ability_id", flat=True)
+        )
+
+        # Match by prefix against known ability names
+        matches = []
+        for aid in known_ids:
+            ability = ABILITIES.get(aid)
+            if not ability:
+                continue
+            if ability["name"].lower() == raw_args.lower():
+                matches = [aid]
+                break
+            if ability["name"].lower().startswith(raw_args.lower()):
+                matches.append(aid)
+
+        if not matches:
+            character.msg("|rYou don't know an ability by that name.|n")
+            return
+        if len(matches) > 1:
+            names = ", ".join(
+                ABILITIES[m]["name"] for m in matches if m in ABILITIES
+            )
+            character.msg(f"|rWhich ability? Matches: {names}|n")
+            return
+
+        ability_id = matches[0]
+
+        # Loadout gate
+        active_loadout = character.db.active_loadout or []
+        if active_loadout and ability_id not in active_loadout:
+            character.msg(
+                "That ability is not in your active loadout. "
+                "Use |wloadout add <ability>|n first."
+            )
+            return
+
+        handler.process_player_action(
+            character, action_type="charge", ability_id=ability_id
+        )
+
+
+# ---------------------------------------------------------------------------
 # CombatCmdSet
 # ---------------------------------------------------------------------------
 
@@ -261,6 +348,7 @@ class CombatCmdSet(CmdSet):
         self.add(CmdFlee())
         self.add(CmdTarget())
         self.add(CmdPass())
+        self.add(CmdCharge())
         self.add(CmdUseAbility())
         self.add(CmdAbilities())
         self.add(CmdLook())

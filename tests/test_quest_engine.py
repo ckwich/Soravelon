@@ -1091,8 +1091,48 @@ class TestGetAvailableQuestForNpc(unittest.TestCase):
 
     @patch("world.quest_engine.CharacterQuest")
     @patch("world.quest_engine._get_all_quest_specs")
-    def test_returns_none_for_completed_quest(self, mock_all_specs, MockCQ):
-        """Returns None if NPC's quest is already complete."""
+    def test_returns_none_for_completed_one_chance_quest(self, mock_all_specs, MockCQ):
+        """Returns None if NPC's one_chance quest is already complete."""
+        from world.quest_engine import get_available_quest_for_npc
+
+        npc = MagicMock()
+        npc.db.npc_id = "npc_barkeep"
+        char = MagicMock()
+
+        mock_all_specs.return_value = [
+            {"quest_id": "q1", "quest_giver": "npc_barkeep", "one_chance": True},
+        ]
+
+        existing_qs = MagicMock()
+        active_qs = MagicMock()
+        active_qs.values_list.return_value = []
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = ["q1"]
+        failed_qs = MagicMock()
+        failed_qs.values_list.return_value = []
+
+        def filter_side_effect(**kwargs):
+            if "status" not in kwargs:
+                return existing_qs
+            if kwargs.get("status") == "active":
+                return active_qs
+            if kwargs.get("status") == "complete":
+                return complete_qs
+            if kwargs.get("status") == "failed":
+                return failed_qs
+            return MagicMock(values_list=MagicMock(return_value=[]))
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+        existing_qs.filter.side_effect = filter_side_effect
+
+        result = get_available_quest_for_npc(npc, char)
+
+        self.assertIsNone(result)
+
+    @patch("world.quest_engine.CharacterQuest")
+    @patch("world.quest_engine._get_all_quest_specs")
+    def test_repeatable_quest_re_offered_after_completion(self, mock_all_specs, MockCQ):
+        """Repeatable (non-one_chance) quest is offered again after completion."""
         from world.quest_engine import get_available_quest_for_npc
 
         npc = MagicMock()
@@ -1127,7 +1167,8 @@ class TestGetAvailableQuestForNpc(unittest.TestCase):
 
         result = get_available_quest_for_npc(npc, char)
 
-        self.assertIsNone(result)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["quest_id"], "q1")
 
     @patch("world.quest_engine.CharacterQuest")
     @patch("world.quest_engine._get_all_quest_specs")

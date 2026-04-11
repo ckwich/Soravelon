@@ -243,8 +243,8 @@ class TestGetDominantFlag(unittest.TestCase):
 class TestFlagVocabularyCompleteness(unittest.TestCase):
     """FLAG_VOCABULARY has expected count and SENSE_PRIORITY covers all flags."""
 
-    def test_vocabulary_has_21_flags(self):
-        self.assertEqual(len(FLAG_VOCABULARY), 21)
+    def test_vocabulary_has_25_flags(self):
+        self.assertEqual(len(FLAG_VOCABULARY), 25)
 
     def test_sense_priority_covers_all_flags(self):
         """Every flag in vocabulary appears in SENSE_PRIORITY."""

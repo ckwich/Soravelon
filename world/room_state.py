@@ -139,7 +139,7 @@ FLAG_VOCABULARY = {
         "description": "A significant entity died here. Faction presence weakened.",
         "typical_duration": 30,
         "writers": ["named mob death", "boss mob death",
-                    "LLM quest consequence"],
+                    "quest consequence"],
         "readers": ["faction Standing gain rate (amplified)",
                     "Resonance Sense", "Diplomacy Influence build rate"],
     },
