@@ -39,6 +39,8 @@ def _make_target(hp=100, stamina=50, immunities=None):
     target.db.immunities = immunities or []
     # Ensure ndb.immunities is not set (default)
     target.ndb.immunities = None
+    # Prevent MagicMock location from triggering node-effect modifiers in tick_effects
+    target.location = None
     return target
 
 
