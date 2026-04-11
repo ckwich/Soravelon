@@ -153,7 +153,7 @@ class TestCreateItemFromTemplate(unittest.TestCase):
         self.assertEqual(result.db.weight, 1.5)
         self.assertEqual(result.db.rarity, "magic")
         self.assertEqual(result.db.desc, "A sharp iron dagger.")
-        self.assertEqual(result.db.value, 12)
+        self.assertEqual(result.db.value_scales, 12)
         self.assertEqual(result.db.item_type, "equipment")
 
     def test_equip_slot_set_for_equipment_type(self):
@@ -169,10 +169,10 @@ class TestCreateItemFromTemplate(unittest.TestCase):
             "value": 8,
         }
         result = self.create_item_from_template(item_def)
-        self.assertEqual(result.db.equip_slot, "head")
+        self.assertEqual(result.db.equipment_slot, "head")
 
     def test_equip_slot_none_for_non_equipment(self):
-        """db.equip_slot is None when item_def has no equip_slot."""
+        """db.equipment_slot is None when item_def has no equip_slot."""
         item_def = {
             "item_id": "bread_loaf",
             "key": "bread loaf",
@@ -183,7 +183,7 @@ class TestCreateItemFromTemplate(unittest.TestCase):
             "value": 1,
         }
         result = self.create_item_from_template(item_def)
-        self.assertIsNone(result.db.equip_slot)
+        self.assertIsNone(result.db.equipment_slot)
 
     def test_location_none_passes_none_to_create_object(self):
         """location=None → create_object called with location=None."""

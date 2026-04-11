@@ -80,6 +80,7 @@ def _make_mob(key="wolf", zone_id="zone_test"):
     mob = MagicMock()
     mob.key = key
     mob.db.zone_id = zone_id
+    mob.db.mob_template_key = key
     mob.location = None
     mob.tags.get = MagicMock(return_value=None)
     mob.scripts = MagicMock()
