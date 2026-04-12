@@ -7,7 +7,7 @@ Per D-14: compare shows side-by-side stat comparison.
 """
 
 from commands.command import Command
-from world.skill_engine import get_skill_value, record_skill_use
+from world.skill_engine import get_skill_value, accumulate_skill_use
 
 # Appraisal DC = (rarity_number * 15) + (material_tier * 5)
 RARITY_DC = {
@@ -104,7 +104,7 @@ class CmdInspect(Command):
             stats = _get_item_stats(item)
             self.caller.msg(_format_stats(item, stats))
             # Record skill use for passive advancement
-            record_skill_use(self.caller, "appraisal")
+            accumulate_skill_use(self.caller, "appraisal")
         else:
             self.caller.msg(
                 f"|w{item.key}|n\n{desc}\n"

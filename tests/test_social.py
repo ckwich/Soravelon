@@ -46,8 +46,14 @@ def _make_char(name, zone_id="vaels_crossing", ancestry="Human",
         ancestry=ancestry,
         domain_scores=domain_scores or {},
         guild_name=guild_name,
+        guild_id=None,
     )
-    char.ndb = _MockNDB(stamina=stamina, is_sleeping=False)
+    char.ndb = _MockNDB(
+        stamina=stamina,
+        is_sleeping=False,
+        hp=100,
+        combat_handler=None,
+    )
 
     # Location with zone tag
     location = MagicMock()
@@ -120,7 +126,7 @@ class TestCmdWho(unittest.TestCase):
 
 class TestCmdShout(unittest.TestCase):
 
-    @patch("commands.cmd_social.push_stat_update")
+    @patch("world.recovery_engine.push_stat_update")
     @patch("commands.cmd_social.evennia")
     def test_shout_reaches_zone(self, mock_evennia, mock_push):
         """CmdShout sends message to all characters in same zone."""
@@ -147,7 +153,7 @@ class TestCmdShout(unittest.TestCase):
         self.assertIn("Shouter", msg)
         self.assertIn("Hello zone!", msg)
 
-    @patch("commands.cmd_social.push_stat_update")
+    @patch("world.recovery_engine.push_stat_update")
     @patch("commands.cmd_social.evennia")
     def test_shout_costs_stamina(self, mock_evennia, mock_push):
         """Shout deducts 10 stamina from caller."""
@@ -371,7 +377,7 @@ class TestCmdInspect(unittest.TestCase):
 
         # DC for magic + tier 2 = 15 + 10 = 25
         with patch("commands.cmd_inspect.get_skill_value", return_value=30):
-            with patch("commands.cmd_inspect.record_skill_use"):
+            with patch("commands.cmd_inspect.accumulate_skill_use"):
                 cmd.func()
 
         output = cmd.caller.msg.call_args[0][0]

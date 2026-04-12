@@ -83,6 +83,7 @@ class TestExpandAliasTokenSubstitution(unittest.TestCase):
     def _make_char(self, aliases):
         char = MagicMock()
         char.db.aliases = aliases
+        char.ndb._alias_depth = 0
         return char
 
     def test_dollar1_substitution(self):
@@ -127,6 +128,7 @@ class TestExpandAliasChainCap(unittest.TestCase):
     def _make_char(self, aliases):
         char = MagicMock()
         char.db.aliases = aliases
+        char.ndb._alias_depth = 0
         return char
 
     def test_chain_capped_at_3(self):
@@ -151,6 +153,7 @@ class TestExpandAliasNotFound(unittest.TestCase):
     def _make_char(self, aliases):
         char = MagicMock()
         char.db.aliases = aliases
+        char.ndb._alias_depth = 0
         return char
 
     def test_unknown_alias_returns_none(self):
@@ -174,6 +177,7 @@ class TestPreprocessInputSystemExactMatch(unittest.TestCase):
     def _make_char(self, all_keys, aliases=None):
         char = MagicMock()
         char.db.aliases = aliases or {}
+        char.ndb._alias_depth = 0
         # Build fake cmdset list structure
         cmd_mock = MagicMock()
         cmd_mock.key = None
@@ -217,6 +221,7 @@ class TestPreprocessInputPrefixResolution(unittest.TestCase):
     def _make_char(self, all_keys, aliases=None):
         char = MagicMock()
         char.db.aliases = aliases or {}
+        char.ndb._alias_depth = 0
         cmdset_mock = MagicMock()
         cmdset_mock.commands = []
         for key in all_keys:
@@ -249,6 +254,7 @@ class TestPreprocessInputAmbiguousPrefix(unittest.TestCase):
     def _make_char(self, all_keys, aliases=None):
         char = MagicMock()
         char.db.aliases = aliases or {}
+        char.ndb._alias_depth = 0
         cmdset_mock = MagicMock()
         cmdset_mock.commands = []
         for key in all_keys:
@@ -278,6 +284,7 @@ class TestPreprocessInputAliasExpansion(unittest.TestCase):
     def _make_char(self, all_keys, aliases=None):
         char = MagicMock()
         char.db.aliases = aliases or {}
+        char.ndb._alias_depth = 0
         cmdset_mock = MagicMock()
         cmdset_mock.commands = []
         for key in all_keys:

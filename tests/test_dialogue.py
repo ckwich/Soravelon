@@ -451,9 +451,11 @@ class TestDynamicHints(EvenniaTest):
 class TestContextPacketInterface(unittest.TestCase):
     """_build_dialogue_context returns a dict with all required LLM keys."""
 
+    @patch("world.models.CharacterQuest.objects")
+    @patch("world.quest_engine.get_active_quests", return_value=[])
     @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
     @patch("world.world_state.get_character_context_packet")
-    def test_all_required_keys_present(self, mock_packet, mock_tier):
+    def test_all_required_keys_present(self, mock_packet, mock_tier, mock_active, mock_cq):
         from world.dialogue_engine import _build_dialogue_context
 
         mock_packet.return_value = {
@@ -496,9 +498,11 @@ class TestContextPacketInterface(unittest.TestCase):
         missing = required_keys - set(context.keys())
         self.assertEqual(missing, set(), f"Missing context keys: {missing}")
 
+    @patch("world.models.CharacterQuest.objects")
+    @patch("world.quest_engine.get_active_quests", return_value=[])
     @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
     @patch("world.world_state.get_character_context_packet")
-    def test_standing_tier_added(self, mock_packet, mock_tier):
+    def test_standing_tier_added(self, mock_packet, mock_tier, mock_active, mock_cq):
         """Context includes standing_tier derived from get_standing_tier."""
         from world.dialogue_engine import _build_dialogue_context
 
@@ -512,10 +516,11 @@ class TestContextPacketInterface(unittest.TestCase):
         context = _build_dialogue_context(npc, char)
         self.assertEqual(context["standing_tier"], "neutral")
 
+    @patch("world.models.CharacterQuest.objects")
     @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
     @patch("world.world_state.get_character_context_packet")
     @patch("world.quest_engine.get_active_quests")
-    def test_quest_hints_from_active_quests(self, mock_active, mock_packet, mock_tier):
+    def test_quest_hints_from_active_quests(self, mock_active, mock_packet, mock_tier, mock_cq):
         """Quest state populated from quest_engine; active_quests contains quest IDs."""
         from world.dialogue_engine import _build_dialogue_context
 

@@ -328,10 +328,14 @@ class TestDeathHandling(unittest.TestCase):
 
         player = _make_player()
         item1 = MagicMock()
+        item1.id = 1
         item2 = MagicMock()
+        item2.id = 2
         player.contents = [item1, item2]
 
-        with patch("world.combat_engine._spawn_player_corpse") as mock_corpse:
+        with patch("world.combat_engine._spawn_player_corpse") as mock_corpse, \
+             patch("world.models.InventoryItem.objects"), \
+             patch("world.banking.on_character_death"):
             mock_corpse.return_value = MagicMock()
             msg = handle_player_death(player)
             mock_corpse.assert_called_once()

@@ -9,6 +9,7 @@ Design refs: D-16 (active + idle), D-17 (gathering pools), D-18 (bait system).
 """
 
 from commands.command import Command
+from evennia.utils import delay
 
 
 class CmdFish(Command):
@@ -96,7 +97,6 @@ class CmdFish(Command):
     def _start_active_fishing(self, character, node, tool, bait):
         """Cast the line. Wait for a random bite timer."""
         import random
-        from evennia.utils import delay
 
         character.msg("|cYou cast your line into the water...|n")
         if bait:
@@ -129,7 +129,6 @@ class CmdFish(Command):
             self._stop_fishing(character)
             return
 
-        from evennia.utils import delay
 
         character.msg("|y*** You feel a tug on your line! Type 'reel' quickly! ***|n")
         state["phase"] = "bite"
@@ -169,7 +168,6 @@ class CmdFish(Command):
     def _start_idle_fishing(self, character, node, tool, bait):
         """Start auto-fishing with periodic catches."""
         import random
-        from evennia.utils import delay
 
         character.msg("|cYou settle in for idle fishing...|n")
         if bait:
@@ -212,7 +210,6 @@ class CmdFish(Command):
 
         # Schedule next idle catch
         import random
-        from evennia.utils import delay
 
         interval = random.uniform(20, 40)
         bait = state.get("bait")

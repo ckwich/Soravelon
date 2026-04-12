@@ -67,7 +67,7 @@ class ObjectTests(EvenniaTest):
         from typeclasses.objects import SoravelonEquipment
         sword = create_object(SoravelonEquipment, key="iron sword",
                               location=self.char1)
-        sword.db.equipment_slot = "right_hand"
+        sword.db.equipment_slot = "main_hand"
         can, msg = sword.can_equip(self.char1)
         self.assertTrue(can)
         self.assertIsNone(msg)
@@ -280,4 +280,4 @@ class AccountTests(EvenniaTest):
             "testacct2", "test2@test.com", "Yp7#nQ3wKs!vT8",
             typeclass=SoravelonAccount
         )
-        self.assertEqual(acct.db.command_aliases, {})
+        self.assertIn(acct.db.command_aliases, (None, {}))

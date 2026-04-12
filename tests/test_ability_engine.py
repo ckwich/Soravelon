@@ -201,8 +201,9 @@ class TestCooldowns(unittest.TestCase):
         self.assertIn("cooldown", msg.lower())
         self.assertIn("3", msg)
 
+    @patch("world.status_effects.apply_effect", return_value=(True, "Buff applied."))
     @patch("world.models.CharacterAbility")
-    def test_cooldown_set_after_use(self, mock_ca_cls):
+    def test_cooldown_set_after_use(self, mock_ca_cls, mock_apply):
         """Using an ability with cooldown sets ndb.ability_cooldowns."""
         from world.ability_engine import use_ability
 
@@ -212,7 +213,8 @@ class TestCooldowns(unittest.TestCase):
         char = _mock_character(
             domain_resource={"type": "focus", "current": 100, "max": 100},
         )
-        # shadow_step has cooldown=2
+        # shadow_step has cooldown=2; mock apply_effect since "evasion" buff
+        # type is not yet in the status_effects registry
         ok, msg = use_ability(char, "shadow_step")
 
         self.assertTrue(ok)

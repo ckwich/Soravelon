@@ -11,6 +11,14 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, call
 
 
+# Shared patches for all tests that call set_ancestry (which internally calls
+# _grant_starter_kit and apply_ancestry_skill_seeds, both of which touch the DB)
+_ANCESTRY_PATCHES = [
+    patch("world.ancestry_engine._grant_starter_kit"),
+    patch("world.skill_engine.apply_ancestry_skill_seeds"),
+]
+
+
 # ---------------------------------------------------------------------------
 # Helper: mock character with db namespace
 # ---------------------------------------------------------------------------
@@ -19,7 +27,24 @@ def _mock_character(ancestry=None, selvar_coat=None):
     """Create a MagicMock character with db attributes for ancestry tests."""
     char = MagicMock()
     char.db = SimpleNamespace(ancestry=ancestry, selvar_coat=selvar_coat)
+    char.id = 1  # Prevent MagicMock auto-attribute from breaking DB queries
     return char
+
+
+class _AncestryTestBase(unittest.TestCase):
+    """Base that activates _grant_starter_kit and skill_seeds mocks."""
+
+    def setUp(self):
+        self._patchers = [
+            patch("world.ancestry_engine._grant_starter_kit"),
+            patch("world.skill_engine.apply_ancestry_skill_seeds"),
+        ]
+        for p in self._patchers:
+            p.start()
+
+    def tearDown(self):
+        for p in self._patchers:
+            p.stop()
 
 
 # ===========================================================================
@@ -27,7 +52,7 @@ def _mock_character(ancestry=None, selvar_coat=None):
 # ===========================================================================
 
 
-class TestHumanAncestry(unittest.TestCase):
+class TestHumanAncestry(_AncestryTestBase):
     """Human ancestry sets db.ancestry and applies Empire +10k standing."""
 
     @patch("world.world_state.modify_standing")
@@ -57,7 +82,7 @@ class TestHumanAncestry(unittest.TestCase):
 # ===========================================================================
 
 
-class TestKauroranAncestry(unittest.TestCase):
+class TestKauroranAncestry(_AncestryTestBase):
     """Kauroran ancestry applies 3 faction standings."""
 
     @patch("world.world_state.modify_standing")
@@ -81,7 +106,7 @@ class TestKauroranAncestry(unittest.TestCase):
 # ===========================================================================
 
 
-class TestVethAncestry(unittest.TestCase):
+class TestVethAncestry(_AncestryTestBase):
     """Veth ancestry applies Consortium +7500 standing."""
 
     @patch("world.world_state.modify_standing")
@@ -101,7 +126,7 @@ class TestVethAncestry(unittest.TestCase):
 # ===========================================================================
 
 
-class TestSelvarAncestry(unittest.TestCase):
+class TestSelvarAncestry(_AncestryTestBase):
     """Selvar ancestry requires coat, applies -5k to all factions + guild offset."""
 
     @patch("world.world_state.modify_standing")

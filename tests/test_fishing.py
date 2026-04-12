@@ -323,12 +323,13 @@ class TestBaitSystem(unittest.TestCase):
         self.assertEqual(result, bait_item)
 
     def test_bait_consumed_on_catch_logic(self):
-        """In _catch_fish, bait consumption is handled and state['bait'] cleared."""
-        # The actual implementation delegates to gathering_engine.catch_fish
-        # which returns a bait_consumed flag; _catch_fish then clears state["bait"]
+        """In _catch_fish, bait consumption sets state['bait'] to None."""
+        # Verify the bait consumption code path exists in cmd_fishing.py
+        # The actual logic delegates to gathering_engine.catch_fish which
+        # returns bait_consumed flag; _catch_fish then clears state["bait"]
         import inspect
         from commands.cmd_fishing import CmdFish
 
         source = inspect.getsource(CmdFish._catch_fish)
-        self.assertIn("bait_consumed", source)
         self.assertIn('state["bait"] = None', source)
+        self.assertIn("bait_consumed", source)

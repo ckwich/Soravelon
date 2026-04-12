@@ -79,8 +79,10 @@ class TestCmdStabilize(unittest.TestCase):
         cmd.caller.msg = MagicMock()
         cmd.caller.ndb = MagicMock()
         cmd.caller.ndb.stabilize_cooldown = None
+        cmd.caller.ndb.stamina = 50  # Required for stabilization
         cmd.caller.db = MagicMock()
         cmd.caller.db.domain_scores = {}
+        cmd.args = ""
         return cmd
 
     def test_stabilize_in_node_center_reduces_failure(self):

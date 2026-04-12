@@ -17,7 +17,8 @@ def _make_room(zone_id="zone_test", dbref_id=1):
     room.db.zone_id = zone_id
     room.id = dbref_id
     room.exits = []
-    # Prevent MagicMock from returning truthy values for tag queries
+    # Ensure tags.get returns None by default so BFS doesn't
+    # mistakenly treat every room as having "no_mobs" tag
     room.tags.get = MagicMock(return_value=None)
     return room
 

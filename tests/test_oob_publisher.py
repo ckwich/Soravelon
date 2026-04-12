@@ -278,28 +278,40 @@ class TestPushInventoryUpdate(unittest.TestCase):
     def setUp(self):
         self.char = _make_char()
 
-    @patch("world.inventory_helpers.get_carry_state", return_value="light")
-    def test_sends_inventory_update(self, mock_carry):
+    @patch("world.inventory_engine.get_inventory_display_data", return_value={
+        "equipped": [], "carried": [], "containers": {},
+        "keyring": [], "carried_scales": 0, "carry_state": "light",
+        "carry_weight": 0.0, "carry_capacity": 60,
+    })
+    def test_sends_inventory_update(self, mock_inv):
         from world.oob_publisher import push_inventory_update
         push_inventory_update(self.char)
         self.char.msg.assert_called_once()
         data = self.char.msg.call_args.kwargs["inventory_update"]
-        self.assertIn("items", data)
+        self.assertIn("equipped", data)
         self.assertIn("encumbrance", data)
 
-    @patch("world.inventory_helpers.get_carry_state", return_value="encumbered")
-    def test_encumbrance_value_passed(self, mock_carry):
+    @patch("world.inventory_engine.get_inventory_display_data", return_value={
+        "equipped": [], "carried": [], "containers": {},
+        "keyring": [], "carried_scales": 0, "carry_state": "encumbered",
+        "carry_weight": 55.0, "carry_capacity": 60,
+    })
+    def test_encumbrance_value_passed(self, mock_inv):
         from world.oob_publisher import push_inventory_update
         push_inventory_update(self.char)
         data = self.char.msg.call_args.kwargs["inventory_update"]
         self.assertEqual(data["encumbrance"], "encumbered")
 
-    @patch("world.inventory_helpers.get_carry_state", return_value="light")
-    def test_items_stub_is_empty_list(self, mock_carry):
+    @patch("world.inventory_engine.get_inventory_display_data", return_value={
+        "equipped": [], "carried": [], "containers": {},
+        "keyring": [], "carried_scales": 0, "carry_state": "light",
+        "carry_weight": 0.0, "carry_capacity": 60,
+    })
+    def test_carried_is_empty_list(self, mock_inv):
         from world.oob_publisher import push_inventory_update
         push_inventory_update(self.char)
         data = self.char.msg.call_args.kwargs["inventory_update"]
-        self.assertEqual(data["items"], [])
+        self.assertEqual(data["carried"], [])
 
 
 # ---------------------------------------------------------------------------

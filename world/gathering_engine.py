@@ -11,6 +11,8 @@ random room placement with configurable limits.
 
 import random
 
+import evennia
+
 
 # ---------------------------------------------------------------------------
 # GatheringPoolScript
@@ -80,7 +82,7 @@ def _prune_and_refill(pool_script):
     Called by at_repeat: remove deleted/missing nodes from active list,
     spawn replacements if under max_active.
     """
-    import evennia
+
 
     active_ids = list(pool_script.db.active_node_ids or [])
     live_ids = []
@@ -104,7 +106,7 @@ def _pick_eligible_room(pool_script, exclude_room_id=None):
     Pick a random eligible room from the pool, excluding the last
     depleted room (per D-03 / pitfall 5).
     """
-    import evennia
+
 
     eligible_ids = list(pool_script.db.eligible_room_ids or [])
     if not eligible_ids:
@@ -182,7 +184,7 @@ def spawn_node_in_pool(pool_script, exclude_room_id=None):
     Returns:
         Created node object, or None if no eligible room/material.
     """
-    import evennia
+
     from typeclasses.objects import GatheringNode
 
     room = _pick_eligible_room(pool_script, exclude_room_id)
@@ -236,7 +238,7 @@ def deplete_node(node, pool_script):
         node: GatheringNode instance
         pool_script: GatheringPoolScript managing this node
     """
-    import evennia
+
 
     depleted_room_id = node.location.id if node.location else None
 
@@ -302,7 +304,7 @@ def _find_pool_script(node):
     Locate the GatheringPoolScript managing this node.
     Searches the zone object's scripts for a matching pool_id.
     """
-    import evennia
+
 
     zone_id = node.db.zone_id or ""
     pool_id = node.db.pool_id or ""
@@ -344,7 +346,7 @@ def spawn_gathering_pool(zone_obj, pool_def):
                   max_active, respawn_minutes, respawn_variance,
                   tier_floor, tier_ceiling
     """
-    import evennia
+
 
     zone_id = zone_obj.db.zone_id or ""
     pool_type = pool_def.get("pool_type", "")
@@ -428,7 +430,7 @@ def _set_room_flags_for_pool(pool_type, eligible_room_ids):
       wood -> dense_foliage
       fish -> water_source
     """
-    import evennia
+
     from world.room_state import add_room_flag
 
     flag_map = {

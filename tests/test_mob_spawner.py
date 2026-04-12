@@ -3,7 +3,8 @@ Tests for world/mob_spawner.py — spawn engine.
 
 Uses unittest.TestCase + MagicMock throughout. Per-test sys.modules injection
 for evennia and twisted to avoid DB/server dependencies.
-The `world` package is real (pytest loads it); only sub-dependencies are mocked.
+The `world` package is real (evennia test loads it); only sub-dependencies
+are mocked within setUp/tearDown to prevent leaking into other test modules.
 """
 
 import sys
@@ -13,34 +14,13 @@ from unittest.mock import MagicMock, patch
 
 
 # ---------------------------------------------------------------------------
-# Module-level stubs for deps that can't be imported cleanly in plain pytest
+# Stub classes (module-level definitions, but NOT injected into sys.modules
+# at import time — injection happens only in setUp)
 # ---------------------------------------------------------------------------
 
-# Stub typeclasses hierarchy
 _MockSoravelonMob = type("SoravelonMob", (), {})
-_mobs_mod = types.ModuleType("typeclasses.mobs")
-_mobs_mod.SoravelonMob = _MockSoravelonMob
-
 _MockSoravelonScript = type("SoravelonScript", (), {})
-_scripts_tc_mod = types.ModuleType("typeclasses.scripts")
-_scripts_tc_mod.SoravelonScript = _MockSoravelonScript
-
 _MockPatrolScript = type("PatrolScript", (_MockSoravelonScript,), {})
-_patrol_script_mod = types.ModuleType("world.scripts.patrol_script")
-_patrol_script_mod.PatrolScript = _MockPatrolScript
-
-_world_scripts_mod = types.ModuleType("world.scripts")
-
-if "typeclasses" not in sys.modules:
-    sys.modules["typeclasses"] = types.ModuleType("typeclasses")
-if "typeclasses.mobs" not in sys.modules:
-    sys.modules["typeclasses.mobs"] = _mobs_mod
-if "typeclasses.scripts" not in sys.modules:
-    sys.modules["typeclasses.scripts"] = _scripts_tc_mod
-if "world.scripts" not in sys.modules:
-    sys.modules["world.scripts"] = _world_scripts_mod
-if "world.scripts.patrol_script" not in sys.modules:
-    sys.modules["world.scripts.patrol_script"] = _patrol_script_mod
 
 
 # ---------------------------------------------------------------------------
@@ -88,39 +68,79 @@ def _make_mob(key="wolf", zone_id="zone_test"):
     return mob
 
 
-def _setup_evennia_stub(create_result=None):
-    """Create and inject a fresh evennia stub. Returns the stub."""
-    stub = MagicMock()
-    stub.create_object = MagicMock(return_value=create_result or _make_mob())
-    stub.search_tag = MagicMock(return_value=[])
-    sys.modules["evennia"] = stub
-    return stub
+# Module keys that setUp injects and tearDown must restore
+_STUB_KEYS = [
+    "typeclasses", "typeclasses.mobs", "typeclasses.scripts",
+    "world.scripts", "world.scripts.patrol_script", "evennia",
+]
 
 
-def _reload_mob_spawner():
-    """Remove cached mob_spawner and re-import it."""
-    for key in list(sys.modules.keys()):
-        if "mob_spawner" in key:
-            del sys.modules[key]
-    import world.mob_spawner
-    return world.mob_spawner
+class _MobSpawnerTestBase(unittest.TestCase):
+    """Base class that handles sys.modules injection/restoration."""
+
+    def setUp(self):
+        # Save originals for ALL keys we might touch
+        self._saved_modules = {}
+        for key in _STUB_KEYS:
+            if key in sys.modules:
+                self._saved_modules[key] = sys.modules[key]
+            # else: key was absent, we'll pop it in tearDown
+
+        # Build stub modules
+        mobs_mod = types.ModuleType("typeclasses.mobs")
+        mobs_mod.SoravelonMob = _MockSoravelonMob
+        scripts_mod = types.ModuleType("typeclasses.scripts")
+        scripts_mod.SoravelonScript = _MockSoravelonScript
+        patrol_mod = types.ModuleType("world.scripts.patrol_script")
+        patrol_mod.PatrolScript = _MockPatrolScript
+        world_scripts_mod = types.ModuleType("world.scripts")
+
+        # Inject stubs
+        if "typeclasses" not in sys.modules:
+            sys.modules["typeclasses"] = types.ModuleType("typeclasses")
+        sys.modules["typeclasses.mobs"] = mobs_mod
+        sys.modules["typeclasses.scripts"] = scripts_mod
+        sys.modules["world.scripts"] = world_scripts_mod
+        sys.modules["world.scripts.patrol_script"] = patrol_mod
+
+        # Build evennia stub
+        self.evennia_stub = MagicMock()
+        self.evennia_stub.create_object = MagicMock(return_value=_make_mob())
+        self.evennia_stub.search_tag = MagicMock(return_value=[])
+        sys.modules["evennia"] = self.evennia_stub
+
+        # Remove any cached mob_spawner so we import fresh
+        for key in list(sys.modules.keys()):
+            if "mob_spawner" in key:
+                del sys.modules[key]
+
+        import world.mob_spawner
+        self.spawner = world.mob_spawner
+
+    def tearDown(self):
+        # Remove cached mob_spawner
+        for key in list(sys.modules.keys()):
+            if "mob_spawner" in key:
+                del sys.modules[key]
+
+        # Restore original sys.modules state
+        for key in _STUB_KEYS:
+            if key in self._saved_modules:
+                sys.modules[key] = self._saved_modules[key]
+            else:
+                sys.modules.pop(key, None)
 
 
 # ---------------------------------------------------------------------------
 # Tests: _count_room_mobs
 # ---------------------------------------------------------------------------
 
-class TestCountRoomMobs(unittest.TestCase):
+class TestCountRoomMobs(_MobSpawnerTestBase):
 
     def setUp(self):
+        super().setUp()
         self.mob = _make_mob()
-        self.evennia_stub = _setup_evennia_stub(create_result=self.mob)
-        self.spawner = _reload_mob_spawner()
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if "mob_spawner" in key:
-                del sys.modules[key]
+        self.evennia_stub.create_object.return_value = self.mob
 
     def test_counts_matching_mobs_in_room(self):
         room = _make_room()
@@ -161,6 +181,7 @@ class TestCountRoomMobs(unittest.TestCase):
         non_mob = MagicMock()
         non_mob.__class__ = object  # not a SoravelonMob
         non_mob.key = "wolf"
+        non_mob.db.mob_template_key = "wolf"
         room.contents = [mob, non_mob]
 
         spawn_def = _make_spawn_def(mob="wolf")
@@ -172,9 +193,10 @@ class TestCountRoomMobs(unittest.TestCase):
 # Tests: spawn_single_mob
 # ---------------------------------------------------------------------------
 
-class TestSpawnSingleMob(unittest.TestCase):
+class TestSpawnSingleMob(_MobSpawnerTestBase):
 
     def setUp(self):
+        super().setUp()
         self.room = _make_room()
         self.spawn_def = _make_spawn_def(
             mob="wolf",
@@ -183,13 +205,7 @@ class TestSpawnSingleMob(unittest.TestCase):
             flee_threshold=25,
         )
         self.mob = _make_mob(key="wolf")
-        self.evennia_stub = _setup_evennia_stub(create_result=self.mob)
-        self.spawner = _reload_mob_spawner()
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if "mob_spawner" in key:
-                del sys.modules[key]
+        self.evennia_stub.create_object.return_value = self.mob
 
     def test_creates_mob_with_correct_key_and_location(self):
         mob = self.spawner.spawn_single_mob(self.spawn_def, self.room)
@@ -227,9 +243,10 @@ class TestSpawnSingleMob(unittest.TestCase):
 # Tests: spawn_named_mob
 # ---------------------------------------------------------------------------
 
-class TestSpawnNamedMob(unittest.TestCase):
+class TestSpawnNamedMob(_MobSpawnerTestBase):
 
     def setUp(self):
+        super().setUp()
         self.room = _make_room()
         self.spawn_def = _make_spawn_def(
             mob="dire_wolf",
@@ -238,13 +255,7 @@ class TestSpawnNamedMob(unittest.TestCase):
             tome_drop="tome_bestiary_wolf",
         )
         self.mob = _make_mob(key="dire_wolf")
-        self.evennia_stub = _setup_evennia_stub(create_result=self.mob)
-        self.spawner = _reload_mob_spawner()
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if "mob_spawner" in key:
-                del sys.modules[key]
+        self.evennia_stub.create_object.return_value = self.mob
 
     def test_tags_mob_with_mob_instance_id_category(self):
         self.spawner.spawn_named_mob(self.spawn_def, self.room)
@@ -270,7 +281,6 @@ class TestSpawnNamedMob(unittest.TestCase):
 
     def test_skips_spawn_when_condition_fails(self):
         self.spawn_def["spawn_condition"] = "node_failure_above_999"
-        # Patch get_node_script inside mob_spawner module to return None
         with patch.object(self.spawner, "_evaluate_spawn_condition", return_value=False):
             result = self.spawner.spawn_named_mob(self.spawn_def, self.room)
         self.assertIsNone(result)
@@ -281,17 +291,12 @@ class TestSpawnNamedMob(unittest.TestCase):
 # Tests: spawn_room_mobs — count management
 # ---------------------------------------------------------------------------
 
-class TestSpawnRoomMobs(unittest.TestCase):
+class TestSpawnRoomMobs(_MobSpawnerTestBase):
 
     def setUp(self):
+        super().setUp()
         self.new_mob = _make_mob(key="wolf")
-        self.evennia_stub = _setup_evennia_stub(create_result=self.new_mob)
-        self.spawner = _reload_mob_spawner()
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if "mob_spawner" in key:
-                del sys.modules[key]
+        self.evennia_stub.create_object.return_value = self.new_mob
 
     def _setup_room(self, spawn_defs, existing_count=0):
         room = _make_room()
@@ -335,11 +340,14 @@ class TestSpawnRoomMobs(unittest.TestCase):
             spawn_condition="node_failure_above_999",
         )
         room = self._setup_room([spawn_def], existing_count=0)
-        # Patch node_helpers so condition fails
         with patch.dict(sys.modules, {
             "world.node_helpers": MagicMock(get_node_script=MagicMock(return_value=None))
         }):
-            spawner = _reload_mob_spawner()
+            # Re-import with patched node_helpers
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             spawned = spawner.spawn_room_mobs(room)
         self.assertEqual(spawned, 0)
         self.evennia_stub.create_object.assert_not_called()
@@ -349,17 +357,7 @@ class TestSpawnRoomMobs(unittest.TestCase):
 # Tests: spawn_zone
 # ---------------------------------------------------------------------------
 
-class TestSpawnZone(unittest.TestCase):
-
-    def setUp(self):
-        self.new_mob = _make_mob()
-        self.evennia_stub = _setup_evennia_stub(create_result=self.new_mob)
-        self.spawner = _reload_mob_spawner()
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if "mob_spawner" in key:
-                del sys.modules[key]
+class TestSpawnZone(_MobSpawnerTestBase):
 
     def test_calls_spawn_room_mobs_for_each_room(self):
         zone_obj = MagicMock()
@@ -378,7 +376,6 @@ class TestSpawnZone(unittest.TestCase):
         self.evennia_stub.search_tag = MagicMock(side_effect=_search_tag_side_effect)
 
         total = self.spawner.spawn_zone(zone_obj)
-        # Each room has count_min=1, empty → 1 spawn each → 2 total
         self.assertEqual(total, 2)
 
     def test_excludes_zone_obj_itself(self):
@@ -397,21 +394,14 @@ class TestSpawnZone(unittest.TestCase):
 # Tests: _maybe_attach_patrol
 # ---------------------------------------------------------------------------
 
-class TestMaybeAttachPatrol(unittest.TestCase):
-
-    def setUp(self):
-        self.new_mob = _make_mob()
-        self.evennia_stub = _setup_evennia_stub(create_result=self.new_mob)
-        self.spawner = _reload_mob_spawner()
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if "mob_spawner" in key:
-                del sys.modules[key]
+class TestMaybeAttachPatrol(_MobSpawnerTestBase):
 
     def test_does_nothing_when_no_zone_obj(self):
         with patch("world.zone_scaling.get_zone_obj_for_room", return_value=None):
-            spawner = _reload_mob_spawner()
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             mob = _make_mob()
             spawn_def = _make_spawn_def(mob="wolf")
             room = _make_room()
@@ -422,7 +412,10 @@ class TestMaybeAttachPatrol(unittest.TestCase):
         zone_obj = MagicMock()
         zone_obj.db.patrol_definitions = None
         with patch("world.zone_scaling.get_zone_obj_for_room", return_value=zone_obj):
-            spawner = _reload_mob_spawner()
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             mob = _make_mob()
             spawn_def = _make_spawn_def(mob="wolf")
             room = _make_room()
@@ -435,7 +428,10 @@ class TestMaybeAttachPatrol(unittest.TestCase):
             {"mob_key": "bear", "route_room_ids": ["room_01"]}
         ]
         with patch("world.zone_scaling.get_zone_obj_for_room", return_value=zone_obj):
-            spawner = _reload_mob_spawner()
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             mob = _make_mob()
             spawn_def = _make_spawn_def(mob="wolf")
             room = _make_room()
@@ -479,9 +475,11 @@ class TestMaybeAttachPatrol(unittest.TestCase):
         room = _make_room(zone_id="zone_test")
 
         with patch("world.zone_scaling.get_zone_obj_for_room", return_value=zone_obj):
-            spawner = _reload_mob_spawner()
-            # ensure evennia stub is active
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
             sys.modules["evennia"] = self.evennia_stub
+            import world.mob_spawner as spawner
             spawner._maybe_attach_patrol(mob, spawn_def, room)
 
         mob.scripts.add.assert_called_once()
@@ -493,18 +491,13 @@ class TestMaybeAttachPatrol(unittest.TestCase):
 # Tests: _schedule_respawn
 # ---------------------------------------------------------------------------
 
-class TestScheduleRespawn(unittest.TestCase):
+class TestScheduleRespawn(_MobSpawnerTestBase):
 
     def setUp(self):
+        super().setUp()
         self.room = _make_room()
         self.new_mob = _make_mob()
-        self.evennia_stub = _setup_evennia_stub(create_result=self.new_mob)
-        self.spawner = _reload_mob_spawner()
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if "mob_spawner" in key:
-                del sys.modules[key]
+        self.evennia_stub.create_object.return_value = self.new_mob
 
     def test_calls_call_later_with_valid_delay(self):
         spawn_def = _make_spawn_def(mob="wolf", respawn_minutes=10, respawn_variance=0)
@@ -517,7 +510,6 @@ class TestScheduleRespawn(unittest.TestCase):
         mock_reactor.callLater.assert_called_once()
         delay_arg = mock_reactor.callLater.call_args[0][0]
         self.assertGreaterEqual(delay_arg, 30)
-        # base 10*60=600, variance=0 → should be 600
         self.assertAlmostEqual(delay_arg, 600.0, delta=1.0)
 
     def test_respawn_callback_skips_when_at_count_max(self):
@@ -565,16 +557,7 @@ class TestScheduleRespawn(unittest.TestCase):
 # Tests: _evaluate_spawn_condition
 # ---------------------------------------------------------------------------
 
-class TestEvaluateSpawnCondition(unittest.TestCase):
-
-    def setUp(self):
-        self.evennia_stub = _setup_evennia_stub()
-        self.spawner = _reload_mob_spawner()
-
-    def tearDown(self):
-        for key in list(sys.modules.keys()):
-            if "mob_spawner" in key:
-                del sys.modules[key]
+class TestEvaluateSpawnCondition(_MobSpawnerTestBase):
 
     def test_none_condition_always_returns_true(self):
         room = _make_room()
@@ -586,7 +569,10 @@ class TestEvaluateSpawnCondition(unittest.TestCase):
 
     def test_node_failure_above_threshold_false_when_no_script(self):
         with patch("world.node_helpers.get_node_script", return_value=None):
-            spawner = _reload_mob_spawner()
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             room = _make_room(zone_id="zone_a")
             self.assertFalse(spawner._evaluate_spawn_condition("node_failure_above_50", room))
 
@@ -594,7 +580,10 @@ class TestEvaluateSpawnCondition(unittest.TestCase):
         mock_script = MagicMock()
         mock_script.db.failure = 75
         with patch("world.node_helpers.get_node_script", return_value=mock_script):
-            spawner = _reload_mob_spawner()
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             room = _make_room(zone_id="zone_a")
             self.assertTrue(spawner._evaluate_spawn_condition("node_failure_above_50", room))
 
@@ -602,7 +591,10 @@ class TestEvaluateSpawnCondition(unittest.TestCase):
         mock_script = MagicMock()
         mock_script.db.failure = 30
         with patch("world.node_helpers.get_node_script", return_value=mock_script):
-            spawner = _reload_mob_spawner()
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             room = _make_room(zone_id="zone_a")
             self.assertFalse(spawner._evaluate_spawn_condition("node_failure_above_50", room))
 
@@ -610,7 +602,10 @@ class TestEvaluateSpawnCondition(unittest.TestCase):
         mock_script = MagicMock()
         mock_script.db.state = "active"
         with patch("world.node_helpers.get_node_script", return_value=mock_script):
-            spawner = _reload_mob_spawner()
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             room = _make_room(zone_id="zone_a")
             self.assertTrue(spawner._evaluate_spawn_condition("node_active", room))
 
@@ -618,7 +613,10 @@ class TestEvaluateSpawnCondition(unittest.TestCase):
         mock_script = MagicMock()
         mock_script.db.state = "dormant"
         with patch("world.node_helpers.get_node_script", return_value=mock_script):
-            spawner = _reload_mob_spawner()
+            for key in list(sys.modules.keys()):
+                if "mob_spawner" in key:
+                    del sys.modules[key]
+            import world.mob_spawner as spawner
             room = _make_room(zone_id="zone_a")
             self.assertFalse(spawner._evaluate_spawn_condition("node_active", room))
 

@@ -23,7 +23,8 @@ class TestCreateItemFromTemplate(unittest.TestCase):
         self.mock_evennia = MagicMock()
         self.mock_evennia.create_object.return_value = self.mock_item
 
-        # Inject into sys.modules before import
+        # Save original evennia module before injecting stub
+        self._saved_evennia = sys.modules.get("evennia")
         sys.modules["evennia"] = self.mock_evennia
 
         # Remove cached module if already imported
@@ -39,6 +40,11 @@ class TestCreateItemFromTemplate(unittest.TestCase):
         for mod in list(sys.modules.keys()):
             if mod.startswith("world.item_spawner") or mod == "world.item_spawner":
                 del sys.modules[mod]
+        # Restore original evennia module to prevent leaking into other tests
+        if self._saved_evennia is not None:
+            sys.modules["evennia"] = self._saved_evennia
+        else:
+            sys.modules.pop("evennia", None)
 
     def test_equipment_type_uses_soravelon_equipment_typeclass(self):
         """item_type='equipment' → creates with SoravelonEquipment typeclass."""

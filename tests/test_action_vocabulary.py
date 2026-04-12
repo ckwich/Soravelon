@@ -77,13 +77,13 @@ class TestActionHandlersRegistry(EvenniaTest):
     """ACTION_HANDLERS dict contains all registered action types."""
 
     def test_handler_count(self):
-        """ACTION_HANDLERS has exactly 16 keys (12 original + add_room_flag + 3 quest reward handlers)."""
+        """ACTION_HANDLERS has exactly 17 keys."""
         from world.action_vocabulary import ACTION_HANDLERS
 
-        self.assertEqual(len(ACTION_HANDLERS), 16)
+        self.assertEqual(len(ACTION_HANDLERS), 17)
 
     def test_all_expected_action_types_present(self):
-        """All 16 required action types are registered."""
+        """All 17 required action types are registered."""
         from world.action_vocabulary import ACTION_HANDLERS
 
         expected = {
@@ -103,6 +103,7 @@ class TestActionHandlersRegistry(EvenniaTest):
             "give_scales",
             "give_skill_xp",
             "modify_node_failure",
+            "learn_recipe",
         }
         self.assertEqual(set(ACTION_HANDLERS.keys()), expected)
 
@@ -149,7 +150,7 @@ class TestTeleportAction(EvenniaTest):
             )
 
         self.assertTrue(success)
-        char.move_to.assert_called_once_with(target_room, quiet=False)
+        char.move_to.assert_called_once_with(target_room, quiet=False, move_hooks=False)
 
     def test_teleport_room_not_found_returns_false(self):
         """teleport with invalid room_id returns (False, error)."""
@@ -186,7 +187,7 @@ class TestTeleportToMobAction(EvenniaTest):
             )
 
         self.assertTrue(success)
-        char.move_to.assert_called_once_with(mob_room, quiet=False)
+        char.move_to.assert_called_once_with(mob_room, quiet=False, move_hooks=False)
 
     def test_teleport_to_mob_not_found_returns_false(self):
         """teleport_to_mob with unknown mob_key returns (False, error)."""
@@ -248,7 +249,7 @@ class TestOpenDialogueCallsQuestEngine(EvenniaTest):
         quest_spec = {"quest_id": "wolves_hunt", "name": "Hunt the Wolves"}
 
         with patch("world.quest_engine.get_available_quest_for_npc", return_value=quest_spec) as mock_avail, \
-             patch("world.quest_engine.accept_quest") as mock_accept, \
+             patch("world.quest_engine.accept_quest", return_value=(True, "Quest accepted")) as mock_accept, \
              patch("world.dialogue_engine.resolve_greeting", return_value=("Hello!", "neutral")):
             success, msg = execute_action(
                 {"action_type": "open_dialogue"},
