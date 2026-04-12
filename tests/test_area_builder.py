@@ -1052,3 +1052,237 @@ class TestAreaBuilderNamedMobRefactor(AreaBuilderTestBase):
 
         spawn_def = r1.db.spawn_definitions[0]
         self.assertEqual(spawn_def["prestige_modifier"], 2.0)
+
+
+# ------------------------------------------------------------------
+# Reconciliation tests (Phase 17, Plan 03)
+# ------------------------------------------------------------------
+
+class TestReconciliation(AreaBuilderTestBase):
+    """Tests for _reconcile_stale_objects: hard-deleting orphan DB objects on rebuild."""
+
+    def test_orphan_room_deleted_on_rebuild(self):
+        """Build 3 rooms, remove 1 from spec, rebuild — orphan room deleted, 2 remain."""
+        ab1 = self._make_builder("recon_zone_rooms")
+        r1 = self._make_room(ab1, "room_001")
+        r2 = self._make_room(ab1, "room_002")
+        r3 = self._make_room(ab1, "room_003")
+        ab1.build()
+
+        r1_id = r1.id
+        r2_id = r2.id
+        r3_id = r3.id
+
+        # Rebuild with only 2 rooms — room_003 removed from spec
+        ab2 = self._make_builder("recon_zone_rooms")
+        self._make_room(ab2, "room_001")
+        self._make_room(ab2, "room_002")
+        report = ab2.build()
+
+        # room_003 should be deleted
+        from evennia.objects.models import ObjectDB
+        self.assertTrue(ObjectDB.objects.filter(id=r1_id).exists())
+        self.assertTrue(ObjectDB.objects.filter(id=r2_id).exists())
+        self.assertFalse(ObjectDB.objects.filter(id=r3_id).exists())
+        self.assertEqual(report["reconciled"]["rooms_deleted"], 1)
+
+    def test_player_evicted_from_deleted_room(self):
+        """Player in a room removed from spec is evicted to respawn_point with a message."""
+        # Build zone with a respawn_point and a second room
+        ab1 = self._make_builder("recon_zone_evict")
+        r_safe = self._make_room(ab1, "safe_room")
+        r_safe.tags.add("respawn_point", category="spawn_point")
+        r_doomed = self._make_room(ab1, "doomed_room")
+        ab1.build()
+
+        # Place a character in the doomed room
+        from typeclasses.characters import Character
+        char = create_object(Character, key="test_player", location=r_doomed)
+        char.msg = MagicMock()
+
+        # Rebuild without doomed_room
+        ab2 = self._make_builder("recon_zone_evict")
+        r_safe2 = self._make_room(ab2, "safe_room")
+        r_safe2.tags.add("respawn_point", category="spawn_point")
+        report = ab2.build()
+
+        # Player should have been moved to safe room
+        char.refresh_from_db()
+        self.assertEqual(char.location.id, r_safe.id)
+        char.msg.assert_called()
+        self.assertEqual(report["reconciled"]["players_evicted"], 1)
+
+        # Cleanup
+        char.delete()
+
+    def test_orphan_exit_deleted_on_rebuild(self):
+        """Exit removed from spec is hard-deleted on rebuild."""
+        ab1 = self._make_builder("recon_zone_exits")
+        r1 = self._make_room(ab1, "room_001")
+        r2 = self._make_room(ab1, "room_002")
+        ab1.exit(r1, r2, "north")
+        ab1.build()
+
+        # Find the exit
+        exits_before = [ex for ex in r1.exits if ex.key == "north"]
+        self.assertEqual(len(exits_before), 1)
+        exit_id = exits_before[0].id
+
+        # Rebuild without the exit
+        ab2 = self._make_builder("recon_zone_exits")
+        self._make_room(ab2, "room_001")
+        self._make_room(ab2, "room_002")
+        report = ab2.build()
+
+        from evennia.objects.models import ObjectDB
+        self.assertFalse(ObjectDB.objects.filter(id=exit_id).exists())
+        self.assertEqual(report["reconciled"]["exits_deleted"], 1)
+
+    def test_orphan_npc_deleted_on_rebuild(self):
+        """NPC removed from spec is hard-deleted on rebuild."""
+        ab1 = self._make_builder("recon_zone_npc")
+        r1 = self._make_room(ab1, "room_001")
+        ab1.npc(r1, "old_merchant", quest="trade_quest")
+        ab1.build()
+
+        # Find the NPC object
+        import evennia as _ev
+        npcs = _ev.search_tag("old_merchant", category="npc_id")
+        self.assertEqual(len(npcs), 1)
+        npc_id = npcs[0].id
+
+        # Rebuild without the NPC
+        ab2 = self._make_builder("recon_zone_npc")
+        self._make_room(ab2, "room_001")
+        report = ab2.build()
+
+        from evennia.objects.models import ObjectDB
+        self.assertFalse(ObjectDB.objects.filter(id=npc_id).exists())
+        self.assertEqual(report["reconciled"]["npcs_deleted"], 1)
+
+    def test_builder_mob_deleted_on_rebuild(self):
+        """Builder mob() object removed from spec is hard-deleted on rebuild."""
+        ab1 = self._make_builder("recon_zone_mob")
+        r1 = self._make_room(ab1, "room_001")
+        ab1.mob("patrol_guard", r1, behavior=["territorial"])
+        ab1.build()
+
+        # Find the mob
+        from typeclasses.mobs import SoravelonMob
+        import evennia as _ev
+        candidates = _ev.search_object("patrol_guard", typeclass=SoravelonMob)
+        mob_obj = None
+        for c in candidates:
+            if (c.db.zone_id or "") == "recon_zone_mob":
+                mob_obj = c
+                break
+        self.assertIsNotNone(mob_obj)
+        mob_db_id = mob_obj.id
+
+        # Rebuild without the mob
+        ab2 = self._make_builder("recon_zone_mob")
+        self._make_room(ab2, "room_001")
+        report = ab2.build()
+
+        from evennia.objects.models import ObjectDB
+        self.assertFalse(ObjectDB.objects.filter(id=mob_db_id).exists())
+        self.assertEqual(report["reconciled"]["mobs_deleted"], 1)
+
+    def test_runtime_mob_preserved_on_rebuild(self):
+        """Runtime-spawned mob (tagged with MOB_INSTANCE_TAG_CATEGORY) is NOT deleted."""
+        from world.mob_spawner import MOB_INSTANCE_TAG_CATEGORY
+        from typeclasses.mobs import SoravelonMob
+
+        ab1 = self._make_builder("recon_zone_runtime")
+        r1 = self._make_room(ab1, "room_001")
+        ab1.build()
+
+        # Manually create a runtime mob in the zone
+        runtime_mob = create_object(SoravelonMob, key="spawned_wolf", location=r1)
+        runtime_mob.db.zone_id = "recon_zone_runtime"
+        runtime_mob.tags.add("recon_zone_runtime", category="zone_id")
+        runtime_mob.tags.add("spawned_wolf", category=MOB_INSTANCE_TAG_CATEGORY)
+
+        runtime_mob_id = runtime_mob.id
+
+        # Rebuild the zone (no mob in spec)
+        ab2 = self._make_builder("recon_zone_runtime")
+        self._make_room(ab2, "room_001")
+        report = ab2.build()
+
+        from evennia.objects.models import ObjectDB
+        self.assertTrue(ObjectDB.objects.filter(id=runtime_mob_id).exists(),
+                        "Runtime-spawned mob should NOT be deleted by reconciliation")
+        self.assertEqual(report["reconciled"]["mobs_deleted"], 0)
+
+        # Cleanup
+        runtime_mob.delete()
+
+    def test_crafting_station_tag_cleared_on_rebuild(self):
+        """Crafting station tag is cleared when room rebuilds without crafting_stations."""
+        ab1 = self._make_builder("recon_zone_craft")
+        r1 = self._make_room(ab1, "room_001", crafting_stations=["forge"])
+        ab1.build()
+
+        # Verify tag was set
+        self.assertTrue(r1.tags.has("crafting_forge", category="crafting_station"))
+
+        # Rebuild without crafting stations
+        ab2 = self._make_builder("recon_zone_craft")
+        r1_again = self._make_room(ab2, "room_001")
+        ab2.build()
+
+        # Tag should be gone (D-05: clear-then-readd)
+        self.assertFalse(r1_again.tags.has("crafting_forge", category="crafting_station"))
+
+    def test_exit_attr_reset_on_rebuild(self):
+        """Exit requires_ancestry attr is reset to None when removed from spec."""
+        ab1 = self._make_builder("recon_zone_exitattr")
+        r1 = self._make_room(ab1, "room_001")
+        r2 = self._make_room(ab1, "room_002")
+        ab1.exit(r1, r2, "north", requires_ancestry="kauroran")
+        ab1.build()
+
+        # Verify attr was set
+        exit_obj = [ex for ex in r1.exits if ex.key == "north"][0]
+        self.assertEqual(exit_obj.db.requires_ancestry, "kauroran")
+
+        # Rebuild without requires_ancestry
+        ab2 = self._make_builder("recon_zone_exitattr")
+        r1b = self._make_room(ab2, "room_001")
+        r2b = self._make_room(ab2, "room_002")
+        ab2.exit(r1b, r2b, "north")
+        ab2.build()
+
+        # requires_ancestry should be reset to None (D-06)
+        exit_obj_after = [ex for ex in r1b.exits if ex.key == "north"][0]
+        self.assertIsNone(exit_obj_after.db.requires_ancestry)
+
+    def test_build_report_contains_reconciled_key(self):
+        """build() return dict includes 'reconciled' key with correct counts."""
+        ab = self._make_builder("recon_zone_report")
+        self._make_room(ab, "room_001")
+        report = ab.build()
+
+        self.assertIn("reconciled", report)
+        reconciled = report["reconciled"]
+        self.assertIn("rooms_deleted", reconciled)
+        self.assertIn("exits_deleted", reconciled)
+        self.assertIn("npcs_deleted", reconciled)
+        self.assertIn("mobs_deleted", reconciled)
+        self.assertIn("players_evicted", reconciled)
+
+    def test_on_examine_trigger_accepted(self):
+        """on_examine trigger event is accepted without raising AreaBuilderValidationError."""
+        ab = self._make_builder("recon_zone_examine")
+        r1 = self._make_room(ab, "room_001")
+
+        # Should NOT raise
+        ab.trigger(r1, "on_examine", actions=[
+            {"action_type": "echo", "message": "You notice scratches on the wall."}
+        ])
+
+        # Verify trigger was stored
+        triggers = r1.db.triggers
+        self.assertEqual(len(triggers), 1)
+        self.assertEqual(triggers[0]["event"], "on_examine")

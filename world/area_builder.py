@@ -636,6 +636,7 @@ class AreaBuilder:
                 mob_obj.move_to(room, quiet=True, move_hooks=False)
 
         mob_obj.db.zone_id = self._zone_id
+        mob_obj.tags.add(self._zone_id, category="zone_id")
         for attr, val in kwargs.items():
             setattr(mob_obj.db, attr, val)
 
@@ -1103,17 +1104,27 @@ class AreaBuilder:
             fallback_id = getattr(django_settings, "DEFAULT_HOME", None)
             if fallback_id:
                 from evennia.objects.models import ObjectDB
+                # DEFAULT_HOME may be Evennia '#N' format — strip the '#'
+                raw = str(fallback_id).lstrip("#")
                 try:
-                    eviction_target = ObjectDB.objects.get(id=fallback_id)
-                except ObjectDB.DoesNotExist:
+                    eviction_target = ObjectDB.objects.get(id=int(raw))
+                except (ObjectDB.DoesNotExist, ValueError, TypeError):
                     pass
 
         # Collect all zone-owned objects once
         all_zone_objects = evennia.search_tag(zone_id, category="zone_id")
 
         # --- 1. Orphan exits (D-02) ---
+        from typeclasses.exits import SoravelonExit
         for obj in all_zone_objects:
-            if hasattr(obj, 'destination') and obj.id not in self._exit_ids:
+            if not obj.pk:
+                continue
+            try:
+                is_exit = isinstance(obj, SoravelonExit) or obj.destination is not None
+            except Exception:
+                # db_destination access can fail on stale/deleted objects
+                is_exit = isinstance(obj, SoravelonExit)
+            if is_exit and obj.id not in self._exit_ids:
                 obj.delete()
                 report["exits_deleted"] += 1
 
