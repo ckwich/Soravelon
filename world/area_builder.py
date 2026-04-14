@@ -383,6 +383,8 @@ class AreaBuilder:
         exit_obj.db.requires_quest = kwargs.get("requires_quest")
 
         exit_obj.tags.add(self._zone_id, category="zone_id")
+        if not hasattr(self, "_exit_ids"):
+            self._exit_ids = set()
         self._exit_ids.add(exit_obj.id)
 
     # ------------------------------------------------------------------

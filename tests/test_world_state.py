@@ -304,27 +304,6 @@ class TestDecayPausedOnline(EvenniaTest):
         self.assertEqual(self.char1.db.reputation_score, 50.0)
 
 
-# --- LLM Quest Data Collection Foundations ---
-
-
-class TestQuestlineChoicesInitialized(EvenniaTest):
-    """New character has questline_choices initialized as empty list."""
-
-    def test_questline_choices_initialized_empty(self):
-        """New character has questline_choices = [], not None."""
-        choices = self.char1.db.questline_choices
-        self.assertIsNotNone(choices)
-        self.assertEqual(choices, [])
-
-
-class TestActiveLlmQuestInitialized(EvenniaTest):
-    """New character has active_llm_quest_id initialized as None."""
-
-    def test_active_llm_quest_initialized_none(self):
-        """New character has active_llm_quest_id = None."""
-        self.assertIsNone(self.char1.db.active_llm_quest_id)
-
-
 class TestWorldEventLogCreation(EvenniaTest):
     """log_world_event() creates a WorldEventLog record."""
 

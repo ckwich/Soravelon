@@ -85,8 +85,8 @@ class TestCmdStabilize(unittest.TestCase):
         cmd.args = ""
         return cmd
 
-    def test_stabilize_in_node_center_reduces_failure(self):
-        """CmdStabilize in a node_center room should reduce node failure."""
+    def test_stabilize_in_node_center_starts_stabilization(self):
+        """CmdStabilize in a node_center room calls attempt_stabilization (tick-based)."""
         cmd = self._make_cmd()
 
         # Room is a node center
@@ -97,15 +97,18 @@ class TestCmdStabilize(unittest.TestCase):
         mock_script.db.failure = 50.0
 
         mock_zone_obj = MagicMock()
+        mock_zone_obj.tags.has.return_value = True
         mock_zone_obj.scripts.get.return_value = [mock_script]
 
-        with patch("world.node_commands.search_tag") as mock_search:
+        with patch("world.node_commands.search_tag") as mock_search, \
+             patch("world.node_helpers.attempt_stabilization") as mock_stab:
             mock_search.return_value = [mock_zone_obj]
+            mock_stab.return_value = True
             cmd.caller.location.db.zone_id = "test_zone"
             cmd.func()
 
-        # Failure should have been reduced
-        self.assertLess(mock_script.db.failure, 50.0)
+        # Command should invoke tick-based stabilization for the zone
+        mock_stab.assert_called_once_with(cmd.caller, "test_zone")
 
     def test_stabilize_outside_node_room_shows_error(self):
         """CmdStabilize outside a node room should show error message."""
