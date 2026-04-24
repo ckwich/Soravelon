@@ -12,6 +12,7 @@ records in sync.
 """
 
 import random
+from numbers import Integral
 import evennia
 from world.models import InventoryItem
 
@@ -56,10 +57,54 @@ def _get_or_create_inventory_record(character, item, **defaults):
 
 
 def _delete_inventory_record(character, item):
+    character_id = getattr(character, "id", None)
+    item_id = getattr(item, "id", None)
+
+    if (
+        isinstance(character_id, bool)
+        or isinstance(item_id, bool)
+        or not isinstance(character_id, Integral)
+        or not isinstance(item_id, Integral)
+        or character_id <= 0
+        or item_id <= 0
+    ):
+        return
+
     InventoryItem.objects.filter(
-        character_id=character.id,
-        item_id=item.id
+        character_id=character_id,
+        item_id=item_id
     ).delete()
+
+
+def register_item_ownership(character, item, quantity=None, container_id=None,
+                            is_quest_item=None, keyring=None):
+    """
+    Ensure a newly created player-owned item has an InventoryItem record.
+
+    This is the authoritative sync point for item producers that place a
+    freshly created object directly into a character's inventory.
+    """
+    qty = quantity if quantity is not None else (item.db.quantity or 1)
+    quest_flag = (
+        is_quest_item if is_quest_item is not None else bool(item.db.is_quest_item)
+    )
+    keyring_flag = (
+        keyring if keyring is not None else bool(getattr(item.db, "keyring", False))
+    )
+    record, _ = _get_or_create_inventory_record(
+        character,
+        item,
+        quantity=qty,
+        container_id=container_id,
+        is_quest_item=quest_flag,
+        keyring=keyring_flag,
+    )
+    return record
+
+
+def unregister_item_ownership(character, item):
+    """Delete the InventoryItem record for one player-owned item."""
+    _delete_inventory_record(character, item)
 
 
 def _apply_stack_quantity(item, quantity):

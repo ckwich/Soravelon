@@ -69,7 +69,7 @@ def roll_crit(attacker):
     base_stats = attacker.db.base_stats
     if base_stats:
         # Character: Acuity-based crit
-        acuity = base_stats.get("acuity", 10)
+        acuity = _get_modified_stat_value(attacker, "acuity", 10)
         crit_chance = BASE_CRIT_CHANCE + (acuity * ACUITY_CRIT_BONUS)
     else:
         # Mob: flat crit chance
@@ -129,7 +129,7 @@ def _compute_raw_damage(attacker, weapon):
     """
     attacker_stats = attacker.db.base_stats
     if attacker_stats:
-        strength = attacker_stats.get("strength", 10)
+        strength = _get_modified_stat_value(attacker, "strength", 10)
         if weapon:
             w_min = weapon.db.damage_min or BARE_HANDS_MIN
             w_max = weapon.db.damage_max or BARE_HANDS_MAX
@@ -145,6 +145,72 @@ def _compute_raw_damage(attacker, weapon):
         raw = random.randint(raw_min, raw_max)
         element = attacker.db.element or "physical"
     return raw, element
+
+
+def _get_modified_stat_value(actor, stat_name, default=10):
+    """Return a base stat with temporary status-effect boosts applied."""
+    base_stats = actor.db.base_stats or {}
+    if not base_stats:
+        return default
+
+    value = base_stats.get(stat_name, default)
+
+    from world.status_effects import get_effect_modifiers
+
+    boost = get_effect_modifiers(actor).get("stat_multipliers", {}).get(stat_name, 0.0)
+    return int(value * (1 + boost))
+
+
+def _get_echo_scaling_bonus(character):
+    """Return a capped damage bonus for lore-heavy echo spenders."""
+    resource = getattr(character.ndb, "domain_resource", None) or {}
+    current_echoes = resource.get("current", 0) if resource.get("type") == "echoes" else 0
+    bonus_data = getattr(character.db, "echoes_investigation_bonus", None)
+    stored_bonus = bonus_data.get("amount", 0) if isinstance(bonus_data, dict) else 0
+    return 1.0 + min(0.75, (current_echoes + stored_bonus) / 100.0)
+
+
+def _apply_attack_followups(attacker, target, payload):
+    """Apply next-hit rider effects after a successful damaging attack."""
+    from world import status_effects
+
+    for effect in payload.get("status_effects", []):
+        status_effects.apply_effect(
+            target,
+            effect["effect_type"],
+            effect.get("duration", 3),
+            effect.get("magnitude", 1.0),
+            attacker.id,
+        )
+
+
+def _apply_incoming_damage(attacker, target, damage, ignore_reduction=False, ignore_absorb=False):
+    """Apply damage reduction, absorb pools, and reflect before HP loss."""
+    from world.status_effects import get_effect_modifiers, mitigate_incoming_damage
+
+    target_mods = get_effect_modifiers(target)
+    final = damage
+    absorbed = 0
+    reflected = 0
+
+    dmg_reduction = 0.0 if ignore_reduction else target_mods.get("damage_reduction", 0.0)
+    if dmg_reduction > 0:
+        final = max(1, int(final * (1 - dmg_reduction)))
+
+    if ignore_absorb:
+        absorbed = 0
+    else:
+        final, absorbed = mitigate_incoming_damage(target, final)
+
+    current_hp = target.ndb.hp or 0
+    target.ndb.hp = max(0, current_hp - final)
+
+    reflect_pct = target_mods.get("reflect_percent", 0.0)
+    if final > 0 and reflect_pct > 0 and getattr(attacker.ndb, "hp", None) is not None:
+        reflected = max(1, int(final * reflect_pct))
+        attacker.ndb.hp = max(0, (attacker.ndb.hp or 0) - reflected)
+
+    return final, absorbed, reflected
 
 
 # ---------------------------------------------------------------------------
@@ -170,22 +236,34 @@ def resolve_basic_attack(attacker, target, weapon=None):
     from world.zone_scaling import (
         get_player_damage_to_mob, get_mob_damage_for_player, apply_resistance,
     )
-    from world.status_effects import get_effect_modifiers
+    from world.status_effects import consume_attack_effects, get_effect_modifiers
 
     # Check miss from blind effect
     target_mods = get_effect_modifiers(target)
     attacker_mods = get_effect_modifiers(attacker)
-    miss_chance = attacker_mods.get("miss_chance_increase", 0.0)
+    next_attack = consume_attack_effects(attacker, consume=False)
+    miss_chance = max(
+        0.0,
+        attacker_mods.get("miss_chance_increase", 0.0) - attacker_mods.get("accuracy_bonus", 0.0),
+    )
     if miss_chance > 0 and random.random() < miss_chance:
         return (False, f"{attacker.key}'s attack misses!", 0)
+    evasion = target_mods.get("evasion_bonus", 0.0)
+    if evasion > 0 and random.random() < evasion:
+        return (False, f"{target.key} evades {attacker.key}'s attack!", 0)
 
     attacker_stats = attacker.db.base_stats
 
     raw, element = _compute_raw_damage(attacker, weapon)
 
     # Critical hit
-    is_crit, crit_mult = roll_crit(attacker)
+    if next_attack.get("guaranteed_crit"):
+        is_crit, crit_mult = True, CRIT_MULTIPLIER
+    else:
+        is_crit, crit_mult = roll_crit(attacker)
     raw = int(raw * crit_mult)
+    raw += int(next_attack.get("bonus_damage", 0))
+    raw = max(1, int(raw * (1 + attacker_mods.get("damage_bonus", 0.0))))
 
     # Zone scaling
     target_stats = target.db.base_stats
@@ -219,17 +297,13 @@ def resolve_basic_attack(attacker, target, weapon=None):
         mob_rarity = target.db.rarity or "normal"
         final = apply_elite_boss_scaling(final, mob_rarity, is_incoming=False)
 
-    # Apply weaken damage reduction from status effects
-    dmg_reduction = target_mods.get("damage_reduction", 0.0)
-    if dmg_reduction > 0:
-        final = max(1, int(final * (1 - dmg_reduction)))
-
-    # Reduce target HP
-    current_hp = target.ndb.hp or 0
-    target.ndb.hp = max(0, current_hp - final)
+    # Defensive mitigation and reflection
+    final, absorbed, reflected = _apply_incoming_damage(attacker, target, final)
 
     # Flag for petrify break-on-damage check
-    target.ndb.took_damage_this_round = True
+    if final > 0:
+        target.ndb.took_damage_this_round = True
+        _apply_attack_followups(attacker, target, consume_attack_effects(attacker, consume=True))
 
     # Record stat use
     if attacker_stats:
@@ -246,9 +320,11 @@ def resolve_basic_attack(attacker, target, weapon=None):
 
     # Build message
     crit_tag = " |y*CRITICAL*|n" if is_crit else ""
+    absorb_tag = f" |c({absorbed} absorbed)|n" if absorbed else ""
+    reflect_tag = f" |m({reflected} reflected)|n" if reflected else ""
     msg = (
         f"{attacker.key} strikes {target.key} for "
-        f"|r{final}|n {element} damage.{crit_tag}"
+        f"|r{final}|n {element} damage.{crit_tag}{absorb_tag}{reflect_tag}"
     )
 
     return (True, msg, final)
@@ -274,36 +350,52 @@ def resolve_ability_damage(character, ability, target):
         (bool, str, int): (success, message, damage_dealt).
     """
     from world.zone_scaling import get_player_damage_to_mob, apply_resistance
-    from world.status_effects import get_effect_modifiers
+    from world.status_effects import consume_attack_effects, get_effect_modifiers
 
     # Check miss from blind/status effects (D-05: Focus resets on miss)
     attacker_mods = get_effect_modifiers(character)
-    miss_chance = attacker_mods.get("miss_chance_increase", 0.0)
+    target_mods = get_effect_modifiers(target)
+    params = ability.get("effect_params", {})
+    next_attack = (
+        {"bonus_damage": 0, "guaranteed_crit": False, "status_effects": []}
+        if params.get("ignore_attack_buffs")
+        else consume_attack_effects(character, consume=False)
+    )
+    miss_chance = max(
+        0.0,
+        attacker_mods.get("miss_chance_increase", 0.0) - attacker_mods.get("accuracy_bonus", 0.0),
+    )
     if miss_chance > 0 and random.random() < miss_chance:
         from world.ability_engine import handle_focus_miss
         handle_focus_miss(character)
         ability_name = ability.get("name", "ability")
         return (False, f"{character.key}'s {ability_name} misses!", 0)
-
-    stats = character.db.base_stats or {}
+    evasion = target_mods.get("evasion_bonus", 0.0)
+    if evasion > 0 and random.random() < evasion:
+        from world.ability_engine import handle_focus_miss
+        handle_focus_miss(character)
+        ability_name = ability.get("name", "ability")
+        return (False, f"{target.key} evades {character.key}'s {ability_name}!", 0)
 
     # Stat lookups via domain-to-stat mapping
     primary_stat_name = DOMAIN_TO_STAT.get(
         ability.get("scaling_primary", "combat"), "strength"
     )
-    primary_stat = stats.get(primary_stat_name, 10)
+    primary_stat = _get_modified_stat_value(character, primary_stat_name, 10)
 
     secondary_domain = ability.get("scaling_secondary")
     if secondary_domain:
         secondary_stat_name = DOMAIN_TO_STAT.get(secondary_domain, "strength")
-        secondary_stat = stats.get(secondary_stat_name, 10)
+        secondary_stat = _get_modified_stat_value(character, secondary_stat_name, 10)
     else:
         secondary_stat = 0
 
     # Base damage from ability definition (prefer effect_params)
-    params = ability.get("effect_params", {})
     ability_base = params.get("damage_base") or ability.get("damage_base", 15)
     raw = ability_base * (1 + primary_stat * 0.02 + secondary_stat * 0.01)
+
+    if params.get("echo_scaling"):
+        raw = int(raw * _get_echo_scaling_bonus(character))
 
     # Balance pendulum scaling (D-06)
     balance_type = params.get("balance_type")
@@ -313,8 +405,13 @@ def resolve_ability_damage(character, ability, target):
         raw = int(raw * balance_mod)
 
     # Critical hit
-    is_crit, crit_mult = roll_crit(character)
+    if params.get("guaranteed_crit") or next_attack.get("guaranteed_crit"):
+        is_crit, crit_mult = True, CRIT_MULTIPLIER
+    else:
+        is_crit, crit_mult = roll_crit(character)
     raw = int(raw * crit_mult)
+    raw += int(next_attack.get("bonus_damage", 0))
+    raw = max(1, int(raw * (1 + attacker_mods.get("damage_bonus", 0.0))))
 
     # Zone scaling (player attacking mob)
     target_stats = target.db.base_stats
@@ -327,25 +424,30 @@ def resolve_ability_damage(character, ability, target):
     element = ability.get("element", "physical")
 
     # Elemental resistance
-    final = apply_resistance(scaled, element, target)
+    if params.get("piercing") or params.get("ignores_armor") or params.get("unique_damage_type"):
+        final = scaled
+    else:
+        final = apply_resistance(scaled, element, target)
 
     # Elite/boss scaling (if target is mob)
     if not target_stats:
         mob_rarity = target.db.rarity or "normal"
         final = apply_elite_boss_scaling(final, mob_rarity, is_incoming=False)
 
-    # Apply weaken from status effects
-    target_mods = get_effect_modifiers(target)
-    dmg_reduction = target_mods.get("damage_reduction", 0.0)
-    if dmg_reduction > 0:
-        final = max(1, int(final * (1 - dmg_reduction)))
-
-    # Reduce target HP
-    current_hp = target.ndb.hp or 0
-    target.ndb.hp = max(0, current_hp - final)
+    # Defensive mitigation and reflection
+    final, absorbed, reflected = _apply_incoming_damage(
+        character,
+        target,
+        final,
+        ignore_reduction=bool(params.get("ignores_armor")),
+        ignore_absorb=bool(params.get("ignores_armor")),
+    )
 
     # Flag for petrify break-on-damage check
-    target.ndb.took_damage_this_round = True
+    if final > 0:
+        target.ndb.took_damage_this_round = True
+        if not params.get("ignore_attack_buffs"):
+            _apply_attack_followups(character, target, consume_attack_effects(character, consume=True))
 
     # Record stat use
     from world.base_attributes import record_stat_use
@@ -362,17 +464,37 @@ def resolve_ability_damage(character, ability, target):
         status_effects.apply_effect(
             target,
             status_effect,
-            params.get("duration") or ability.get("effect_duration", 3),
-            params.get("magnitude") or ability.get("effect_magnitude", 1.0),
+            params.get("status_duration") or params.get("duration") or ability.get("effect_duration", 3),
+            params.get("status_magnitude") or params.get("magnitude") or ability.get("effect_magnitude", 1.0),
+            character.id,
+        )
+    if params.get("bleed"):
+        from world import status_effects
+        status_effects.apply_effect(
+            target,
+            "bleed",
+            params.get("bleed_duration", 3),
+            params.get("bleed_damage", 1.0),
+            character.id,
+        )
+    for extra_effect in params.get("secondary_effects", []) or []:
+        from world import status_effects
+        status_effects.apply_effect(
+            target,
+            extra_effect,
+            params.get("secondary_duration", params.get("duration") or ability.get("effect_duration", 3)),
+            params.get("secondary_magnitude", params.get("magnitude") or ability.get("effect_magnitude", 1.0)),
             character.id,
         )
 
     # Build message
     crit_tag = " |y*CRITICAL*|n" if is_crit else ""
+    absorb_tag = f" |c({absorbed} absorbed)|n" if absorbed else ""
+    reflect_tag = f" |m({reflected} reflected)|n" if reflected else ""
     ability_name = ability.get("name", "ability")
     msg = (
         f"{character.key} uses {ability_name} on {target.key} for "
-        f"|r{final}|n {element} damage.{crit_tag}"
+        f"|r{final}|n {element} damage.{crit_tag}{absorb_tag}{reflect_tag}"
     )
 
     return (True, msg, final)
@@ -398,17 +520,21 @@ def resolve_heal(character, ability, target):
     """
     from world.base_attributes import derive_max_hp
 
-    stats = character.db.base_stats or {}
     primary_stat_name = DOMAIN_TO_STAT.get(
         ability.get("scaling_primary", "naturalism"), "resonance"
     )
-    primary_stat = stats.get(primary_stat_name, 10)
+    primary_stat = _get_modified_stat_value(character, primary_stat_name, 10)
 
-    heal_base = ability.get("heal_base", 20)
+    params = ability.get("effect_params", {})
+    heal_base = (
+        params.get("heal_base")
+        or params.get("heal_amount")
+        or ability.get("heal_base")
+        or ability.get("damage_base", 20)
+    )
     heal_amount = int(heal_base * (1 + primary_stat * 0.015))
 
     # Balance pendulum scaling for heals (D-06: Calm position boosts heals)
-    params = ability.get("effect_params", {})
     balance_type = params.get("balance_type")
     if balance_type:
         from world.ability_engine import get_balance_modifier
@@ -517,24 +643,67 @@ def handle_player_death(character):
 
 def _respawn_player(character):
     """
-    Teleport player to respawn point (medic building) after death.
-    Falls back to character home if no respawn_point tagged room exists.
+    Teleport player to the nearest reachable respawn point after death.
+    Falls back to character home, then any respawn_point tagged room.
     """
+    from collections import deque
     from evennia.utils.search import search_tag
     from world.base_attributes import derive_max_hp, derive_max_stamina
+    from world import oob_publisher
 
-    respawn_rooms = search_tag("respawn_point", category="spawn_point")
-    if respawn_rooms:
-        destination = respawn_rooms[0]
-    elif character.home:
+    def _is_respawn_room(room):
+        return bool(
+            room
+            and hasattr(room, "tags")
+            and room.tags.has("respawn_point", category="spawn_point")
+        )
+
+    def _find_nearest_respawn(room):
+        if _is_respawn_room(room):
+            return room
+        if not room:
+            return None
+
+        queue = deque([room])
+        seen = {room.id}
+        while queue:
+            current = queue.popleft()
+            for exit_obj in getattr(current, "exits", []) or []:
+                destination = getattr(exit_obj, "destination", None)
+                if destination is None or destination.id in seen:
+                    continue
+                if _is_respawn_room(destination):
+                    return destination
+                seen.add(destination.id)
+                queue.append(destination)
+        return None
+
+    destination = _find_nearest_respawn(character.location)
+    if destination is None and character.home:
         destination = character.home
-    else:
+    if destination is None:
+        respawn_rooms = search_tag("respawn_point", category="spawn_point")
+        if respawn_rooms:
+            destination = respawn_rooms[0]
+    if destination is None:
         return  # nowhere to go
 
+    room_id = destination.tags.get(category="room_id") if hasattr(destination, "tags") else None
+    if room_id:
+        visited = set(character.db.visited_room_ids or set())
+        if room_id not in visited:
+            visited.add(room_id)
+            character.db.visited_room_ids = visited
+
     character.move_to(destination, quiet=True, move_hooks=False)
+    character.ndb.oob_debounce = {}
     # Restore partial HP on respawn
     character.ndb.hp = max(1, derive_max_hp(character) // 4)
     character.ndb.stamina = derive_max_stamina(character) // 4
+    oob_publisher.push_status_update(character)
+    oob_publisher.push_stat_update(character)
+    oob_publisher.push_map_update(character)
+    oob_publisher.push_inventory_update(character)
     character.msg(
         "|yYou awaken on a cot in the medic station, bandaged and "
         "bruised. Your belongings remain where you fell.|n"
@@ -579,9 +748,16 @@ def spawn_corpse(mob, killer):
     corpse.db.butcherable = True
     corpse.db.butchered = False
 
-    # Group leader for group loot access
-    group_leader_id = getattr(killer.ndb, "group_leader_id", None)
-    corpse.db.killer_group_leader_id = group_leader_id
+    # Snapshot authorized looters at corpse creation so reloads/disconnects
+    # cannot rewrite access through ephemeral ndb group state.
+    from world.group_engine import get_group_member_ids
+    authorized_ids = get_group_member_ids(killer)
+    if not authorized_ids:
+        authorized_ids = [killer.id]
+    corpse.db.authorized_looter_ids = authorized_ids
+    corpse.db.killer_group_leader_id = getattr(
+        killer.ndb, "group_leader_id", None
+    )
 
     # Set decay timestamp for crash-recovery sweep
     grace = CorpseContainer.GRACE_PERIOD
@@ -608,6 +784,7 @@ def _spawn_player_corpse(character, room):
         location=room,
     )
     corpse.db.killer_id = character.id  # player owns their own corpse
+    corpse.db.authorized_looter_ids = [character.id]
     corpse.db.mob_key = character.key
     corpse.db.loot_phase = "open"  # player corpses immediately accessible
     corpse.db.decay_at = time.time() + CorpseContainer.OPEN_PERIOD

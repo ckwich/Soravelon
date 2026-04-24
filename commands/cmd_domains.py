@@ -18,7 +18,7 @@ class CmdDomains(Command):
     """
 
     key = "domains"
-    aliases = ["domain", "skills"]
+    aliases = ["domain"]
     locks = "cmd:all()"
     help_category = "Character"
 

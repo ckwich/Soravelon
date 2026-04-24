@@ -6,8 +6,11 @@ Integration tests for Phase 7 content:
 - Spawn/respawn tag wiring
 """
 
+import ast
 import os
+import pathlib
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 # Django setup required for Evennia command imports
@@ -21,7 +24,7 @@ django.setup()
 # ---------------------------------------------------------------------------
 
 class TestZoneImports(unittest.TestCase):
-    """Verify all 5 zone spec files and equipment catalog import cleanly."""
+    """Verify authored zone spec files and equipment catalog import cleanly."""
 
     def test_vaels_crossing_imports(self):
         from world.areas import vaels_crossing
@@ -43,19 +46,41 @@ class TestZoneImports(unittest.TestCase):
         from world.areas import stormhaven_coast
         self.assertTrue(hasattr(stormhaven_coast, "build"))
 
+    def test_varath_prime_imports(self):
+        from world.areas import varath_prime
+        self.assertTrue(hasattr(varath_prime, "build"))
+
+    def test_crownroad_north_imports(self):
+        from world.areas import crownroad_north
+        self.assertTrue(hasattr(crownroad_north, "build"))
+
+    def test_old_causeway_imports(self):
+        from world.areas import old_causeway
+        self.assertTrue(hasattr(old_causeway, "build"))
+
+    def test_ironvein_escarpment_imports(self):
+        from world.areas import ironvein_escarpment
+        self.assertTrue(hasattr(ironvein_escarpment, "build"))
+
+    def test_stagcrown_preserve_imports(self):
+        from world.areas import stagcrown_preserve
+        self.assertTrue(hasattr(stagcrown_preserve, "build"))
+
     def test_equipment_catalog_imports(self):
         from world.areas import equipment_catalog
         self.assertTrue(hasattr(equipment_catalog, "build"))
 
     def test_all_zones_have_callable_build(self):
-        """Every zone spec's build() must be callable."""
+        """Every authored zone spec's build() must be callable."""
         from world.areas import (
             vaels_crossing, ashreach_plains, reth_foothills,
-            cantera_edge, stormhaven_coast, equipment_catalog,
+            cantera_edge, stormhaven_coast, varath_prime, crownroad_north, old_causeway,
+            ironvein_escarpment, stagcrown_preserve, equipment_catalog,
         )
         for module in [
             vaels_crossing, ashreach_plains, reth_foothills,
-            cantera_edge, stormhaven_coast, equipment_catalog,
+            cantera_edge, stormhaven_coast, varath_prime, crownroad_north, old_causeway,
+            ironvein_escarpment, stagcrown_preserve, equipment_catalog,
         ]:
             self.assertTrue(
                 callable(getattr(module, "build", None)),
@@ -162,6 +187,11 @@ class TestContentCrossReferences(unittest.TestCase):
         from world import loot_tables
         self.assertTrue(hasattr(loot_tables, "LOOT_TABLES"))
 
+    def test_captain_wrack_template_exists(self):
+        from world.mob_templates import get_mob_template
+
+        self.assertIsNotNone(get_mob_template("captain_wrack"))
+
 
 # ---------------------------------------------------------------------------
 # Spawn point tag tests
@@ -170,22 +200,91 @@ class TestContentCrossReferences(unittest.TestCase):
 class TestSpawnPointTags(unittest.TestCase):
     """Verify spawn/respawn logic exists in the codebase."""
 
-    def test_greeter_room_tag_exists_in_zone_content(self):
-        """Vael's Crossing zone file should tag the arrival room as greeter_room."""
-        import inspect
-        from world.areas import vaels_crossing
-        source = inspect.getsource(vaels_crossing)
-        self.assertIn("greeter_room", source)
+    def _make_room(self, room_id, is_respawn=False):
+        room = MagicMock()
+        room.id = hash(room_id)
+        room.key = room_id
+        room.db = SimpleNamespace(zone_id="zone")
+        room.exits = []
 
-    def test_death_handler_references_respawn_point(self):
-        """handle_player_death or _respawn_player should use respawn_point tag."""
-        import inspect
+        def has_tag(key, category=None):
+            return key == "respawn_point" and category == "spawn_point" and is_respawn
+
+        def get_tag(category=None):
+            if category == "room_id":
+                return room_id
+            return None
+
+        room.tags.has.side_effect = has_tag
+        room.tags.get.side_effect = get_tag
+        return room
+
+    def test_greeter_room_tag_exists_in_zone_content(self):
+        """Vael's Crossing should tag a room as greeter_room in spawn_point category."""
+        tree = ast.parse(pathlib.Path("world/areas/vaels_crossing.py").read_text())
+
+        found_tag = False
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if not isinstance(node.func, ast.Attribute) or node.func.attr != "add":
+                continue
+            if not node.args:
+                continue
+            if not isinstance(node.args[0], ast.Constant) or node.args[0].value != "greeter_room":
+                continue
+            for keyword in node.keywords:
+                if (
+                    keyword.arg == "category"
+                    and isinstance(keyword.value, ast.Constant)
+                    and keyword.value.value == "spawn_point"
+                ):
+                    found_tag = True
+                    break
+            if found_tag:
+                break
+
+        self.assertTrue(found_tag, "Expected a greeter_room spawn_point tag in vaels_crossing.py")
+
+    def test_respawn_falls_back_to_global_respawn_tag_search(self):
+        """Respawn should use globally tagged respawn rooms when no local route exists."""
         from world.combat_engine import _respawn_player
-        source = inspect.getsource(_respawn_player)
-        self.assertIn("respawn_point", source)
+
+        death_room = self._make_room("death_room")
+        global_respawn = self._make_room("global_respawn", is_respawn=True)
+
+        character = MagicMock()
+        character.location = death_room
+        character.home = None
+        character.db.visited_room_ids = set()
+        character.ndb.oob_debounce = {"map_update": 1.0}
+
+        with patch("evennia.utils.search.search_tag", return_value=[global_respawn]), \
+             patch("world.base_attributes.derive_max_hp", return_value=120), \
+             patch("world.base_attributes.derive_max_stamina", return_value=80), \
+             patch("world.oob_publisher.push_status_update"), \
+             patch("world.oob_publisher.push_stat_update"), \
+             patch("world.oob_publisher.push_map_update"), \
+             patch("world.oob_publisher.push_inventory_update"):
+            _respawn_player(character)
+
+        character.move_to.assert_called_once_with(
+            global_respawn, quiet=True, move_hooks=False
+        )
 
     def test_cmdstabilize_registered_in_cmdset(self):
         """CmdStabilize should be registered in CharacterCmdSet."""
-        import pathlib
-        source = pathlib.Path("commands/default_cmdsets.py").read_text()
-        self.assertIn("CmdStabilize", source)
+        from commands import default_cmdsets
+
+        added_commands = []
+
+        with patch.object(
+            default_cmdsets.default_cmds.CharacterCmdSet,
+            "at_cmdset_creation",
+            return_value=None,
+        ):
+            cmdset = default_cmdsets.CharacterCmdSet()
+            cmdset.add = added_commands.append
+            cmdset.at_cmdset_creation()
+
+        self.assertIn("stabilize", {cmd.key for cmd in added_commands})

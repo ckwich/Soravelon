@@ -45,6 +45,7 @@ def _make_combatant(cid, name, is_player=True, initiative=10, hp=100):
     c.ndb.active_effects = []
     c.ndb.group_state = None
     c.ndb.group_leader_id = None
+    c.ndb.resolving_charged_ability = False
 
     if is_player:
         c.db.base_stats = {"strength": 10, "agility": initiative, "endurance": 10,
@@ -159,6 +160,45 @@ class TestTurnManagement(unittest.TestCase):
         self.assertEqual(cds.get("fireball", 0), 2)
         # heal at 1 should be 0 or removed
         self.assertLessEqual(cds.get("heal", 0), 0)
+
+    @patch("world.combat_script._send_turn_prompt")
+    @patch("world.combat_script._resolve_by_id")
+    @patch("world.oob_publisher.push_combat_update")
+    @patch("world.status_effects.get_effect_modifiers", return_value={})
+    @patch("world.base_attributes.get_actions_per_turn", return_value=2)
+    def test_prompt_player_turn_marks_internal_charge_release(
+        self,
+        mock_actions,
+        mock_modifiers,
+        mock_push_combat,
+        mock_resolve,
+        mock_turn_prompt,
+    ):
+        """Charged auto-release sets an internal bypass flag only for the release call."""
+        from world.combat_script import CombatScript
+
+        script = _make_script()
+        character = _make_combatant(1, "Caster", is_player=True)
+        target = _make_combatant(2, "Target", is_player=False)
+        script.ndb.pending_charged = {
+            character.id: {
+                "ability_id": "meteor_strike",
+                "rounds_left": 1,
+                "target_id": target.id,
+            }
+        }
+        script._resolve_post_ability_deaths = MagicMock(return_value=False)
+        mock_resolve.side_effect = lambda obj_id: target if obj_id == target.id else None
+
+        def _fake_use_ability(resolved_character, ability_id, target=None):
+            self.assertTrue(resolved_character.ndb.resolving_charged_ability)
+            return True, "Meteor Strike lands."
+
+        with patch("world.ability_engine.use_ability", side_effect=_fake_use_ability):
+            CombatScript._prompt_player_turn(script, character)
+
+        self.assertFalse(getattr(character.ndb, "resolving_charged_ability", False))
+        self.assertNotIn(character.id, script.ndb.pending_charged)
 
 
 class TestCombatEnd(unittest.TestCase):

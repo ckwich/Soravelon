@@ -2,17 +2,19 @@
 Group system for Soravelon.
 
 Groups are session-state only — stored in ndb, not the database.
-Groups dissolve when leader disconnects or all members leave.
+If the leader disconnects or leaves, leadership passes to another member.
+Groups dissolve only when all members leave.
 Maximum 6 players per group.
 
-Loot modes: personal (default), ffa, round_robin, need_pass.
+Loot modes: personal (default), ffa, round_robin.
 Quest drops and Scales are ALWAYS personal regardless of loot mode.
 """
 
 import evennia
+import uuid
 
 MAX_GROUP_SIZE = 6
-VALID_LOOT_MODES = ("personal", "ffa", "round_robin", "need_pass")
+VALID_LOOT_MODES = ("personal", "ffa", "round_robin")
 
 
 # ---------------------------------------------------------------------------
@@ -21,6 +23,54 @@ VALID_LOOT_MODES = ("personal", "ffa", "round_robin", "need_pass")
 
 def _get_group_state(leader):
     return getattr(leader.ndb, 'group_state', None)
+
+
+def _resolve_character(char_id):
+    if char_id is None:
+        return None
+    objs = evennia.search_object("#" + str(char_id))
+    return objs[0] if objs else None
+
+
+def _ensure_presence_nonce(character):
+    """Return a live-session invite nonce, creating one when needed."""
+    nonce = getattr(character.ndb, "presence_nonce", None)
+    if nonce:
+        return nonce
+    nonce = str(uuid.uuid4())
+    character.ndb.presence_nonce = nonce
+    return nonce
+
+
+def _parse_pending_invite(invite_entry):
+    """Normalize a pending invite entry to inviter_id/presence_nonce fields."""
+    if not isinstance(invite_entry, dict):
+        return None, None
+    return invite_entry.get("inviter_id"), invite_entry.get("presence_nonce")
+
+
+def _resolve_pending_invite(character):
+    """
+    Return a validated pending invite tuple or clear it if stale.
+
+    The invite is only valid while the inviter still has the same
+    `presence_nonce`, which expires on logout/reconnect.
+    """
+    invite_entry = getattr(character.ndb, "pending_group_invite", None)
+    if not invite_entry:
+        return None, None
+
+    inviter_id, presence_nonce = _parse_pending_invite(invite_entry)
+    inviter = _resolve_character(inviter_id)
+    if (
+        not inviter
+        or not presence_nonce
+        or getattr(inviter.ndb, "presence_nonce", None) != presence_nonce
+    ):
+        character.ndb.pending_group_invite = None
+        return None, None
+
+    return inviter, invite_entry
 
 
 def get_group_state(character):
@@ -37,8 +87,7 @@ def _get_leader(character):
     leader_id = getattr(character.ndb, 'group_leader_id', None)
     if leader_id is None:
         return None
-    objs = evennia.search_object("#" + str(leader_id))
-    return objs[0] if objs else None
+    return _resolve_character(leader_id)
 
 
 def _get_group_members(leader):
@@ -70,6 +119,16 @@ def is_group_leader(character):
     return bool(state and state.get("leader_id") == character.id)
 
 
+def get_group_member_ids(character):
+    """Return the live member IDs for character's current group."""
+    if not is_in_group(character):
+        return []
+    leader = _get_leader(character)
+    if not leader:
+        return []
+    return [member.id for member in _get_group_members(leader)]
+
+
 # ---------------------------------------------------------------------------
 # Group formation
 # ---------------------------------------------------------------------------
@@ -88,7 +147,16 @@ def send_group_invite(inviter, target):
             if len(members) >= MAX_GROUP_SIZE:
                 return False, f"Your group is full ({MAX_GROUP_SIZE} max)."
 
-    target.ndb.pending_group_invite = inviter.id
+    pending_inviter, _ = _resolve_pending_invite(target)
+    if pending_inviter:
+        if pending_inviter.id == inviter.id:
+            return False, f"{target.key} already has your pending group invite."
+        return False, f"{target.key} already has a pending group invite."
+
+    target.ndb.pending_group_invite = {
+        "inviter_id": inviter.id,
+        "presence_nonce": _ensure_presence_nonce(inviter),
+    }
     target.msg(
         f"|w{inviter.key}|n invites you to join their group. "
         f"Type '|wgroup accept|n' or '|wgroup decline|n'."
@@ -98,21 +166,16 @@ def send_group_invite(inviter, target):
 
 
 def accept_group_invite(character):
-    inviter_id = getattr(character.ndb, 'pending_group_invite', None)
-    if not inviter_id:
+    inviter, _ = _resolve_pending_invite(character)
+    if not inviter:
         return False, "You have no pending group invite."
 
     character.ndb.pending_group_invite = None
 
-    objs = evennia.search_object("#" + str(inviter_id))
-    if not objs:
-        return False, "That player is no longer online."
-    inviter = objs[0]
-
     if is_in_group(inviter):
         leader = _get_leader(inviter)
         if not leader:
-            return False, "Could not find group leader."
+            return False, "That group invite has expired."
     else:
         leader = inviter
         leader.ndb.group_leader_id = leader.id
@@ -144,15 +207,16 @@ def accept_group_invite(character):
 
 
 def decline_group_invite(character):
-    inviter_id = getattr(character.ndb, 'pending_group_invite', None)
-    if not inviter_id:
+    invite_entry = getattr(character.ndb, 'pending_group_invite', None)
+    if not invite_entry:
         return False, "You have no pending group invite."
 
     character.ndb.pending_group_invite = None
 
-    objs = evennia.search_object("#" + str(inviter_id))
-    if objs:
-        objs[0].msg(f"{character.key} declined your group invite.")
+    inviter_id, _ = _parse_pending_invite(invite_entry)
+    inviter = _resolve_character(inviter_id)
+    if inviter:
+        inviter.msg(f"{character.key} declined your group invite.")
 
     return True, f"You decline the group invite."
 
@@ -188,7 +252,7 @@ def leave_group(character):
 
     if character == leader:
         new_leader = remaining[0]
-        _transfer_leadership_internal(leader, new_leader, state)
+        _transfer_leadership_internal(leader, new_leader, state, old_leader_stays=False)
         new_leader.msg("|wYou are now the group leader.|n")
 
     character.msg("You leave the group.")
@@ -231,12 +295,12 @@ def transfer_leadership(current_leader, new_leader):
     return True, ""
 
 
-def _transfer_leadership_internal(old_leader, new_leader, state):
+def _transfer_leadership_internal(old_leader, new_leader, state, old_leader_stays=True):
     state["leader_id"] = new_leader.id
     new_leader.ndb.group_state = state
     new_leader.ndb.group_leader_id = new_leader.id
     old_leader.ndb.group_state = None
-    old_leader.ndb.group_leader_id = new_leader.id
+    old_leader.ndb.group_leader_id = new_leader.id if old_leader_stays else None
 
 
 def set_loot_mode(leader, mode):
@@ -314,7 +378,6 @@ def get_designated_looter(character, corpse):
     personal mode: only the killer
     ffa mode: anyone (return None)
     round_robin mode: next in rotation
-    need_pass mode: not implemented yet (treat as personal)
     """
     if not is_in_group(character):
         return None
@@ -351,7 +414,6 @@ def get_designated_looter(character, corpse):
         idx = state.get("round_robin_index", 0) % len(members)
         return members[idx]
 
-    # need_pass: not implemented, fallback to personal (killer gets loot)
     return character
 
 

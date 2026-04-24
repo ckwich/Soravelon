@@ -1574,7 +1574,7 @@ def build():
     area.exit(rc_reth_exit, rc_collapsed_tunnel, "south")
 
     # Cross-zone exit to Reth foothills
-    area.exit(rc_reth_exit, "reth_foothills:rf_south_cave", "north",
+    area.exit(rc_reth_exit, "reth_foothills:cn_mouth", "north",
               desc="A narrow path climbs north into the foothills of The Reth.")
 
     # Region 4 spawns
@@ -2300,7 +2300,7 @@ def build():
 
     # 4. Warden supply sergeant (delivery target for cantera_resupply)
     area.npc(
-        fe_warden_post, "npc_warden_supply_sergeant",
+        bh_cantera_overlook, "npc_warden_supply_sergeant",
         name="Sergeant Voss",
         title="Warden Supply Sergeant",
         desc=(
@@ -2308,7 +2308,8 @@ def build():
             "rolled past thick forearms. Crates and canvas bundles are "
             "stacked in neat rows behind her -- the product of a mind "
             "that treats logistics like a battlefield. She checks a "
-            "manifest against a dwindling pile of supplies, frowning."
+            "manifest against a dwindling pile of supplies, frowning over "
+            "the overlook where the deeper watch line should be visible."
         ),
         faction="wardens",
         dialogue={
@@ -2373,22 +2374,24 @@ def build():
     # ------------------------------------------------------------------
     area.quest("cantera_resupply",
         name="Warden Resupply",
-        description="Warden Kaelen's outpost is running dangerously low on supplies. The node corruption has made the usual routes impassable, and the forward positions need crates from the staging camp before they're cut off entirely.",
+        description="Kaelen needs a fresh supply crate carried from the forest edge to Sergeant Voss at the forward overlook. The path is usable again only in brief windows, and if the watch line goes hungry the whole west route starts guessing instead of reporting.",
         quest_type="delivery",
         quest_giver="npc_warden_kaelen",
+        prerequisite_quests=["cantera_bandit_lookout"],
         objectives=[
-            {"type": "deliver", "target": "npc_warden_supply_sergeant", "count": 3,
-             "description": "Deliver supply crates to the forward Warden positions"},
+            {"type": "deliver", "target": "npc_warden_supply_sergeant", "count": 1,
+             "description": "Carry a Warden supply crate to Sergeant Voss at the forward overlook"},
         ],
+        flagged_drop="warden_supplies",
         rewards=[
             {"action_type": "give_scales", "amount": 80},
             {"action_type": "modify_standing", "faction_id": "wardens", "delta": 200},
-            {"action_type": "echo", "message": "|gKaelen checks the supply manifest with visible relief. \"Three crates received. The forward posts can hold another week now. The Wardens won't forget this.\"|n"},
+            {"action_type": "echo", "message": "|gVoss checks the crate seal, then the trail behind you. \"Good. One clean run means the line eats tonight and reports tomorrow. Tell Kaelen her route still breathes.\"|n"},
         ],
         # Legacy fields (backward compat)
         objective_type="deliver",
-        objective_target="warden_supplies",
-        objective_count=3,
+        objective_target="npc_warden_supply_sergeant",
+        objective_count=1,
     )
 
     area.quest("cantera_lost_traveler",
@@ -2410,25 +2413,99 @@ def build():
         objective_count=1,
     )
 
+    area.quest("cantera_bandit_lookout",
+        name="Watchline Cutters",
+        description="Kaelen has tracked a bandit knot using the charcoal clearings and old lookouts to cut runners off before they can reach the forward watch. Clear them out and the resupply line can move without every crate turning into a fight.",
+        quest_type="kill",
+        quest_giver="npc_warden_kaelen",
+        prerequisite_quests=["ashreach_forest_relay"],
+        objectives=[
+            {"type": "kill", "target": "forest_bandit", "count": 6,
+             "description": "Break the bandit hold on the charcoal clearings and lookout trail"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 90},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 175},
+            {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 3},
+            {"action_type": "echo", "message": "|gKaelen moves the bandit markers off her map one by one. \"That opens the trail. Good. Now we can carry food instead of bodies.\"|n"},
+        ],
+        next_quest_id="cantera_resupply",
+        objective_type="kill",
+        objective_target="forest_bandit",
+        objective_count=6,
+    )
+
     area.quest("cantera_node_study",
-        name="Node Resonance Samples",
-        description="Druid Thaelen needs resonance samples from around the active node. The energy distortions make collection dangerous -- the node pulses erratically, and each sample must be gathered during a lull in the resonance cycle.",
+        name="Node Resonance Survey",
+        description="Thaelen no longer wants guesses about the node. He wants observations from the standing stones, the crystal garden, and the stabilization ring -- the three places where the forest still shows what the buried machine is trying to do.",
         quest_type="investigation",
         quest_giver="npc_druid_thaelen",
         objectives=[
-            {"type": "collect", "target": "resonance_sample", "count": 5,
-             "description": "Collect node resonance samples from around the active node"},
+            {"type": "investigate", "target": "rs_standing_stones", "count": 1,
+             "description": "Record what the standing stones are doing at the node edge"},
+            {"type": "investigate", "target": "rs_crystal_garden", "count": 1,
+             "description": "Survey how the crystal growth changes near the heart"},
+            {"type": "investigate", "target": "rs_stabilization_ring", "count": 1,
+             "description": "Inspect the stabilization ring where the old channels converge"},
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 100},
             {"action_type": "modify_node_failure", "zone_id": "cantera_edge", "delta": -5.0},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
-            {"action_type": "echo", "message": "|gThaelen cradles the resonance samples with reverent care. \"These readings... the node is more unstable than I feared, but your samples may hold the key to stabilizing it.\"|n"},
+            {"action_type": "echo", "message": "|gThaelen compares your notes against his bark strips and goes very still. \"Good. Now it begins to look like a system instead of a wound. That is worse in one way, and much better in another.\"|n"},
         ],
+        next_quest_id="cantera_channel_survey",
         # Legacy fields (backward compat)
-        objective_type="collect",
-        objective_target="node_fragment",
-        objective_count=5,
+        objective_type="investigate",
+        objective_target="rs_standing_stones",
+        objective_count=1,
+    )
+
+    area.quest("cantera_channel_survey",
+        name="Where the Forest Carries It",
+        description="With the first survey complete, Thaelen wants the carrying lines traced beyond the heart itself. Follow the resonance from the shrine stones, through the sap convergence, and down into the root nexus where stone and living growth stop pretending they are separate things.",
+        quest_type="investigation",
+        quest_giver="npc_druid_thaelen",
+        prerequisite_quests=["cantera_node_study"],
+        objectives=[
+            {"type": "investigate", "target": "bh_shrine_stones", "count": 1,
+             "description": "Inspect the shrine stones where the outer channel still shows through"},
+            {"type": "investigate", "target": "rs_sap_convergence", "count": 1,
+             "description": "Trace the resonance where sap and carved channels meet"},
+            {"type": "investigate", "target": "rc_root_nexus", "count": 1,
+             "description": "Survey the root nexus beneath the forest"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 95},
+            {"action_type": "modify_node_failure", "zone_id": "cantera_edge", "delta": -3.0},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 4},
+            {"action_type": "echo", "message": "|gThaelen presses bark charcoal into the grooves of your sketch and exhales slowly. \"There. A channel map. Not complete, but enough to prove the forest is carrying a design, not merely surviving a storm.\"|n"},
+        ],
+        objective_type="investigate",
+        objective_target="bh_shrine_stones",
+        objective_count=1,
+    )
+
+    area.lore_fragment("cantera_watchline_001", bh_cantera_overlook,
+        discovery_method="search",
+        text=(
+            "The overlook's oldest marker stones do not face the node. They "
+            "face east toward Ashreach and south toward the city road, as if "
+            "this ridge was always meant to watch routes as much as forest. "
+            "The Wardens inherited a watchline someone else first laid out."
+        ),
+        insight_gain=4,
+    )
+
+    area.lore_fragment("cantera_runner_markers_001", dc_bandit_lookout,
+        discovery_method="search",
+        text=(
+            "Under the bandits' boot scrapes are older cut marks spaced at "
+            "runner height along the rock. This lookout was not first built "
+            "for ambush. It was a relay stop, then a warning point, and only "
+            "much later a place where desperate people learned to steal."
+        ),
+        insight_gain=5,
     )
 
     # ------------------------------------------------------------------
@@ -2762,6 +2839,12 @@ def build():
         rooms=["dc_webbed_clearing", "dc_spider_nest", "rc_spider_den"],
         materials=["spider_silk"],
         max_active=2, respawn_minutes=15, respawn_variance=5,
+    )
+    area.gathering_pool(
+        "fish",
+        rooms=["fe_creek_bank", "dc_silent_pool", "rc_deep_pool"],
+        materials=["river_trout", "shadow_bass"],
+        max_active=2, respawn_minutes=13, respawn_variance=4,
     )
 
     # ------------------------------------------------------------------

@@ -46,6 +46,7 @@ class SoravelonItem(SoravelonObject):
         self.db.stackable = False
         self.db.value_scales = 0
         self.db.lore_desc = None
+        self.db.is_quest_item = False
 
     def at_pre_delete(self):
         """Clean up InventoryItem records when item is destroyed."""
@@ -120,6 +121,7 @@ class CorpseContainer(SoravelonContainer):
         super().at_object_creation()
         self.db.killer_id = None
         self.db.killer_group_leader_id = None
+        self.db.authorized_looter_ids = []
         self.db.loot_phase = "locked"
         self.db.mob_key = ""
         self.db.mob_rarity = "normal"
@@ -149,10 +151,15 @@ class CorpseContainer(SoravelonContainer):
             return True, ""
 
         # Locked phase: check killer or group membership
-        if character.id == self.db.killer_id:
+        authorized_ids = list(self.db.authorized_looter_ids or [])
+        if authorized_ids:
+            if character.id in authorized_ids:
+                return True, ""
+        elif character.id == self.db.killer_id:
             return True, ""
 
-        # Check group membership: character's group leader matches killer's group leader
+        # Backward-compatible fallback for older corpses created before
+        # authorized_looter_ids existed.
         killer_group_id = self.db.killer_group_leader_id
         if killer_group_id:
             char_group_id = getattr(character.ndb, "group_leader_id", None)

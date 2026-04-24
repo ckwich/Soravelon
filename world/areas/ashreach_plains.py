@@ -970,7 +970,8 @@ def build():
             "Beneath the wind-scoured surface, a half-collapsed chamber opens "
             "into what was once a records hall. Stone tablets line the walls, "
             "their inscriptions worn but legible to a trained eye. The script "
-            "predates the Dragon Empire by centuries. Ash has drifted into the "
+            "predates the oldest surviving Imperial records by centuries. Ash "
+            "has drifted into the "
             "corners, but the dry air has preserved the carvings remarkably well."
         ),
         room_type="ruins",
@@ -1977,6 +1978,7 @@ def build():
         description="Captain Ashwyn reports the ash wolf packs are growing bolder, threatening travelers on the Ashway. The beasts have lost their fear of fire and steel alike. Thin their numbers before someone gets killed.",
         quest_type="kill",
         quest_giver="npc_warden_captain_ashwyn",
+        prerequisite_quests=["vc_q_warden_report"],
         objectives=[
             {"type": "kill", "target": "ash_wolf", "count": 10,
              "description": "Cull ash wolves on the plains"},
@@ -1992,8 +1994,8 @@ def build():
         objective_target="ash_wolf",
         objective_count=10,
         reward_tiers={},
-        consequence_small="Warden standing gain",
-        consequence_medium="Wolf population decrease, safer Ashreach travel",
+        consequence_small="Ashwyn remembers you answered the Warden road call",
+        consequence_medium="Warden road talk can acknowledge you as a proven Ashway helper",
     )
 
     area.quest(
@@ -2002,6 +2004,7 @@ def build():
         description="With the wolves thinned, Ashwyn turns to the next problem: bandits have established a camp near the old trade route. They prey on merchants and refugees alike, and the Wardens are spread too thin to deal with them.",
         quest_type="kill",
         quest_giver="npc_warden_captain_ashwyn",
+        prerequisite_quests=["ashreach_wolf_overpopulation"],
         objectives=[
             {"type": "kill", "target": "ashreach_bandit", "count": 6,
              "description": "Eliminate Ashreach bandits along the Ashway"},
@@ -2017,32 +2020,121 @@ def build():
         objective_target="ashreach_bandit",
         objective_count=6,
         reward_tiers={},
-        consequence_small="Warden standing gain",
-        consequence_medium="Bandit camp weakened, Ashway safer",
+        consequence_small="Ashwyn treats you as reliable in later Warden conversations",
+        consequence_medium="Local Warden dialogue can remember your Ashway service",
     )
 
     area.quest(
         "ashreach_ruin_investigation",
         name="Voices in the Dust",
-        description="Scholar Obed believes the wind-worn ruins scattered across the plains hold records of a civilization that predates the Dragon Empire. The inscriptions are fading fast -- document what remains before the ash-winds erase them entirely.",
+        description="Scholar Obed believes three ruin sites on the plains still preserve enough of their original geometry to be useful: the sunken chamber, the wind channel, and the buried archive below the octagonal platform. Document them before another season of ash-wind grinds them flat.",
         quest_type="investigate",
         quest_giver="npc_hermit_scholar_obed",
         objectives=[
-            {"type": "investigate", "target": "ashreach_ancient_ruins", "count": 3,
-             "description": "Investigate ancient ruin sites on the Ashreach plains"},
+            {"type": "investigate", "target": "ruins_04", "count": 1,
+             "description": "Survey the sunken chamber in the drystone ruins"},
+            {"type": "investigate", "target": "ruins_10", "count": 1,
+             "description": "Record the acoustics and cutwork of the wind channel"},
+            {"type": "investigate", "target": "ashreach_ancient_ruins", "count": 1,
+             "description": "Descend to the buried archive beneath the octagonal platform"},
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 70},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 5},
-            {"action_type": "echo", "message": "|gObed's eyes widen as he reads your rubbings. \"Remarkable. These glyphs predate everything in my collection. The world was old before the dragons came, it seems.\"|n"},
+            {"action_type": "echo", "message": "|gObed's eyes widen as he reads your rubbings. \"Remarkable. These glyphs predate everything in my collection. Whatever first ordered this place, it was old long before the Empire learned to count it.\"|n"},
         ],
         # Legacy fields (backward compat)
-        objective_type="discover",
-        objective_target="lore_fragment",
-        objective_count=3,
+        objective_type="investigate",
+        objective_target="ruins_04",
+        objective_count=1,
         reward_tiers={},
-        consequence_small="Scholar's gratitude, lore insight",
-        consequence_medium="Knowledge of pre-Imperial civilization",
+        consequence_small="Obed remembers you as someone who treats old stone seriously",
+        consequence_medium="Your notes deepen your personal trail of pre-Imperial clues",
+    )
+
+    area.quest(
+        "ashreach_forest_relay",
+        name="Line to the Treeline",
+        description="Commander Harven needs his latest road tallies and casualty notes carried to Ranger Taen at the Cantera treeline. If the Ashway crossroads and the forest watch stop sharing what they see, both routes go blind in the same week.",
+        quest_type="delivery",
+        quest_giver="npc_warden_outpost_commander",
+        objectives=[
+            {"type": "deliver", "target": "npc_ranger_forest_edge", "count": 1,
+             "description": "Carry Harven's relay satchel to the Cantera forest edge"},
+        ],
+        flagged_drop="ashreach_relay_satchel",
+        rewards=[
+            {"action_type": "give_scales", "amount": 75},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 225},
+            {"action_type": "echo", "message": "|gHarven breaks the return seal and nods once. \"Good. A quiet road report is worth a dozen speeches after the fact. The line holds because people like you keep it stitched.\"|n"},
+        ],
+        next_quest_id="cantera_bandit_lookout",
+        objective_type="deliver",
+        objective_target="npc_ranger_forest_edge",
+        objective_count=1,
+    )
+
+    area.quest(
+        "ashreach_coastal_order",
+        name="Salt Before Spoil",
+        description="Merchant Reva needs Old Korrin in Stormhaven to mark a purchase order before her next wagon leaves the plains. If she misses the tide-day smokehouse run, Vael's Crossing goes another week without preserved fish and lamp oil.",
+        quest_type="delivery",
+        quest_giver="npc_merchant_reva",
+        objectives=[
+            {"type": "deliver", "target": "npc_fisherman_old_korrin", "count": 1,
+             "description": "Take Reva's purchase order east to Old Korrin in Stormhaven"},
+        ],
+        flagged_drop="coastal_purchase_order",
+        rewards=[
+            {"action_type": "give_scales", "amount": 70},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 175},
+            {"action_type": "echo", "message": "|gReva taps the marked order against her palm and grins. \"Perfect. Paper first, cargo second, profit third. That is how the road stays kind to us.\"|n"},
+        ],
+        next_quest_id="sc_q_deep_cave_rumors",
+        objective_type="deliver",
+        objective_target="npc_fisherman_old_korrin",
+        objective_count=1,
+    )
+
+    area.lore_fragment(
+        "ashreach_crossroads_marker_01", ash_road_16,
+        discovery_method="search",
+        text=(
+            "The crossroads marker predates the current roadbed by a visible "
+            "margin. Under the wagon ruts is fitted stone angled precisely "
+            "toward the city, the coast, and the forest edge. The plains did "
+            "not become a meeting place when traders arrived. Traders found a "
+            "meeting place that was already here."
+        ),
+        insight_gain=4,
+    )
+
+    area.lore_fragment(
+        "ashreach_wayhouse_tablet_01", bandit_16,
+        discovery_method="search",
+        text=(
+            "A half-buried tablet inside the old mine entrance records tolls "
+            "in the same eight-part measures seen across the ruins. Bandits "
+            "made a camp here because caravans once stopped here on purpose. "
+            "Their hideout is a stripped relay post wearing newer dirt."
+        ),
+        insight_gain=5,
+    )
+
+    area.trigger(
+        grass_03, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "rare_herb_bundle"}],
+        trigger_id="ashreach_rare_herb_grass_03",
+    )
+    area.trigger(
+        outpost_03, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "rare_herb_bundle"}],
+        trigger_id="ashreach_rare_herb_outpost_03",
+    )
+    area.trigger(
+        grass_12, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "rare_herb_bundle"}],
+        trigger_id="ashreach_rare_herb_grass_12",
     )
 
     # ==================================================================
@@ -2127,6 +2219,12 @@ def build():
         rooms=["grass_07", "grass_09", "grass_10", "grass_17", "grass_18"],
         materials=["ashgrass_fiber"],
         max_active=3, respawn_minutes=8, respawn_variance=3,
+    )
+    area.gathering_pool(
+        "fish",
+        rooms=["outpost_03", "ridge_14"],
+        materials=["river_trout"],
+        max_active=2, respawn_minutes=12, respawn_variance=4,
     )
 
     # ==================================================================

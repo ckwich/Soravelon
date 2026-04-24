@@ -7,6 +7,7 @@ Uses unittest.TestCase + MagicMock (no Evennia DB required).
 """
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, PropertyMock
 
 
@@ -198,6 +199,118 @@ class TestAbilityDamageResolution(unittest.TestCase):
                 mob, "poison", 3, 1.0, player.id
             )
 
+    @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
+    @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: int(d * 0.5))
+    def test_piercing_bypasses_resistance(self, mock_res, mock_scale, mock_crit):
+        from world.combat_engine import resolve_ability_damage
+
+        player = _make_player()
+        mob = _make_mob()
+        ability = {
+            "name": "Arcane Bolt",
+            "scaling_primary": "combat",
+            "element": "arcane",
+            "effect_params": {"damage_base": 20, "piercing": True},
+        }
+
+        ok, _, dmg = resolve_ability_damage(player, ability, mob)
+
+        self.assertTrue(ok)
+        self.assertEqual(dmg, 24)
+
+    @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
+    @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: d)
+    def test_ignores_armor_skips_reduction_and_absorb(self, mock_res, mock_scale, mock_crit):
+        from world.combat_engine import resolve_ability_damage
+
+        player = _make_player()
+        mob = _make_mob()
+        mob.ndb.active_effects = [
+            {
+                "type": "warding",
+                "stacks": 1,
+                "duration": 3,
+                "magnitude": 0.5,
+                "source_id": None,
+                "max_stacks": 1,
+                "is_compound": False,
+                "data": {"value": 0.5},
+            },
+            {
+                "type": "damage_absorb",
+                "stacks": 1,
+                "duration": 3,
+                "magnitude": 10,
+                "source_id": None,
+                "max_stacks": 1,
+                "is_compound": False,
+                "data": {"remaining": 10},
+            },
+        ]
+        ability = {
+            "name": "Truth Strike",
+            "scaling_primary": "combat",
+            "element": "physical",
+            "effect_params": {"damage_base": 20, "ignores_armor": True},
+        }
+
+        ok, _, dmg = resolve_ability_damage(player, ability, mob)
+
+        self.assertTrue(ok)
+        self.assertEqual(dmg, 24)
+        self.assertEqual(mob.ndb.active_effects[1]["data"]["remaining"], 10)
+
+    @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
+    @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: d)
+    def test_echo_scaling_rewards_accumulated_lore(self, mock_res, mock_scale, mock_crit):
+        from world.combat_engine import resolve_ability_damage
+
+        low_player = _make_player()
+        high_player = _make_player()
+        low_player.ndb.domain_resource = {"type": "echoes", "current": 0, "max": 100}
+        high_player.ndb.domain_resource = {"type": "echoes", "current": 40, "max": 100}
+        high_player.db.echoes_investigation_bonus = {"amount": 20}
+        mob = _make_mob()
+        ability = {
+            "name": "Unbroken Memory",
+            "scaling_primary": "combat",
+            "element": "physical",
+            "effect_params": {"damage_base": 20, "echo_scaling": True},
+        }
+
+        _, _, low_dmg = resolve_ability_damage(low_player, ability, mob)
+        mob.ndb.hp = 80
+        _, _, high_dmg = resolve_ability_damage(high_player, ability, mob)
+
+        self.assertGreater(high_dmg, low_dmg)
+
+    @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
+    @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: d)
+    def test_guaranteed_crit_attack_buff_is_consumed_on_hit(self, mock_res, mock_scale, mock_crit):
+        from world.combat_engine import resolve_ability_damage
+        from world.status_effects import apply_effect
+
+        player = _make_player()
+        player.ndb.domain_resource = {"type": "momentum", "current": 50, "max": 100}
+        mob = _make_mob()
+        apply_effect(player, "guaranteed_crit", duration=1, data={})
+        ability = {
+            "name": "Ambush",
+            "scaling_primary": "combat",
+            "element": "physical",
+            "effect_params": {"damage_base": 20},
+        }
+
+        ok, _, dmg = resolve_ability_damage(player, ability, mob)
+
+        self.assertTrue(ok)
+        self.assertEqual(dmg, 48)
+        self.assertEqual(player.ndb.active_effects, [])
+
 
 class TestEliteBossScaling(unittest.TestCase):
     """Elite and boss damage scaling modifiers (CMB-02)."""
@@ -235,10 +348,11 @@ class TestEliteBossScaling(unittest.TestCase):
 class TestCorpseLocking(unittest.TestCase):
     """Corpse loot phase and access control (CMB-04)."""
 
-    def _make_corpse(self, killer_id=1, group_leader_id=None, loot_phase="locked"):
+    def _make_corpse(self, killer_id=1, authorized_looter_ids=None, loot_phase="locked"):
         corpse = MagicMock()
         corpse.db.killer_id = killer_id
-        corpse.db.killer_group_leader_id = group_leader_id
+        corpse.db.authorized_looter_ids = authorized_looter_ids or []
+        corpse.db.killer_group_leader_id = None
         corpse.db.loot_phase = loot_phase
         return corpse
 
@@ -249,19 +363,17 @@ class TestCorpseLocking(unittest.TestCase):
             return False, "Nothing remains here."
         if phase == "open":
             return True, ""
-        # Locked phase
-        if character.id == corpse.db.killer_id:
-            return True, ""
-        killer_group_id = corpse.db.killer_group_leader_id
-        if killer_group_id:
-            char_group_id = getattr(character.ndb, "group_leader_id", None)
-            if char_group_id == killer_group_id:
+        authorized_ids = list(corpse.db.authorized_looter_ids or [])
+        if authorized_ids:
+            if character.id in authorized_ids:
                 return True, ""
-        return False, "This corpse is not yours to loot."
+        elif character.id == corpse.db.killer_id:
+            return True, ""
+        return False, "This corpse's loot is still being claimed by the killer."
 
     def test_killer_can_loot(self):
         """Killer can access locked corpse."""
-        corpse = self._make_corpse(killer_id=1)
+        corpse = self._make_corpse(killer_id=1, authorized_looter_ids=[1])
         char = MagicMock()
         char.id = 1
         char.ndb.group_leader_id = None
@@ -270,7 +382,7 @@ class TestCorpseLocking(unittest.TestCase):
 
     def test_non_killer_blocked(self):
         """Non-killer blocked from locked corpse."""
-        corpse = self._make_corpse(killer_id=1)
+        corpse = self._make_corpse(killer_id=1, authorized_looter_ids=[1])
         char = MagicMock()
         char.id = 99
         char.ndb.group_leader_id = None
@@ -278,11 +390,11 @@ class TestCorpseLocking(unittest.TestCase):
         self.assertFalse(ok)
 
     def test_group_member_can_loot(self):
-        """Killer's group member can access locked corpse."""
-        corpse = self._make_corpse(killer_id=1, group_leader_id=10)
+        """Authorized group snapshot member can access locked corpse."""
+        corpse = self._make_corpse(killer_id=1, authorized_looter_ids=[1, 2])
         char = MagicMock()
         char.id = 2  # not the killer
-        char.ndb.group_leader_id = 10  # same group leader
+        char.ndb.group_leader_id = None
         ok, msg = self._can_loot(corpse, char)
         self.assertTrue(ok)
 
@@ -359,3 +471,97 @@ class TestDeathHandling(unittest.TestCase):
         mob = _make_mob()
         mob.ndb.hp = 50
         self.assertFalse(check_death(mob))
+
+
+class TestRespawnHandling(unittest.TestCase):
+    """Respawn routing and refresh behavior."""
+
+    def _make_room(self, room_id, is_respawn=False):
+        room = MagicMock()
+        room.id = hash(room_id)
+        room.key = room_id
+        room.db = SimpleNamespace(zone_id="zone")
+        room.exits = []
+
+        def has_tag(key, category=None):
+            return key == "respawn_point" and category == "spawn_point" and is_respawn
+
+        def get_tag(category=None):
+            if category == "room_id":
+                return room_id
+            return None
+
+        room.tags.has.side_effect = has_tag
+        room.tags.get.side_effect = get_tag
+        return room
+
+    def test_respawn_uses_nearest_reachable_respawn_point(self):
+        from world.combat_engine import _respawn_player
+
+        start = self._make_room("start")
+        mid = self._make_room("mid")
+        scenic = self._make_room("scenic")
+        detour = self._make_room("detour")
+        near_respawn = self._make_room("near_respawn", is_respawn=True)
+        far_respawn = self._make_room("far_respawn", is_respawn=True)
+
+        start.exits = [
+            MagicMock(destination=mid),
+            MagicMock(destination=scenic),
+        ]
+        mid.exits = [MagicMock(destination=near_respawn)]
+        scenic.exits = [MagicMock(destination=detour)]
+        detour.exits = [MagicMock(destination=far_respawn)]
+        near_respawn.exits = []
+        far_respawn.exits = []
+
+        character = MagicMock()
+        character.location = start
+        character.home = None
+        character.db.visited_room_ids = set()
+        character.ndb.oob_debounce = {"map_update": 1.0}
+
+        with patch("evennia.utils.search.search_tag", return_value=[far_respawn, near_respawn]), \
+             patch("world.base_attributes.derive_max_hp", return_value=120), \
+             patch("world.base_attributes.derive_max_stamina", return_value=80), \
+             patch("world.oob_publisher.push_status_update"), \
+             patch("world.oob_publisher.push_stat_update"), \
+             patch("world.oob_publisher.push_map_update"), \
+             patch("world.oob_publisher.push_inventory_update"):
+            _respawn_player(character)
+
+        character.move_to.assert_called_once_with(
+            near_respawn, quiet=True, move_hooks=False
+        )
+
+    def test_respawn_refreshes_player_state_and_marks_room_visited(self):
+        from world.combat_engine import _respawn_player
+
+        death_room = self._make_room("death_room")
+        respawn_room = self._make_room("respawn_room", is_respawn=True)
+        death_room.exits = [MagicMock(destination=respawn_room)]
+        respawn_room.exits = []
+
+        character = MagicMock()
+        character.location = death_room
+        character.home = None
+        character.db.visited_room_ids = set()
+        character.ndb.oob_debounce = {"map_update": 1.0}
+
+        with patch("evennia.utils.search.search_tag", return_value=[respawn_room]), \
+             patch("world.base_attributes.derive_max_hp", return_value=120), \
+             patch("world.base_attributes.derive_max_stamina", return_value=80), \
+             patch("world.oob_publisher.push_status_update") as mock_push_status, \
+             patch("world.oob_publisher.push_stat_update") as mock_push_stat, \
+             patch("world.oob_publisher.push_map_update") as mock_push_map, \
+             patch("world.oob_publisher.push_inventory_update") as mock_push_inventory:
+            _respawn_player(character)
+
+        self.assertEqual(character.ndb.hp, 30)
+        self.assertEqual(character.ndb.stamina, 20)
+        self.assertEqual(character.db.visited_room_ids, {"respawn_room"})
+        self.assertEqual(character.ndb.oob_debounce, {})
+        mock_push_status.assert_called_once_with(character)
+        mock_push_stat.assert_called_once_with(character)
+        mock_push_map.assert_called_once_with(character)
+        mock_push_inventory.assert_called_once_with(character)

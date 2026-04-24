@@ -484,6 +484,7 @@ class TestProficiencyLabel100(unittest.TestCase):
 # ===========================================================================
 
 from evennia.utils.test_resources import EvenniaTest
+from world.models import CharacterAbility
 from world.models import CharacterGuild
 
 
@@ -508,6 +509,43 @@ class TestJoinGuildValid(EvenniaTest):
         self.assertEqual(record.guild_id, "ironblood")
         self.assertEqual(record.subclass_id, "duskblade")
         self.assertFalse(record.induction_complete)
+
+    def test_join_guild_grants_tier_one_domain_abilities(self):
+        self.char1.db.ancestry = "human"
+        self.char1.db.domain_scores = {"combat": 30, "subterfuge": 0}
+        self.char1.db.guild_id = None
+        self.char1.db.primary_domain = None
+        self.char1.db.secondary_domain = None
+        self.char1.db.subclass_id = None
+
+        success, _ = join_guild(self.char1, "ironblood", "subterfuge")
+        self.assertTrue(success)
+
+        known = set(
+            CharacterAbility.objects.filter(character=self.char1).values_list("ability_id", flat=True)
+        )
+        self.assertIn("second_wind", known)
+        self.assertIn("crushing_advance", known)
+        self.assertIn("iron_resolve", known)
+        self.assertNotIn("rending_strike", known)
+
+    def test_join_guild_grants_new_tier_unlocks_when_gts_is_high_enough(self):
+        self.char1.db.ancestry = "human"
+        self.char1.db.domain_scores = {"combat": 80, "subterfuge": 30}
+        self.char1.db.guild_id = None
+        self.char1.db.primary_domain = None
+        self.char1.db.secondary_domain = None
+        self.char1.db.subclass_id = None
+
+        success, _ = join_guild(self.char1, "ironblood", "subterfuge")
+        self.assertTrue(success)
+
+        known = set(
+            CharacterAbility.objects.filter(character=self.char1).values_list("ability_id", flat=True)
+        )
+        self.assertIn("rending_strike", known)
+        self.assertIn("duskblade_shadow_strike", known)
+        self.assertNotIn("duskblade_vanishing_edge", known)
 
 
 class TestJoinGuildInvalidGuild(EvenniaTest):

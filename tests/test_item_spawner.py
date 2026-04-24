@@ -18,6 +18,7 @@ class TestCreateItemFromTemplate(unittest.TestCase):
         # Build mock item object that supports attribute assignment via .db
         self.mock_item = MagicMock()
         self.mock_item.db = MagicMock()
+        self.mock_inventory_engine = MagicMock()
 
         # Build mock evennia module
         self.mock_evennia = MagicMock()
@@ -25,7 +26,9 @@ class TestCreateItemFromTemplate(unittest.TestCase):
 
         # Save original evennia module before injecting stub
         self._saved_evennia = sys.modules.get("evennia")
+        self._saved_inventory_engine = sys.modules.get("world.inventory_engine")
         sys.modules["evennia"] = self.mock_evennia
+        sys.modules["world.inventory_engine"] = self.mock_inventory_engine
 
         # Remove cached module if already imported
         for mod in list(sys.modules.keys()):
@@ -45,6 +48,10 @@ class TestCreateItemFromTemplate(unittest.TestCase):
             sys.modules["evennia"] = self._saved_evennia
         else:
             sys.modules.pop("evennia", None)
+        if self._saved_inventory_engine is not None:
+            sys.modules["world.inventory_engine"] = self._saved_inventory_engine
+        else:
+            sys.modules.pop("world.inventory_engine", None)
 
     def test_equipment_type_uses_soravelon_equipment_typeclass(self):
         """item_type='equipment' → creates with SoravelonEquipment typeclass."""
@@ -249,6 +256,39 @@ class TestCreateItemFromTemplate(unittest.TestCase):
                     "weight": 0.1, "desc": "", "value": 0}
         result = self.create_item_from_template(item_def)
         self.assertEqual(result, self.mock_item)
+
+    def test_registers_inventory_when_location_is_player_character(self):
+        """Direct-to-player item spawns create authoritative inventory records."""
+        class _FakeTags:
+            def has(self, key, category=None):
+                return key == "player_character" and category == "character_type"
+
+            def get(self, key, category=None):
+                return self.has(key, category)
+
+        class _FakeCharacter:
+            def __init__(self):
+                self.tags = _FakeTags()
+
+        item_def = {
+            "item_id": "iron_sword",
+            "key": "iron sword",
+            "item_type": "equipment",
+            "weight": 2.0,
+            "desc": "A test sword.",
+            "value": 5,
+        }
+        character = _FakeCharacter()
+
+        result = self.create_item_from_template(item_def, location=character)
+
+        self.mock_inventory_engine.register_item_ownership.assert_called_once_with(
+            character,
+            result,
+            quantity=1,
+            is_quest_item=False,
+            keyring=False,
+        )
 
 
 if __name__ == "__main__":

@@ -20,3 +20,8 @@ class SoravelonAccount(DefaultAccount):
         self.db.inv_sort = "type"
         self.db.combine_stacks = True
         self.db.prompt_format = "default"
+
+
+class Account(SoravelonAccount):
+    """Compatibility alias for Evennia test resources and scaffold defaults."""
+    pass

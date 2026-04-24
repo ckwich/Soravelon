@@ -1041,6 +1041,8 @@ def build():
     area.exit(cn_mouth, ls_scree_slope, "east")
     area.exit(cn_mouth, cn_entrance_hall, "in")
     area.exit(cn_entrance_hall, cn_mouth, "out")
+    area.exit(cn_mouth, "cantera_edge:rc_reth_exit", "south",
+              desc="A rough trail descends south through the roots toward Cantera Edge.")
     area.exit(cn_entrance_hall, cn_stream_passage, "north")
     area.exit(cn_stream_passage, cn_entrance_hall, "south")
     area.exit(cn_stream_passage, cn_mushroom_grotto, "north")
@@ -2149,7 +2151,7 @@ def build():
             "The broken golem on the terrace is of a design that matches "
             "no known Imperial construction period. Its joints are fitted "
             "with eight-fold symmetry -- the same mathematical base that "
-            "appears in dragon-era architecture. The golem was not built "
+            "appears in the oldest surviving engineered sites. The golem was not built "
             "by humans. It was built by something that thought in eights."
         ),
         insight_gain=6,
@@ -2208,22 +2210,28 @@ def build():
 
     area.quest("rf_q_lost_miners",
         name="Lost in the Deep",
-        description="Foreman Halvek's survey team went silent three days ago in the mountain passages. They were mapping new tunnels when contact was lost. Check the passages for signs of them -- or whatever drove them underground.",
+        description="Foreman Halvek's survey team went silent while tracing a fresh collapse, a blocked passage, and the deeper caverns beyond it. Follow their route in order and learn whether the mountain took them, or whether they opened something they should have left buried.",
         quest_type="investigation",
         quest_giver="npc_foreman_halvek",
+        prerequisite_quests=["vc_q_forging_commission"],
         objectives=[
-            {"type": "investigate", "target": "rf_mountain_passage", "count": 3,
-             "description": "Search mountain passages for signs of the lost miners"},
+            {"type": "investigate", "target": "gm_collapse", "count": 1,
+             "description": "Search the collapsed section for the survey team's trail"},
+            {"type": "investigate", "target": "rf_mountain_passage", "count": 1,
+             "description": "Check the blocked mountain passage the team was mapping"},
+            {"type": "investigate", "target": "dc_bone_corridor", "count": 1,
+             "description": "Follow the route into the deep caverns below the dig"},
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
             {"action_type": "modify_standing", "faction_id": "consortium", "delta": 200},
             {"action_type": "echo", "message": "|gHalvek's weathered face creases with relief. \"Alive, then. Thank the stone. The Consortium will remember this -- and so will I.\"|n"},
         ],
+        next_quest_id="rf_q_foundation_survey",
         # Legacy fields (backward compat)
         objective_type="investigate",
-        objective_target="missing_miners",
-        objective_count=3,
+        objective_target="gm_collapse",
+        objective_count=1,
     )
 
     area.quest("rf_q_troll_menace",
@@ -2232,8 +2240,8 @@ def build():
         quest_type="combat",
         quest_giver="npc_warden_captain_serra",
         objectives=[
-            {"type": "kill", "target": "mountain_troll", "count": 5,
-             "description": "Slay mountain trolls in the foothills"},
+            {"type": "kill", "target": "rock_troll", "count": 5,
+             "description": "Drive rock trolls out of the lower foothills"},
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 120},
@@ -2249,9 +2257,10 @@ def build():
 
     area.quest("rf_q_rare_ingredients",
         name="Mountain Remedies",
-        description="Old Renn needs rare alpine ingredients that only grow at high elevation where the air thins and the rock bleeds iron. Gather them before the season turns and the frost kills the last of the growth.",
+        description="Old Renn needs rare alpine ingredients from the herb ledge, the high meadow, and the colder eastern slopes. Gather them while the season still holds; once the frost locks in, the patrol line loses its best tonic for the whole winter.",
         quest_type="gathering",
         quest_giver="npc_hermit_alchemist_old_renn",
+        prerequisite_quests=["vc_q_herbalist_gathering", "rf_q_patrol_request"],
         objectives=[
             {"type": "collect", "target": "rare_alpine_ingredient", "count": 4,
              "description": "Gather rare alpine ingredients from the high foothills"},
@@ -2266,6 +2275,97 @@ def build():
         objective_type="gather",
         objective_target="rare_mountain_ingredient",
         objective_count=4,
+    )
+
+    area.quest("rf_q_patrol_request",
+        name="A Tonic for the Line",
+        description="Captain Serra needs Renn to prepare a fresh tonic batch for the lower-pass patrols before the next cold front rolls down. Carry the request west to the hermit's cave; Serra cannot spare a runner while trolls are testing the road.",
+        quest_type="delivery",
+        quest_giver="npc_warden_captain_serra",
+        objectives=[
+            {"type": "deliver", "target": "npc_hermit_alchemist_old_renn", "count": 1,
+             "description": "Carry Serra's tonic request to Old Renn on the western ridge"},
+        ],
+        flagged_drop="patrol_tonic_request",
+        rewards=[
+            {"action_type": "give_scales", "amount": 65},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 125},
+            {"action_type": "echo", "message": "|gSerra folds Renn's answer into her map case. \"Good. The line keeps men alive because somebody thinks ahead. Today that somebody was you.\"|n"},
+        ],
+        next_quest_id="rf_q_rare_ingredients",
+        objective_type="deliver",
+        objective_target="npc_hermit_alchemist_old_renn",
+        objective_count=1,
+    )
+
+    area.quest("rf_q_foundation_survey",
+        name="What the Mountain Was Built For",
+        description="Halvek wants proof before he shuts a productive cut, and Renn wants proof before anyone digs farther. Compare the hidden alcove, the ancient foundation, and the old nest in the deep caverns to learn whether the miners broke into a structure instead of a vein.",
+        quest_type="investigation",
+        quest_giver="npc_foreman_halvek",
+        prerequisite_quests=["rf_q_lost_miners"],
+        objectives=[
+            {"type": "investigate", "target": "gm_hidden_alcove", "count": 1,
+             "description": "Examine the hidden alcove cut into the mine wall"},
+            {"type": "investigate", "target": "mo_foundation", "count": 1,
+             "description": "Survey the exposed foundation on the mountain ridge"},
+            {"type": "investigate", "target": "dc_old_nest", "count": 1,
+             "description": "Compare the symbols hidden behind the old nest in the deep caverns"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 100},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 150},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 4},
+            {"action_type": "echo", "message": "|gHalvek studies the copied marks in silence before handing them to Renn. \"That is not mine work,\" he mutters. \"That means the mountain owed us warning before it owed us ore.\"|n"},
+        ],
+        objective_type="investigate",
+        objective_target="gm_hidden_alcove",
+        objective_count=1,
+    )
+
+    area.lore_fragment(
+        "lore_reth_patrol_cairn", ls_miners_rest,
+        discovery_method="search",
+        text=(
+            "The stacked stones at Miner's Rest hide an older marker at their "
+            "center: a carved wedge aligned with the pass, the western ridge, "
+            "and the summit pillar. The Wardens keep a camp here because the "
+            "older road planners already decided this was the mountain's hinge."
+        ),
+        insight_gain=4,
+    )
+
+    area.lore_fragment(
+        "lore_reth_herb_terrace", ls_herb_ledge,
+        discovery_method="search",
+        text=(
+            "The ledge wall is too even to be natural. Someone cut shallow "
+            "planting shelves into the stone long before the current herb "
+            "growth took hold. The alpine remedies survive here because this "
+            "ledge was cultivated on purpose."
+        ),
+        insight_gain=5,
+    )
+
+    area.trigger(
+        ls_herb_ledge, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "rare_alpine_ingredient"}],
+        trigger_id="rf_alpine_ingredient_herb_ledge",
+    )
+    area.trigger(
+        mo_high_meadow, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "rare_alpine_ingredient"}],
+        trigger_id="rf_alpine_ingredient_high_meadow",
+    )
+    area.trigger(
+        ed_lower_meadow, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "rare_alpine_ingredient"}],
+        trigger_id="rf_alpine_ingredient_lower_meadow",
+    )
+    area.trigger(
+        ra_spring, "on_examine",
+        actions=[{"action_type": "give_item", "item_id": "rare_alpine_ingredient"}],
+        trigger_id="rf_alpine_ingredient_spring",
     )
 
     # ==================================================================
@@ -2337,6 +2437,12 @@ def build():
         rooms=["ls_herb_ledge", "ra_spring", "ra_scrub_flat", "ed_lower_meadow", "mo_high_meadow"],
         materials=["mountain_herb"],
         max_active=3, respawn_minutes=10, respawn_variance=3,
+    )
+    area.gathering_pool(
+        "fish",
+        rooms=["ra_spring", "cn_stream_passage", "cn_underground_pool", "dc_deep_pool"],
+        materials=["river_trout", "cave_eel"],
+        max_active=2, respawn_minutes=14, respawn_variance=4,
     )
 
     # ==================================================================

@@ -2145,6 +2145,40 @@ def build():
     # 3. Imperial coastguard patrol captain
     area.npc(lh_base, "npc_coastguard_captain_aldren", faction="empire", trainer_id="npc_trainer_swimming_stormhaven")
 
+    # 3b. Lighthouse keeper in the lantern room
+    area.npc(
+        lh_lantern_room, "npc_lighthouse_keeper_merrow",
+        name="Merrow",
+        title="Lighthouse Keeper",
+        desc=(
+            "A weather-scoured keeper in layered oilskins, all rope-scarred "
+            "hands and narrowed eyes. Soot marks darken one sleeve where he "
+            "works the lantern housings by hand. He smells of lamp oil, "
+            "salt, and sleeplessness."
+        ),
+        faction=None,
+        dialogue={
+            "greeting": (
+                "Merrow keeps one eye on the horizon even while he speaks. "
+                "'If you came up here, either the light is short on oil or "
+                "someone down below has finally decided storms do not wait "
+                "for paperwork.'"
+            ),
+            "topics": {
+                "light": (
+                    "'A dark lantern kills as surely as a reef. Fishing "
+                    "boats, coasters, patrol skiffs -- all of them count on "
+                    "this room burning when the weather turns mean.'"
+                ),
+                "storms": (
+                    "'Fog, rain, crosswind, bad tide -- none of them care "
+                    "whose flag is on the mast. The light is the only honest "
+                    "thing on this headland.'"
+                ),
+            },
+        },
+    )
+
     # 4. Dock contact (delivery target for sc_q_smuggler_delivery)
     area.npc(
         sv_dock, "npc_dock_contact",
@@ -2250,8 +2284,8 @@ def build():
             "marker -- not for ships, but for something that approached "
             "from the air. The stones are positioned to be visible from "
             "directly above, forming a pattern that reads as a landing "
-            "glyph in pre-human notation. Dragons used this coast long "
-            "before humans fished it."
+            "glyph in pre-human notation. This coast served airborne "
+            "traffic long before humans fished it."
         ),
         insight_gain=7,
     )
@@ -2271,6 +2305,31 @@ def build():
         insight_gain=10,
     )
 
+    area.lore_fragment(
+        "lore_lantern_foundation", lh_base,
+        discovery_method="search",
+        text=(
+            "The lighthouse footing is newer than the black stone plinth "
+            "under it. Someone rebuilt a coastal beacon on top of a much "
+            "older foundation that already knew exactly where the horizon, "
+            "the harbor mouth, and the reef line met."
+        ),
+        insight_gain=5,
+    )
+
+    area.lore_fragment(
+        "lore_reef_soundings", wr_reef_base,
+        discovery_method="search",
+        text=(
+            "Shallow cuts in the reef stone mark old soundings taken from "
+            "fixed points, not drifting boats. The pattern matches the "
+            "captain's surviving chart notes. Whoever first measured these "
+            "waters did so with patience, geometry, and a reason to keep "
+            "coming back."
+        ),
+        insight_gain=4,
+    )
+
     # ==================================================================
     #  QUESTS (enriched specs — D-21/D-22)
     # ==================================================================
@@ -2281,12 +2340,12 @@ def build():
         quest_type="combat",
         quest_giver="npc_coastguard_captain_aldren",
         objectives=[
-            {"type": "kill", "target": "sea_raider", "count": 10,
-             "description": "Eliminate sea raiders along the coast"},
+            {"type": "kill", "target": "coastal_raider", "count": 10,
+             "description": "Eliminate coastal raiders operating out of the coves"},
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 100},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 250},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 250},
             {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 4},
             {"action_type": "echo", "message": "|gAldren crosses the last name off his bounty list. \"Ten less raiders on the water. The fishing fleet can breathe again. Your bounty, well earned.\"|n"},
         ],
@@ -2298,21 +2357,27 @@ def build():
 
     area.quest("sc_q_deep_cave_rumors",
         name="Whispers from the Deep",
-        description="Old Korrin swears he heard voices echoing from the sea caves at low tide. The other fishermen think he's gone salt-mad, but Korrin has been on these waters for fifty years. Something is down there.",
+        description="Old Korrin wants more than a story about voices in the sea caves. He wants someone to walk the tide-cut entrance, the fossil wall, and the deep chamber beyond it so he can decide whether the coast is changing or simply remembering what it has always hidden.",
         quest_type="exploration",
         quest_giver="npc_fisherman_old_korrin",
+        prerequisite_quests=["ashreach_coastal_order"],
         objectives=[
+            {"type": "investigate", "target": "cn_tidal_cave_entrance", "count": 1,
+             "description": "Enter the tide-cut cave path from the northern cliffs"},
+            {"type": "investigate", "target": "sc_fossil_wall", "count": 1,
+             "description": "Inspect the fossil wall deep in the sea caves"},
             {"type": "investigate", "target": "sc_deep_sea_cave", "count": 1,
-             "description": "Investigate the deep sea cave at low tide"},
+             "description": "Press on to the deep sea cave beyond the known chambers"},
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 80},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 5},
             {"action_type": "echo", "message": "|gKorrin listens to your account with narrowed eyes. \"I knew it. Fifty years on these waters and my ears haven't failed me yet. Whatever you found down there, it's just the beginning.\"|n"},
         ],
+        next_quest_id="sc_q_seaspray_ledger",
         # Legacy fields (backward compat)
         objective_type="investigate",
-        objective_target="sea_cave_deep_pool",
+        objective_target="cn_tidal_cave_entrance",
         objective_count=1,
     )
 
@@ -2325,6 +2390,7 @@ def build():
             {"type": "deliver", "target": "npc_dock_contact", "count": 1,
              "description": "Deliver the sealed package to Veyra's dock contact"},
         ],
+        flagged_drop="contraband_package",
         rewards=[
             {"action_type": "give_scales", "amount": 90},
             {"action_type": "echo", "message": "|gVeyra's contact weighs the package in practiced hands and nods once. A pouch of coins appears from nowhere. \"Veyra says thanks. You never saw me.\"|n"},
@@ -2332,6 +2398,50 @@ def build():
         # Legacy fields (backward compat)
         objective_type="deliver",
         objective_target="contraband_package",
+        objective_count=1,
+    )
+
+    area.quest("sc_q_lantern_fuel",
+        name="Light Through the Fog",
+        description="Korrin has scraped together oil tins and spare mantles for the lighthouse, but he cannot leave the harbor while the catch is turning. Carry the crate up to Keeper Merrow before the evening fog bank reaches the reef.",
+        quest_type="delivery",
+        quest_giver="npc_fisherman_old_korrin",
+        objectives=[
+            {"type": "deliver", "target": "npc_lighthouse_keeper_merrow", "count": 1,
+             "description": "Carry Korrin's oil crate up to the lantern room"},
+        ],
+        flagged_drop="lighthouse_oil_crate",
+        rewards=[
+            {"action_type": "give_scales", "amount": 65},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 2},
+            {"action_type": "echo", "message": "|gMerrow stacks the oil tins by the lamp housing and finally lets his shoulders drop. \"Good timing. A reef is patient, but a dark lantern makes it greedy.\"|n"},
+        ],
+        objective_type="deliver",
+        objective_target="npc_lighthouse_keeper_merrow",
+        objective_count=1,
+    )
+
+    area.quest("sc_q_seaspray_ledger",
+        name="Ledger of the Wreck",
+        description="Korrin wants the story of the Seaspray pieced together before rumor turns it into another dockside ghost tale. Search the captain's quarters, the cargo hold, and the reef below the wreck to learn what that ship was really doing before it died on the coast.",
+        quest_type="investigation",
+        quest_giver="npc_fisherman_old_korrin",
+        prerequisite_quests=["sc_q_deep_cave_rumors"],
+        objectives=[
+            {"type": "investigate", "target": "wr_captain_quarters", "count": 1,
+             "description": "Search the captain's quarters of the Seaspray"},
+            {"type": "investigate", "target": "wr_cargo_hold", "count": 1,
+             "description": "Inspect what remains in the cargo hold"},
+            {"type": "investigate", "target": "wr_reef_base", "count": 1,
+             "description": "Check the reef below the wreck for old soundings and debris"},
+        ],
+        rewards=[
+            {"action_type": "give_scales", "amount": 95},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 4},
+            {"action_type": "echo", "message": "|gKorrin traces the route on your wet notes with a calloused thumb. \"Not a ghost story, then. A real run, a real chart, and a crew that knew more than they should have. That matters.\"|n"},
+        ],
+        objective_type="investigate",
+        objective_target="wr_captain_quarters",
         objective_count=1,
     )
 

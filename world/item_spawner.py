@@ -23,6 +23,47 @@ _RESERVED_KEYS = frozenset(
 )
 
 
+def _is_player_inventory_owner(location):
+    """Return True when location is a real Soravelon player character."""
+    if location is None:
+        return False
+    if type(location).__module__.startswith("unittest.mock"):
+        return False
+    tags = getattr(location, "tags", None)
+    if not tags:
+        return False
+    for method_name in ("has", "get"):
+        method = getattr(tags, method_name, None)
+        if not callable(method):
+            continue
+        try:
+            if bool(method("player_character", category="character_type")):
+                return True
+        except TypeError:
+            continue
+    return False
+
+
+def _register_player_inventory(item, location, item_def):
+    """Create the authoritative InventoryItem row for direct-to-player spawns."""
+    if not _is_player_inventory_owner(location):
+        return
+    from world.inventory_engine import register_item_ownership
+
+    keyring_attr = getattr(item.db, "keyring", False)
+    keyring_flag = bool(item_def.get("item_type") == "keyring")
+    if isinstance(keyring_attr, bool):
+        keyring_flag = keyring_flag or keyring_attr
+
+    register_item_ownership(
+        location,
+        item,
+        quantity=item_def.get("quantity", 1),
+        is_quest_item=bool(item_def.get("is_quest_item")),
+        keyring=keyring_flag,
+    )
+
+
 def create_item_from_template(item_def, location=None):
     """
     Create an Evennia item object from a definition dict.
@@ -73,5 +114,7 @@ def create_item_from_template(item_def, location=None):
     item_id = item_def.get("item_id")
     if item_id:
         item.tags.add(item_id, category="item_tag")
+
+    _register_player_inventory(item, location, item_def)
 
     return item

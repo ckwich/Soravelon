@@ -229,6 +229,34 @@ class CombatScript:
         """Check if obj is in this combat."""
         return obj.id in (self.db.combatant_ids or [])
 
+    def _resolve_post_ability_deaths(self, actor=None, priority_target=None):
+        """Clean up every combatant killed by an ability, not just its primary target."""
+        from world.combat_engine import check_death, handle_mob_death, handle_player_death
+
+        ordered = []
+        for candidate in (priority_target, actor):
+            if candidate and candidate not in ordered:
+                ordered.append(candidate)
+        for combatant in self._resolve_combatants():
+            if combatant and combatant not in ordered and check_death(combatant):
+                ordered.append(combatant)
+
+        for combatant in ordered:
+            if combatant is None or not self.is_combatant(combatant):
+                continue
+            if not check_death(combatant):
+                continue
+            if _is_mob(combatant):
+                death_msg = handle_mob_death(combatant, actor)
+            else:
+                death_msg = handle_player_death(combatant)
+            if self.obj:
+                self.obj.msg_contents(death_msg)
+            self.remove_combatant(combatant)
+            if not self.db.combatant_ids:
+                return True
+        return False
+
     # -- turn management -----------------------------------------------------
 
     def advance_turn(self):
@@ -301,23 +329,20 @@ class CombatScript:
                 # Fire the charged ability
                 ability_id = charge_info["ability_id"]
                 target = _resolve_by_id(charge_info.get("target_id"))
-                ok, msg = use_ability(character, ability_id, target=target)
+                previous_flag = getattr(
+                    character.ndb, "resolving_charged_ability", False
+                )
+                character.ndb.resolving_charged_ability = True
+                try:
+                    ok, msg = use_ability(character, ability_id, target=target)
+                finally:
+                    character.ndb.resolving_charged_ability = previous_flag
                 character.msg(f"|w{msg}|n")
                 if self.obj:
                     self.obj.msg_contents(msg, exclude=[character])
                 del charged[character.id]
-                # Check death of target
-                if target:
-                    from world.combat_engine import check_death, handle_mob_death, handle_player_death
-                    if check_death(target):
-                        if _is_mob(target):
-                            death_msg = handle_mob_death(target, character)
-                        else:
-                            death_msg = handle_player_death(target)
-                        if self.obj:
-                            self.obj.msg_contents(death_msg)
-                        self.remove_combatant(target)
-                        return
+                if self._resolve_post_ability_deaths(actor=character, priority_target=target):
+                    return
             else:
                 charged[character.id] = charge_info
             self.ndb.pending_charged = charged
@@ -555,14 +580,7 @@ class CombatScript:
             self.ndb.ally_action_count = ally_counts
             # Abilities consume all remaining actions per D-09
             character.ndb.actions_remaining = 0
-            if target and check_death(target):
-                if _is_mob(target):
-                    death_msg = handle_mob_death(target, character)
-                else:
-                    death_msg = handle_player_death(target)
-                if self.obj:
-                    self.obj.msg_contents(death_msg)
-                self.remove_combatant(target)
+            if self._resolve_post_ability_deaths(actor=character, priority_target=target):
                 return
             self.advance_turn()
 
@@ -714,6 +732,12 @@ class CombatScript:
             if check_death(combatant):
                 dead.append(combatant)
 
+        # Periodic autonomous attacks can kill combatants other than the owner
+        # of the ticking effect, so rescan once before resolving round-end deaths.
+        for combatant in self._resolve_combatants():
+            if combatant and combatant not in dead and check_death(combatant):
+                dead.append(combatant)
+
         # Handle deaths from DoTs
         for combatant in dead:
             if _is_mob(combatant):
@@ -787,15 +811,7 @@ class CombatScript:
             cooldowns[ability_id] = cooldown
             mob.ndb.ability_cooldowns = cooldowns
 
-        # Check death of target
-        if check_death(target):
-            if _is_player(target):
-                death_msg = handle_player_death(target)
-            else:
-                death_msg = handle_mob_death(target, mob)
-            if self.obj:
-                self.obj.msg_contents(death_msg)
-            self.remove_combatant(target)
+        self._resolve_post_ability_deaths(actor=mob, priority_target=target)
 
     # -- combat end ----------------------------------------------------------
 
@@ -1090,7 +1106,18 @@ def _send_turn_prompt(character, combat_handler):
     charged_msg = ""
     pending = (combat_handler.ndb.pending_charged or {}).get(character.id)
     if pending:
-        charged_msg = f" | Charging: {pending['ability_id']} ({pending['rounds_left']} rounds)"
+        ability_label = pending["ability_id"]
+        try:
+            from world.ability_registry import ABILITIES
+
+            ability_label = ABILITIES.get(
+                pending["ability_id"], {}
+            ).get("name", ability_label)
+        except Exception:
+            pass
+        charged_msg = (
+            f" | Charging: {ability_label} ({pending['rounds_left']} rounds)"
+        )
 
     rnd = combat_handler.db.round_number or 1
     prompt = (

@@ -34,7 +34,7 @@ class CmdGroup(Command):
       group kick <player>    - kick a member (leader only)
       group lootmode <mode>  - set loot mode (leader only)
 
-    Valid loot modes: personal, ffa, round_robin, need_pass
+    Valid loot modes: personal, ffa, round_robin
     Alias: party
     """
 

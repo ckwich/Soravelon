@@ -283,6 +283,52 @@ class TestRollLootItemDefShape(unittest.TestCase):
 
         self.assertEqual(results[0]["item_id"], "wolf_pelt")
 
+    def test_equipment_loot_preserves_authored_combat_metadata(self):
+        from world.loot_tables import roll_loot, LOOT_TABLES
+        mob = _make_mob(mob_type="coastal_raider")
+        killer = _make_killer({"combat": 80})
+
+        equipment_only_entry = dict(LOOT_TABLES["coastal_raider"])
+        equipment_only_entry["base_drop_chance"] = 1.0
+        equipment_only_entry["drops"] = [LOOT_TABLES["coastal_raider"]["drops"][0]]
+
+        with patch.dict(LOOT_TABLES, {"coastal_raider": equipment_only_entry}):
+            results = roll_loot(mob, killer)
+
+        self.assertEqual(len(results), 1)
+        item = results[0]
+        self.assertEqual(item["equip_slot"], "main_hand")
+        self.assertEqual(item["scaling_stat"], "agility")
+        self.assertEqual(item["damage_min"], 13)
+        self.assertEqual(item["damage_max"], 21)
+        self.assertEqual(item["stat_bonuses"], {"agility": 2})
+        self.assertEqual(item["material_tier"], 2)
+
+    def test_all_authored_equipment_drops_have_equipment_payloads(self):
+        from world.loot_tables import LOOT_TABLES
+
+        for mob_type, table in LOOT_TABLES.items():
+            for drop in table.get("drops", []):
+                if drop.get("item_type") != "equipment":
+                    continue
+                self.assertIn(
+                    "equip_slot",
+                    drop,
+                    f"{mob_type}:{drop['item_id']} is missing equip_slot",
+                )
+                has_stats = any(
+                    key in drop
+                    for key in (
+                        "damage_min_by_tier",
+                        "armor_value_by_tier",
+                        "stat_bonuses_by_tier",
+                    )
+                )
+                self.assertTrue(
+                    has_stats,
+                    f"{mob_type}:{drop['item_id']} is missing equipment stats",
+                )
+
 
 class TestRollLootZoneOverride(unittest.TestCase):
     """zone_obj.db.loot_table_overrides replaces LOOT_TABLES entry for mob_type."""

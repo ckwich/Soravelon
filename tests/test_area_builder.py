@@ -326,6 +326,19 @@ class TestQuestStoredOnZone(AreaBuilderTestBase):
         self.assertEqual(quests[0]["quest_id"], "wolf_hunt")
         self.assertEqual(quests[0]["objective_count"], 30)
 
+    def test_quest_stores_prerequisite_quests(self):
+        """Quest chains can be prerequisite-locked by authored quest IDs."""
+        ab = self._make_builder()
+        ab.quest(
+            "wolf_followup",
+            quest_type="investigation",
+            quest_giver="maren_warden",
+            prerequisite_quests=["wolf_hunt"],
+        )
+
+        quests = ab._zone_obj.db.quest_definitions
+        self.assertEqual(quests[0]["prerequisite_quests"], ["wolf_hunt"])
+
 
 # ------------------------------------------------------------------
 # Material tests
@@ -346,6 +359,28 @@ class TestMaterialStoredOnZone(AreaBuilderTestBase):
         self.assertEqual(len(materials), 1)
         self.assertEqual(materials[0]["material"], "pala_heartwood")
         self.assertEqual(materials[0]["tier"], 2)
+
+
+class TestZoneReloadClearsZoneOwnedDefinitions(AreaBuilderTestBase):
+    def test_zone_reentry_clears_zone_owned_lists_before_rebuild(self):
+        """zone() clears zone-owned definitions so stale DB state cannot survive reload."""
+        ab = self._make_builder()
+        ab.item("old_item", key="old", item_type="item")
+        ab.quest("old_quest", quest_type="collection")
+        ab.material("old_material", tier=1)
+        ab.gathering_pool("ore", ["room_a"], ["iron_ore"])
+
+        self.assertEqual(len(ab._zone_obj.db.item_definitions), 1)
+        self.assertEqual(len(ab._zone_obj.db.quest_definitions), 1)
+        self.assertEqual(len(ab._zone_obj.db.material_definitions), 1)
+        self.assertEqual(len(ab._zone_obj.db.gathering_pools), 1)
+
+        ab.zone(name="Test Zone", zone_type="frontier", continent="varath")
+
+        self.assertEqual(ab._zone_obj.db.item_definitions, [])
+        self.assertEqual(ab._zone_obj.db.quest_definitions, [])
+        self.assertEqual(ab._zone_obj.db.material_definitions, [])
+        self.assertEqual(ab._zone_obj.db.gathering_pools, [])
 
 
 # ------------------------------------------------------------------
@@ -486,6 +521,27 @@ class TestZoneLoadsFromFile(AreaBuilderTestBase):
         self.assertEqual(report["rooms_created"], 2)
         self.assertEqual(report["exits_created"], 2)
         self.assertIsNotNone(zone_registry.get_zone("file_test_zone"))
+
+
+class TestSpawnWarnings(AreaBuilderTestBase):
+    def test_valid_spawn_template_does_not_add_warning(self):
+        """Known mob templates should not emit authoring warnings."""
+        ab = self._make_builder("warning_free_zone")
+        room = self._make_room(ab, "room_001")
+
+        ab.spawn(room, "ash_wolf", count_min=1, count_max=1)
+
+        self.assertEqual(ab._build_warnings, [])
+
+    def test_unknown_spawn_template_adds_warning(self):
+        """Unknown mob templates still emit a build warning."""
+        ab = self._make_builder("warning_zone")
+        room = self._make_room(ab, "room_001")
+
+        ab.spawn(room, "definitely_missing_template", count_min=1, count_max=1)
+
+        self.assertEqual(len(ab._build_warnings), 1)
+        self.assertIn("definitely_missing_template", ab._build_warnings[0])
 
 
 class TestServerStartLoadsAreasDir(AreaBuilderTestBase):

@@ -45,6 +45,7 @@ class CmdStatus(Command):
         )
         from world.banking import get_balance
         from world.ancestry_engine import ANCESTRY_TRAITS
+        from world.ability_registry import get_ability
 
         lines = []
 
@@ -142,7 +143,9 @@ class CmdStatus(Command):
         loadout = char.db.active_loadout or []
         if loadout:
             for ability_id in loadout:
-                lines.append(f"  |c{ability_id}|n")
+                ability = get_ability(ability_id)
+                name = ability["name"] if ability else ability_id
+                lines.append(f"  |c{name}|n")
         else:
             lines.append("  |xEmpty|n")
 

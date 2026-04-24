@@ -13,6 +13,19 @@ from commands.command import Command
 SHOUT_STAMINA_COST = 10
 
 
+def _is_whisperable_player(target):
+    """Return True only for an active player character target."""
+    if not target or getattr(getattr(target, "db", None), "is_npc", False):
+        return False
+    sessions = getattr(target, "sessions", None)
+    if not sessions:
+        return False
+    try:
+        return sessions.count() > 0
+    except Exception:
+        return False
+
+
 class CmdWho(Command):
     """
     List online players.
@@ -32,9 +45,11 @@ class CmdWho(Command):
         # Get all puppeted characters
         sessions = evennia.SESSION_HANDLER.get_sessions()
         characters = []
+        seen_ids = set()
         for session in sessions:
             puppet = session.get_puppet()
-            if puppet:
+            if puppet and puppet.id not in seen_ids:
+                seen_ids.add(puppet.id)
                 characters.append(puppet)
 
         if not characters:
@@ -162,6 +177,9 @@ class CmdWhisper(Command):
 
         if target == self.caller:
             self.caller.msg("You mutter to yourself.")
+            return
+        if not _is_whisperable_player(target):
+            self.caller.msg("You can only whisper to another player in the room.")
             return
 
         # Send whisper

@@ -9,6 +9,8 @@ Each entry in HELP_ENTRY_DICTS is a dict with keys:
   key, text, category (optional), aliases (optional), locks (optional)
 """
 
+from world.skill_definitions import SKILL_DEFINITIONS
+
 HELP_ENTRY_DICTS = [
     # =========================================================================
     # DEVELOPER (1 entry, locked)
@@ -37,10 +39,19 @@ HELP_ENTRY_DICTS = [
             "understand.\n\n"
             "|wFirst steps:|n\n"
             "  1. Choose your |cancestry|n -- type |wancestry|n to see options\n"
-            "  2. Explore the world -- |wlook|n, |wsearch|n, |wmap|n\n"
-            "  3. Discover |cguilds|n by visiting guild halls -- type |wjoinguild|n\n"
-            "  4. Learn |cabilities|n as you advance -- type |wabilities|n\n"
-            "  5. Fight creatures with |wattack|n and |wuse <ability>|n\n\n"
+            "  2. Review your starter kit -- |winventory|n, |wgear|n, then "
+            "|wequip <item>|n\n"
+            "  3. Explore the world -- |wlook|n, |wsearch|n, |wmap|n\n"
+            "  4. Ask people for leads -- |wtalk <name>|n, |wask <name> about "
+            "work|n, |wquest|n\n"
+            "  5. Work toward your |cguild|n by building skill and domain "
+            "mastery over time\n"
+            "  6. Fight creatures with |wattack|n and |wuse <ability>|n\n\n"
+            "|wStarter kit briefing:|n After choosing an ancestry, your first "
+            "weapon, clothing, and travel money are placed in your inventory. "
+            "Use |winventory|n to review what you are carrying, |wgear|n to "
+            "see what is equipped, and |wequip <item>|n to get ready before "
+            "you head out.\n\n"
             "Type |whelp <topic>|n for more on any system. "
             "Type |whelp|n alone to see all help categories."
         ),
@@ -57,8 +68,11 @@ HELP_ENTRY_DICTS = [
             "Type |wancestry <name>|n to choose. Selvar characters also choose "
             "a seasonal coat (|wancestry selvar summer|n or |wancestry selvar winter|n).\n\n"
             "After choosing, you start with basic equipment and a starting "
-            "ability tied to your ancestry. Explore your surroundings to find "
-            "guild halls where you can begin developing domain mastery."
+            "ability tied to your ancestry. Your starter items are packed into "
+            "your inventory, so check |winventory|n and |wgear|n, then use "
+            "|wequip <item>|n before you head into danger. Explore your "
+            "surroundings to find work, build your skills, and eventually earn "
+            "entry into a guild hall that fits your path."
         ),
     },
     {
@@ -152,14 +166,16 @@ HELP_ENTRY_DICTS = [
             "|wGuild System|n\n\n"
             "Soravelon has 10 guilds, each tied to a domain of mastery. "
             "Discover guilds by visiting their halls in hub cities, then "
-            "type |wjoinguild <guild>|n.\n\n"
+            "type |wjoinguild|n to review any invitations you have earned.\n\n"
             "|cGuild Tier Score (GTS):|n Your advancement within a guild is "
             "measured by GTS, computed from your domain scores. Higher GTS "
             "unlocks more powerful abilities.\n\n"
             "|cTier thresholds:|n 0 (join), 20, 50, 85\n\n"
             "|cSubclasses:|n When you develop a secondary domain alongside "
             "your guild's primary, you unlock a unique subclass identity. "
-            "There are 90 possible subclasses across all guilds.\n\n"
+            "There are 90 possible subclasses across all guilds. Once you "
+            "choose a guild, finish the oath with "
+            "|wjoinguild <guild> <secondary_domain>|n.\n\n"
             "|w10 Guilds:|n Ironblood (Combat), Veilcraft (Subterfuge), "
             "Verdance (Naturalism), Resonance (Resonance), Arcane (Arcana), "
             "Accord (Diplomacy), Thornwork (Alchemy), Warcraft (Tactics), "
@@ -204,7 +220,8 @@ HELP_ENTRY_DICTS = [
             "  Tier 1: GTS 0 (immediate)  |  Tier 2: GTS 20\n"
             "  Tier 3: GTS 50             |  Tier 4: GTS 85\n\n"
             "|cUsing abilities:|n |wuse <ability name>|n\n"
-            "|cViewing abilities:|n |wabilities|n to see what you know\n"
+            "|cViewing abilities:|n |wabilities|n or |wabs|n to see what "
+            "you know\n"
             "|cAbility details:|n |whelp <ability name>|n for full info\n\n"
             "|cCooldowns:|n After using an ability, it may go on cooldown "
             "for a number of rounds before it can be used again.\n\n"
@@ -230,7 +247,9 @@ HELP_ENTRY_DICTS = [
             "warren sense reveals hidden passages underground.\n\n"
             "|wSelvar|n -- Fierce, seasonal. Reckless momentum in combat, "
             "summer/winter coat grants different bonuses.\n\n"
-            "Type |whelp <ancestry name>|n for detailed info on each."
+            "|cChoosing an ancestry:|n |wancestry <name> [coat]|n. This is "
+            "a permanent choice, so use |whelp <ancestry name>|n to review "
+            "the details before you commit."
         ),
     },
     {
@@ -301,19 +320,22 @@ HELP_ENTRY_DICTS = [
         "text": (
             "|wSkill System|n\n\n"
             "Skills represent general proficiencies that improve through use.\n\n"
-            "|cViewing skills:|n Type |wskills|n to see your current skill levels.\n"
+            "|cViewing skills:|n Type |wskills|n or |wskill|n to see your "
+            "current skill levels.\n"
             "|cPracticing:|n |wpractice <skill>|n to actively train a skill.\n"
             "|cTrainers:|n |wtrain <skill>|n at a trainer NPC for faster gains.\n\n"
             "Skills range from 0 to 100. Higher skill levels improve your "
             "effectiveness at related tasks and may unlock new recipes, "
             "dialogue options, or interactions.\n\n"
             "Skill categories include investigation, lockpicking, cooking, "
-            "smithing, alchemy, herbalism, and more."
+            "smithing, alchemy, herbalism, and more. Every skill also has "
+            "its own direct help topic, so |whelp tracking|n or "
+            "|whelp first aid|n will give you practical guidance."
         ),
     },
     {
-        "key": "quests",
-        "aliases": ["quest system", "journal"],
+        "key": "quest",
+        "aliases": ["quests", "quest system", "journal"],
         "category": "Systems",
         "locks": "read:all()",
         "text": (
@@ -322,6 +344,8 @@ HELP_ENTRY_DICTS = [
             "|cCommands:|n\n"
             "  |wquest|n -- View your quest journal\n"
             "  |wquest <name>|n -- View details for a specific quest\n\n"
+            "|cOffers:|n Talk to NPCs to discover work, then use |waccept|n "
+            "or |wdecline|n when they present a quest offer.\n\n"
             "Quests are offered by NPCs, discovered through exploration, "
             "or triggered by world events. Each quest lists objectives "
             "and rewards. Completed quests may affect faction standings "
@@ -381,60 +405,22 @@ HELP_ENTRY_DICTS = [
     },
     # -- Ancestry & Guilds --
     {
-        "key": "ancestry command",
-        "aliases": ["setancestry"],
-        "category": "Commands",
-        "locks": "read:all()",
-        "text": (
-            "|wUsage:|n ancestry <name> [coat]\n\n"
-            "Choose your character's ancestry during creation. This is "
-            "a permanent choice that grants unique traits and abilities.\n\n"
-            "Available ancestries: Human, Kau'roran, Veth, Selvar\n"
-            "Selvar characters also choose a coat: |wancestry selvar summer|n "
-            "or |wancestry selvar winter|n\n\n"
-            "|wExample:|n\n"
-            "  > ancestry human\n"
-            "  > ancestry selvar winter"
-        ),
-    },
-    {
         "key": "joinguild",
         "aliases": ["join guild"],
         "category": "Commands",
         "locks": "read:all()",
         "text": (
-            "|wUsage:|n joinguild <guild name>\n\n"
-            "Join a guild after discovering its hall. You must be in a "
-            "room where the guild can be joined. Joining grants access to "
-            "the guild's tier 1 abilities.\n\n"
-            "|wExample:|n\n"
-            "  > joinguild ironblood"
-        ),
-    },
-    {
-        "key": "domains command",
-        "category": "Commands",
-        "locks": "read:all()",
-        "text": (
-            "|wUsage:|n domains\n\n"
-            "Display your current domain scores across all 10 domains. "
-            "Shows your primary and secondary domains, GTS progress, "
-            "and current subclass if applicable.\n\n"
-            "|wExample:|n\n"
-            "  > domains"
-        ),
-    },
-    {
-        "key": "abilities command",
-        "category": "Commands",
-        "locks": "read:all()",
-        "text": (
-            "|wUsage:|n abilities\n\n"
-            "List all abilities you currently have access to, organized "
-            "by domain. Shows ability name, tier, cooldown status, and "
-            "resource cost.\n\n"
-            "|wExample:|n\n"
-            "  > abilities"
+            "|wUsage:|n\n"
+            "  joinguild\n"
+            "  joinguild <guild_name>\n"
+            "  joinguild <guild_name> <secondary_domain>\n\n"
+            "Review your available guild invitations, then choose the guild "
+            "you want to join. When you commit, you also choose a secondary "
+            "domain that shapes your subclass identity. Hidden guilds stay "
+            "hidden until you satisfy their narrative discovery rules.\n\n"
+            "|wExamples:|n\n"
+            "  > joinguild\n"
+            "  > joinguild ironblood tactics"
         ),
     },
     {
@@ -509,18 +495,6 @@ HELP_ENTRY_DICTS = [
     },
     # -- Skills --
     {
-        "key": "skills command",
-        "category": "Commands",
-        "locks": "read:all()",
-        "text": (
-            "|wUsage:|n skills\n\n"
-            "Display your current skill levels and progress. Skills are "
-            "organized by category and show your proficiency (0-100).\n\n"
-            "|wExample:|n\n"
-            "  > skills"
-        ),
-    },
-    {
         "key": "practice",
         "category": "Commands",
         "locks": "read:all()",
@@ -588,10 +562,15 @@ HELP_ENTRY_DICTS = [
         "category": "Commands",
         "locks": "read:all()",
         "text": (
-            "|wUsage:|n tell <player> <message>\n\n"
-            "Send a private message to another player. The message is "
-            "only visible to you and the recipient.\n\n"
+            "|wUsage:|n tell <npc> <text>\n"
+            "       tell <player> <message>\n\n"
+            "Direct speech at a specific NPC in the room or send a private "
+            "message to an online player. When you tell an NPC something, "
+            "they may answer based on known topics, standing, or quest state. "
+            "When you tell a player something, only you and the recipient see "
+            "the message.\n\n"
             "|wExample:|n\n"
+            "  > tell Maren I just arrived in the city.\n"
             "  > tell Arden Watch your back in the ruins."
         ),
     },
@@ -798,19 +777,24 @@ HELP_ENTRY_DICTS = [
     # -- Group --
     {
         "key": "group",
+        "aliases": ["party"],
         "category": "Commands",
         "locks": "read:all()",
         "text": (
             "|wUsage:|n\n"
             "  group -- View your current group\n"
             "  group invite <player> -- Invite a player\n"
+            "  group accept -- Accept a pending invite\n"
+            "  group decline -- Decline a pending invite\n"
             "  group leave -- Leave your group\n"
             "  group kick <player> -- Remove a member (leader only)\n"
-            "  group loot <mode> -- Set loot distribution mode\n"
-            "  group leader <player> -- Transfer leadership\n\n"
-            "Groups (parties) support up to 6 members. Four loot modes "
-            "are available: round-robin, need/greed, leader-assigns, and "
-            "free-for-all. Groups are session-only and disband on logout.\n\n"
+            "  group lootmode <mode> -- Set loot distribution mode\n\n"
+            "Groups support up to 6 members. Loot modes are |wpersonal|n "
+            "(default), |wffa|n, and |wround_robin|n. Quest drops and "
+            "Scales remain personal regardless of loot mode. Groups are "
+            "session-state only: if the leader disconnects or leaves, "
+            "leadership passes to another member; the group only dissolves "
+            "when everyone leaves.\n\n"
             "|wExample:|n\n"
             "  > group invite Arden"
         ),
@@ -823,12 +807,17 @@ HELP_ENTRY_DICTS = [
         "text": (
             "|wUsage:|n\n"
             "  loadout -- View your current ability loadout\n"
-            "  loadout set <slot> <ability> -- Assign an ability to a slot\n"
-            "  loadout clear <slot> -- Clear a slot\n\n"
-            "Your loadout determines which abilities are readily available "
-            "in combat. Organize your abilities for quick access.\n\n"
+            "  loadout add <ability> -- Add an unlocked ability\n"
+            "  loadout remove <ability> -- Remove an ability\n"
+            "  loadout clear -- Empty the active loadout\n"
+            "  loadout save <slot#> -- Save the current setup to preset 1-5\n"
+            "  loadout <slot#> -- Load a saved preset\n\n"
+            "Your loadout determines which abilities are ready when you want "
+            "a curated combat bar. Leaving it empty keeps all unlocked "
+            "abilities available until you decide to specialize.\n\n"
             "|wExample:|n\n"
-            "  > loadout set 1 momentum strike"
+            "  > loadout add momentum strike\n"
+            "  > loadout save 1"
         ),
     },
     # -- Flight --
@@ -897,20 +886,293 @@ HELP_ENTRY_DICTS = [
             "  > unalias ms"
         ),
     },
-    # -- Quest --
+    # -- Utility, Gathering, Commerce & Social --
     {
-        "key": "quest command",
+        "key": "inspect",
+        "aliases": ["examine", "appraise_item"],
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n inspect <item>\n\n"
+            "Inspect an item in your inventory or the room. You always see "
+            "its description, but full mechanical stats require enough "
+            "Appraisal skill. If you are shopping, |wview <item_id>|n lets "
+            "you inspect vendor stock without a skill gate.\n\n"
+            "|wExample:|n\n"
+            "  > inspect iron chainmail"
+        ),
+    },
+    {
+        "key": "compare",
         "category": "Commands",
         "locks": "read:all()",
         "text": (
             "|wUsage:|n\n"
-            "  quest -- View your quest journal\n"
-            "  quest <name> -- View details of a specific quest\n\n"
-            "Your quest journal tracks active, completed, and failed "
-            "quests. Each quest shows objectives, progress, and rewards.\n\n"
+            "  compare <item1> to <item2>\n"
+            "  compare <item1> <item2>\n\n"
+            "Compare two items side by side. Both items must be nearby, and "
+            "you need enough Appraisal skill to read both of them clearly.\n\n"
             "|wExample:|n\n"
-            "  > quest\n"
-            "  > quest the sunken ward"
+            "  > compare iron chainmail to steel brigandine"
+        ),
+    },
+    {
+        "key": "fish",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n\n"
+            "  fish\n"
+            "  fish idle\n"
+            "  fish stop\n\n"
+            "Fish at an active fishing spot with a fishing rod. Active "
+            "fishing pays better but requires attention; idle fishing trades "
+            "quality for convenience. Bait helps, and |wreel|n is how you "
+            "capitalize on a bite in active mode.\n\n"
+            "|wExample:|n\n"
+            "  > fish idle"
+        ),
+    },
+    {
+        "key": "reel",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n reel\n\n"
+            "Reel in when a fish bites during active fishing. The bite "
+            "window is short, so keep your eye on the prompt after you cast.\n\n"
+            "|wExample:|n\n"
+            "  > reel"
+        ),
+    },
+    {
+        "key": "loot",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n\n"
+            "  loot\n"
+            "  loot <corpse>\n\n"
+            "Loot a corpse while respecting killer grace periods and your "
+            "group's loot mode. If round-robin is active, wait for your turn; "
+            "quest drops and Scales still remain personal.\n\n"
+            "|wExample:|n\n"
+            "  > loot raider corpse"
+        ),
+    },
+    {
+        "key": "prospect",
+        "aliases": ["survey"],
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n prospect\n\n"
+            "Scan outward in the cardinal directions for gathering nodes. "
+            "Your best gathering skill extends the range and helps you read "
+            "what kind of deposit is out there, how far away it is, and how "
+            "rich it looks.\n\n"
+            "|wExample:|n\n"
+            "  > prospect"
+        ),
+    },
+    {
+        "key": "repair",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n repair <tool>\n\n"
+            "Repair a damaged gathering tool at a workbench. Smithing skill "
+            "improves the amount of durability you recover, so this becomes "
+            "more efficient as your character matures.\n\n"
+            "|wExample:|n\n"
+            "  > repair worn pickaxe"
+        ),
+    },
+    {
+        "key": "rest",
+        "aliases": ["sit"],
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n rest\n\n"
+            "Sit down and recover faster than passive regeneration. Rest is "
+            "good for short breathers between fights, but movement and combat "
+            "will interrupt it.\n\n"
+            "|wExample:|n\n"
+            "  > rest"
+        ),
+    },
+    {
+        "key": "sleep",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n sleep\n\n"
+            "Lie down and recover much faster than resting. Beds improve the "
+            "rate further, but while sleeping you miss room chatter until you "
+            "wake up.\n\n"
+            "|wExample:|n\n"
+            "  > sleep"
+        ),
+    },
+    {
+        "key": "wake",
+        "aliases": ["stand"],
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n wake\n\n"
+            "End a resting or sleeping state and get back on your feet. Use "
+            "this when you are ready to move again or need to react quickly.\n\n"
+            "|wExample:|n\n"
+            "  > wake"
+        ),
+    },
+    {
+        "key": "blessing",
+        "aliases": ["bless"],
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n\n"
+            "  blessing\n"
+            "  blessing <heal|fortify|vigor|purify>\n\n"
+            "Ask a medic NPC for paid recovery support. Blessings cost "
+            "Scales, respect cooldowns, and cover emergency healing, buffs, "
+            "or cleansing depending on the service you request.\n\n"
+            "|wExample:|n\n"
+            "  > blessing purify"
+        ),
+    },
+    {
+        "key": "who",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n who\n\n"
+            "See who is currently online, including a quick read on their "
+            "ancestry, guild or strongest domain, and approximate location.\n\n"
+            "|wExample:|n\n"
+            "  > who"
+        ),
+    },
+    {
+        "key": "shout",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n shout <message>\n\n"
+            "Broadcast an in-character message to everyone in your current "
+            "zone. Shouting costs stamina, so use it to rally allies or warn "
+            "other players instead of treating it like free chat spam.\n\n"
+            "|wExample:|n\n"
+            "  > shout Raiders on the east road!"
+        ),
+    },
+    {
+        "key": "whisper",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n whisper <player> <message>\n\n"
+            "Send a private in-room message to another player. Bystanders see "
+            "that a whisper happened, but not the content.\n\n"
+            "|wExample:|n\n"
+            "  > whisper Arden Take the left flank."
+        ),
+    },
+    {
+        "key": "tools",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n\n"
+            "  tools\n"
+            "  tools equip <tool>\n"
+            "  tools unequip <slot>\n\n"
+            "Manage your dedicated gathering-tool loadout. Tool slots are "
+            "separate from combat gear, so keeping the right kit equipped "
+            "makes fieldwork much smoother.\n\n"
+            "|wExample:|n\n"
+            "  > tools equip fishing rod"
+        ),
+    },
+    {
+        "key": "list",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n list\n\n"
+            "Display the wares sold by a vendor in the room. Stock is grouped "
+            "by item type, and each line shows the short stock ID you will use "
+            "with |wbuy|n or |wview|n.\n\n"
+            "|wExample:|n\n"
+            "  > list"
+        ),
+    },
+    {
+        "key": "buy",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n buy <item_id>\n\n"
+            "Purchase an item from the vendor using the stock ID shown by "
+            "|wlist|n. Buying spends carried Scales, not your bank balance, "
+            "so withdraw money first if you need to.\n\n"
+            "|wExample:|n\n"
+            "  > buy iron_rations"
+        ),
+    },
+    {
+        "key": "sell",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n sell <item>\n\n"
+            "Sell an item from your inventory to a vendor that accepts it. "
+            "Quest items stay protected, and vendors only pay a fraction of "
+            "base value, so use this for cleanup and liquidity rather than "
+            "perfect efficiency.\n\n"
+            "|wExample:|n\n"
+            "  > sell cracked longsword"
+        ),
+    },
+    {
+        "key": "appraise",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n appraise <item>\n\n"
+            "Ask the vendor what they would pay for an item in your inventory "
+            "before you commit to selling it.\n\n"
+            "|wExample:|n\n"
+            "  > appraise silver torque"
+        ),
+    },
+    {
+        "key": "view",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n view <item_id>\n\n"
+            "Inspect the full stats of an item in a vendor's stock without an "
+            "Appraisal check. Use this after |wlist|n when you want to compare "
+            "gear before spending your money.\n\n"
+            "|wExample:|n\n"
+            "  > view iron_chainmail"
+        ),
+    },
+    {
+        "key": "charge",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n charge <ability>\n\n"
+            "Begin charging a multi-round ability in combat. Only abilities "
+            "that explicitly support charging can use this, and the ability "
+            "must still be in your active loadout if you use one.\n\n"
+            "|wExample:|n\n"
+            "  > charge meteor strike"
         ),
     },
     # -- Lore --
@@ -1254,7 +1516,7 @@ HELP_ENTRY_DICTS = [
         ),
     },
     # =========================================================================
-    # SKILLS (8 entries for major skill categories)
+    # SKILLS (starter authored entries + generated direct coverage)
     # =========================================================================
     {
         "key": "investigation",
@@ -1526,3 +1788,58 @@ HELP_ENTRY_DICTS = [
         ),
     },
 ]
+
+
+def _format_skill_thresholds(thresholds):
+    """Render skill thresholds in ascending order for help output."""
+    lines = []
+    for score in sorted(thresholds):
+        lines.append(f"  {score} -- {thresholds[score]}")
+    return "\n".join(lines)
+
+
+def _build_skill_help_entry(skill_key, skill_def):
+    """Create a rich help entry for a skill from canonical skill data."""
+    name = skill_def.get("name", skill_key.replace("_", " ").title())
+    display_key = name.lower()
+    trainer_gate = skill_def.get("trainer_required_above", 50)
+    domain_bonus = skill_def.get("domain_bonus", "general")
+    thresholds = _format_skill_thresholds(skill_def.get("thresholds", {}))
+    return {
+        "key": display_key,
+        "aliases": [skill_key, skill_key.replace("_", " ")],
+        "category": "Skills",
+        "locks": "read:all()",
+        "text": (
+            f"|w{name}|n\n\n"
+            f"{skill_def.get('description', 'A practical skill used throughout Soravelon.')}\n\n"
+            f"|cDomain Synergy:|n {domain_bonus.title()}\n"
+            f"|cHow It Improves:|n Use it in the world, practice it directly with "
+            f"|wpractice {skill_key}|n, and seek out trainers once you push past "
+            f"{trainer_gate}.\n\n"
+            f"|cMilestones:|n\n{thresholds}\n\n"
+            f"|cPractical Advice:|n Skills are long-term investments. Keep the tool "
+            f"or context they need on hand, use them in the zones that support them, "
+            f"and check |wskills|n often so you can lean into what your character is "
+            f"already getting good at."
+        ),
+    }
+
+
+_existing_help_keys = {entry["key"] for entry in HELP_ENTRY_DICTS}
+_existing_help_aliases = {
+    alias
+    for entry in HELP_ENTRY_DICTS
+    for alias in (entry.get("aliases") or [])
+}
+
+for _skill_key, _skill_def in SKILL_DEFINITIONS.items():
+    _skill_title = _skill_def.get("name", _skill_key).lower()
+    if (
+        _skill_key in _existing_help_keys
+        or _skill_title in _existing_help_keys
+        or _skill_key in _existing_help_aliases
+        or _skill_title in _existing_help_aliases
+    ):
+        continue
+    HELP_ENTRY_DICTS.append(_build_skill_help_entry(_skill_key, _skill_def))

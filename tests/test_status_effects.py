@@ -8,7 +8,7 @@ Uses unittest.TestCase + MagicMock (no Evennia DB required).
 """
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from world.status_effects import (
     ALL_EFFECT_TYPES,
@@ -17,11 +17,14 @@ from world.status_effects import (
     NON_STACKABLE_EFFECTS,
     STACKABLE_EFFECTS,
     apply_effect,
+    cleanse_one_negative_effect,
     check_compound_triggers,
     clear_all_effects,
+    consume_attack_effects,
     get_effect_modifiers,
     get_effect_stacks,
     has_effect,
+    mitigate_incoming_damage,
     remove_effect,
     tick_effects,
 )
@@ -34,8 +37,11 @@ def _make_target(hp=100, stamina=50, immunities=None):
     target.id = 1
     target.ndb.active_effects = []
     target.ndb.hp = hp
+    target.ndb.max_hp = hp
     target.ndb.stamina = stamina
     target.ndb.took_damage_this_round = False
+    target.db.base_stats = None
+    target.db.hp_max = hp
     target.db.immunities = immunities or []
     # Ensure ndb.immunities is not set (default)
     target.ndb.immunities = None
@@ -178,6 +184,12 @@ class TestUnknownAndImmunity(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("Immune", msg)
 
+    def test_new_authored_effect_types_are_supported(self):
+        target = _make_target()
+        for effect_type in ("warding", "silence", "frozen", "damage_absorb"):
+            ok, _ = apply_effect(target, effect_type, duration=2, magnitude=1.0)
+            self.assertTrue(ok, f"{effect_type} should be supported by the runtime")
+
 
 # ---------------------------------------------------------------------------
 # Effect Removal and Queries
@@ -217,6 +229,13 @@ class TestEffectRemovalAndQueries(unittest.TestCase):
     def test_has_effect_false_when_empty(self):
         target = _make_target()
         self.assertFalse(has_effect(target, "burn"))
+
+    def test_cleanse_one_negative_effect_removes_harmful_status(self):
+        target = _make_target()
+        apply_effect(target, "poison", duration=3)
+        removed = cleanse_one_negative_effect(target)
+        self.assertEqual(removed, "poison")
+        self.assertFalse(has_effect(target, "poison"))
 
 
 # ---------------------------------------------------------------------------
@@ -373,6 +392,59 @@ class TestTickEffectsDoT(unittest.TestCase):
         self.assertFalse(has_effect(target, "stun"))
         self.assertTrue(any("fades" in m.lower() for m in messages))
 
+    def test_custom_damage_per_tick_overrides_default_dot_value(self):
+        target = _make_target(hp=100)
+        apply_effect(target, "poison", duration=3, data={"damage_per_tick": 20})
+        tick_effects(target)
+        self.assertEqual(target.ndb.hp, 80)
+
+    def test_regeneration_restores_health_each_tick(self):
+        target = _make_target(hp=55)
+        target.ndb.max_hp = 100
+        target.db.hp_max = 100
+        apply_effect(target, "regeneration", duration=2, data={"heal_per_round": 12})
+        tick_effects(target)
+        self.assertEqual(target.ndb.hp, 67)
+
+    @patch("evennia.search_object")
+    def test_dot_can_heal_the_source_each_tick(self, mock_search):
+        source = _make_target(hp=40)
+        source.key = "Source"
+        source.ndb.max_hp = 100
+        source.db.hp_max = 100
+        mock_search.return_value = [source]
+        target = _make_target(hp=100)
+        apply_effect(
+            target,
+            "poison",
+            duration=3,
+            source_id=99,
+            data={"damage_per_tick": 10, "heal_source_per_round": 8},
+        )
+        tick_effects(target)
+        self.assertEqual(source.ndb.hp, 48)
+
+    @patch("world.combat_engine.resolve_ability_damage", return_value=(True, "hit", 33))
+    def test_sustained_attack_fires_periodic_strikes(self, mock_damage):
+        owner = _make_target(hp=100)
+        owner.id = 10
+        owner.db.base_stats = {"strength": 10}
+        owner.key = "Owner"
+        owner.ndb.combat_handler = MagicMock()
+        enemy = _make_target(hp=100)
+        enemy.id = 11
+        enemy.key = "Enemy"
+        owner.ndb.combat_handler.get_mob_combatants.return_value = [enemy]
+        apply_effect(
+            owner,
+            "sustained_attack",
+            duration=2,
+            source_id=owner.id,
+            data={"damage_per_round": 30, "ability_name": "Ghost Protocol"},
+        )
+        tick_effects(owner)
+        mock_damage.assert_called_once()
+
 
 class TestTickEffectsDrain(unittest.TestCase):
     """Drain reduces stamina per tick."""
@@ -491,6 +563,29 @@ class TestGetEffectModifiers(unittest.TestCase):
         self.assertTrue(mods["skip_turn"])
         self.assertTrue(mods["no_hostile_action"])
 
+
+class TestAttackEffectConsumption(unittest.TestCase):
+    def test_consume_attack_effects_returns_payload_and_clears_one_shots(self):
+        attacker = _make_target()
+        apply_effect(
+            attacker,
+            "venom_coat",
+            duration=3,
+            data={"bonus_poison_damage": 15, "status_effect": "poison", "duration": 3, "magnitude": 8},
+        )
+        apply_effect(attacker, "guaranteed_crit", duration=1, data={})
+
+        preview = consume_attack_effects(attacker, consume=False)
+        self.assertEqual(preview["bonus_damage"], 15)
+        self.assertTrue(preview["guaranteed_crit"])
+        self.assertTrue(has_effect(attacker, "venom_coat"))
+
+        payload = consume_attack_effects(attacker, consume=True)
+        self.assertEqual(payload["bonus_damage"], 15)
+        self.assertTrue(payload["guaranteed_crit"])
+        self.assertFalse(has_effect(attacker, "venom_coat"))
+        self.assertFalse(has_effect(attacker, "guaranteed_crit"))
+
     def test_weaken_stacks_damage_reduction(self):
         target = _make_target()
         apply_effect(target, "weaken", duration=3)
@@ -541,6 +636,42 @@ class TestGetEffectModifiers(unittest.TestCase):
         self.assertEqual(mods["action_budget_penalty"], 1)
         self.assertAlmostEqual(mods["miss_chance_increase"], 0.25)
         self.assertTrue(mods["prevents_flee"])
+
+    def test_warding_uses_authored_magnitude(self):
+        target = _make_target()
+        apply_effect(target, "warding", duration=3, magnitude=0.35)
+        mods = get_effect_modifiers(target)
+        self.assertEqual(mods["damage_reduction"], 0.35)
+
+    def test_stat_boost_exposes_modified_stats(self):
+        target = _make_target()
+        apply_effect(
+            target,
+            "stat_boost",
+            duration=3,
+            magnitude=1.0,
+            data={"stats": {"strength": 0.20, "endurance": 0.10}},
+        )
+        mods = get_effect_modifiers(target)
+        self.assertEqual(mods["stat_multipliers"]["strength"], 0.20)
+        self.assertEqual(mods["stat_multipliers"]["endurance"], 0.10)
+
+
+class TestAbsorbMitigation(unittest.TestCase):
+    def test_damage_absorb_reduces_incoming_damage_and_consumes_pool(self):
+        target = _make_target()
+        apply_effect(
+            target,
+            "damage_absorb",
+            duration=3,
+            magnitude=60,
+            data={"value": 60, "remaining": 60},
+        )
+        remaining, absorbed = mitigate_incoming_damage(target, 40)
+        self.assertEqual(remaining, 0)
+        self.assertEqual(absorbed, 40)
+        mods = get_effect_modifiers(target)
+        self.assertEqual(mods["damage_absorb"], 20)
 
 
 # ---------------------------------------------------------------------------

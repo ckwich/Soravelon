@@ -85,6 +85,10 @@ def book_flight(character, origin_point_id, destination_point_id):
         return False, f"Unknown flight point: {origin_point_id}"
     if not destination:
         return False, f"Unknown flight point: {destination_point_id}"
+    current_room = getattr(character, "location", None)
+    current_room_id = getattr(current_room, "id", None)
+    if current_room_id != origin["room_id"]:
+        return False, "You must be at that Dragon Courier stop to depart from it."
 
     # 2. Find route legs via BFS
     legs = FlightRegistry.find_route_legs(origin_point_id, destination_point_id)

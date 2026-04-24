@@ -17,6 +17,8 @@ class GroupTestBase(EvenniaTest):
         self.char2.location = self.room
         self.char1.db.backend_level = 10
         self.char2.db.backend_level = 10
+        self.char1.ndb.presence_nonce = "leader-online"
+        self.char2.ndb.presence_nonce = "member-online"
 
     def _make_char(self, key="Extra"):
         c = create_object(self.char1.__class__, key=key)
@@ -30,7 +32,9 @@ class TestSendInviteStoresPending(GroupTestBase):
         from world.group_engine import send_group_invite
         success, _ = send_group_invite(self.char1, self.char2)
         self.assertTrue(success)
-        self.assertEqual(self.char2.ndb.pending_group_invite, self.char1.id)
+        invite = self.char2.ndb.pending_group_invite
+        self.assertEqual(invite["inviter_id"], self.char1.id)
+        self.assertEqual(invite["presence_nonce"], "leader-online")
 
 
 class TestSendInviteToSelfFails(GroupTestBase):
@@ -82,6 +86,43 @@ class TestDeclineClearsPending(GroupTestBase):
         self.assertIsNone(self.char2.ndb.pending_group_invite)
 
 
+class TestSendInviteRejectsPendingInvite(GroupTestBase):
+    def test_send_invite_rejects_target_with_other_pending_invite(self):
+        from world.group_engine import send_group_invite
+        c3 = self._make_char("C3")
+        c3.ndb.presence_nonce = "other-online"
+
+        send_group_invite(c3, self.char2)
+        success, msg = send_group_invite(self.char1, self.char2)
+
+        self.assertFalse(success)
+        self.assertIn("pending group invite", msg)
+        self.assertEqual(
+            self.char2.ndb.pending_group_invite["inviter_id"],
+            c3.id,
+        )
+
+
+class TestSendInviteClearsStalePendingInvite(GroupTestBase):
+    def test_send_invite_replaces_stale_pending_invite(self):
+        from world.group_engine import send_group_invite
+
+        stale = self._make_char("Stale")
+        stale.ndb.presence_nonce = None
+        self.char2.ndb.pending_group_invite = {
+            "inviter_id": stale.id,
+            "presence_nonce": "expired-token",
+        }
+
+        success, _ = send_group_invite(self.char1, self.char2)
+
+        self.assertTrue(success)
+        self.assertEqual(
+            self.char2.ndb.pending_group_invite["inviter_id"],
+            self.char1.id,
+        )
+
+
 class TestLeaveRemovesMember(GroupTestBase):
     def test_leave_group_removes_member(self):
         from world.group_engine import (
@@ -102,7 +143,7 @@ class TestLeaderLeaveTransfers(GroupTestBase):
     def test_leader_leave_transfers_leadership(self):
         from world.group_engine import (
             send_group_invite, accept_group_invite, leave_group,
-            is_group_leader
+            is_group_leader, is_in_group
         )
         c3 = self._make_char("C3")
         send_group_invite(self.char1, self.char2)
@@ -111,6 +152,7 @@ class TestLeaderLeaveTransfers(GroupTestBase):
         accept_group_invite(c3)
         leave_group(self.char1)
         self.assertTrue(is_group_leader(self.char2))
+        self.assertFalse(is_in_group(self.char1))
 
 
 class TestLastMemberDissolves(GroupTestBase):
@@ -247,6 +289,20 @@ class TestOnDisconnectLeavesGroup(GroupTestBase):
         accept_group_invite(c3)
         on_member_disconnect(self.char2)
         self.assertFalse(is_in_group(self.char2))
+
+
+class TestAcceptInviteExpiresAfterInviterDisconnect(GroupTestBase):
+    def test_accept_invite_fails_when_inviter_presence_expires(self):
+        from world.group_engine import send_group_invite, accept_group_invite
+
+        send_group_invite(self.char1, self.char2)
+        self.char1.ndb.presence_nonce = None
+
+        success, msg = accept_group_invite(self.char2)
+
+        self.assertFalse(success)
+        self.assertIn("pending group invite", msg.lower())
+        self.assertIsNone(self.char2.ndb.pending_group_invite)
 
 
     # TestGroupScalingInZoneOnly removed — group scaling no longer exists.

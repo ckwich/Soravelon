@@ -26,6 +26,7 @@ put secret game- or server-specific settings in secret_settings.py.
 
 # Use the defaults from Evennia unless explicitly overridden
 from evennia.settings_default import *
+import os
 
 ######################################################################
 # Evennia base server config
@@ -44,6 +45,20 @@ BASE_ROOM_TYPECLASS = "typeclasses.rooms.SoravelonRoom"
 BASE_EXIT_TYPECLASS = "typeclasses.exits.SoravelonExit"
 BASE_SCRIPT_TYPECLASS = "typeclasses.scripts.SoravelonScript"
 BASE_ACCOUNT_TYPECLASS = "typeclasses.accounts.SoravelonAccount"
+FILE_HELP_ENTRY_MODULES = ["world.help_entries"]
+
+SORAVELON_DOMAIN_CHANNELS = (
+    "combat",
+    "subterfuge",
+    "naturalism",
+    "resonance",
+    "arcana",
+    "diplomacy",
+    "alchemy",
+    "tactics",
+    "engineering",
+    "remnance",
+)
 
 # Channel configuration — OOC global chat for all players
 DEFAULT_CHANNELS = [
@@ -67,6 +82,25 @@ DEFAULT_CHANNELS = [
         "typeclass": "typeclasses.channels.OOCChannel",
     },
 ]
+
+DEFAULT_CHANNELS.extend(
+    {
+        "key": domain_name.title(),
+        "aliases": (domain_name,),
+        "desc": f"{domain_name.title()} domain chat",
+        "locks": "control:perm(Admin);listen:all();send:all()",
+        "typeclass": "typeclasses.channels.DomainChannel",
+        "attrs": [("domain_name", domain_name)],
+    }
+    for domain_name in SORAVELON_DOMAIN_CHANNELS
+)
+
+SORAVELON_ENV = os.environ.get("SORAVELON_ENV", "development").lower()
+if SORAVELON_ENV == "production":
+    try:
+        from server.conf.production_settings import *
+    except ImportError:
+        print("production_settings.py file not found; using development defaults.")
 
 
 ######################################################################

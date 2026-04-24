@@ -4,13 +4,15 @@ NPC dialogue commands.
 CmdTalk     -- greet an NPC, see Standing-tier greeting + dynamic hints
 CmdAsk      -- ask an NPC about a specific topic
 CmdSay      -- room broadcast + NPC keyword extraction (overrides Evennia default)
-CmdTell     -- directed speech to a specific NPC
+CmdTell     -- directed speech to a specific NPC or private tell to a player
 CmdAccept   -- accept a pending quest offer
 CmdDecline  -- decline a pending quest offer
 
 All commands are thin dispatchers to world/dialogue_engine.py.
 No dialogue text lives in this file (anti-pattern per research).
 """
+
+import evennia
 
 from commands.command import Command
 
@@ -46,6 +48,49 @@ def _find_npc_in_room(character, npc_name):
             return obj
 
     return None
+
+
+def _is_tellable_player(target):
+    """Return True only for an online player character target."""
+    if not target or getattr(getattr(target, "db", None), "is_npc", False):
+        return False
+    sessions = getattr(target, "sessions", None)
+    if not sessions:
+        return False
+    try:
+        return sessions.count() > 0
+    except Exception:
+        return False
+
+
+def _find_online_player(player_name):
+    """
+    Find an online player character by exact or prefix match.
+
+    The search is session-backed so `tell` can reach players outside the room
+    without overlapping with NPC lookup rules.
+    """
+    if not player_name:
+        return None
+
+    player_name_lower = player_name.strip().lower()
+    sessions = evennia.SESSION_HANDLER.get_sessions()
+    seen_ids = set()
+    prefix_match = None
+
+    for session in sessions:
+        puppet = session.get_puppet()
+        if not puppet or puppet.id in seen_ids or not _is_tellable_player(puppet):
+            continue
+
+        seen_ids.add(puppet.id)
+        player_key = (getattr(puppet, "key", "") or "").lower()
+        if player_key == player_name_lower:
+            return puppet
+        if not prefix_match and player_key.startswith(player_name_lower):
+            prefix_match = puppet
+
+    return prefix_match
 
 
 def _build_quest_oob_payload(npc, quest_data):
@@ -316,10 +361,11 @@ class CmdSay(Command):
 
 class CmdTell(Command):
     """
-    Speak directly to a specific NPC.
+    Speak directly to a specific NPC or privately message a player.
 
     Usage:
       tell <npc> <text>
+      tell <player> <message>
     """
 
     key = "tell"
@@ -338,55 +384,68 @@ class CmdTell(Command):
         args = self.args.strip()
 
         if not args:
-            character.msg("|yTell whom? Usage: tell <npc> <text>|n")
+            character.msg("|yTell whom? Usage: tell <npc|player> <text>|n")
             return
 
         args = args[:MAX_DIALOGUE_LENGTH]
         parts = args.split(None, 1)
-        npc_name = parts[0]
+        target_name = parts[0]
         text = parts[1].strip() if len(parts) > 1 else ""
 
-        npc = _find_npc_in_room(character, npc_name)
-        if not npc:
-            character.msg("|rYou don't see anyone by that name here.|n")
-            return
-
-        npc_display = npc.db.npc_name or npc.key
-
         if not text:
-            character.msg(f"|yTell {npc_display} what?|n")
+            character.msg("|yTell whom what? Usage: tell <npc|player> <text>|n")
             return
 
-        # Broadcast the tell
-        character.msg(f'You tell {npc_display}, "{text}"')
+        npc = _find_npc_in_room(character, target_name)
+        if npc:
+            npc_display = npc.db.npc_name or npc.key
 
-        # Extract topic from speech
-        available_topics = list((npc.db.dialogue_topics or {}).keys())
-        topic_key = extract_topic(text, available_topics)
+            # Broadcast the tell
+            character.msg(f'You tell {npc_display}, "{text}"')
 
-        if topic_key:
-            response_text, condition = resolve_topic_response(
-                npc, character, topic_key
-            )
-            if response_text:
-                character.msg(f"|w{npc_display}|n says, \"{response_text}\"")
-                npc_id = npc.db.npc_id or npc.key or ""
-                context = _build_dialogue_context(npc, character)
-                record_topic_learned(character, npc_id, topic_key, context)
+            # Extract topic from speech
+            available_topics = list((npc.db.dialogue_topics or {}).keys())
+            topic_key = extract_topic(text, available_topics)
+
+            if topic_key:
+                response_text, condition = resolve_topic_response(
+                    npc, character, topic_key
+                )
+                if response_text:
+                    character.msg(f"|w{npc_display}|n says, \"{response_text}\"")
+                    npc_id = npc.db.npc_id or npc.key or ""
+                    context = _build_dialogue_context(npc, character)
+                    record_topic_learned(character, npc_id, topic_key, context)
+                    return
+
+            # No topic match — show fallback
+            if available_topics:
+                topics_str = ", ".join(f"|w{t}|n" for t in available_topics[:6])
+                character.msg(
+                    f"|y{npc_display} tilts their head. "
+                    f"\"I'm not sure what you mean.\"|n\n"
+                    f"|x[Available topics: {topics_str}|x]|n"
+                )
+            else:
+                character.msg(
+                    f"|y{npc_display} nods thoughtfully but says nothing.|n"
+                )
+            return
+
+        player = _find_online_player(target_name)
+        if player:
+            if player == character:
+                character.msg("|yYou mutter to yourself.|n")
                 return
 
-        # No topic match — show fallback
-        if available_topics:
-            topics_str = ", ".join(f"|w{t}|n" for t in available_topics[:6])
-            character.msg(
-                f"|y{npc_display} tilts their head. "
-                f"\"I'm not sure what you mean.\"|n\n"
-                f"|x[Available topics: {topics_str}|x]|n"
-            )
-        else:
-            character.msg(
-                f"|y{npc_display} nods thoughtfully but says nothing.|n"
-            )
+            character.msg(f'|mYou tell {player.key}, "{text}"|n')
+            player.msg(f'|m{character.key} tells you, "{text}"|n')
+            return
+
+        character.msg(
+            "|rYou don't see anyone by that name here, and no online player "
+            "matches it.|n"
+        )
 
 
 # ---------------------------------------------------------------------------

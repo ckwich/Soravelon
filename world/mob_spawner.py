@@ -33,6 +33,7 @@ _SENTINEL = object()
 
 # Tag category for identifying named mob instances (used by search_tag for reload detection)
 MOB_INSTANCE_TAG_CATEGORY = "mob_instance_id"
+SUPPORTED_SPAWN_CONDITIONS = ("node_failure_above_", "node_active")
 
 
 # ---------------------------------------------------------------------------
@@ -59,8 +60,6 @@ def _evaluate_spawn_condition(condition_str, room):
     Supported conditions:
       node_failure_above_N  — zone node failure float >= N
       node_active           — node state in ("active", "critical")
-      quest_complete:id     — checks quest_engine for completion (deferred: time_of_day)
-      time_of_day:period    — always True (time system deferred to Milestone 2)
     """
     if not condition_str:
         return True
@@ -85,18 +84,11 @@ def _evaluate_spawn_condition(condition_str, room):
         state = script.db.state or "dormant"
         return state in ("active", "critical")
 
-    # quest_complete:quest_id — deferred: would check quest_engine
-    if condition_str.startswith("quest_complete:"):
-        return False
-
-    # time_of_day:period — deferred to Milestone 2 time system
-    if condition_str.startswith("time_of_day:"):
-        return True
-
-    # Unknown condition — log warning, spawn anyway
+    # Unsupported or unknown conditions fail closed. AreaBuilder validation
+    # should prevent them from reaching authored production content.
     from evennia.utils import logger
-    logger.log_warn(f"[mob_spawner] Unknown spawn_condition: {condition_str!r}")
-    return True
+    logger.log_warn(f"[mob_spawner] Unsupported spawn_condition: {condition_str!r}")
+    return False
 
 
 # ---------------------------------------------------------------------------

@@ -187,6 +187,141 @@ class TestAcceptQuest(unittest.TestCase):
         self.assertEqual(create_kwargs["progress"]["kill_wolf"], 0)
         self.assertEqual(create_kwargs["progress"]["collect_fang"], 0)
 
+    @patch("world.action_vocabulary.execute_action")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_accept_grants_delivery_item_from_flagged_drop(self, MockCQ, mock_execute_action):
+        """accept_quest grants flagged_drop items for delivery quests."""
+        from world.quest_engine import accept_quest
+
+        char = MagicMock()
+        char.contents = []
+        char.location = MagicMock()
+        MockCQ.objects.filter.return_value.count.return_value = 0
+        MockCQ.objects.filter.return_value.exists.return_value = False
+        cq = _make_cq("deliver_q")
+        MockCQ.objects.create.return_value = cq
+        mock_execute_action.return_value = (True, "")
+
+        spec = {
+            "quest_id": "deliver_q",
+            "flagged_drop": "sealed_packet",
+            "objectives": [
+                {"type": "deliver", "target": "npc_factor", "count": 1},
+            ],
+        }
+
+        ok, msg = accept_quest(char, "deliver_q", spec)
+
+        self.assertTrue(ok)
+        mock_execute_action.assert_called_once_with(
+            {"action_type": "give_item", "template_id": "sealed_packet"},
+            {"character": char, "room": char.location},
+        )
+
+    @patch("world.action_vocabulary.execute_action")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_accept_rolls_back_when_delivery_item_grant_fails(self, MockCQ, mock_execute_action):
+        """accept_quest deletes the record if starter delivery item grant fails."""
+        from world.quest_engine import accept_quest
+
+        char = MagicMock()
+        char.contents = []
+        char.location = MagicMock()
+        MockCQ.objects.filter.return_value.count.return_value = 0
+        MockCQ.objects.filter.return_value.exists.return_value = False
+        cq = _make_cq("deliver_q")
+        MockCQ.objects.create.return_value = cq
+        mock_execute_action.return_value = (False, "template missing")
+
+        spec = {
+            "quest_id": "deliver_q",
+            "flagged_drop": "sealed_packet",
+            "objectives": [
+                {"type": "deliver", "target": "npc_factor", "count": 1},
+            ],
+        }
+
+        ok, msg = accept_quest(char, "deliver_q", spec)
+
+        self.assertFalse(ok)
+        self.assertIn("template missing", msg)
+        cq.delete.assert_called_once()
+
+    @patch("world.quest_engine.CharacterQuest")
+    def test_accept_rejects_missing_prerequisite_quest(self, MockCQ):
+        """Chain quests cannot be accepted before prerequisites are complete."""
+        from world.quest_engine import accept_quest
+
+        char = MagicMock()
+        active_count_qs = MagicMock()
+        active_count_qs.count.return_value = 0
+        already_active_qs = MagicMock()
+        already_active_qs.exists.return_value = False
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = []
+
+        def filter_side_effect(**kwargs):
+            if kwargs.get("status") == "active" and "quest_id" not in kwargs:
+                return active_count_qs
+            if kwargs.get("status") == "active" and "quest_id" in kwargs:
+                return already_active_qs
+            if kwargs.get("status") == "complete":
+                return complete_qs
+            return MagicMock(
+                count=MagicMock(return_value=0),
+                exists=MagicMock(return_value=False),
+                values_list=MagicMock(return_value=[]),
+            )
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+
+        spec = {
+            "quest_id": "chain_step_two",
+            "prerequisite_quests": ["chain_step_one"],
+        }
+        ok, msg = accept_quest(char, "chain_step_two", spec)
+
+        self.assertFalse(ok)
+        self.assertIn("earlier quests", msg)
+        MockCQ.objects.create.assert_not_called()
+
+    @patch("world.quest_engine.CharacterQuest")
+    def test_accept_allows_completed_prerequisite_quest(self, MockCQ):
+        """Completed prerequisites unlock the next chain step."""
+        from world.quest_engine import accept_quest
+
+        char = MagicMock()
+        active_count_qs = MagicMock()
+        active_count_qs.count.return_value = 0
+        already_active_qs = MagicMock()
+        already_active_qs.exists.return_value = False
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = ["chain_step_one"]
+
+        def filter_side_effect(**kwargs):
+            if kwargs.get("status") == "active" and "quest_id" not in kwargs:
+                return active_count_qs
+            if kwargs.get("status") == "active" and "quest_id" in kwargs:
+                return already_active_qs
+            if kwargs.get("status") == "complete":
+                return complete_qs
+            return MagicMock(
+                count=MagicMock(return_value=0),
+                exists=MagicMock(return_value=False),
+                values_list=MagicMock(return_value=[]),
+            )
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+
+        spec = {
+            "quest_id": "chain_step_two",
+            "prerequisite_quests": ["chain_step_one"],
+        }
+        ok, msg = accept_quest(char, "chain_step_two", spec)
+
+        self.assertTrue(ok)
+        MockCQ.objects.create.assert_called_once()
+
 
 # ---------------------------------------------------------------------------
 # Test: abandon_quest
@@ -356,6 +491,22 @@ class TestNormalizeQuestSpec(unittest.TestCase):
         obj = result["objectives"][0]
         self.assertEqual(obj["type"], "deliver")
         self.assertEqual(obj["item_tag"], "guard_report")
+
+    def test_deliver_objectives_list_uses_flagged_drop_when_missing_item_tag(self):
+        """Objectives-list deliver specs inherit item_tag from flagged_drop."""
+        from world.quest_engine import _normalize_quest_spec
+
+        spec = {
+            "quest_id": "q10",
+            "flagged_drop": "sealed_packet",
+            "objectives": [
+                {"type": "deliver", "target": "npc_factor", "count": 1},
+            ],
+        }
+
+        result = _normalize_quest_spec(spec)
+
+        self.assertEqual(result["objectives"][0]["item_tag"], "sealed_packet")
 
 
 # ---------------------------------------------------------------------------
@@ -629,10 +780,13 @@ class TestCheckInvestigateObjectives(unittest.TestCase):
 class TestCheckDeliverObjectives(unittest.TestCase):
     """Tests for check_deliver_objectives."""
 
+    @patch("world.inventory_engine.unregister_item_ownership")
     @patch("world.quest_engine._check_quest_completion")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
-    def test_deliver_completes_with_item_and_npc(self, MockCQ, mock_get_spec, mock_check):
+    def test_deliver_completes_with_item_and_npc(
+        self, MockCQ, mock_get_spec, mock_check, mock_unregister
+    ):
         """Talking to target NPC while carrying target item completes delivery."""
         from world.quest_engine import check_deliver_objectives
 
@@ -661,6 +815,8 @@ class TestCheckDeliverObjectives(unittest.TestCase):
         check_deliver_objectives(char, npc)
 
         self.assertEqual(cq.progress.get("deliver_npc_warden", 0), 1)
+        mock_unregister.assert_called_once_with(char, item)
+        item.delete.assert_called_once()
 
     @patch("world.quest_engine._check_quest_completion")
     @patch("world.quest_engine._get_quest_spec")
@@ -1169,6 +1325,95 @@ class TestGetAvailableQuestForNpc(unittest.TestCase):
 
         self.assertIsNotNone(result)
         self.assertEqual(result["quest_id"], "q1")
+
+    @patch("world.quest_engine.CharacterQuest")
+    @patch("world.quest_engine._get_all_quest_specs")
+    def test_prerequisite_locked_quest_not_offered_early(self, mock_all_specs, MockCQ):
+        """NPCs do not offer chain steps until prerequisite quests are complete."""
+        from world.quest_engine import get_available_quest_for_npc
+
+        npc = MagicMock()
+        npc.db.npc_id = "npc_barkeep"
+        char = MagicMock()
+
+        mock_all_specs.return_value = [
+            {
+                "quest_id": "q2",
+                "quest_giver": "npc_barkeep",
+                "prerequisite_quests": ["q1"],
+            },
+        ]
+
+        existing_qs = MagicMock()
+        active_qs = MagicMock()
+        active_qs.values_list.return_value = []
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = []
+        failed_qs = MagicMock()
+        failed_qs.values_list.return_value = []
+
+        def filter_side_effect(**kwargs):
+            if "status" not in kwargs:
+                return existing_qs
+            if kwargs.get("status") == "active":
+                return active_qs
+            if kwargs.get("status") == "complete":
+                return complete_qs
+            if kwargs.get("status") == "failed":
+                return failed_qs
+            return MagicMock(values_list=MagicMock(return_value=[]))
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+        existing_qs.filter.side_effect = filter_side_effect
+
+        result = get_available_quest_for_npc(npc, char)
+
+        self.assertIsNone(result)
+
+    @patch("world.quest_engine.CharacterQuest")
+    @patch("world.quest_engine._get_all_quest_specs")
+    def test_prerequisite_locked_quest_offered_after_completion(self, mock_all_specs, MockCQ):
+        """NPCs offer a chain step after all prerequisite quests are complete."""
+        from world.quest_engine import get_available_quest_for_npc
+
+        npc = MagicMock()
+        npc.db.npc_id = "npc_barkeep"
+        char = MagicMock()
+
+        mock_all_specs.return_value = [
+            {
+                "quest_id": "q2",
+                "quest_giver": "npc_barkeep",
+                "prerequisite_quests": ["q1"],
+            },
+        ]
+
+        existing_qs = MagicMock()
+        active_qs = MagicMock()
+        active_qs.values_list.return_value = []
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = ["q1"]
+        failed_qs = MagicMock()
+        failed_qs.values_list.return_value = []
+
+        def filter_side_effect(**kwargs):
+            if "status" not in kwargs:
+                return existing_qs
+            if kwargs.get("status") == "active":
+                return active_qs
+            if kwargs.get("status") == "complete":
+                return complete_qs
+            if kwargs.get("status") == "failed":
+                return failed_qs
+            return MagicMock(values_list=MagicMock(return_value=[]))
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+        existing_qs.filter.side_effect = filter_side_effect
+
+        result = get_available_quest_for_npc(npc, char)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["quest_id"], "q2")
 
     @patch("world.quest_engine.CharacterQuest")
     @patch("world.quest_engine._get_all_quest_specs")

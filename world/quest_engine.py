@@ -99,10 +99,13 @@ def _normalize_quest_spec(quest_spec):
     if "objectives" in spec and spec["objectives"]:
         # Already in new format — just normalize objective types
         normalized = []
+        flagged_drop = spec.get("flagged_drop") or ""
         for obj in spec["objectives"]:
             obj = dict(obj)
             obj_type = obj.get("type", "")
             obj["type"] = _OBJECTIVE_TYPE_ALIASES.get(obj_type, obj_type)
+            if obj["type"] == "deliver" and not obj.get("item_tag") and flagged_drop:
+                obj["item_tag"] = flagged_drop
             normalized.append(obj)
         spec["objectives"] = normalized
         return spec
@@ -124,9 +127,90 @@ def _normalize_quest_spec(quest_spec):
     return spec
 
 
+def _get_prerequisite_quest_ids(quest_spec):
+    """
+    Return prerequisite quest IDs for a chain step.
+
+    AreaBuilder stores the canonical field as prerequisite_quests. The small
+    alias set lets older authored specs converge without player-facing drift.
+    """
+    raw = (
+        quest_spec.get("prerequisite_quests")
+        or quest_spec.get("required_quests")
+        or quest_spec.get("requires_quests")
+        or []
+    )
+    if isinstance(raw, str):
+        return [raw]
+    return [quest_id for quest_id in raw if quest_id]
+
+
 def _make_obj_key(obj_type, target):
     """Build the progress dict key for an objective."""
     return f"{obj_type}_{target}"
+
+
+def _find_carried_item_by_tag(character, item_tag):
+    """Return the first carried item matching an item_tag."""
+    if not item_tag:
+        return None
+
+    for item in (character.contents or []):
+        db_tag = getattr(getattr(item, "db", None), "item_tag", None) or ""
+        evennia_tag = item.tags.get(category="item_tag") if hasattr(item, "tags") else None
+        if item_tag in {db_tag, evennia_tag}:
+            return item
+    return None
+
+
+def _grant_delivery_items_on_accept(character, quest_spec):
+    """
+    Give deliver-quest handoff items to the player when a quest is accepted.
+
+    This keeps authored delivery quests completable without inventing a second
+    acquisition step outside the quest contract. Items are only granted when
+    the player does not already carry the required tagged item.
+    """
+    context = {"character": character, "room": character.location}
+    granted_tags = set()
+
+    for obj in (quest_spec.get("objectives") or []):
+        if obj.get("type") != "deliver":
+            continue
+
+        item_tag = obj.get("item_tag") or ""
+        if not item_tag or item_tag in granted_tags:
+            continue
+
+        if _find_carried_item_by_tag(character, item_tag):
+            granted_tags.add(item_tag)
+            continue
+
+        from world.action_vocabulary import execute_action
+        success, msg = execute_action(
+            {"action_type": "give_item", "template_id": item_tag},
+            context,
+        )
+        if not success:
+            return False, msg
+
+        granted_tags.add(item_tag)
+
+    return True, ""
+
+
+def _consume_delivery_item(character, item):
+    """Remove a delivered quest item from the player's inventory."""
+    try:
+        from world.inventory_engine import unregister_item_ownership
+        unregister_item_ownership(character, item)
+    except Exception:
+        pass
+
+    try:
+        item.delete()
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +249,19 @@ def accept_quest(character, quest_id, quest_spec):
     ).exists():
         return False, "You already have this quest."
 
+    prerequisite_ids = _get_prerequisite_quest_ids(quest_spec)
+    if prerequisite_ids:
+        complete_ids = set(
+            CharacterQuest.objects.filter(
+                character=character,
+                status="complete",
+                quest_id__in=prerequisite_ids,
+            ).values_list("quest_id", flat=True)
+        )
+        missing = [quest_id for quest_id in prerequisite_ids if quest_id not in complete_ids]
+        if missing:
+            return False, "Complete the earlier quests in this chain first."
+
     # Initialize progress dict with zero values for all objectives
     spec = _normalize_quest_spec(quest_spec)
     progress = {}
@@ -172,12 +269,20 @@ def accept_quest(character, quest_id, quest_spec):
         key = _make_obj_key(obj["type"], obj["target"])
         progress[key] = 0
 
-    CharacterQuest.objects.create(
+    cq = CharacterQuest.objects.create(
         character=character,
         quest_id=quest_id,
         status="active",
         progress=progress,
     )
+
+    granted, grant_msg = _grant_delivery_items_on_accept(character, spec)
+    if not granted:
+        try:
+            cq.delete()
+        except Exception:
+            pass
+        return False, grant_msg
 
     name = quest_spec.get("name") or quest_id
     return True, f"Quest accepted: {name}"
@@ -376,11 +481,8 @@ def check_deliver_objectives(character, npc):
             if not item_tag:
                 continue
 
-            has_item = any(
-                (c.tags.get(category="item_tag") if hasattr(c, "tags") else None) == item_tag
-                for c in (character.contents or [])
-            )
-            if not has_item:
+            delivery_item = _find_carried_item_by_tag(character, item_tag)
+            if not delivery_item:
                 continue
 
             key = _make_obj_key("deliver", target)
@@ -392,6 +494,7 @@ def check_deliver_objectives(character, npc):
                 progress[key] = current + 1
                 cq.progress = progress
                 cq.save(update_fields=["progress"])
+                _consume_delivery_item(character, delivery_item)
                 updated = True
 
         if updated:
@@ -558,6 +661,10 @@ def get_available_quest_for_npc(npc, character):
 
         # Skip if one_chance and failed
         if spec.get("one_chance") and qid in failed_ids:
+            continue
+
+        prerequisites = _get_prerequisite_quest_ids(spec)
+        if any(prerequisite not in complete_ids for prerequisite in prerequisites):
             continue
 
         return spec

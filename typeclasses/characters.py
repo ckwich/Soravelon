@@ -84,6 +84,11 @@ class Character(ObjectParent, DefaultCharacter):
         from world.session_lifecycle import on_login
         on_login(self)
 
+    def _send_new_player_guidance(self):
+        """Delegate contextual login breadcrumbs to the lifecycle layer."""
+        from world.session_lifecycle import send_new_player_guidance
+        return send_new_player_guidance(self)
+
     def at_pre_unpuppet(self):
         """Called just before a player disconnects from this character."""
         from world.session_lifecycle import on_logout

@@ -55,6 +55,129 @@ ABILITY_TIERS = {
 ABILITIES = {
     # (All Phase 5a initial entries replaced by full domain pools below)
     # ===================================================================
+    # ANCESTRY STARTING ABILITIES -- granted when ancestry is chosen
+    # These are additive and are not part of domain tier unlock pools.
+    # ===================================================================
+    "second_wind": {
+        "id": "second_wind",
+        "name": "Second Wind",
+        "domain": "combat",
+        "tier": 1,
+        "resource_cost": 0,
+        "resource_type": None,
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "heal",
+        "scaling_primary": "combat",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Steady yourself, force a full breath through pain, and reclaim "
+            "your footing. Humans survive by refusing to stay down."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "unlock_source": "ancestry",
+        "effect_params": {
+            "heal_base": 40,
+            "buff_type": "regeneration",
+            "buff_duration": 2,
+            "buff_value": 12,
+        },
+    },
+    "immovable": {
+        "id": "immovable",
+        "name": "Immovable",
+        "domain": "combat",
+        "tier": 1,
+        "resource_cost": 0,
+        "resource_type": None,
+        "cooldown": 5,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "combat",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Plant your feet and refuse the world's attempt to move you. "
+            "Kau'roran endurance turns a stance into a fortress."
+        ),
+        "room_flag_written": "fortified",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "unlock_source": "ancestry",
+        "effect_params": {
+            "buff_type": "warding",
+            "duration": 2,
+            "magnitude": 0.30,
+            "secondary_buffs": [
+                {"buff_type": "damage_absorb", "duration": 2, "value": 30},
+            ],
+        },
+    },
+    "vanish": {
+        "id": "vanish",
+        "name": "Vanish",
+        "domain": "subterfuge",
+        "tier": 1,
+        "resource_cost": 0,
+        "resource_type": None,
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "subterfuge",
+        "scaling_secondary": None,
+        "application_chance": 1.0,
+        "description": (
+            "Slip out of the eye's certainty and let the next heartbeat pass "
+            "without finding you. Veth survive by being where danger expects "
+            "them least."
+        ),
+        "room_flag_written": "shadow_marked",
+        "attuned_variants": {},
+        "subclass_id": None,
+        "unlock_source": "ancestry",
+        "effect_params": {
+            "buff_type": "stealth",
+            "duration": 2,
+            "magnitude": 1.0,
+            "secondary_buffs": [
+                {"buff_type": "haste", "duration": 1, "value": 1},
+            ],
+        },
+    },
+    "audacity": {
+        "id": "audacity",
+        "name": "Audacity",
+        "domain": "combat",
+        "tier": 1,
+        "resource_cost": 0,
+        "resource_type": None,
+        "cooldown": 4,
+        "charge_turns": 0,
+        "effect_type": "buff",
+        "scaling_primary": "combat",
+        "scaling_secondary": "subterfuge",
+        "application_chance": 1.0,
+        "description": (
+            "Commit so hard that hesitation cannot catch up. Selvar fight by "
+            "turning nerve into tempo and making the next strike land harder."
+        ),
+        "room_flag_written": None,
+        "attuned_variants": {},
+        "subclass_id": None,
+        "unlock_source": "ancestry",
+        "effect_params": {
+            "buff_type": "vigor",
+            "duration": 2,
+            "magnitude": 0.20,
+            "secondary_buffs": [
+                {"buff_type": "haste", "duration": 1, "value": 1},
+            ],
+        },
+    },
+    # ===================================================================
     # COMBAT DOMAIN POOL (15 abilities) -- resource_type: momentum
     # Fingerprint: PRESS -- sustained aggression, always moving forward
     # Scaling: combat -> strength
@@ -334,7 +457,16 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {'buff_type': 'warding', 'duration': 3, 'magnitude': 0.2},
+        "effect_params": {
+            'buff_type': 'group_damage_bonus',
+            'value': 0.20,
+            'duration': 3,
+            'magnitude': 0.20,
+            'group_buff': True,
+            'secondary_buffs': [
+                {'buff_type': 'group_damage_reduction', 'value': 0.20, 'duration': 3},
+            ],
+        },
     },
 
     # --- Combat Tier 4 (3 abilities) -- Domain capstones ---
@@ -359,7 +491,13 @@ ABILITIES = {
         "room_flag_written": "devastated",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {'damage_base': 200},
+        "effect_params": {
+            'damage_base': 200,
+            'guaranteed_crit': True,
+            'bleed': True,
+            'bleed_duration': 3,
+            'bleed_damage': 1.0,
+        },
     },
     "break_the_world": {
         "id": "break_the_world",
@@ -461,7 +599,13 @@ ABILITIES = {
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "duskblade",
-        "effect_params": {'damage_base': 200},
+        "effect_params": {
+            'damage_base': 200,
+            'guaranteed_crit': True,
+            'bleed': True,
+            'bleed_duration': 3,
+            'bleed_damage': 1.0,
+        },
     },
 
     # --- Thornguard (combat + naturalism) ---
@@ -657,7 +801,15 @@ ABILITIES = {
         "room_flag_written": "intimidated",
         "attuned_variants": {},
         "subclass_id": "ironvoice",
-        "effect_params": {'debuff_type': 'weaken', 'duration': 3, 'magnitude': 0.25},
+        "effect_params": {
+            'debuff_type': 'weaken',
+            'duration': 3,
+            'magnitude': 0.25,
+            'aoe': True,
+            'secondary_debuff': 'slow',
+            'secondary_duration': 3,
+            'secondary_magnitude': 1.0,
+        },
     },
 
     # --- Ashfang (combat + alchemy) ---
@@ -1175,7 +1327,17 @@ ABILITIES = {
         "room_flag_written": "fortified",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {'buff_type': 'haste', 'duration': 2, 'magnitude': 1.5},
+        "effect_params": {
+            'buff_type': 'haste',
+            'duration': 2,
+            'magnitude': 1.5,
+            'group_buff': True,
+            'bonus_actions': 1,
+            'secondary_buffs': [
+                {'buff_type': 'group_damage_bonus', 'value': 0.20, 'duration': 2},
+                {'buff_type': 'group_damage_reduction', 'value': 0.15, 'duration': 2},
+            ],
+        },
     },
     "break_their_will": {
         "id": "break_their_will",
@@ -1199,7 +1361,15 @@ ABILITIES = {
         "room_flag_written": "intimidated",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {'debuff_type': 'weaken', 'duration': 3, 'magnitude': 0.25},
+        "effect_params": {
+            'debuff_type': 'weaken',
+            'duration': 3,
+            'magnitude': 0.25,
+            'aoe': True,
+            'secondary_debuff': 'slow',
+            'secondary_duration': 3,
+            'secondary_magnitude': 1.0,
+        },
     },
     "commanders_gambit": {
         "id": "commanders_gambit",
@@ -1327,7 +1497,15 @@ ABILITIES = {
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "greycommand",
-        "effect_params": {'buff_type': 'haste', 'duration': 1, 'magnitude': 2.0},
+        "effect_params": {
+            'buff_type': 'stealth',
+            'duration': 1,
+            'magnitude': 1.0,
+            'group_buff': True,
+            'secondary_buffs': [
+                {'buff_type': 'guaranteed_crit', 'duration': 1, 'magnitude': 1.0},
+            ],
+        },
     },
 
     # --- Wildtactician (tactics + naturalism) ---
@@ -1503,7 +1681,13 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": "warlord",
-        "effect_params": {'buff_type': 'haste', 'duration': 3, 'magnitude': 1.5},
+        "effect_params": {
+            'buff_type': 'group_damage_bonus',
+            'value': 0.20,
+            'duration': 3,
+            'magnitude': 0.20,
+            'group_buff': True,
+        },
     },
     "warlord_sovereign_command": {
         "id": "warlord_sovereign_command",
@@ -1653,7 +1837,16 @@ ABILITIES = {
         "room_flag_written": "ancient_ground",
         "attuned_variants": {},
         "subclass_id": "oathbreaker",
-        "effect_params": {'buff_type': 'warding', 'duration': 3, 'magnitude': 0.2},
+        "effect_params": {
+            'buff_type': 'group_damage_bonus',
+            'value': 0.20,
+            'duration': 3,
+            'magnitude': 0.20,
+            'group_buff': True,
+            'secondary_buffs': [
+                {'buff_type': 'group_damage_reduction', 'value': 0.20, 'duration': 3},
+            ],
+        },
     },
     "oathbreaker_forgotten_doctrine": {
         "id": "oathbreaker_forgotten_doctrine",
@@ -2197,7 +2390,13 @@ ABILITIES = {
         "room_flag_written": "scouted",
         "attuned_variants": {},
         "subclass_id": "veilreader",
-        "effect_params": {"buff_type": "evasion", "duration": 3, "magnitude": 0.25, "consumes_all_focus": True},
+        "effect_params": {
+            "buff_type": "evasion",
+            "duration": 3,
+            "magnitude": 0.25,
+            "consumes_all_focus": True,
+            "group_buff": True,
+        },
     },
 
     # --- Nullshadow (subterfuge + arcana) ---
@@ -2296,7 +2495,16 @@ ABILITIES = {
         "room_flag_written": "exposed",
         "attuned_variants": {},
         "subclass_id": "tally_agent",
-        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+        "effect_params": {
+            "buff_type": "haste",
+            "duration": 3,
+            "magnitude": 1.0,
+            "group_buff": True,
+            "party_size_scaling": True,
+            "secondary_buffs": [
+                {"buff_type": "group_damage_reduction", "value": 0.15, "duration": 3},
+            ],
+        },
     },
 
     # --- Blackthorn (subterfuge + alchemy) ---
@@ -2371,7 +2579,15 @@ ABILITIES = {
         "room_flag_written": "shadow_marked",
         "attuned_variants": {},
         "subclass_id": "shadecommand",
-        "effect_params": {"buff_type": "evasion", "duration": 2, "magnitude": 0.2},
+        "effect_params": {
+            "buff_type": "evasion",
+            "duration": 2,
+            "magnitude": 0.2,
+            "group_buff": True,
+            "secondary_buffs": [
+                {"buff_type": "stealth", "duration": 1, "magnitude": 1.0},
+            ],
+        },
     },
     "shadecommand_black_operation": {
         "id": "shadecommand_black_operation",
@@ -2760,7 +2976,16 @@ ABILITIES = {
         "room_flag_written": "inspired",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+        "effect_params": {
+            "buff_type": "haste",
+            "duration": 3,
+            "magnitude": 1.0,
+            "group_buff": True,
+            "party_size_scaling": True,
+            "secondary_buffs": [
+                {"buff_type": "group_damage_reduction", "value": 0.15, "duration": 3},
+            ],
+        },
     },
     "social_execution": {
         "id": "social_execution",
@@ -2985,7 +3210,7 @@ ABILITIES = {
         "room_flag_written": "inspired",
         "attuned_variants": {},
         "subclass_id": "wayfinder",
-        "effect_params": {"damage_base": 80, "buff_type": "warding", "duration": 2, "magnitude": 0.15},
+        "effect_params": {"heal_base": 80, "buff_type": "warding", "duration": 2, "magnitude": 0.15},
     },
     "wayfinder_heart_of_the_wild": {
         "id": "wayfinder_heart_of_the_wild",
@@ -3009,7 +3234,13 @@ ABILITIES = {
         "room_flag_written": "inspired",
         "attuned_variants": {},
         "subclass_id": "wayfinder",
-        "effect_params": {"damage_base": 150, "buff_type": "warding", "duration": 3, "magnitude": 0.2},
+        "effect_params": {
+            "heal_base": 150,
+            "buff_type": "warding",
+            "duration": 3,
+            "magnitude": 0.2,
+            "group_heal": True,
+        },
     },
 
     # --- Spiritvoice (diplomacy + resonance) ---
@@ -3182,7 +3413,16 @@ ABILITIES = {
         "room_flag_written": "inspired",
         "attuned_variants": {},
         "subclass_id": "bannerspeaker",
-        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.0},
+        "effect_params": {
+            "buff_type": "haste",
+            "duration": 3,
+            "magnitude": 1.0,
+            "group_buff": True,
+            "party_size_scaling": True,
+            "secondary_buffs": [
+                {"buff_type": "group_damage_reduction", "value": 0.18, "duration": 3},
+            ],
+        },
     },
     "bannerspeaker_morale_surge": {
         "id": "bannerspeaker_morale_surge",
@@ -3206,7 +3446,15 @@ ABILITIES = {
         "room_flag_written": "inspired",
         "attuned_variants": {},
         "subclass_id": "bannerspeaker",
-        "effect_params": {"buff_type": "haste", "duration": 3, "magnitude": 1.5},
+        "effect_params": {
+            "buff_type": "haste",
+            "duration": 3,
+            "magnitude": 1.5,
+            "group_buff": True,
+            "secondary_buffs": [
+                {"buff_type": "group_damage_bonus", "value": 0.25, "duration": 3},
+            ],
+        },
     },
 
     # --- Dealwright (diplomacy + engineering) ---
@@ -3955,7 +4203,18 @@ ABILITIES = {
         "room_flag_written": "scorched",
         "attuned_variants": {},
         "subclass_id": "fusewright",
-        "effect_params": {"dot_type": "burn", "duration": 4, "damage_per_tick": 20, "magnitude": 1.5, "status_effect": "burn", "effect_duration": 3, "effect_magnitude": 1},
+        "effect_params": {
+            "dot_type": "burn",
+            "duration": 4,
+            "damage_per_tick": 20,
+            "magnitude": 1.5,
+            "status_effect": "burn",
+            "effect_duration": 3,
+            "effect_magnitude": 1,
+            "secondary_effects": ["poison"],
+            "secondary_duration": 4,
+            "secondary_magnitude": 8,
+        },
     },
     "fusewright_transmutation_burst": {
         "id": "fusewright_transmutation_burst",
@@ -4708,7 +4967,14 @@ ABILITIES = {
             "living_wood": {"extra_effect": "self-heal doubled", "extra_cost": 10},
         },
         "subclass_id": "thornweald",
-        "effect_params": {"dot_type": "poison", "duration": 4, "damage_per_tick": 18, "magnitude": 1.0, "resonance_generated": 15},
+        "effect_params": {
+            "dot_type": "poison",
+            "duration": 4,
+            "damage_per_tick": 18,
+            "magnitude": 1.0,
+            "resonance_generated": 15,
+            "heal_source_per_round": 10,
+        },
     },
     "thornweald_ancient_growth": {
         "id": "thornweald_ancient_growth",
@@ -4736,7 +5002,14 @@ ABILITIES = {
             "living_wood": {"extra_effect": "healing zone persists 2 extra rounds", "extra_cost": 0},
         },
         "subclass_id": "thornweald",
-        "effect_params": {"dot_type": "poison", "duration": 5, "damage_per_tick": 30, "magnitude": 2.0},
+        "effect_params": {
+            "dot_type": "poison",
+            "duration": 5,
+            "damage_per_tick": 30,
+            "magnitude": 2.0,
+            "aoe": True,
+            "heal_allies_per_round": 12,
+        },
     },
 
     # --- Sealwright (resonance + arcana) ---
@@ -5431,7 +5704,13 @@ ABILITIES = {
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {"heal_base": 200, "balance_shift": -15, "balance_type": "calm"},
+        "effect_params": {
+            "heal_base": 200,
+            "balance_shift": -15,
+            "balance_type": "calm",
+            "group_heal": True,
+            "cleanse_negative": 1,
+        },
     },
     "natures_equilibrium": {
         "id": "natures_equilibrium",
@@ -5614,7 +5893,7 @@ ABILITIES = {
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "cantera",
-        "effect_params": {"heal_base": 180, "balance_shift": -15, "balance_type": "calm"},
+        "effect_params": {"heal_base": 180, "balance_shift": -15, "balance_type": "calm", "group_heal": True},
     },
 
     # --- Stormcaller (naturalism + arcana) ---
@@ -5922,7 +6201,7 @@ ABILITIES = {
         "room_flag_written": "living_wood",
         "attuned_variants": {},
         "subclass_id": "deeproot",
-        "effect_params": {"heal_base": 200, "balance_shift": -15, "balance_type": "calm"},
+        "effect_params": {"heal_base": 200, "balance_shift": -15, "balance_type": "calm", "group_heal": True},
     },
 
     # ===================================================================
@@ -8528,6 +8807,8 @@ ABILITIES = {
 DOMAIN_ABILITIES = {}
 for _ability_id, _ability in ABILITIES.items():
     if _ability["subclass_id"] is not None:
+        continue  # signatures are separate
+    if _ability.get("unlock_source") == "ancestry":
         continue  # signatures are separate
     _domain = _ability["domain"]
     _tier = _ability["tier"]

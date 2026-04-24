@@ -81,6 +81,34 @@ class TestEquipmentCatalog(unittest.TestCase):
         """Fishing bait consumable defined."""
         self.assertIn("bait", self.catalog)
 
+    def test_chainmail_sits_between_iron_and_steel_plate_progression(self):
+        """Crafted chainmail should not skip past the next heavy-armor tier."""
+        chainmail = self.catalog["iron_chainmail"]
+        iron_plate = self.catalog["iron_breastplate"]
+        steel_plate = self.catalog["steel_breastplate"]
+        self.assertGreater(chainmail["armor_value"], iron_plate["armor_value"])
+        self.assertLess(chainmail["armor_value"], steel_plate["armor_value"])
+
+    def test_face_and_wrist_slots_have_tier_three_options(self):
+        """Late-game gearing should not dead-end in face and wrists slots."""
+        face_tiers = {
+            item["material_tier"]
+            for item in self.catalog.values()
+            if item.get("equip_slot") == "face"
+        }
+        wrist_tiers = {
+            item["material_tier"]
+            for item in self.catalog.values()
+            if item.get("equip_slot") == "wrists"
+        }
+        self.assertIn(3, face_tiers)
+        self.assertIn(3, wrist_tiers)
+
+    def test_bucklers_offer_a_fast_off_hand_profile(self):
+        """Bucklers should provide an agility-forward alternative to kite shields."""
+        for item_id in ("iron_buckler", "steel_buckler", "mithril_buckler"):
+            self.assertIn("agility", self.catalog[item_id]["stat_bonuses"])
+
 
 class TestLootTables(unittest.TestCase):
     """Verify loot_tables.py contains rat and bandit entries."""
@@ -146,24 +174,29 @@ class TestStormhavenCoast(unittest.TestCase):
 class TestQuestItemSources(unittest.TestCase):
     """Verify quest items are wired to world sources."""
 
-    def test_resonance_sample_trigger_in_cantera(self):
+    def test_vaels_warden_report_uses_delivery_item(self):
+        content = _read_file("world/areas/vaels_crossing.py")
+        self.assertIn("warden_field_report", content)
+        self.assertIn('flagged_drop="warden_field_report"', content)
+
+    def test_cantera_resupply_uses_delivery_item(self):
         content = _read_file("world/areas/cantera_edge.py")
-        self.assertIn("resonance_sample", content)
-
-    def test_debt_token_trigger_in_vaels_crossing(self):
-        content = _read_file("world/areas/vaels_crossing.py")
-        self.assertIn("outstanding_debt_token", content)
-        self.assertIn("vc_debt_token_grant", content)
-
-    def test_warden_supplies_trigger_in_vaels_crossing(self):
-        content = _read_file("world/areas/vaels_crossing.py")
         self.assertIn("warden_supplies", content)
-        self.assertIn("vc_warden_supplies_grant", content)
+        self.assertIn('flagged_drop="warden_supplies"', content)
+
+    def test_ashreach_references_rare_herb_bundles(self):
+        content = _read_file("world/areas/ashreach_plains.py")
+        self.assertIn("rare_herb_bundle", content)
 
     def test_rare_alpine_trigger_in_reth(self):
         """Reth Foothills references rare alpine ingredient."""
         content = _read_file("world/areas/reth_foothills.py")
         self.assertIn("rare_alpine_ingredient", content)
+
+    def test_stormhaven_delivery_items_are_referenced(self):
+        content = _read_file("world/areas/stormhaven_coast.py")
+        self.assertIn("contraband_package", content)
+        self.assertIn("lighthouse_oil_crate", content)
 
 
 if __name__ == "__main__":

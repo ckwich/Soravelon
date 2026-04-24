@@ -192,6 +192,11 @@ def commit_session_xp(character):
     # Recalculate attunement aggregate
     recalculate_attunement_aggregate(character)
 
+    # Ability unlocks track ancestry + guild tier progression and should update
+    # as soon as domain scores commit.
+    from world.ability_engine import sync_character_ability_unlocks
+    sync_character_ability_unlocks(character)
+
     # OOB: notify client of updated scores after XP commit (CLI-06)
     from world import oob_publisher
     oob_publisher.push_status_update(character)

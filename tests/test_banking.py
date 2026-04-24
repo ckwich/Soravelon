@@ -285,6 +285,18 @@ class TestIssueDraftCreatesItem(BankingTestBase):
         self.assertEqual(drafts[0].db.denomination, 200)
 
 
+class TestIssueDraftRespectsCap(BankingTestBase):
+    def test_issue_draft_rejects_amounts_over_transaction_cap(self):
+        from world.banking import deposit, issue_draft, MAX_TRANSACTION, get_balance
+
+        deposit(self.char1, 1000)
+        success, msg = issue_draft(self.char1, MAX_TRANSACTION + 1)
+
+        self.assertFalse(success)
+        self.assertIn(str(MAX_TRANSACTION), msg)
+        self.assertEqual(get_balance(self.char1), 1000)
+
+
 class TestRedeemDraftCreditsBank(BankingTestBase):
     def test_redeem_draft_credits_bank(self):
         from world.banking import deposit, issue_draft, redeem_draft, get_balance

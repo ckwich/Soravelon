@@ -2,14 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Completed 16-04-PLAN.md
-last_updated: "2026-04-06T01:00:37.289Z"
+status: Phase 17 Complete — Milestone v1.0 complete
+stopped_at: Completed 17-03-PLAN.md
+last_updated: "2026-04-14T11:55:00.000Z"
 progress:
-  total_phases: 14
-  completed_phases: 13
-  total_plans: 74
-  completed_plans: 72
+  total_phases: 15
+  completed_phases: 15
+  total_plans: 80
+  completed_plans: 80
+  percent: 100
 ---
 
 # Project State
@@ -19,12 +20,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Character identity must feel mechanically distinct — 90 subclasses play differently, not just look different
-**Current focus:** Phase 16 — architectural-refactoring
+**Current focus:** Milestone v1.0 complete — ready for v2.0 or /gsd-complete-milestone
 
 ## Current Position
 
-Phase: 16
-Plan: Not started
+Phase: 17 (area-reconciliation-and-test-env) — COMPLETE
+Plans: 3 of 3 complete
+Verification: targeted launch-hardening tests and smoke checks passed; full canonical suite was not re-run to completion in this pass
 
 ## Performance Metrics
 
@@ -88,6 +90,10 @@ Plan: Not started
 | Phase 16 P04 | 15 | 2 tasks | 15 files |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 17 added: Area Reconciliation and Test Environment (AreaBuilder stale state reconciliation + test env standardization)
 
 ### Decisions
 

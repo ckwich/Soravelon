@@ -15,6 +15,7 @@ Public API:
     get_loot_modifiers(mob) -> dict       — rarity modifiers
 """
 
+import copy
 import random
 
 
@@ -167,6 +168,18 @@ LOOT_TABLES = {
                 "item_id": "raider_cutlass",
                 "key": "raider's cutlass",
                 "item_type": "equipment",
+                "equip_slot": "main_hand",
+                "scaling_stat": "agility",
+                "material_tier_by_tier": [1, 1, 2, 2, 3],
+                "damage_min_by_tier": [7, 9, 11, 13, 15],
+                "damage_max_by_tier": [13, 15, 18, 21, 24],
+                "stat_bonuses_by_tier": [
+                    {"agility": 1},
+                    {"agility": 1},
+                    {"agility": 2},
+                    {"agility": 2},
+                    {"agility": 3},
+                ],
                 "weight": 1.5,
                 "weight_in_pool": 4,
                 "value_by_tier":  [8, 18, 35, 70, 140],
@@ -434,6 +447,18 @@ LOOT_TABLES = {
                 "item_id": "iron_shortsword",
                 "key": "iron shortsword",
                 "item_type": "equipment",
+                "equip_slot": "main_hand",
+                "scaling_stat": "agility",
+                "material_tier_by_tier": [1, 1, 1, 2, 2],
+                "damage_min_by_tier": [6, 7, 9, 11, 13],
+                "damage_max_by_tier": [12, 14, 16, 19, 22],
+                "stat_bonuses_by_tier": [
+                    {"agility": 1},
+                    {"agility": 1},
+                    {"agility": 2},
+                    {"agility": 2},
+                    {"agility": 3},
+                ],
                 "weight": 1.5,
                 "weight_in_pool": 4,
                 "value_by_tier":  [5, 10, 20, 40, 80],
@@ -567,6 +592,15 @@ LOOT_TABLES = {
                 "item_id": "alpha_fang_necklace",
                 "key": "alpha fang necklace",
                 "item_type": "equipment",
+                "equip_slot": "amulet",
+                "material_tier_by_tier": [2, 2, 3, 3, 3],
+                "stat_bonuses_by_tier": [
+                    {"presence": 1},
+                    {"presence": 1, "resonance": 1},
+                    {"presence": 2, "resonance": 1},
+                    {"presence": 2, "resonance": 2},
+                    {"presence": 3, "resonance": 2},
+                ],
                 "weight": 0.2,
                 "weight_in_pool": 3,
                 "value_by_tier":  [20, 40, 80, 160, 320],
@@ -1206,6 +1240,18 @@ LOOT_TABLES = {
                 "item_id": "raider_boarding_axe",
                 "key": "raider's boarding axe",
                 "item_type": "equipment",
+                "equip_slot": "main_hand",
+                "scaling_stat": "strength",
+                "material_tier_by_tier": [1, 1, 2, 2, 3],
+                "damage_min_by_tier": [9, 11, 13, 16, 19],
+                "damage_max_by_tier": [15, 18, 21, 25, 29],
+                "stat_bonuses_by_tier": [
+                    {"strength": 1},
+                    {"strength": 1},
+                    {"strength": 2},
+                    {"strength": 2},
+                    {"strength": 3},
+                ],
                 "weight": 2.0,
                 "weight_in_pool": 4,
                 "value_by_tier":  [10, 22, 45, 90, 180],
@@ -1393,7 +1439,7 @@ def _pick_drop(drops, count=1):
 def _build_item_def(drop, tier):
     """Build an item_def dict from a drop entry at a given tier (1-5)."""
     idx = max(0, min(4, tier - 1))
-    return {
+    item_def = {
         "item_id":   drop["item_id"],
         "key":       drop["key"],
         "item_type": drop.get("item_type", "item"),
@@ -1402,6 +1448,33 @@ def _build_item_def(drop, tier):
         "value":     drop["value_by_tier"][idx],
         "desc":      drop["desc_by_tier"][idx],
     }
+    if "material_tier_by_tier" in drop:
+        item_def["material_tier"] = drop["material_tier_by_tier"][idx]
+    elif "material_tier" in drop:
+        item_def["material_tier"] = drop["material_tier"]
+
+    for source_key, target_key in (
+        ("damage_min_by_tier", "damage_min"),
+        ("damage_max_by_tier", "damage_max"),
+        ("armor_value_by_tier", "armor_value"),
+        ("stat_bonuses_by_tier", "stat_bonuses"),
+    ):
+        if source_key in drop:
+            item_def[target_key] = copy.deepcopy(drop[source_key][idx])
+
+    for field_name in (
+        "equip_slot",
+        "scaling_stat",
+        "two_handed",
+        "stackable",
+        "tool_slot",
+        "tool_tag",
+        "use_effect",
+    ):
+        if field_name in drop:
+            item_def[field_name] = copy.deepcopy(drop[field_name])
+
+    return item_def
 
 
 # ---------------------------------------------------------------------------

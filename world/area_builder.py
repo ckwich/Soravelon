@@ -126,6 +126,7 @@ from world.area_validator import (
     VALID_DIRECTIONS,
     VALID_ROOM_TYPES,
     AreaBuilderValidationError,
+    validate_spawn_condition,
 )
 
 
@@ -196,6 +197,13 @@ class AreaBuilder:
 
         # Find or create ZoneObject
         zone_obj = self._get_or_create_zone_object()
+
+        # Clear zone-owned definition lists on every load so rebuilds cannot
+        # inherit stale definitions from prior source versions.
+        zone_obj.db.item_definitions = []
+        zone_obj.db.quest_definitions = []
+        zone_obj.db.material_definitions = []
+        zone_obj.db.gathering_pools = []
 
         # Set all zone metadata
         zone_obj.db.zone_id = self._zone_id
@@ -396,6 +404,7 @@ class AreaBuilder:
         Register a mob spawn definition on a room.
         Does NOT create mobs — spawning is handled at runtime.
         """
+        validate_spawn_condition(kwargs.get("spawn_condition"))
         spawn_def = {
             "mob": mob,
             "behavior": kwargs.get("behavior", []),
@@ -427,11 +436,13 @@ class AreaBuilder:
             current.append(spawn_def)
         room.db.spawn_definitions = current
 
-        # Warn about unverified mob template
-        self._build_warnings.append(
-            f"spawn in {self._room_id_for(room)} references mob "
-            f"'{mob}' — verify template exists before loading to production"
-        )
+        from world.mob_templates import get_mob_template
+
+        if get_mob_template(mob) is None:
+            self._build_warnings.append(
+                f"spawn in {self._room_id_for(room)} references mob "
+                f"'{mob}' — verify template exists before loading to production"
+            )
 
     # ------------------------------------------------------------------
     # named_mob()
@@ -882,6 +893,7 @@ class AreaBuilder:
             "objectives": kwargs.get("objectives", []),
             "rewards": kwargs.get("rewards", []),
             "next_quest_id": kwargs.get("next_quest_id"),
+            "prerequisite_quests": kwargs.get("prerequisite_quests", []),
             "one_chance": kwargs.get("one_chance", False),
             # Sharing (deferred but stored for future use)
             "can_share": kwargs.get("can_share", False),
@@ -1043,13 +1055,8 @@ class AreaBuilder:
         # 4. Register zone
         zone_registry.register_zone(self._zone_id, self._zone_obj)
 
-        # 6. Initialize zone-level list attrs if not present
-        if not self._zone_obj.db.quest_definitions:
-            self._zone_obj.db.quest_definitions = []
-        if not self._zone_obj.db.material_definitions:
-            self._zone_obj.db.material_definitions = []
-        if not self._zone_obj.db.gathering_pools:
-            self._zone_obj.db.gathering_pools = []
+        # 6. Zone-owned definition lists are reset in zone() before the file
+        # re-registers them through quest()/material()/item()/gathering_pool().
 
         # 5. Initialize gathering pools
         from world.gathering_engine import initialize_zone_gathering

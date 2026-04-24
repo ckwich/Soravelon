@@ -193,6 +193,10 @@ def process_recurring_payments():
 
 
 def issue_draft(character, amount):
+    if amount <= 0:
+        return False, "Amount must be positive."
+    if amount > MAX_TRANSACTION:
+        return False, f"Cannot issue a draft for more than {MAX_TRANSACTION} Scales at once."
     success, msg = deduct_from_bank(
         character, amount,
         transaction_type="draft_issued",
@@ -200,18 +204,25 @@ def issue_draft(character, amount):
     )
     if not success:
         return False, msg
-    from evennia import create_object
-    from typeclasses.objects import SoravelonItem
-    draft = create_object(SoravelonItem, key="Gnome Consortium Draft", location=character)
+    from world.item_spawner import create_item_from_template
+    draft = create_item_from_template(
+        {
+            "item_id": "consortium_draft",
+            "key": "Gnome Consortium Draft",
+            "item_type": "draft",
+            "weight": 0.01,
+            "rarity": "common",
+            "value": amount,
+            "desc": (
+                f"A crisp Consortium Draft stamped with the value of {amount} "
+                f"Scales. Redeemable at any bank or caravan."
+            ),
+            "denomination": amount,
+        },
+        location=character,
+    )
     draft.db.item_type = "draft"
-    draft.db.denomination = amount
-    draft.db.stackable = False
-    draft.db.weight = 0.01
-    draft.db.rarity = "common"
-    draft.db.desc = f"A crisp Consortium Draft stamped with the value of {amount} Scales. Redeemable at any bank or caravan."
     draft.tags.add("consortium_draft", category="item_type")
-    from world.models import InventoryItem
-    InventoryItem.objects.create(character_id=character.id, item_id=draft.id, quantity=1)
     return True, f"Draft for {amount} Scales issued."
 
 

@@ -1671,8 +1671,9 @@ def join_guild(character, guild_id, secondary_domain):
     character.db.primary_domain = primary
     character.db.secondary_domain = secondary_domain
     # Initialize domain resource for mid-session guild join
-    from world.ability_engine import initialize_domain_resource
+    from world.ability_engine import initialize_domain_resource, sync_character_ability_unlocks
     initialize_domain_resource(character)
+    sync_character_ability_unlocks(character)
     return True, f"You have joined the {guild['name']}."
 
 

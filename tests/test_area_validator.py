@@ -10,12 +10,14 @@ import unittest
 from world.area_validator import (
     validate_zone,
     ValidationError,
+    AreaBuilderValidationError,
     VALID_ZONE_TYPES,
     VALID_CONTINENTS,
     VALID_NODE_TYPES,
     VALID_DIRECTIONS,
     VALID_FACTION_TERRITORIES,
     VALID_ROOM_TYPES,
+    validate_spawn_condition,
 )
 
 
@@ -382,6 +384,27 @@ class TestValidateZoneFullyValid(unittest.TestCase):
         self.assertIn("zone.continent", field_paths)
         self.assertIn("rooms[0].room_type", field_paths)
         self.assertIn("exits[0].direction", field_paths)
+
+
+class TestValidateSpawnCondition(unittest.TestCase):
+    """Authored spawn conditions fail closed unless explicitly supported."""
+
+    def test_node_active_is_allowed(self):
+        self.assertIsNone(validate_spawn_condition("node_active"))
+
+    def test_node_failure_above_integer_is_allowed(self):
+        self.assertIsNone(validate_spawn_condition("node_failure_above_25"))
+
+    def test_empty_condition_is_allowed(self):
+        self.assertIsNone(validate_spawn_condition(""))
+
+    def test_unknown_condition_raises(self):
+        with self.assertRaises(AreaBuilderValidationError):
+            validate_spawn_condition("quest_complete:starter_arc")
+
+    def test_non_numeric_threshold_raises(self):
+        with self.assertRaises(AreaBuilderValidationError):
+            validate_spawn_condition("node_failure_above_high")
 
 
 if __name__ == "__main__":

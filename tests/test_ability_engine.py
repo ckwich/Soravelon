@@ -39,15 +39,23 @@ def _mock_character(
     echoes_investigation_bonus=None,
     reagent_stock=None,
     component_stock=None,
+    char_id=1,
+    key="TestChar",
+    combat_handler=None,
+    group_leader_id=None,
 ):
     """Create a MagicMock character with ndb/db for ability engine tests."""
     char = MagicMock()
+    char.id = char_id
+    char.key = key
     char.ndb = SimpleNamespace(
         ability_cooldowns=ability_cooldowns if ability_cooldowns is not None else {},
         domain_resource=domain_resource,
         ancestry_ability_used=ancestry_ability_used,
         active_effects=[],
         ability_used_this_turn=False,
+        combat_handler=combat_handler,
+        group_leader_id=group_leader_id,
     )
     char.db = SimpleNamespace(
         guild_id=guild_id,
@@ -121,6 +129,14 @@ class TestAbilityRegistryStructure(unittest.TestCase):
         self.assertEqual(ABILITY_TIERS[1], 0)
         self.assertEqual(ABILITY_TIERS[4], 85)
 
+    def test_ancestry_abilities_are_authored_and_not_mixed_into_domain_pool(self):
+        """Starting ancestry abilities exist but do not auto-grant through domain tiers."""
+        for ability_id in ("second_wind", "immovable", "vanish", "audacity"):
+            self.assertIn(ability_id, ABILITIES)
+
+        self.assertNotIn("second_wind", DOMAIN_ABILITIES["combat"][1])
+        self.assertNotIn("vanish", DOMAIN_ABILITIES["subterfuge"][1])
+
 
 # ===========================================================================
 # ABL-02: use_ability dispatch routing
@@ -176,6 +192,63 @@ class TestUseAbilityDispatch(unittest.TestCase):
         self.assertIn("not unlocked", msg.lower())
 
 
+class TestAbilityUnlockSync(unittest.TestCase):
+    def test_expected_unlocks_include_ancestry_and_tiered_primary_domain(self):
+        from world.ability_engine import get_expected_unlocked_ability_ids
+
+        char = _mock_character(guild_id="ironblood")
+        char.db.ancestry = "human"
+        char.db.primary_domain = "combat"
+        char.db.secondary_domain = "subterfuge"
+        char.db.subclass_id = "duskblade"
+        char.db.domain_scores = {"combat": 30.0, "subterfuge": 0.0}
+
+        expected = get_expected_unlocked_ability_ids(char)
+
+        self.assertIn("second_wind", expected)
+        self.assertIn("crushing_advance", expected)
+        self.assertIn("iron_resolve", expected)
+        self.assertNotIn("rending_strike", expected)
+        self.assertNotIn("duskblade_shadow_strike", expected)
+
+    def test_expected_unlocks_gain_signature_abilities_when_tier_reached(self):
+        from world.ability_engine import get_expected_unlocked_ability_ids
+
+        char = _mock_character(guild_id="ironblood")
+        char.db.ancestry = "human"
+        char.db.primary_domain = "combat"
+        char.db.secondary_domain = "subterfuge"
+        char.db.subclass_id = "duskblade"
+        char.db.domain_scores = {"combat": 80.0, "subterfuge": 30.0}
+
+        expected = get_expected_unlocked_ability_ids(char)
+
+        self.assertIn("rending_strike", expected)
+        self.assertIn("duskblade_shadow_strike", expected)
+        self.assertNotIn("duskblade_vanishing_edge", expected)
+
+    @patch("world.models.CharacterAbility")
+    def test_sync_unlocks_grants_missing_expected_records(self, mock_ca_cls):
+        from world.ability_engine import sync_character_ability_unlocks
+
+        mock_ca_cls.objects.get_or_create.side_effect = (
+            lambda **kwargs: (MagicMock(), kwargs["ability_id"] != "second_wind")
+        )
+
+        char = _mock_character(guild_id="ironblood")
+        char.db.ancestry = "human"
+        char.db.primary_domain = "combat"
+        char.db.secondary_domain = "subterfuge"
+        char.db.subclass_id = "duskblade"
+        char.db.domain_scores = {"combat": 30.0, "subterfuge": 0.0}
+
+        granted = sync_character_ability_unlocks(char)
+
+        self.assertNotIn("second_wind", granted)
+        self.assertIn("crushing_advance", granted)
+        self.assertIn("iron_resolve", granted)
+
+
 # ===========================================================================
 # ABL-05: Cooldown management
 # ===========================================================================
@@ -219,6 +292,46 @@ class TestCooldowns(unittest.TestCase):
 
         self.assertTrue(ok)
         self.assertEqual(char.ndb.ability_cooldowns["shadow_step"], 2)
+
+    @patch("world.models.CharacterAbility.objects.filter")
+    def test_charged_ability_requires_charge_flow_in_combat(self, mock_ca_filter):
+        """Charge-turn abilities cannot be fired instantly through use_ability."""
+        from world.ability_engine import use_ability
+
+        mock_ca_filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "mana", "current": 100, "max": 100},
+            combat_handler=MagicMock(),
+        )
+
+        ok, msg = use_ability(char, "meteor_strike", target=MagicMock())
+
+        self.assertFalse(ok)
+        self.assertIn("must be charged", msg.lower())
+        self.assertEqual(char.ndb.domain_resource["current"], 100)
+
+    @patch("world.models.CharacterAbility.objects.filter")
+    def test_internal_charge_release_can_resolve_ability(self, mock_ca_filter):
+        """The auto-release path bypasses the manual charge gate."""
+        from world.ability_engine import use_ability
+
+        mock_ca_filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "mana", "current": 100, "max": 100},
+            combat_handler=MagicMock(),
+        )
+        char.ndb.resolving_charged_ability = True
+        target = MagicMock()
+
+        with patch.dict(
+            "world.ability_engine.EFFECT_HANDLERS",
+            {"damage": lambda character, ability, resolved_target: (True, "Meteor Strike lands.")},
+            clear=False,
+        ):
+            ok, msg = use_ability(char, "meteor_strike", target=target)
+
+        self.assertTrue(ok)
+        self.assertIn("Meteor Strike lands.", msg)
 
     def test_decrement_cooldowns(self):
         """decrement_cooldowns reduces all by 1, removes expired."""
@@ -924,3 +1037,238 @@ class TestTypedResourceVariants(unittest.TestCase):
         ability = {"resource_cost": 10, "effect_params": {"component_type": "conduit"}}
         ok, msg = _handle_components_spend(char, ability)
         self.assertTrue(ok)
+
+
+class TestAbilityRuntimeAlignment(unittest.TestCase):
+    @patch("world.models.CharacterAbility")
+    def test_silence_blocks_ability_before_spending_resources(self, mock_ca_cls):
+        from world.ability_engine import use_ability
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "momentum", "current": 100, "max": 100},
+        )
+        char.ndb.active_effects = [{
+            "type": "silence",
+            "stacks": 1,
+            "duration": 2,
+            "magnitude": 1.0,
+            "source_id": None,
+            "max_stacks": 1,
+            "is_compound": False,
+            "data": {},
+        }]
+
+        ok, msg = use_ability(char, "crushing_advance")
+
+        self.assertFalse(ok)
+        self.assertIn("silenced", msg.lower())
+        self.assertEqual(char.ndb.domain_resource["current"], 100)
+
+    @patch("world.models.CharacterAbility")
+    def test_failed_handler_restores_resource_and_skips_cooldown(self, mock_ca_cls):
+        from world.ability_engine import use_ability
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "momentum", "current": 100, "max": 100},
+        )
+
+        with patch.dict("world.ability_engine.EFFECT_HANDLERS", {"damage": lambda *_: (False, "Handler failed.")}, clear=False):
+            ok, msg = use_ability(char, "crushing_advance")
+
+        self.assertFalse(ok)
+        self.assertEqual(char.ndb.domain_resource["current"], 100)
+        self.assertEqual(char.ndb.ability_cooldowns, {})
+
+    @patch("world.combat_engine.resolve_ability_damage", return_value=(True, "hit", 25))
+    @patch("world.models.CharacterAbility")
+    def test_aoe_damage_hits_every_enemy_in_combat(self, mock_ca_cls, mock_resolve):
+        from world.ability_engine import use_ability
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+
+        combat_handler = MagicMock()
+        mob_a = MagicMock()
+        mob_a.key = "Mob A"
+        mob_b = MagicMock()
+        mob_b.key = "Mob B"
+        mob_c = MagicMock()
+        mob_c.key = "Mob C"
+        combat_handler.get_mob_combatants.return_value = [mob_a, mob_b, mob_c]
+
+        char = _mock_character(
+            domain_resource={"type": "mana", "current": 100, "max": 100},
+            combat_handler=combat_handler,
+        )
+        char.ndb.resolving_charged_ability = True
+
+        ok, msg = use_ability(char, "meteor_strike", target=mob_a)
+
+        self.assertTrue(ok)
+        self.assertEqual(mock_resolve.call_count, 3)
+        second_params = mock_resolve.call_args_list[1].args[1]["effect_params"]
+        self.assertEqual(second_params["damage_base"], 120)
+
+    @patch("world.status_effects.apply_effect", return_value=(True, "Applied"))
+    @patch("world.combat_engine.resolve_heal", return_value=(True, "healed", 40))
+    @patch("world.group_engine._get_group_members")
+    @patch("world.group_engine._get_leader")
+    @patch("world.models.CharacterAbility")
+    def test_group_heal_targets_all_group_members(
+        self,
+        mock_ca_cls,
+        mock_get_leader,
+        mock_get_members,
+        mock_resolve_heal,
+        mock_apply_effect,
+    ):
+        from world.ability_engine import use_ability
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+
+        char = _mock_character(
+            domain_resource={"type": "influence", "current": 100, "max": 100},
+            group_leader_id=1,
+        )
+        ally = _mock_character(
+            domain_resource={"type": "influence", "current": 100, "max": 100},
+            char_id=2,
+            key="Ally",
+            group_leader_id=1,
+            location=char.location,
+        )
+        mock_get_leader.return_value = char
+        mock_get_members.return_value = [char, ally]
+
+        ok, msg = use_ability(char, "wayfinder_heart_of_the_wild", target=ally)
+
+        self.assertTrue(ok)
+        self.assertEqual(mock_resolve_heal.call_count, 2)
+        self.assertEqual(mock_apply_effect.call_count, 2)
+
+
+class TestAbilityTruthfulnessSweep(unittest.TestCase):
+    @patch("world.ability_engine.random.random", return_value=0.0)
+    @patch("world.models.CharacterAbility")
+    def test_venom_coat_applies_next_attack_buff_to_self(self, mock_ca_cls, mock_random):
+        from world.ability_engine import use_ability
+        from world.status_effects import has_effect
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "reagents", "current": 25, "max": 100},
+        )
+
+        ok, _ = use_ability(char, "venom_coat")
+
+        self.assertTrue(ok)
+        self.assertTrue(has_effect(char, "venom_coat"))
+
+    @patch("world.models.CharacterAbility")
+    def test_node_tap_restores_spent_mana(self, mock_ca_cls):
+        from world.ability_engine import use_ability
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "mana", "current": 70, "max": 100},
+        )
+
+        ok, _ = use_ability(char, "spellseeker_node_tap")
+
+        self.assertTrue(ok)
+        self.assertEqual(char.ndb.domain_resource["current"], 85)
+
+    @patch("world.models.CharacterAbility")
+    def test_echo_mend_applies_regeneration_buff(self, mock_ca_cls):
+        from world.ability_engine import use_ability
+        from world.status_effects import has_effect
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "resonance", "current": 100, "max": 100},
+        )
+        char.ndb.hp = 50
+
+        ok, _ = use_ability(char, "echo_mend", target=char)
+
+        self.assertTrue(ok)
+        self.assertTrue(has_effect(char, "regeneration"))
+
+    @patch("world.models.CharacterAbility")
+    @patch("world.combat_engine.resolve_ability_damage", return_value=(True, "hit", 40))
+    def test_construct_summon_creates_lingering_attack_buff(self, mock_resolve, mock_ca_cls):
+        from world.ability_engine import use_ability
+        from world.status_effects import has_effect
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "echoes", "current": 80, "max": 100},
+        )
+        target = MagicMock()
+        target.id = 999
+        target.key = "Target"
+        target.db = SimpleNamespace(base_stats=None)
+        target.ndb = SimpleNamespace(hp=100, active_effects=[])
+
+        ok, _ = use_ability(char, "dragonwright_ancient_construct", target=target)
+
+        self.assertTrue(ok)
+        self.assertTrue(has_effect(char, "sustained_attack"))
+
+    @patch("world.ability_engine.random.random", return_value=0.0)
+    @patch("world.models.CharacterAbility")
+    @patch("world.status_effects.apply_effect", return_value=(True, "Applied"))
+    def test_volatile_mixture_applies_burn_and_poison(self, mock_apply_effect, mock_ca_cls, mock_random):
+        from world.ability_engine import use_ability
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "mana", "current": 100, "max": 100},
+        )
+        target = MagicMock()
+        target.key = "Target"
+        target.db = SimpleNamespace(base_stats=None)
+        target.ndb = SimpleNamespace(hp=100, active_effects=[])
+
+        ok, _ = use_ability(char, "fusewright_volatile_mixture", target=target)
+
+        self.assertTrue(ok)
+        effect_types = [call.args[1] for call in mock_apply_effect.call_args_list]
+        self.assertIn("burn", effect_types)
+        self.assertIn("poison", effect_types)
+
+    @patch("world.status_effects.apply_effect", return_value=(True, "Applied"))
+    @patch("world.group_engine._get_group_members")
+    @patch("world.group_engine._get_leader")
+    @patch("world.models.CharacterAbility")
+    def test_rally_buffs_scale_with_party_size(
+        self,
+        mock_ca_cls,
+        mock_get_leader,
+        mock_get_members,
+        mock_apply_effect,
+    ):
+        from world.ability_engine import use_ability
+
+        mock_ca_cls.objects.filter.return_value.exists.return_value = True
+        char = _mock_character(
+            domain_resource={"type": "influence", "current": 100, "max": 100},
+            group_leader_id=1,
+        )
+        ally = _mock_character(
+            domain_resource={"type": "influence", "current": 100, "max": 100},
+            char_id=2,
+            key="Ally",
+            group_leader_id=1,
+            location=char.location,
+        )
+        mock_get_leader.return_value = char
+        mock_get_members.return_value = [char, ally]
+
+        ok, _ = use_ability(char, "rally_the_fallen")
+
+        self.assertTrue(ok)
+        reduction_calls = [call for call in mock_apply_effect.call_args_list if call.args[1] == "group_damage_reduction"]
+        self.assertTrue(reduction_calls)
+        self.assertGreater(reduction_calls[0].args[3], 0.15)

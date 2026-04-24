@@ -1,0 +1,21 @@
+[Unit]
+Description=Soravelon Evennia Service
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=soravelon
+Group=soravelon
+WorkingDirectory=/srv/soravelon
+EnvironmentFile=/etc/soravelon/soravelon.env
+ExecStart=/srv/soravelon/.venv/bin/evennia start
+ExecStop=/srv/soravelon/.venv/bin/evennia stop
+ExecReload=/srv/soravelon/.venv/bin/evennia reload
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=120
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

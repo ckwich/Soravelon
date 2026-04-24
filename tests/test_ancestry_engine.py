@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch, call
 _ANCESTRY_PATCHES = [
     patch("world.ancestry_engine._grant_starter_kit"),
     patch("world.skill_engine.apply_ancestry_skill_seeds"),
+    patch("world.ability_engine.sync_character_ability_unlocks"),
 ]
 
 
@@ -38,6 +39,7 @@ class _AncestryTestBase(unittest.TestCase):
         self._patchers = [
             patch("world.ancestry_engine._grant_starter_kit"),
             patch("world.skill_engine.apply_ancestry_skill_seeds"),
+            patch("world.ability_engine.sync_character_ability_unlocks"),
         ]
         for p in self._patchers:
             p.start()

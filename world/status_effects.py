@@ -50,6 +50,26 @@ NON_STACKABLE_EFFECTS = {
     "evasion": {"evasion_bonus": 0.15},  # evasion buff (subterfuge builder)
     "fortify": {"damage_reduction": 0.15},  # 15% damage reduction (medic blessing)
     "vigor": {"damage_bonus": 0.15},  # 15% damage bonus (medic blessing)
+    "warding": {"damage_reduction": 0.15},
+    "silence": {"silenced": True},
+    "frozen": {"skip_turn": True, "prevents_flee": True, "action_budget_penalty": 1},
+    "stealth": {"stealthed": True, "evasion_bonus": 0.20},
+    "accuracy": {"accuracy_bonus": 0.15},
+    "damage_bonus": {"damage_bonus": 0.15},
+    "damage_reduction": {"damage_reduction": 0.15},
+    "group_damage_bonus": {"damage_bonus": 0.15},
+    "group_damage_reduction": {"damage_reduction": 0.15},
+    "damage_absorb": {"damage_absorb": 40},
+    "damage_redirect": {"damage_absorb": 50},
+    "resource_efficiency": {"resource_cost_reduction_pct": 0.25},
+    "group_resource_regen": {"resource_regen_per_round": 5},
+    "all_stats": {"all_stats": 0.10},
+    "stat_boost": {"stat_multipliers": {}},
+    "sustained_attack": {"damage_bonus": 0.20},
+    "companion_mode_change": {},
+    "regeneration": {"heal_per_round": 15},
+    "venom_coat": {},
+    "guaranteed_crit": {},
 }
 
 # All known effect types for quick membership checks
@@ -138,6 +158,27 @@ def _find_effect(effects, effect_type):
     return None, -1
 
 
+def _copy_effect_data(data):
+    """Return a shallow copy of effect metadata for safe storage."""
+    if not data:
+        return {}
+    return dict(data)
+
+
+def _build_effect_entry(effect_type, duration, magnitude, source_id, max_stacks, data=None, is_compound=False):
+    """Build a normalized effect entry dict."""
+    return {
+        "type": effect_type,
+        "stacks": 1,
+        "duration": duration,
+        "magnitude": magnitude,
+        "source_id": source_id,
+        "max_stacks": max_stacks,
+        "is_compound": is_compound,
+        "data": _copy_effect_data(data),
+    }
+
+
 def _has_immunity(target, effect_type):
     """Check if target is immune to an effect type (mob immunity support)."""
     immunities = target.ndb.immunities if hasattr(target.ndb, "immunities") else None
@@ -150,11 +191,150 @@ def _has_immunity(target, effect_type):
     return False
 
 
+def _resolve_effect_source(source_id):
+    """Best-effort source object lookup for periodic effects."""
+    if not source_id:
+        return None
+    try:
+        import evennia
+        results = evennia.search_object("#" + str(source_id))
+        return results[0] if results else None
+    except Exception:
+        return None
+
+
+def _numeric(value, default=0):
+    """Return numeric values directly and fall back for MagicMock-like objects."""
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, (int, float)):
+        return value
+    return default
+
+
+def _get_max_hp(target):
+    """Best-effort max HP lookup for players, mobs, and test doubles."""
+    if getattr(target.db, "base_stats", None):
+        try:
+            from world.base_attributes import derive_max_hp
+            return derive_max_hp(target)
+        except Exception:
+            pass
+
+    for candidate in (
+        getattr(target.ndb, "max_hp", None),
+        getattr(target.db, "hp_max", None),
+        getattr(target.db, "max_hp", None),
+    ):
+        resolved = _numeric(candidate, default=None)
+        if resolved is not None and resolved > 0:
+            return int(resolved)
+    current_hp = _numeric(getattr(target.ndb, "hp", None), default=100)
+    return max(1, int(current_hp))
+
+
+def _heal_target(target, amount):
+    """Heal a combatant up to their max HP and return the actual amount healed."""
+    amount = int(_numeric(amount, 0))
+    if amount <= 0:
+        return 0
+
+    max_hp = _get_max_hp(target)
+    current_hp = int(_numeric(getattr(target.ndb, "hp", 0), 0))
+    new_hp = min(max_hp, current_hp + amount)
+    target.ndb.hp = new_hp
+    return new_hp - current_hp
+
+
+def _collect_periodic_allies(source):
+    """Return same-room allies for periodic healing canopies and support effects."""
+    if source is None:
+        return []
+
+    if getattr(source.db, "base_stats", None):
+        leader_id = getattr(source.ndb, "group_leader_id", None)
+        if leader_id:
+            try:
+                from world.group_engine import _get_group_members, _get_leader
+
+                leader = _get_leader(source)
+                if leader:
+                    allies = []
+                    for member in _get_group_members(leader):
+                        if member and getattr(member, "location", None) == getattr(source, "location", None):
+                            allies.append(member)
+                    if allies:
+                        return allies
+            except Exception:
+                pass
+    return [source]
+
+
+def _get_periodic_enemy_target(owner, preferred_id=None):
+    """Resolve a live hostile target for autonomous periodic attacks."""
+    handler = getattr(owner.ndb, "combat_handler", None)
+    if not handler:
+        return None
+
+    if getattr(owner.db, "base_stats", None):
+        candidates = [enemy for enemy in handler.get_mob_combatants() if enemy]
+    else:
+        candidates = [enemy for enemy in handler.get_player_combatants() if enemy]
+
+    if preferred_id:
+        for candidate in candidates:
+            if getattr(candidate, "id", None) == preferred_id and _numeric(getattr(candidate.ndb, "hp", 1), 1) > 0:
+                return candidate
+
+    for candidate in candidates:
+        if _numeric(getattr(candidate.ndb, "hp", 1), 1) > 0:
+            return candidate
+    return None
+
+
+def _apply_periodic_attack(owner, entry):
+    """Resolve a periodic autonomous strike from a lingering effect."""
+    data = entry.get("data") or {}
+    damage = int(_numeric(data.get("damage_per_round"), 0))
+    if damage <= 0:
+        return None
+
+    target = _get_periodic_enemy_target(owner, preferred_id=data.get("periodic_target_id"))
+    if target is None:
+        return None
+
+    ability = {
+        "name": data.get("ability_name", entry["type"].replace("_", " ").title()),
+        "effect_type": "damage",
+        "scaling_primary": data.get("scaling_primary", "engineering"),
+        "scaling_secondary": data.get("scaling_secondary"),
+        "element": data.get("element", "physical"),
+        "effect_params": {
+            "damage_base": damage,
+            "status_effect": data.get("status_effect"),
+            "duration": data.get("status_duration", data.get("duration", 3)),
+            "magnitude": data.get("status_magnitude", data.get("magnitude", 1.0)),
+            "secondary_effects": list(data.get("secondary_effects", []) or []),
+            "ignore_attack_buffs": True,
+        },
+    }
+
+    try:
+        from world.combat_engine import resolve_ability_damage
+
+        ok, _, dealt = resolve_ability_damage(owner, ability, target)
+        if ok:
+            return target, dealt
+    except Exception:
+        return None
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Core API
 # ---------------------------------------------------------------------------
 
-def apply_effect(target, effect_type, duration, magnitude=1.0, source_id=None):
+def apply_effect(target, effect_type, duration, magnitude=1.0, source_id=None, data=None):
     """
     Apply a status effect to target.
 
@@ -164,6 +344,7 @@ def apply_effect(target, effect_type, duration, magnitude=1.0, source_id=None):
         duration: Rounds the effect lasts
         magnitude: Power level (used for non-stackable replacement logic)
         source_id: dbref of the source combatant
+        data: Optional effect-specific metadata (value, stats, absorb pool, etc.)
 
     Returns:
         (bool, str): Success flag and descriptive message.
@@ -183,12 +364,18 @@ def apply_effect(target, effect_type, duration, magnitude=1.0, source_id=None):
     effects = _get_effects(target)
 
     if effect_type in STACKABLE_EFFECTS:
-        result = _apply_stackable(effects, effect_type, duration, magnitude, source_id)
+        result = _apply_stackable(
+            effects, effect_type, duration, magnitude, source_id, data=data
+        )
     elif effect_type in NON_STACKABLE_EFFECTS:
-        result = _apply_non_stackable(effects, effect_type, duration, magnitude, source_id)
+        result = _apply_non_stackable(
+            effects, effect_type, duration, magnitude, source_id, data=data
+        )
     else:
         # Compound result type -- treat as non-stackable
-        result = _apply_non_stackable(effects, effect_type, duration, magnitude, source_id)
+        result = _apply_non_stackable(
+            effects, effect_type, duration, magnitude, source_id, data=data
+        )
 
     _save_effects(target, effects)
 
@@ -202,7 +389,7 @@ def apply_effect(target, effect_type, duration, magnitude=1.0, source_id=None):
     return (result[0], msg)
 
 
-def _apply_stackable(effects, effect_type, duration, magnitude, source_id):
+def _apply_stackable(effects, effect_type, duration, magnitude, source_id, data=None):
     """Apply or stack a stackable effect. Mutates effects list in place."""
     spec = STACKABLE_EFFECTS[effect_type]
     max_stacks = spec["max_stacks"]
@@ -215,23 +402,28 @@ def _apply_stackable(effects, effect_type, duration, magnitude, source_id):
         existing["stacks"] = new_stacks
         existing["duration"] = max(existing["duration"], duration)
         existing["magnitude"] = max(existing["magnitude"], magnitude)
+        if data:
+            merged = dict(existing.get("data") or {})
+            merged.update(data)
+            existing["data"] = merged
         if new_stacks == old_stacks:
             return (True, f"{effect_type.capitalize()} refreshed ({new_stacks} stacks, max).")
         return (True, f"{effect_type.capitalize()} applied ({new_stacks} stacks).")
     else:
-        effects.append({
-            "type": effect_type,
-            "stacks": 1,
-            "duration": duration,
-            "magnitude": magnitude,
-            "source_id": source_id,
-            "max_stacks": max_stacks,
-            "is_compound": False,
-        })
+        effects.append(
+            _build_effect_entry(
+                effect_type,
+                duration,
+                magnitude,
+                source_id,
+                max_stacks,
+                data=data,
+            )
+        )
         return (True, f"{effect_type.capitalize()} applied (1 stack).")
 
 
-def _apply_non_stackable(effects, effect_type, duration, magnitude, source_id):
+def _apply_non_stackable(effects, effect_type, duration, magnitude, source_id, data=None):
     """Apply or replace a non-stackable effect. Mutates effects list in place."""
     existing, existing_idx = _find_effect(effects, effect_type)
 
@@ -239,26 +431,26 @@ def _apply_non_stackable(effects, effect_type, duration, magnitude, source_id):
         if existing["magnitude"] >= magnitude:
             return (False, f"A stronger {effect_type} is already active.")
         # Replace weaker with stronger
-        effects[existing_idx] = {
-            "type": effect_type,
-            "stacks": 1,
-            "duration": duration,
-            "magnitude": magnitude,
-            "source_id": source_id,
-            "max_stacks": 1,
-            "is_compound": False,
-        }
+        effects[existing_idx] = _build_effect_entry(
+            effect_type,
+            duration,
+            magnitude,
+            source_id,
+            1,
+            data=data,
+        )
         return (True, f"{effect_type.capitalize()} replaced with stronger effect.")
     else:
-        effects.append({
-            "type": effect_type,
-            "stacks": 1,
-            "duration": duration,
-            "magnitude": magnitude,
-            "source_id": source_id,
-            "max_stacks": 1,
-            "is_compound": False,
-        })
+        effects.append(
+            _build_effect_entry(
+                effect_type,
+                duration,
+                magnitude,
+                source_id,
+                1,
+                data=data,
+            )
+        )
         return (True, f"{effect_type.capitalize()} applied.")
 
 
@@ -356,6 +548,7 @@ def check_compound_triggers(target):
                 "source_id": None,
                 "max_stacks": 1,
                 "is_compound": True,
+                "data": {},
             })
             active_types.add(result_name)
             triggered.append(result_name)
@@ -386,12 +579,17 @@ def tick_effects(target):
     for entry in effects:
         etype = entry["type"]
         stacks = entry.get("stacks", 1)
+        data = entry.get("data") or {}
 
         # DoT damage for stackable damage effects
         if etype in ("poison", "bleed", "burn"):
-            spec = STACKABLE_EFFECTS[etype]
-            diminishing = spec["diminishing"]
-            damage = sum(diminishing[:stacks])
+            custom_tick = _numeric(data.get("damage_per_tick"), 0)
+            if custom_tick > 0:
+                damage = int(custom_tick)
+            else:
+                spec = STACKABLE_EFFECTS[etype]
+                diminishing = spec["diminishing"]
+                damage = sum(diminishing[:stacks])
 
             # Node effect modifiers on DoT damage
             room = getattr(target, "location", None)
@@ -410,6 +608,27 @@ def tick_effects(target):
             messages.append(
                 f"{etype.capitalize()} deals {damage} damage ({stacks} stacks)."
             )
+
+            source = _resolve_effect_source(entry.get("source_id"))
+            heal_source = int(_numeric(data.get("heal_source_per_round"), 0))
+            if source and heal_source > 0:
+                healed = _heal_target(source, heal_source)
+                if healed > 0:
+                    messages.append(f"{source.key} draws |g{healed}|n health from the lingering effect.")
+
+            heal_allies = int(_numeric(data.get("heal_allies_per_round"), 0))
+            if source and heal_allies > 0:
+                total_healed = 0
+                allies_healed = 0
+                for ally in _collect_periodic_allies(source):
+                    healed = _heal_target(ally, heal_allies)
+                    if healed > 0:
+                        allies_healed += 1
+                        total_healed += healed
+                if total_healed > 0:
+                    messages.append(
+                        f"{source.key}'s lingering canopy restores |g{total_healed}|n health across {allies_healed} allies."
+                    )
 
         # Drain reduces stamina
         elif etype == "drain":
@@ -439,9 +658,9 @@ def tick_effects(target):
                 target.ndb.hp = max(0, current_hp - burst)
                 messages.append(f"Steam scalds for {burst} damage!")
 
-        # Discharge burst damage (compound result)
         elif etype == "discharge":
-            # Burst damage on first tick only
+            # Burst damage is percentage-based, applied once on creation tick
+            # Subsequent ticks maintain the action penalty
             initial = entry.get("initial_duration", entry["duration"])
             if entry["duration"] >= initial:
                 max_hp = getattr(target.ndb, "max_hp", 100) or 100
@@ -450,11 +669,18 @@ def tick_effects(target):
                 target.ndb.hp = max(0, current_hp - burst)
                 messages.append(f"Electrical discharge deals {burst} damage!")
 
-        # Discharge burst damage (consuming compound: wet + shocked)
-        elif etype == "discharge":
-            # Burst damage is percentage-based, applied once on creation tick
-            # Subsequent ticks maintain the action penalty
-            pass
+        periodic_heal = int(_numeric(data.get("heal_per_round"), 0))
+        if periodic_heal > 0:
+            healed = _heal_target(target, periodic_heal)
+            if healed > 0:
+                messages.append(f"{etype.capitalize()} restores |g{healed}|n health.")
+
+        if etype == "sustained_attack" and _numeric(data.get("damage_per_round"), 0) > 0:
+            source = _resolve_effect_source(entry.get("source_id")) or target
+            strike = _apply_periodic_attack(source, entry)
+            if strike is not None:
+                enemy, damage = strike
+                messages.append(f"{entry.get('data', {}).get('ability_name', etype.replace('_', ' ').title())} hits {enemy.key} for |r{damage}|n damage.")
 
         # Decrement duration
         entry["duration"] -= 1
@@ -500,6 +726,16 @@ def get_effect_modifiers(target):
         "skip_turn": False,
         "prevents_flee": False,
         "damage_reduction": 0.0,
+        "damage_bonus": 0.0,
+        "accuracy_bonus": 0.0,
+        "evasion_bonus": 0.0,
+        "silenced": False,
+        "stealthed": False,
+        "damage_absorb": 0,
+        "reflect_percent": 0.0,
+        "resource_cost_reduction_pct": 0.0,
+        "resource_regen_per_round": 0,
+        "stat_multipliers": {},
         "no_hostile_action": False,
     }
 
@@ -508,11 +744,12 @@ def get_effect_modifiers(target):
     for entry in effects:
         etype = entry["type"]
         stacks = entry.get("stacks", 1)
+        data = entry.get("data") or {}
 
         if etype == "slow":
-            modifiers["action_budget_penalty"] += NON_STACKABLE_EFFECTS["slow"]["action_budget_penalty"]
+            modifiers["action_budget_penalty"] += data.get("action_budget_penalty", NON_STACKABLE_EFFECTS["slow"]["action_budget_penalty"])
         elif etype == "shocked":
-            modifiers["action_budget_penalty"] += NON_STACKABLE_EFFECTS["shocked"]["action_budget_penalty"]
+            modifiers["action_budget_penalty"] += data.get("action_budget_penalty", NON_STACKABLE_EFFECTS["shocked"]["action_budget_penalty"])
         elif etype == "root":
             modifiers["prevents_flee"] = True
         elif etype == "blind":
@@ -523,7 +760,7 @@ def get_effect_modifiers(target):
             modifiers["skip_turn"] = True
             modifiers["no_hostile_action"] = True
         elif etype == "haste":
-            modifiers["action_budget_bonus"] += NON_STACKABLE_EFFECTS["haste"]["action_budget_bonus"]
+            modifiers["action_budget_bonus"] += int(data.get("action_budget_bonus", NON_STACKABLE_EFFECTS["haste"]["action_budget_bonus"]))
         elif etype == "weaken":
             spec = STACKABLE_EFFECTS["weaken"]
             modifiers["damage_reduction"] += spec["reduction_per_stack"] * stacks
@@ -541,8 +778,164 @@ def get_effect_modifiers(target):
             # Compound: action penalty (wet + shocked)
             modifiers["action_budget_penalty"] += 1
         elif etype == "fortify":
-            modifiers["damage_reduction"] += NON_STACKABLE_EFFECTS["fortify"]["damage_reduction"]
+            reduction = data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["fortify"]["damage_reduction"]))
+            modifiers["damage_reduction"] += reduction
         elif etype == "vigor":
-            modifiers["damage_bonus"] = modifiers.get("damage_bonus", 0.0) + NON_STACKABLE_EFFECTS["vigor"]["damage_bonus"]
+            bonus = data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["vigor"]["damage_bonus"]))
+            modifiers["damage_bonus"] += bonus
+        elif etype == "warding":
+            modifiers["damage_reduction"] += data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["warding"]["damage_reduction"]))
+        elif etype in ("damage_reduction", "group_damage_reduction"):
+            modifiers["damage_reduction"] += data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS[etype]["damage_reduction"]))
+        elif etype in ("damage_bonus", "group_damage_bonus"):
+            modifiers["damage_bonus"] += data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS[etype]["damage_bonus"]))
+        elif etype == "accuracy":
+            modifiers["accuracy_bonus"] += data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["accuracy"]["accuracy_bonus"]))
+        elif etype == "evasion":
+            modifiers["evasion_bonus"] += data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["evasion"]["evasion_bonus"]))
+        elif etype == "silence":
+            modifiers["silenced"] = True
+        elif etype == "frozen":
+            modifiers["skip_turn"] = True
+            modifiers["prevents_flee"] = True
+            modifiers["action_budget_penalty"] += data.get("action_budget_penalty", NON_STACKABLE_EFFECTS["frozen"]["action_budget_penalty"])
+        elif etype == "stealth":
+            modifiers["stealthed"] = True
+            modifiers["evasion_bonus"] += data.get("evasion_bonus", NON_STACKABLE_EFFECTS["stealth"]["evasion_bonus"])
+        elif etype == "damage_absorb":
+            remaining = data.get("remaining", data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["damage_absorb"]["damage_absorb"])))
+            modifiers["damage_absorb"] += int(remaining)
+        elif etype == "damage_redirect":
+            remaining = data.get("remaining", data.get("absorb", data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["damage_redirect"]["damage_absorb"]))))
+            modifiers["damage_absorb"] += int(remaining)
+        elif etype == "resource_efficiency":
+            modifiers["resource_cost_reduction_pct"] += data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["resource_efficiency"]["resource_cost_reduction_pct"]))
+        elif etype == "group_resource_regen":
+            modifiers["resource_regen_per_round"] += int(data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["group_resource_regen"]["resource_regen_per_round"])))
+        elif etype == "all_stats":
+            boost = data.get("value", entry.get("magnitude", NON_STACKABLE_EFFECTS["all_stats"]["all_stats"]))
+            for stat in ("strength", "agility", "endurance", "acuity", "mana", "presence", "resonance"):
+                modifiers["stat_multipliers"][stat] = modifiers["stat_multipliers"].get(stat, 0.0) + boost
+        elif etype == "stat_boost":
+            for stat, boost in (data.get("stats") or {}).items():
+                modifiers["stat_multipliers"][stat] = modifiers["stat_multipliers"].get(stat, 0.0) + boost
+        elif etype == "sustained_attack":
+            modifiers["damage_bonus"] += data.get("damage_bonus", entry.get("magnitude", NON_STACKABLE_EFFECTS["sustained_attack"]["damage_bonus"]))
+        if data.get("reflect_percent"):
+            modifiers["reflect_percent"] += data["reflect_percent"]
 
+    modifiers["damage_reduction"] = min(modifiers["damage_reduction"], 0.80)
     return modifiers
+
+
+def mitigate_incoming_damage(target, damage):
+    """
+    Consume absorb/redirect effects before HP loss.
+
+    Returns:
+        (int, int): (remaining_damage, absorbed_damage)
+    """
+    if damage <= 0:
+        return 0, 0
+
+    effects = _get_effects(target)
+    if not effects:
+        return damage, 0
+
+    remaining = damage
+    absorbed_total = 0
+    changed = False
+
+    for entry in effects:
+        if entry["type"] not in ("damage_absorb", "damage_redirect"):
+            continue
+        data = dict(entry.get("data") or {})
+        pool = int(
+            data.get(
+                "remaining",
+                data.get(
+                    "absorb",
+                    data.get(
+                        "value",
+                        entry.get("magnitude", 0),
+                    ),
+                ),
+            )
+        )
+        if pool <= 0:
+            continue
+        absorbed = min(pool, remaining)
+        if absorbed <= 0:
+            continue
+        pool -= absorbed
+        remaining -= absorbed
+        absorbed_total += absorbed
+        data["remaining"] = pool
+        entry["data"] = data
+        changed = True
+        if pool <= 0:
+            entry["duration"] = 0
+        if remaining <= 0:
+            break
+
+    if changed:
+        surviving = [entry for entry in effects if entry.get("duration", 1) > 0]
+        _save_effects(target, surviving)
+
+    return remaining, absorbed_total
+
+
+def cleanse_one_negative_effect(target):
+    """Remove one hostile effect from target and return its type, if any."""
+    negative_priority = [
+        "frozen", "stun", "charm", "silence", "blind", "root", "slow",
+        "weaken", "shocked", "poison", "bleed", "burn", "drain",
+        "petrify", "steam", "discharge", "corruption", "venom_lag",
+    ]
+    effects = _get_effects(target)
+    for effect_type in negative_priority:
+        entry, idx = _find_effect(effects, effect_type)
+        if entry is not None:
+            del effects[idx]
+            _save_effects(target, effects)
+            return effect_type
+    return None
+
+
+def consume_attack_effects(attacker, consume=True):
+    """Return one-shot attack enhancers and optionally remove them from the attacker."""
+    effects = _get_effects(attacker)
+    payload = {
+        "bonus_damage": 0,
+        "guaranteed_crit": False,
+        "status_effects": [],
+    }
+    surviving = []
+
+    for entry in effects:
+        etype = entry["type"]
+        data = entry.get("data") or {}
+        if etype == "venom_coat":
+            payload["bonus_damage"] += int(_numeric(data.get("bonus_poison_damage"), 0))
+            status_effect = data.get("status_effect")
+            if status_effect:
+                payload["status_effects"].append(
+                    {
+                        "effect_type": status_effect,
+                        "duration": int(_numeric(data.get("duration"), 3)),
+                        "magnitude": _numeric(data.get("magnitude"), 1.0),
+                    }
+                )
+            if not consume:
+                surviving.append(entry)
+            continue
+        if etype == "guaranteed_crit":
+            payload["guaranteed_crit"] = True
+            if not consume:
+                surviving.append(entry)
+            continue
+        surviving.append(entry)
+
+    if consume:
+        _save_effects(attacker, surviving)
+    return payload

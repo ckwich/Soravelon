@@ -620,17 +620,17 @@ class TestEvaluateSpawnCondition(_MobSpawnerTestBase):
             room = _make_room(zone_id="zone_a")
             self.assertFalse(spawner._evaluate_spawn_condition("node_active", room))
 
-    def test_quest_complete_stub_returns_false(self):
+    def test_quest_complete_condition_fails_closed(self):
         room = _make_room()
         self.assertFalse(self.spawner._evaluate_spawn_condition("quest_complete:some_quest", room))
 
-    def test_time_of_day_stub_returns_true(self):
+    def test_time_of_day_condition_fails_closed(self):
         room = _make_room()
-        self.assertTrue(self.spawner._evaluate_spawn_condition("time_of_day:night", room))
+        self.assertFalse(self.spawner._evaluate_spawn_condition("time_of_day:night", room))
 
-    def test_unknown_condition_returns_true(self):
+    def test_unknown_condition_fails_closed(self):
         room = _make_room()
-        self.assertTrue(self.spawner._evaluate_spawn_condition("totally_unknown_condition_xyz", room))
+        self.assertFalse(self.spawner._evaluate_spawn_condition("totally_unknown_condition_xyz", room))
 
 
 if __name__ == "__main__":

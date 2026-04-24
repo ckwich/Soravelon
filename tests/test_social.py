@@ -35,7 +35,7 @@ class _MockNDB:
 
 def _make_char(name, zone_id="vaels_crossing", ancestry="Human",
                domain_scores=None, guild_name=None, stamina=100,
-               sessions_count=1):
+               sessions_count=1, is_npc=False):
     """Create a mock character with standard attributes."""
     char = MagicMock()
     char.key = name
@@ -47,6 +47,7 @@ def _make_char(name, zone_id="vaels_crossing", ancestry="Human",
         domain_scores=domain_scores or {},
         guild_name=guild_name,
         guild_id=None,
+        is_npc=is_npc,
     )
     char.ndb = _MockNDB(
         stamina=stamina,
@@ -118,6 +119,28 @@ class TestCmdWho(unittest.TestCase):
 
         output = cmd.caller.msg.call_args[0][0]
         self.assertIn("No one is online", output)
+
+    @patch("commands.cmd_social.evennia")
+    def test_who_deduplicates_multiple_sessions_on_same_character(self, mock_evennia):
+        """CmdWho should only list a character once even with multiple sessions."""
+        from commands.cmd_social import CmdWho
+
+        char1 = _make_char("Alice", ancestry="Human")
+
+        sess1 = MagicMock()
+        sess1.get_puppet.return_value = char1
+        sess2 = MagicMock()
+        sess2.get_puppet.return_value = char1
+        mock_evennia.SESSION_HANDLER.get_sessions.return_value = [sess1, sess2]
+
+        cmd = CmdWho()
+        cmd.caller = _make_char("Viewer")
+        cmd.args = ""
+        cmd.func()
+
+        output = cmd.caller.msg.call_args[0][0]
+        self.assertEqual(output.count("Alice"), 1)
+        self.assertIn("1 player(s) online", output)
 
 
 # ---------------------------------------------------------------------------
@@ -259,6 +282,24 @@ class TestCmdWhisper(unittest.TestCase):
         output = cmd.caller.msg.call_args[0][0]
         self.assertIn("Usage", output)
 
+    def test_whisper_rejects_non_player_targets(self):
+        """Whisper should reject NPCs so it does not overlap with tell."""
+        from commands.cmd_social import CmdWhisper
+
+        caller = _make_char("Whisperer")
+        npc = _make_char("Steward", is_npc=True, sessions_count=0)
+        caller.location.contents = [caller, npc]
+        caller.search = MagicMock(return_value=npc)
+
+        cmd = CmdWhisper()
+        cmd.caller = caller
+        cmd.args = " Steward secret message"
+        cmd.func()
+
+        output = cmd.caller.msg.call_args[0][0]
+        self.assertIn("another player", output.lower())
+        npc.msg.assert_not_called()
+
 
 # ---------------------------------------------------------------------------
 # Channel typeclass tests
@@ -310,6 +351,33 @@ class TestDomainChannel(unittest.TestCase):
         with patch.object(DefaultChannel, "at_pre_msg", return_value=True):
             result = ch.at_pre_msg(message)
         self.assertTrue(result)
+
+
+class TestDefaultChannelConfiguration(unittest.TestCase):
+
+    def test_default_channels_include_domain_channels(self):
+        """Every Soravelon domain is provisioned as a default channel."""
+        from django.conf import settings
+        from world.world_state import ALL_DOMAINS
+
+        default_channels = settings.DEFAULT_CHANNELS
+        domain_channels = [
+            channel for channel in default_channels
+            if channel.get("typeclass") == "typeclasses.channels.DomainChannel"
+        ]
+
+        self.assertEqual(len(domain_channels), len(ALL_DOMAINS))
+
+        keyed_channels = {channel["key"].lower(): channel for channel in domain_channels}
+        self.assertEqual(set(keyed_channels.keys()), set(ALL_DOMAINS))
+
+        for domain_name in ALL_DOMAINS:
+            channel = keyed_channels[domain_name]
+            self.assertEqual(channel.get("aliases"), (domain_name,))
+            self.assertEqual(
+                channel.get("attrs"),
+                [("domain_name", domain_name)],
+            )
 
 
 # ---------------------------------------------------------------------------

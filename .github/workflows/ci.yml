@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run smoke imports
+        env:
+          DJANGO_SETTINGS_MODULE: server.conf.settings
+        run: python scripts/smoke_start.py
+
+      - name: Run canonical test suite
+        env:
+          DJANGO_SETTINGS_MODULE: server.conf.settings
+        run: python scripts/run_tests.py

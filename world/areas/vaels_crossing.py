@@ -1,10 +1,10 @@
 """
 Vael's Crossing -- Hub City Zone Spec
 
-Soravelon's first hub city. A dark frontier outpost on Varath's eastern edge
-where the Ashreach plains meet the foothills of The Reth. Gritty, worn,
-practical -- a crossroads town built by the Empire but shaped by everyone
-who washes through it.
+Soravelon's first hub city. A dark frontier outpost on Sorath's eastern edge
+where old roads, river traffic, and the rough country beyond the walls meet.
+Gritty, worn, practical -- a crossroads town built by the Empire but shaped
+by everyone who washes through it.
 
 100+ rooms across 7 districts, 50+ NPCs, all city services.
 No levels -- zone scaling makes all content universal.
@@ -31,7 +31,7 @@ def build():
     area.zone(
         name="Vael's Crossing",
         zone_type="frontier",
-        continent="varath",
+        continent="sorath",
         faction_territory="imperial",
         faction_presence=["empire", "consortium", "wardens"],
         world_x=0,
@@ -353,7 +353,56 @@ def build():
     # Harbor Gate NPCs
 
     # 1. Greeter NPC (D-11 onboarding)
-    area.npc(hg_arrival, "npc_greeter_maren", faction="empire")
+    area.npc(
+        hg_arrival,
+        "npc_greeter_maren",
+        faction="empire",
+        dialogue={
+            "greeting_tiers": {
+                "neutral": (
+                    "Maren squares her ledger against one hip and gives you a "
+                    "practiced once-over. 'First time through Vael's Crossing? "
+                    "Keep the harbor at your back and you'll find food, work, "
+                    "and trouble in that order.'"
+                ),
+                "friendly": (
+                    "Maren lifts two fingers in a small salute. 'Back again? "
+                    "Good. The city makes more sense once you know which doors "
+                    "lead to work and which only lead to speeches.'"
+                ),
+            },
+            "topics": {
+                "work": {
+                    "default": (
+                        "'If you want honest coin, start with the tavern, the "
+                        "trading house, or the Warden office. Marta hears half "
+                        "the city's small troubles, Broker Carston pays for eyes "
+                        "that notice details, and Agent Calloway needs people "
+                        "who can carry a sealed report without losing it.'"
+                    ),
+                },
+                "guilds": {
+                    "default": (
+                        "'The guild halls are open to visitors, not promises. "
+                        "You earn a place there by proving what you can do, not "
+                        "by walking in fresh off the road. Learn the city, take "
+                        "some work, and let people remember your name for the "
+                        "right reasons.'"
+                    ),
+                },
+                "rumors": {
+                    "default": (
+                        "'River traffic is jumpier than it should be, Warden "
+                        "riders have been coming and going at odd hours, and the "
+                        "market keeps whispering about cargo that vanishes on "
+                        "paper before it ever vanishes in the street. That's "
+                        "enough rumor for one arrival.'"
+                    ),
+                },
+            },
+            "base_hints": ["work", "guilds", "rumors"],
+        },
+    )
 
     # 2. Gate guard captain
     area.npc(hg_gatehouse, "npc_gate_captain_voss", faction="empire")
@@ -1321,7 +1370,52 @@ def build():
     area.npc(cq_bank, "npc_bank_manager_giselle", faction="consortium")
 
     # 30. Trading house broker
-    area.npc(cq_trading_house, "npc_broker_carston", faction="consortium")
+    area.npc(
+        cq_trading_house,
+        "npc_broker_carston",
+        faction="consortium",
+        dialogue={
+            "greeting_tiers": {
+                "neutral": (
+                    "Carston closes a ledger with one finger still marking the "
+                    "page. 'If you are here to waste my afternoon, queue behind "
+                    "the auditors. If you are here to be useful, say so quickly.'"
+                ),
+                "friendly": (
+                    "Carston's eyes sharpen with recognition. 'Good. Someone "
+                    "who can tell the difference between a missing crate and a "
+                    "missing story. I can use that.'"
+                ),
+            },
+            "topics": {
+                "work": {
+                    "default": (
+                        "'Most of my work begins when a manifest stops matching "
+                        "the dock, the wagon yard, or the men swearing they saw "
+                        "nothing. I pay for steady hands, sharp memory, and "
+                        "people willing to walk a trail all the way to the end.'"
+                    ),
+                },
+                "trade": {
+                    "default": (
+                        "'Vael's Crossing survives on movement. Ore from the "
+                        "foothills, timber from Cantera, fish and salt from the "
+                        "coast, and enough paperwork to choke a horse. Break the "
+                        "flow anywhere and everyone in the quarter feels it.'"
+                    ),
+                },
+                "rumors": {
+                    "default": (
+                        "'Rumor says smugglers are getting bolder. My ledgers say "
+                        "someone higher up the line is teaching them where to be "
+                        "bold. I trust ledgers more than rumor, but I listen to "
+                        "both.'"
+                    ),
+                },
+            },
+            "base_hints": ["work", "trade", "rumors"],
+        },
+    )
 
     # 31. Consortium liaison
     area.npc(cq_guild_liaison, "npc_liaison_twick", faction="consortium")
@@ -1600,7 +1694,51 @@ def build():
     area.npc(iq_faction_office, "npc_admin_clerk_pellith", faction="empire")
 
     # 38. Dragon Warden agent
-    area.npc(iq_warden_office, "npc_warden_agent_calloway", faction="wardens")
+    area.npc(
+        iq_warden_office,
+        "npc_warden_agent_calloway",
+        faction="wardens",
+        dialogue={
+            "greeting_tiers": {
+                "neutral": (
+                    "Calloway keeps one hand on a stack of sealed packets. "
+                    "'Speak clearly. If you need the Wardens, I assume it "
+                    "matters. If you want work, I assume you can travel.'"
+                ),
+                "friendly": (
+                    "Calloway gives a curt nod. 'You're still standing, which "
+                    "puts you ahead of some couriers I've had. What do you need?'"
+                ),
+            },
+            "topics": {
+                "work": {
+                    "default": (
+                        "'Road work, dispatches, field checks. The Ashway and "
+                        "the outposts stay alive because someone carries orders, "
+                        "counts trouble, and comes back with the truth instead of "
+                        "a good story.'"
+                    ),
+                },
+                "wardens": {
+                    "default": (
+                        "'The Wardens keep routes open, track threats before they "
+                        "reach the walls, and answer when the rest of the city "
+                        "would rather let a problem stay distant. There is always "
+                        "more road than there are Wardens.'"
+                    ),
+                },
+                "rumors": {
+                    "default": (
+                        "'Rumor says the plains are restless, patrol gaps are "
+                        "widening, and too many reports are arriving late. I do "
+                        "not work in rumor. I work in confirmation. That is why "
+                        "I send people out.'"
+                    ),
+                },
+            },
+            "base_hints": ["work", "wardens", "rumors"],
+        },
+    )
 
     # 39. Drill sergeant
     area.npc(iq_parade_ground, "npc_drill_sergeant_krath", faction="empire")
@@ -1865,7 +2003,52 @@ def build():
     # Residential District NPCs
 
     # 41. Tavern keeper
-    area.npc(rd_tavern, "npc_barkeep_marta_voss", faction=None)
+    area.npc(
+        rd_tavern,
+        "npc_barkeep_marta_voss",
+        faction=None,
+        dialogue={
+            "greeting_tiers": {
+                "neutral": (
+                    "Marta wipes the bar with a cloth that has given up on ever "
+                    "being clean. 'If you need a drink, a room, or the kind of "
+                    "work polite people call a favor, you're in the right place.'"
+                ),
+                "friendly": (
+                    "Marta leans on the bar and smirks. 'Back already? Good. "
+                    "The city always sounds clearer after one hot meal and two "
+                    "solid rumors.'"
+                ),
+            },
+            "topics": {
+                "work": {
+                    "default": (
+                        "'I hear what breaks first in this city: cellars, tempers, "
+                        "supply lines, and sometimes people's nerve. If you want "
+                        "small work that leads to bigger trouble, ask me before "
+                        "you ask anyone in a uniform.'"
+                    ),
+                },
+                "rumors": {
+                    "default": (
+                        "'Tonight's rumor says rats are getting bold below the "
+                        "taproom, caravans are arriving light, and someone down "
+                        "by the river keeps paying in fresh coin for old silence. "
+                        "Take whichever piece sounds like your sort of evening.'"
+                    ),
+                },
+                "trade": {
+                    "default": (
+                        "'A tavern measures trade better than a counting house. "
+                        "When teamsters eat well, the roads are good. When "
+                        "couriers drink fast and leave faster, trouble is "
+                        "moving.'"
+                    ),
+                },
+            },
+            "base_hints": ["work", "rumors", "trade"],
+        },
+    )
 
     # 42. Innkeeper
     area.npc(rd_inn, "npc_innkeeper_whistle", faction=None)
@@ -2318,11 +2501,11 @@ def build():
         discovery_method="search",
         scholar_path="remnance",
         text=(
-            "The stones of the old cistern are fitted with dragon-era "
+            "The stones of the old cistern are fitted with older-than-Imperial "
             "precision. No mortar, no gaps. The symbols carved into "
             "the walls match those on the Ashwatch Tower and the "
-            "Sunken Temple. Three locations in one city, all built by "
-            "the same hands. Or claws."
+            "Sunken Temple. Three locations in one city, all built in "
+            "the same older design tradition."
         ),
         insight_gain=10,
     )
@@ -2339,27 +2522,96 @@ def build():
         insight_gain=3,
     )
 
+    area.lore_fragment(
+        "lore_customs_weights", hg_customs_office,
+        discovery_method="search",
+        text=(
+            "The oldest customs weights are cut with eight equal notches "
+            "instead of the modern trade marks used by the Consortium. "
+            "They measure volume and burden according to a system older "
+            "than the city, suggesting the gate inherited its duties "
+            "from an earlier road station."
+        ),
+        insight_gain=4,
+    )
+
+    area.lore_fragment(
+        "lore_market_well_shaft", mk_well,
+        discovery_method="search",
+        scholar_path="remnance",
+        text=(
+            "The market well descends through newer brick before meeting "
+            "a ring of fitted dark stone identical to the old cistern. "
+            "The shaft was not first dug to serve the square. The square "
+            "was laid over a much older water system already waiting here."
+        ),
+        insight_gain=6,
+    )
+
+    area.lore_fragment(
+        "lore_library_survey_roll", gq_library,
+        discovery_method="search",
+        text=(
+            "A brittle survey roll in the shared library places Ashwatch, "
+            "the Sunken Temple, and the old road markers of Ashreach on "
+            "one uninterrupted line. The early city planners did not pick "
+            "their landmarks at random. They built around a preexisting "
+            "network they only partly understood."
+        ),
+        insight_gain=7,
+    )
+
+    area.lore_fragment(
+        "lore_courier_marker", iq_courier_platform,
+        discovery_method="search",
+        text=(
+            "Under the courier roost's newest flagstones lies a much older "
+            "sighting mark cut into the parapet itself. The angle lines do "
+            "not point at city walls or roads. They point toward the plains, "
+            "the coast, and the mountain pass with mathematical precision."
+        ),
+        insight_gain=5,
+    )
+
+    area.lore_fragment(
+        "lore_river_pilings", wn_smuggler_dock,
+        discovery_method="search",
+        text=(
+            "The smugglers lash boats to timber, but the lower pilings are "
+            "stone. Those blocks are older than the riverfront above them "
+            "and fitted with the same pressure-tight joints seen in the "
+            "Sunken Temple and the old cistern. Someone engineered this "
+            "landing for heavier use than smugglers and ferrymen manage now."
+        ),
+        insight_gain=6,
+    )
+
     # ==================================================================
     #  QUESTS (enriched specs — D-21/D-22)
     # ==================================================================
 
     area.quest("vc_q_missing_shipment",
         name="The Missing Shipment",
-        description="Carston's latest shipment from the southern road never arrived. Investigate the warehouse district for signs of tampering or foul play.",
+        description="Broker Carston has a shipment of survey brass and dried stores vanish between the loading bay, the records office, and the river line. Follow the paper trail and the river trail before the loss disappears into the Warrens for good.",
         quest_type="investigation",
         quest_giver="npc_broker_carston",
         objectives=[
             {"type": "investigate", "target": "vc_warehouse_district", "count": 1,
-             "description": "Investigate the warehouse district for signs of the missing shipment"},
+             "description": "Inspect the warehouse loading bay where the shipment was last seen"},
+            {"type": "investigate", "target": "cq_records_office", "count": 1,
+             "description": "Check the Consortium records office for altered manifests"},
+            {"type": "investigate", "target": "wn_smuggler_dock", "count": 1,
+             "description": "Trace the shipment to the hidden river docks below the city"},
         ],
         rewards=[
-            {"action_type": "give_scales", "amount": 75},
+            {"action_type": "give_scales", "amount": 80},
             {"action_type": "modify_standing", "faction_id": "consortium", "delta": 150},
-            {"action_type": "echo", "message": "|gCarston exhales with visible relief. \"Good work. The Consortium doesn't forget those who look out for its interests.\"|n"},
+            {"action_type": "echo", "message": "|gCarston folds the corrected manifest into his ledger. \"So that is how it walked. Quiet work, and useful work. I can use people who notice the seams in a city.\"|n"},
         ],
+        next_quest_id="vc_q_stolen_goods",
         # Legacy fields (backward compat)
         objective_type="investigate",
-        objective_target="missing_consortium_shipment",
+        objective_target="vc_warehouse_district",
         objective_count=1,
     )
 
@@ -2384,120 +2636,142 @@ def build():
     )
 
     area.quest("vc_q_warden_report",
-        name="Warden's Dispatch",
-        description="Agent Calloway needs field intelligence delivered to the Warden outpost beyond the city walls. The roads aren't safe, and official couriers have been turning up empty-handed.",
+        name="Ashway Dispatch",
+        description="Agent Calloway needs a sealed field report carried to Commander Harven at the Ashreach outpost. The roads are still thinly patrolled, and the Wardens trust a traveler who can actually reach the line more than any stamped order left sitting in a tray.",
         quest_type="delivery",
         quest_giver="npc_warden_agent_calloway",
         objectives=[
             {"type": "deliver", "target": "npc_warden_outpost_commander", "count": 1,
              "description": "Deliver the field report to the outpost commander"},
         ],
+        flagged_drop="warden_field_report",
         rewards=[
             {"action_type": "give_scales", "amount": 60},
             {"action_type": "modify_standing", "faction_id": "wardens", "delta": 200},
-            {"action_type": "echo", "message": "|gCalloway nods curtly. \"The Wardens remember those who can be relied upon. You'll find our doors open to you.\"|n"},
+            {"action_type": "echo", "message": "|gCalloway checks the returned seal and gives a rare approving nod. \"Good. That road stays alive because someone walks it on purpose. The Wardens remember that.\"|n"},
         ],
+        next_quest_id="ashreach_wolf_overpopulation",
         # Legacy fields (backward compat)
         objective_type="deliver",
-        objective_target="warden_field_report",
+        objective_target="npc_warden_outpost_commander",
         objective_count=1,
     )
 
     area.quest("vc_q_debt_collection",
-        name="Outstanding Debts",
-        description="Raith needs certain debts collected from merchants who've been avoiding their obligations. He's not particular about methods, so long as the coin comes back.",
+        name="Quiet Collections",
+        description="Raith has decided broken noses are bad for business and wants signatures instead of bruises. Track down three debtors across the city and make certain they remember whose coin kept them open through lean months.",
         quest_type="social",
         quest_giver="npc_debt_collector_raith",
         objectives=[
-            {"type": "collect", "target": "outstanding_debt_token", "count": 3,
-             "description": "Collect outstanding debts from merchants"},
+            {"type": "talk_to", "target": "npc_exchange_clerk_bynn", "count": 1,
+             "description": "Remind Bynn at the exchange what he still owes"},
+            {"type": "talk_to", "target": "npc_innkeeper_whistle", "count": 1,
+             "description": "Collect Whistle's promise of payment at the Dustwalker's Rest"},
+            {"type": "talk_to", "target": "npc_wheelwright_tomas", "count": 1,
+             "description": "Get Tomas to acknowledge the overdue wheel order in the wagon yard"},
         ],
         rewards=[
-            {"action_type": "give_scales", "amount": 100},
-            {"action_type": "echo", "message": "|gRaith counts the coins with practiced fingers. \"Pleasure doing business. I'll keep you in mind for future work.\"|n"},
+            {"action_type": "give_scales", "amount": 90},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 100},
+            {"action_type": "echo", "message": "|gRaith skims the signed pledges and tucks them away. \"Better. Fear spends once. Obligation spends for years. You did this the useful way.\"|n"},
         ],
         # Legacy fields (backward compat)
-        objective_type="collect",
-        objective_target="outstanding_debts",
-        objective_count=3,
+        objective_type="talk_to",
+        objective_target="npc_exchange_clerk_bynn",
+        objective_count=1,
     )
 
     area.quest("vc_q_forging_commission",
-        name="Goram's Commission",
-        description="Goram needs an apprentice blade forged to his exacting specifications. The old smith claims nobody in the city can meet his standards anymore.",
+        name="Goram's Temper",
+        description="Goram refuses to ruin a commission on suspect ore. Inspect the import dock, the wagon yard, and the forge itself so he can work out where bad metal entered the city's supply before he wastes heat and reputation on it.",
         quest_type="crafting",
         quest_giver="npc_smith_goram",
         objectives=[
-            {"type": "collect", "target": "commissioned_blade", "count": 1,
-             "description": "Craft and deliver a commissioned blade to Goram"},
+            {"type": "investigate", "target": "cq_import_dock", "count": 1,
+             "description": "Inspect the import dock for signs of tampered ore shipments"},
+            {"type": "investigate", "target": "hg_wagon_yard", "count": 1,
+             "description": "Check the wagon yard where the mountain loads are broken down"},
+            {"type": "investigate", "target": "mk_forge", "count": 1,
+             "description": "Compare the suspect ore against Goram's current stock at the forge"},
         ],
         rewards=[
-            {"action_type": "give_scales", "amount": 80},
-            {"action_type": "give_skill_xp", "skill_id": "smithing", "count": 5},
+            {"action_type": "give_scales", "amount": 85},
+            {"action_type": "give_skill_xp", "skill_id": "smithing", "count": 4},
             {"action_type": "modify_standing", "faction_id": "consortium", "delta": 100},
-            {"action_type": "echo", "message": "|gGoram turns the blade in the firelight, testing its edge with a calloused thumb. \"Not bad. Not bad at all. You might have the makings of a real smith.\"|n"},
+            {"action_type": "echo", "message": "|gGoram grunts over the slag streaks you found in the shipment notes. \"There. That is the lie in the metal. A forge is honest if the hands feeding it are. You just saved me a bad commission.\"|n"},
         ],
+        next_quest_id="rf_q_lost_miners",
         # Legacy fields (backward compat)
-        objective_type="craft",
-        objective_target="commissioned_blade",
+        objective_type="investigate",
+        objective_target="cq_import_dock",
         objective_count=1,
     )
 
     area.quest("vc_q_stolen_goods",
         name="Shadow Market Recovery",
-        description="Shadow Mekk knows where several stolen artifacts ended up after last month's warehouse heists. Recover them, and he'll make it worth your while -- no questions asked.",
+        description="Shadow Mekk knows where the warehouse relics passed after last month's heists. He wants proof of the route more than the cargo itself: loading bay, black market, and the safehouse where the real buyers wait for the city to stop looking.",
         quest_type="investigation",
         quest_giver="npc_fence_shadow_mekk",
+        prerequisite_quests=["vc_q_missing_shipment"],
         objectives=[
-            {"type": "collect", "target": "stolen_artifact", "count": 5,
-             "description": "Recover stolen artifacts from the shadow market"},
+            {"type": "investigate", "target": "vc_warehouse_district", "count": 1,
+             "description": "Revisit the loading bay where the theft route began"},
+            {"type": "investigate", "target": "wn_black_market", "count": 1,
+             "description": "Work through the black market stalls where the relics were fenced"},
+            {"type": "investigate", "target": "wn_safehouse", "count": 1,
+             "description": "Confirm where the heist goods are being held after sale"},
         ],
         rewards=[
-            {"action_type": "give_scales", "amount": 120},
-            {"action_type": "echo", "message": "|gMekk's eyes glitter as he examines each artifact. \"Beautiful. The original owners won't be needing these where they've gone. Your cut, as promised.\"|n"},
+            {"action_type": "give_scales", "amount": 110},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
+            {"action_type": "echo", "message": "|gMekk studies the route you traced and smiles without warmth. \"That is what I needed. Goods come and go. Knowing who moved them and where they vanish is what keeps a person alive down here.\"|n"},
         ],
         # Legacy fields (backward compat)
-        objective_type="recover",
-        objective_target="stolen_artifacts",
-        objective_count=5,
+        objective_type="investigate",
+        objective_target="wn_black_market",
+        objective_count=1,
     )
 
     area.quest("vc_q_tower_mystery",
         name="Echoes of the Tower",
-        description="Guildmaster Morwen senses Remnance disturbances near the old Ashwatch Tower ruins. The wards are failing, and something is seeping through. Investigate before it gets worse.",
+        description="Guildmaster Morwen wants a clean survey of the three oldest intact sites in the city: the Ashwatch ruins, the Sunken Temple, and the old cistern. The same buried geometry runs through all of them, and she needs more than rumor before she warns the guilds.",
         quest_type="exploration",
         quest_giver="npc_guildmaster_remnance_morwen",
         objectives=[
-            {"type": "investigate", "target": "ashwatch_tower_ruins", "count": 3,
-             "description": "Investigate Ashwatch ward sites for Remnance disturbances"},
+            {"type": "investigate", "target": "ashwatch_tower_ruins", "count": 1,
+             "description": "Survey the old Ashwatch ruins for surviving ward geometry"},
+            {"type": "investigate", "target": "rd_sunken_temple", "count": 1,
+             "description": "Compare the Sunken Temple's buried stonework against Ashwatch"},
+            {"type": "investigate", "target": "wn_old_cistern", "count": 1,
+             "description": "Trace the shared markings down into the old cistern"},
         ],
         rewards=[
-            {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 150},
-            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
-            {"action_type": "echo", "message": "|gMorwen studies your findings with furrowed brows. \"The wards are weaker than I feared. This data is invaluable -- the Guild owes you a debt.\"|n"},
+            {"action_type": "give_scales", "amount": 100},
+            {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 4},
+            {"action_type": "echo", "message": "|gMorwen lays your notes beside older sketches from the library. \"Good. Not ghosts, then. Structure. Repetition. Someone laid this city over a much older thought, and now we can start proving it.\"|n"},
         ],
         # Legacy fields (backward compat)
         objective_type="investigate",
-        objective_target="ashwatch_symbols",
-        objective_count=3,
+        objective_target="ashwatch_tower_ruins",
+        objective_count=1,
     )
 
     area.quest("vc_q_herbalist_gathering",
         name="Ystra's Remedy",
-        description="Old Ystra's stores are running low on the rare herbs needed for healing draughts. The wilds beyond the walls still grow them, but few dare venture out to gather.",
+        description="Old Ystra's strongest remedies depend on herbs that only survive beyond the city walls -- in the ash-choked plains and on the cooler ledges of the Reth. Bring her enough bundles to restock before the next caravan season turns every scraped knee into a fever.",
         quest_type="gathering",
         quest_giver="npc_herbalist_old_ystra",
         objectives=[
             {"type": "collect", "target": "rare_herb_bundle", "count": 5,
-             "description": "Gather rare herb bundles from the wilds"},
+             "description": "Gather rare herb bundles from Ashreach and the lower Reth"},
         ],
         rewards=[
-            {"action_type": "give_scales", "amount": 60},
+            {"action_type": "give_scales", "amount": 70},
             {"action_type": "give_skill_xp", "skill_id": "herbalism", "count": 3},
             {"action_type": "learn_recipe", "recipe_id": "healing_draught"},
             {"action_type": "echo", "message": "|gYstra's weathered hands sort through the herbs with practiced care. \"Good quality. Here -- let me show you how I make my draughts. You've earned the knowledge.\"|n"},
         ],
+        next_quest_id="rf_q_rare_ingredients",
         # Legacy fields (backward compat)
         objective_type="gather",
         objective_target="rare_herb_bundle",
@@ -2549,26 +2823,6 @@ def build():
     )
 
     # ==================================================================
-    #  QUEST ITEM TRIGGERS (15-05: wire quest items to world sources)
-    # ==================================================================
-
-    # outstanding_debt_token — given by bank teller NPC room on first visit
-    area.trigger(
-        cq_bank, "on_first_visit",
-        actions=[{"action_type": "give_item", "item_id": "outstanding_debt_token"}],
-        trigger_id="vc_debt_token_grant",
-        once_per_character=True,
-    )
-
-    # warden_supplies — given by warden office on examine (accept supply run)
-    area.trigger(
-        iq_warden_office, "on_examine",
-        actions=[{"action_type": "give_item", "item_id": "warden_supplies"}],
-        trigger_id="vc_warden_supplies_grant",
-        once_per_character=True,
-    )
-
-    # ==================================================================
     #  MATERIALS (zone-level harvestable materials)
     # ==================================================================
 
@@ -2593,6 +2847,12 @@ def build():
         "hide",
         rooms=["mk_tanner", "mk_cloth_row"],
         materials=["rough_leather"],
+        max_active=2, respawn_minutes=12, respawn_variance=4,
+    )
+    area.gathering_pool(
+        "fish",
+        rooms=["cq_import_dock", "wn_smuggler_dock"],
+        materials=["river_trout"],
         max_active=2, respawn_minutes=12, respawn_variance=4,
     )
 

@@ -225,11 +225,15 @@ def _check_ingredients(character, recipe):
     Check if character has required ingredients in inventory.
 
     Uses Evennia's character.contents and obj.tags.has(item_tag, category="item_tag").
-    Returns (bool, str, list_of_items) where list_of_items are the matched
-    inventory objects to consume on success.
+    Stackable inventory records contribute their full quantity instead of
+    counting as only one object.
+
+    Returns (bool, str, consume_specs) where consume_specs is a list of
+    dicts with item / quantity / record to consume on success.
     """
     contents = character.contents
     items_to_consume = []
+    claimed_quantities = {}
 
     # Processing recipe conversion ratio (D-08)
     conversion_qty = get_conversion_quantity(character, recipe)
@@ -240,21 +244,44 @@ def _check_ingredients(character, recipe):
         if conversion_qty is not None:
             needed = conversion_qty  # skill-based override for processing recipes
         matched = []
+        matched_quantity = 0
 
         for obj in contents:
-            if obj in items_to_consume:
-                continue  # already claimed by another ingredient
             if obj.tags.has(tag, category="item_tag"):
-                matched.append(obj)
-                if len(matched) >= needed:
+                record = None
+                if hasattr(obj, "get_inventory_record"):
+                    record = obj.get_inventory_record(character)
+
+                available_quantity = 1
+                if record and getattr(record, "quantity", None):
+                    available_quantity = record.quantity
+                else:
+                    available_quantity = getattr(getattr(obj, "db", None), "quantity", None) or 1
+
+                claim_key = getattr(obj, "id", id(obj))
+                remaining_quantity = available_quantity - claimed_quantities.get(claim_key, 0)
+                if remaining_quantity <= 0:
+                    continue
+
+                take_quantity = min(needed - matched_quantity, remaining_quantity)
+                matched.append(
+                    {
+                        "item": obj,
+                        "quantity": take_quantity,
+                        "record": record,
+                    }
+                )
+                claimed_quantities[claim_key] = claimed_quantities.get(claim_key, 0) + take_quantity
+                matched_quantity += take_quantity
+                if matched_quantity >= needed:
                     break
 
-        if len(matched) < needed:
+        if matched_quantity < needed:
             tag_display = tag.replace("_", " ")
             return (
                 False,
                 f"|rYou need {needed} {tag_display} but only have "
-                f"{len(matched)}.|n",
+                f"{matched_quantity}.|n",
                 [],
             )
 
@@ -267,8 +294,37 @@ def _consume_ingredients(items_to_consume):
     """
     Delete matched inventory item objects, removing them from the game world.
     """
-    for obj in items_to_consume:
+    for spec in items_to_consume:
+        obj = spec["item"]
+        quantity = spec.get("quantity", 1)
+        record = spec.get("record")
+
+        if record and getattr(record, "quantity", 1) > quantity:
+            record.quantity -= quantity
+            record.save()
+            if hasattr(obj, "db"):
+                obj.db.quantity = record.quantity
+            continue
+
         obj.delete()
+
+
+def _best_input_quality(items_to_consume):
+    """
+    Return the strongest recognized quality present in the consumed inputs.
+
+    Processing recipes use this as the raw-material quality influence so
+    higher-quality gathered ingredients can improve refined outputs.
+    """
+    quality_index = {quality: idx for idx, quality in enumerate(QUALITY_TIERS)}
+    best_index = quality_index["standard"]
+
+    for spec in items_to_consume:
+        obj = spec["item"] if isinstance(spec, dict) else spec
+        obj_quality = getattr(getattr(obj, "db", None), "quality", None) or "standard"
+        best_index = max(best_index, quality_index.get(obj_quality, quality_index["standard"]))
+
+    return QUALITY_TIERS[best_index]
 
 
 # --- Item Creation ---
@@ -374,13 +430,20 @@ def craft_item(character, recipe_id):
     skill_id = recipe.get("skill", "cooking")
     skill_value = get_skill_value(character, skill_id)
     difficulty = recipe.get("difficulty", 10)
-    quality = calculate_craft_quality(skill_value, difficulty)
+    has_station_bonus = bool(station)
 
     # 6. Create item FIRST — only consume ingredients on success
     # Processing recipes use inline output dict (Phase 13)
     if recipe.get("recipe_type") == "processing" and recipe.get("output", {}).get("item_id"):
         from world.item_spawner import create_item_from_template
 
+        raw_quality = _best_input_quality(items_to_consume)
+        quality = calculate_processing_quality(
+            skill_value,
+            difficulty,
+            raw_quality=raw_quality,
+            has_station=has_station_bonus,
+        )
         output_def = dict(recipe["output"])  # copy to avoid mutation
         output_def["quality"] = quality
         item = create_item_from_template(output_def, location=character)
@@ -398,6 +461,11 @@ def craft_item(character, recipe_id):
         )
 
     # Standard crafting item creation
+    quality = calculate_craft_quality(
+        skill_value,
+        difficulty,
+        has_station_bonus=has_station_bonus,
+    )
     item = _create_crafted_item(character, recipe, quality)
     if not item:
         return (

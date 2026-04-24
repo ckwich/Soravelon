@@ -57,6 +57,11 @@ VALID_ROOM_TYPES = {
     "underground", "node_center", "generic",
 }
 
+SUPPORTED_SPAWN_CONDITIONS = (
+    "node_active",
+    "node_failure_above_N",
+)
+
 
 # ---------------------------------------------------------------------------
 # validate_zone
@@ -153,3 +158,26 @@ def validate_zone(zone_data: dict) -> list:
             ))
 
     return errors
+
+
+def validate_spawn_condition(condition_str: str):
+    """
+    Validate one authored spawn condition string.
+
+    Supported formats:
+      - node_active
+      - node_failure_above_<integer>
+    """
+    if not condition_str:
+        return None
+    if condition_str == "node_active":
+        return None
+    prefix = "node_failure_above_"
+    if condition_str.startswith(prefix):
+        suffix = condition_str[len(prefix):]
+        if suffix.isdigit():
+            return None
+    raise AreaBuilderValidationError(
+        f"unsupported spawn_condition '{condition_str}'. "
+        f"Supported: {', '.join(SUPPORTED_SPAWN_CONDITIONS)}"
+    )

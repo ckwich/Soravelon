@@ -129,10 +129,11 @@ class TestBookFlight(EvenniaTest):
         FlightRegistry.clear()
         super().tearDown()
 
-    def _make_char(self, discovered=None):
+    def _make_char(self, discovered=None, location=None):
         char = MagicMock()
         char.db.discovered_flight_points = set(discovered) if discovered else set()
         char.scripts.add.return_value = MagicMock()
+        char.location = location or self.room_a
         return char
 
     @patch("world.banking.deduct_from_bank")
@@ -228,6 +229,20 @@ class TestBookFlight(EvenniaTest):
         ok, msg = book_flight(char, "point_a", "point_a")
         self.assertFalse(ok)
         self.assertIn("No route", msg)
+
+    @patch("world.banking.deduct_from_bank")
+    @patch("world.banking.get_balance")
+    @patch("world.world_state.get_standing")
+    def test_wrong_departure_location_returns_false(self, mock_standing, mock_bal, mock_wd):
+        from world.flight_engine import book_flight
+        mock_standing.return_value = 0
+        char = self._make_char(
+            discovered={"point_b"},
+            location=self.room_b,
+        )
+        ok, msg = book_flight(char, "point_a", "point_b")
+        self.assertFalse(ok)
+        self.assertIn("depart", msg.lower())
 
 
 class TestFlightScriptImportable(EvenniaTest):
