@@ -1,0 +1,409 @@
+"""Velu'ana Central Isle -- Hub 5 exterior zone
+
+A humid inner isle where circular paths, rain pools, basalt rings, and subtle node pressure create wonder without explaining the world's deeper secret."""
+
+from world.area_builder import AreaBuilder
+
+
+def build():
+    area = AreaBuilder('veluana_central_isle')
+
+    area.zone(
+        name="Velu'ana Central Isle",
+        zone_type='node_active',
+        continent='veluana',
+        tier=5,
+        region='veluana_archipelago',
+        hub_city='korahei',
+        faction_territory='kauroran',
+        faction_presence=['kauroran', 'warden'],
+        world_x=80,
+        world_y=-1,
+        world_radius=140,
+    )
+
+    area.material('reef_silverjack', tier=1, terrain='water', absorbed_property='finesse', profession_bonus={'cooking': 0.1, 'fishing': 0.05})
+    area.material('tide_eel', tier=2, terrain='water', absorbed_property='timing', profession_bonus={'cooking': 0.1, 'alchemy': 0.05})
+    area.material('saltfruit', tier=1, terrain='coastal', absorbed_property='endurance', profession_bonus={'cooking': 0.1})
+    area.material('hearthroot', tier=2, terrain='garden', absorbed_property='warmth', profession_bonus={'cooking': 0.1, 'alchemy': 0.05})
+    area.material('sunleaf', tier=1, terrain='garden', absorbed_property='clarity', profession_bonus={'alchemy': 0.1})
+    area.material('old_ring_basalt', tier=2, terrain='ring', absorbed_property='resonance', profession_bonus={'smithing': 0.1, 'scholarship': 0.05})
+    area.material('shore_drake_hide', tier=2, terrain='coastal', absorbed_property='resilience', profession_bonus={'smithing': 0.1})
+    area.material('circle_bamboo', tier=2, terrain='ring', absorbed_property='balance', profession_bonus={'engineering': 0.1})
+
+    # Rooms
+    gc_korahei_track = area.room('gc_korahei_track', name='Korahei Track', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on korahei track, where palm roots knot around stones set in deliberate arcs. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_green_cause_start = area.room('gc_green_cause_start', name='Green Cause Start', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on green cause start, where mist hangs in pockets even under direct sun. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_palm_root_arc = area.room('gc_palm_root_arc', name='Palm Root Arc', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on palm root arc, where small route charms have been retied many times. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_mist_pocket_step = area.room('gc_mist_pocket_step', name='Mist Pocket Step', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on mist pocket step, where bird calls repeat from directions that do not quite agree. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_retied_route_charm = area.room('gc_retied_route_charm', name='Retied Route Charm', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on retied route charm, where the path curves back without feeling lost. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_repeating_bird_turn = area.room('gc_repeating_bird_turn', name='Repeating Bird Turn', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on repeating bird turn, where palm roots knot around stones set in deliberate arcs. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_loop_stone = area.room('gc_loop_stone', name='Loop Stone', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on loop stone, where mist hangs in pockets even under direct sun. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_mossy_cause_rail = area.room('gc_mossy_cause_rail', name='Mossy Cause Rail', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on mossy cause rail, where small route charms have been retied many times. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_inner_water_glance = area.room('gc_inner_water_glance', name='Inner Water Glance', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on inner water glance, where bird calls repeat from directions that do not quite agree. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_double_back_bend = area.room('gc_double_back_bend', name='Double-Back Bend', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on double-back bend, where the path curves back without feeling lost. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_kelp_scented_shade = area.room('gc_kelp_scented_shade', name='Kelp-Scented Shade', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on kelp-scented shade, where palm roots knot around stones set in deliberate arcs. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_soft_mud_print = area.room('gc_soft_mud_print', name='Soft Mud Print', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on soft mud print, where mist hangs in pockets even under direct sun. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_hidden_spring_sound = area.room('gc_hidden_spring_sound', name='Hidden Spring Sound', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on hidden spring sound, where small route charms have been retied many times. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_warm_fern_run = area.room('gc_warm_fern_run', name='Warm Fern Run', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on warm fern run, where bird calls repeat from directions that do not quite agree. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_old_track_shoulder = area.room('gc_old_track_shoulder', name='Old Track Shoulder', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on old track shoulder, where the path curves back without feeling lost. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_round_stone_rest = area.room('gc_round_stone_rest', name='Round Stone Rest', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on round stone rest, where palm roots knot around stones set in deliberate arcs. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_unlost_turn = area.room('gc_unlost_turn', name='Unlost Turn', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on unlost turn, where mist hangs in pockets even under direct sun. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_green_cause_rise = area.room('gc_green_cause_rise', name='Green Cause Rise', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on green cause rise, where small route charms have been retied many times. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_central_light_gap = area.room('gc_central_light_gap', name='Central Light Gap', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on central light gap, where bird calls repeat from directions that do not quite agree. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    gc_humid_path_fork = area.room('gc_humid_path_fork', name='Humid Path Fork', desc='A green track from Korahei crosses inner water and thick palms, circling more than distance alone requires. This part of the Green Cause centers on humid path fork, where the path curves back without feeling lost. The central isle signals strangeness through repetition, humidity, and paths that feel measured by old habit.', room_type='path')
+    rp_rain_pools = area.room('rp_rain_pools', name='Rain Pools', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on rain pools, where fresh rings ripple across still water with no visible drop. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_clear_sky_ripple = area.room('rp_clear_sky_ripple', name='Clear-Sky Ripple', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on clear-sky ripple, where tide mint grows beside pools that should be too far inland. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_tide_mint_bowl = area.room('rp_tide_mint_bowl', name='Tide Mint Bowl', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on tide mint bowl, where frogs fall silent when footsteps pause. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_silent_frog_bank = area.room('rp_silent_frog_bank', name='Silent Frog Bank', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on silent frog bank, where the reflected sky looks a shade brighter than the real one. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_bright_reflection_pool = area.room('rp_bright_reflection_pool', name='Bright Reflection Pool', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on bright reflection pool, where basalt lips hold water like cupped hands. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_cupped_basalt_lip = area.room('rp_cupped_basalt_lip', name='Cupped Basalt Lip', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on cupped basalt lip, where fresh rings ripple across still water with no visible drop. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_freshwater_thread = area.room('rp_freshwater_thread', name='Freshwater Thread', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on freshwater thread, where tide mint grows beside pools that should be too far inland. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_warm_rain_stone = area.room('rp_warm_rain_stone', name='Warm Rain Stone', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on warm rain stone, where frogs fall silent when footsteps pause. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_round_pool_shelf = area.room('rp_round_pool_shelf', name='Round Pool Shelf', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on round pool shelf, where the reflected sky looks a shade brighter than the real one. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_unfallen_drop_ring = area.room('rp_unfallen_drop_ring', name='Unfallen Drop Ring', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on unfallen drop ring, where basalt lips hold water like cupped hands. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_moss_wet_seat = area.room('rp_moss_wet_seat', name='Moss-Wet Seat', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on moss-wet seat, where fresh rings ripple across still water with no visible drop. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_low_fern_mirror = area.room('rp_low_fern_mirror', name='Low Fern Mirror', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on low fern mirror, where tide mint grows beside pools that should be too far inland. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_singing_water_edge = area.room('rp_singing_water_edge', name='Singing Water Edge', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on singing water edge, where frogs fall silent when footsteps pause. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_pale_fish_bowl = area.room('rp_pale_fish_bowl', name='Pale Fish Bowl', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on pale fish bowl, where the reflected sky looks a shade brighter than the real one. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_green_light_basin = area.room('rp_green_light_basin', name='Green Light Basin', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on green light basin, where basalt lips hold water like cupped hands. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_still_rain_cut = area.room('rp_still_rain_cut', name='Still Rain Cut', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on still rain cut, where fresh rings ripple across still water with no visible drop. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_pool_of_two_skies = area.room('rp_pool_of_two_skies', name='Pool of Two Skies', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on pool of two skies, where tide mint grows beside pools that should be too far inland. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_mist_breath_hollow = area.room('rp_mist_breath_hollow', name='Mist-Breath Hollow', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on mist-breath hollow, where frogs fall silent when footsteps pause. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_last_rain_bowl = area.room('rp_last_rain_bowl', name='Last Rain Bowl', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on last rain bowl, where the reflected sky looks a shade brighter than the real one. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    rp_pool_ridge_turn = area.room('rp_pool_ridge_turn', name='Pool Ridge Turn', desc='Rain pools collect fresh water in bowls of stone even when the sky is clear, each pool reflecting a slightly different light. This part of the Rain Pools centers on pool ridge turn, where basalt lips hold water like cupped hands. The pools make the node feel alive without naming what it is for players too early.', room_type='clearing')
+    bs_basalt_ring = area.room('bs_basalt_ring', name='Basalt Ring', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on basalt ring, where old ring basalt shows tool marks softened by age. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_warm_outer_spiral = area.room('bs_warm_outer_spiral', name='Warm Outer Spiral', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on warm outer spiral, where moss grows in perfect crescent gaps. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_cool_center_stone = area.room('bs_cool_center_stone', name='Cool Center Stone', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on cool center stone, where basalt tortoises graze where the stone is warmest. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_crescent_moss_gap = area.room('bs_crescent_moss_gap', name='Crescent Moss Gap', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on crescent moss gap, where the spiral seems easier to enter than leave. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_tortoise_grazing_edge = area.room('bs_tortoise_grazing_edge', name='Tortoise Grazing Edge', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on tortoise grazing edge, where small shells sit inland as if carried by patient hands. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_inland_shell_scatter = area.room('bs_inland_shell_scatter', name='Inland Shell Scatter', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on inland shell scatter, where old ring basalt shows tool marks softened by age. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_tool_softened_mark = area.room('bs_tool_softened_mark', name='Tool-Softened Mark', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on tool-softened mark, where moss grows in perfect crescent gaps. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_old_ring_notch = area.room('bs_old_ring_notch', name='Old Ring Notch', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on old ring notch, where basalt tortoises graze where the stone is warmest. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_black_stone_step = area.room('bs_black_stone_step', name='Black Stone Step', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on black stone step, where the spiral seems easier to enter than leave. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_narrow_spiral_walk = area.room('bs_narrow_spiral_walk', name='Narrow Spiral Walk', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on narrow spiral walk, where small shells sit inland as if carried by patient hands. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_center_listening_seat = area.room('bs_center_listening_seat', name='Center Listening Seat', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on center listening seat, where old ring basalt shows tool marks softened by age. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_basalt_dust_pocket = area.room('bs_basalt_dust_pocket', name='Basalt Dust Pocket', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on basalt dust pocket, where moss grows in perfect crescent gaps. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_round_echo_wall = area.room('bs_round_echo_wall', name='Round Echo Wall', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on round echo wall, where basalt tortoises graze where the stone is warmest. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_stone_warm_hollow = area.room('bs_stone_warm_hollow', name='Stone-Warm Hollow', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on stone-warm hollow, where the spiral seems easier to enter than leave. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_half_buried_ring = area.room('bs_half_buried_ring', name='Half-Buried Ring', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on half-buried ring, where small shells sit inland as if carried by patient hands. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_spiral_return_turn = area.room('bs_spiral_return_turn', name='Spiral Return Turn', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on spiral return turn, where old ring basalt shows tool marks softened by age. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_marked_basalt_face = area.room('bs_marked_basalt_face', name='Marked Basalt Face', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on marked basalt face, where moss grows in perfect crescent gaps. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_moss_crescent_rise = area.room('bs_moss_crescent_rise', name='Moss Crescent Rise', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on moss crescent rise, where basalt tortoises graze where the stone is warmest. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_inner_ring_shelf = area.room('bs_inner_ring_shelf', name='Inner Ring Shelf', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on inner ring shelf, where the spiral seems easier to enter than leave. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    bs_quiet_black_center = area.room('bs_quiet_black_center', name='Quiet Black Center', desc='Basalt stones spiral through the inner isle, warm at their edges and cool in their centers. This part of the Basalt Spirals centers on quiet black center, where small shells sit inland as if carried by patient hands. The stones reward investigation and gathering while preserving mystery as a texture, not a lecture.', room_type='ruins')
+    hr_humid_ruin = area.room('hr_humid_ruin', name='Humid Ruin', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on humid ruin, where vines hide the line where cut stone meets living root. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_vine_hidden_wall = area.room('hr_vine_hidden_wall', name='Vine-Hidden Wall', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on vine-hidden wall, where shell-white fungus beads along shaded cracks. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_shell_fungus_crack = area.room('hr_shell_fungus_crack', name='Shell Fungus Crack', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on shell fungus crack, where broken thresholds face circles rather than roads. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_circle_facing_threshold = area.room('hr_circle_facing_threshold', name='Circle-Facing Threshold', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on circle-facing threshold, where old plaster keeps the faint color of sunset. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_sunset_plaster_niche = area.room('hr_sunset_plaster_niche', name='Sunset Plaster Niche', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on sunset plaster niche, where the air tastes of rain and mineral dust. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_rain_mineral_hall = area.room('hr_rain_mineral_hall', name='Rain-Mineral Hall', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on rain-mineral hall, where vines hide the line where cut stone meets living root. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_broken_palm_court = area.room('hr_broken_palm_court', name='Broken Palm Court', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on broken palm court, where shell-white fungus beads along shaded cracks. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_root_lifted_floor = area.room('hr_root_lifted_floor', name='Root-Lifted Floor', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on root-lifted floor, where broken thresholds face circles rather than roads. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_low_arch_moss = area.room('hr_low_arch_moss', name='Low Arch Moss', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on low arch moss, where old plaster keeps the faint color of sunset. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_damp_color_room = area.room('hr_damp_color_room', name='Damp Color Room', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on damp color room, where the air tastes of rain and mineral dust. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_fallen_lintel_seat = area.room('hr_fallen_lintel_seat', name='Fallen Lintel Seat', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on fallen lintel seat, where vines hide the line where cut stone meets living root. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_old_door_without_road = area.room('hr_old_door_without_road', name='Old Door Without Road', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on old door without road, where shell-white fungus beads along shaded cracks. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_misty_wall_bend = area.room('hr_misty_wall_bend', name='Misty Wall Bend', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on misty wall bend, where broken thresholds face circles rather than roads. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_hidden_drain_stone = area.room('hr_hidden_drain_stone', name='Hidden Drain Stone', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on hidden drain stone, where old plaster keeps the faint color of sunset. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_soft_fern_chamber = area.room('hr_soft_fern_chamber', name='Soft Fern Chamber', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on soft fern chamber, where the air tastes of rain and mineral dust. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_wet_plaster_shelf = area.room('hr_wet_plaster_shelf', name='Wet Plaster Shelf', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on wet plaster shelf, where vines hide the line where cut stone meets living root. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_grey_vine_gallery = area.room('hr_grey_vine_gallery', name='Grey Vine Gallery', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on grey vine gallery, where shell-white fungus beads along shaded cracks. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_quiet_root_stair = area.room('hr_quiet_root_stair', name='Quiet Root Stair', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on quiet root stair, where broken thresholds face circles rather than roads. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_collapsed_shade_room = area.room('hr_collapsed_shade_room', name='Collapsed Shade Room', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on collapsed shade room, where old plaster keeps the faint color of sunset. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    hr_last_humid_wall = area.room('hr_last_humid_wall', name='Last Humid Wall', desc='Low ruin walls sleep under vines and shell-white fungi, suggesting old use without surrendering easy answers. This part of the Humid Ruins centers on last humid wall, where the air tastes of rain and mineral dust. The ruins are breadcrumbs, not exposition; they invite curiosity and restraint.', room_type='ruins')
+    lc_lagoon_crown_mouth = area.room('lc_lagoon_crown_mouth', name='Lagoon Crown Mouth', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on lagoon crown mouth, where lagoon water changes from green to blue in a single step. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_green_blue_step = area.room('lc_green_blue_step', name='Green-Blue Step', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on green-blue step, where saltfruit roots grip the bank in clean loops. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_saltfruit_root_bank = area.room('lc_saltfruit_root_bank', name='Saltfruit Root Bank', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on saltfruit root bank, where shore reptiles leave belly trails through warm sand. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_warm_belly_trail = area.room('lc_warm_belly_trail', name='Warm Belly Trail', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on warm belly trail, where small fish gather under hanging fern shade. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_hanging_fern_fish = area.room('lc_hanging_fern_fish', name='Hanging Fern Fish', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on hanging fern fish, where the return path is marked with humble shell cairns. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_shell_cairn_return = area.room('lc_shell_cairn_return', name='Shell Cairn Return', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on shell cairn return, where lagoon water changes from green to blue in a single step. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_quiet_lagoon_seat = area.room('lc_quiet_lagoon_seat', name='Quiet Lagoon Seat', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on quiet lagoon seat, where saltfruit roots grip the bank in clean loops. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_reed_warm_edge = area.room('lc_reed_warm_edge', name='Reed-Warm Edge', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on reed-warm edge, where shore reptiles leave belly trails through warm sand. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_deep_color_cut = area.room('lc_deep_color_cut', name='Deep Color Cut', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on deep color cut, where small fish gather under hanging fern shade. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_small_fish_shade = area.room('lc_small_fish_shade', name='Small Fish Shade', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on small fish shade, where the return path is marked with humble shell cairns. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_palm_loop_bank = area.room('lc_palm_loop_bank', name='Palm-Loop Bank', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on palm-loop bank, where lagoon water changes from green to blue in a single step. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_shore_track_bar = area.room('lc_shore_track_bar', name='Shore Track Bar', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on shore track bar, where saltfruit roots grip the bank in clean loops. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_clear_water_turn = area.room('lc_clear_water_turn', name='Clear Water Turn', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on clear water turn, where shore reptiles leave belly trails through warm sand. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_lagoon_bird_stone = area.room('lc_lagoon_bird_stone', name='Lagoon Bird Stone', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on lagoon bird stone, where small fish gather under hanging fern shade. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_low_return_cairn = area.room('lc_low_return_cairn', name='Low Return Cairn', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on low return cairn, where the return path is marked with humble shell cairns. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_fern_dark_pool = area.room('lc_fern_dark_pool', name='Fern-Dark Pool', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on fern-dark pool, where lagoon water changes from green to blue in a single step. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_long_sand_tongue = area.room('lc_long_sand_tongue', name='Long Sand Tongue', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on long sand tongue, where saltfruit roots grip the bank in clean loops. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_inner_lagoon_shelf = area.room('lc_inner_lagoon_shelf', name='Inner Lagoon Shelf', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on inner lagoon shelf, where shore reptiles leave belly trails through warm sand. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_blue_crown_bend = area.room('lc_blue_crown_bend', name='Blue Crown Bend', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on blue crown bend, where small fish gather under hanging fern shade. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+    lc_last_lagoon_cairn = area.room('lc_last_lagoon_cairn', name='Last Lagoon Cairn', desc="The isle's crown opens to a calm lagoon where fish, birds, and larger reptiles keep the place from feeling abandoned. This part of the Lagoon Crown centers on last lagoon cairn, where the return path is marked with humble shell cairns. The lagoon balances wonder with practical play: fishing, danger, gathering, and a clear way back.", room_type='clearing')
+
+    # Local exits
+    area.exit(gc_korahei_track, gc_green_cause_start, 'east')
+    area.exit(gc_green_cause_start, gc_korahei_track, 'west')
+    area.exit(gc_green_cause_start, gc_palm_root_arc, 'east')
+    area.exit(gc_palm_root_arc, gc_green_cause_start, 'west')
+    area.exit(gc_palm_root_arc, gc_mist_pocket_step, 'east')
+    area.exit(gc_mist_pocket_step, gc_palm_root_arc, 'west')
+    area.exit(gc_mist_pocket_step, gc_retied_route_charm, 'east')
+    area.exit(gc_retied_route_charm, gc_mist_pocket_step, 'west')
+    area.exit(gc_retied_route_charm, gc_repeating_bird_turn, 'east')
+    area.exit(gc_repeating_bird_turn, gc_retied_route_charm, 'west')
+    area.exit(gc_repeating_bird_turn, gc_loop_stone, 'east')
+    area.exit(gc_loop_stone, gc_repeating_bird_turn, 'west')
+    area.exit(gc_loop_stone, gc_mossy_cause_rail, 'east')
+    area.exit(gc_mossy_cause_rail, gc_loop_stone, 'west')
+    area.exit(gc_mossy_cause_rail, gc_inner_water_glance, 'east')
+    area.exit(gc_inner_water_glance, gc_mossy_cause_rail, 'west')
+    area.exit(gc_inner_water_glance, gc_double_back_bend, 'east')
+    area.exit(gc_double_back_bend, gc_inner_water_glance, 'west')
+    area.exit(gc_double_back_bend, gc_kelp_scented_shade, 'east')
+    area.exit(gc_kelp_scented_shade, gc_double_back_bend, 'west')
+    area.exit(gc_kelp_scented_shade, gc_soft_mud_print, 'east')
+    area.exit(gc_soft_mud_print, gc_kelp_scented_shade, 'west')
+    area.exit(gc_soft_mud_print, gc_hidden_spring_sound, 'east')
+    area.exit(gc_hidden_spring_sound, gc_soft_mud_print, 'west')
+    area.exit(gc_hidden_spring_sound, gc_warm_fern_run, 'east')
+    area.exit(gc_warm_fern_run, gc_hidden_spring_sound, 'west')
+    area.exit(gc_warm_fern_run, gc_old_track_shoulder, 'east')
+    area.exit(gc_old_track_shoulder, gc_warm_fern_run, 'west')
+    area.exit(gc_old_track_shoulder, gc_round_stone_rest, 'east')
+    area.exit(gc_round_stone_rest, gc_old_track_shoulder, 'west')
+    area.exit(gc_round_stone_rest, gc_unlost_turn, 'east')
+    area.exit(gc_unlost_turn, gc_round_stone_rest, 'west')
+    area.exit(gc_unlost_turn, gc_green_cause_rise, 'east')
+    area.exit(gc_green_cause_rise, gc_unlost_turn, 'west')
+    area.exit(gc_green_cause_rise, gc_central_light_gap, 'east')
+    area.exit(gc_central_light_gap, gc_green_cause_rise, 'west')
+    area.exit(gc_central_light_gap, gc_humid_path_fork, 'east')
+    area.exit(gc_humid_path_fork, gc_central_light_gap, 'west')
+    area.exit(rp_rain_pools, rp_clear_sky_ripple, 'east')
+    area.exit(rp_clear_sky_ripple, rp_rain_pools, 'west')
+    area.exit(rp_clear_sky_ripple, rp_tide_mint_bowl, 'east')
+    area.exit(rp_tide_mint_bowl, rp_clear_sky_ripple, 'west')
+    area.exit(rp_tide_mint_bowl, rp_silent_frog_bank, 'east')
+    area.exit(rp_silent_frog_bank, rp_tide_mint_bowl, 'west')
+    area.exit(rp_silent_frog_bank, rp_bright_reflection_pool, 'east')
+    area.exit(rp_bright_reflection_pool, rp_silent_frog_bank, 'west')
+    area.exit(rp_bright_reflection_pool, rp_cupped_basalt_lip, 'east')
+    area.exit(rp_cupped_basalt_lip, rp_bright_reflection_pool, 'west')
+    area.exit(rp_cupped_basalt_lip, rp_freshwater_thread, 'east')
+    area.exit(rp_freshwater_thread, rp_cupped_basalt_lip, 'west')
+    area.exit(rp_freshwater_thread, rp_warm_rain_stone, 'east')
+    area.exit(rp_warm_rain_stone, rp_freshwater_thread, 'west')
+    area.exit(rp_warm_rain_stone, rp_round_pool_shelf, 'east')
+    area.exit(rp_round_pool_shelf, rp_warm_rain_stone, 'west')
+    area.exit(rp_round_pool_shelf, rp_unfallen_drop_ring, 'east')
+    area.exit(rp_unfallen_drop_ring, rp_round_pool_shelf, 'west')
+    area.exit(rp_unfallen_drop_ring, rp_moss_wet_seat, 'east')
+    area.exit(rp_moss_wet_seat, rp_unfallen_drop_ring, 'west')
+    area.exit(rp_moss_wet_seat, rp_low_fern_mirror, 'east')
+    area.exit(rp_low_fern_mirror, rp_moss_wet_seat, 'west')
+    area.exit(rp_low_fern_mirror, rp_singing_water_edge, 'east')
+    area.exit(rp_singing_water_edge, rp_low_fern_mirror, 'west')
+    area.exit(rp_singing_water_edge, rp_pale_fish_bowl, 'east')
+    area.exit(rp_pale_fish_bowl, rp_singing_water_edge, 'west')
+    area.exit(rp_pale_fish_bowl, rp_green_light_basin, 'east')
+    area.exit(rp_green_light_basin, rp_pale_fish_bowl, 'west')
+    area.exit(rp_green_light_basin, rp_still_rain_cut, 'east')
+    area.exit(rp_still_rain_cut, rp_green_light_basin, 'west')
+    area.exit(rp_still_rain_cut, rp_pool_of_two_skies, 'east')
+    area.exit(rp_pool_of_two_skies, rp_still_rain_cut, 'west')
+    area.exit(rp_pool_of_two_skies, rp_mist_breath_hollow, 'east')
+    area.exit(rp_mist_breath_hollow, rp_pool_of_two_skies, 'west')
+    area.exit(rp_mist_breath_hollow, rp_last_rain_bowl, 'east')
+    area.exit(rp_last_rain_bowl, rp_mist_breath_hollow, 'west')
+    area.exit(rp_last_rain_bowl, rp_pool_ridge_turn, 'east')
+    area.exit(rp_pool_ridge_turn, rp_last_rain_bowl, 'west')
+    area.exit(bs_basalt_ring, bs_warm_outer_spiral, 'east')
+    area.exit(bs_warm_outer_spiral, bs_basalt_ring, 'west')
+    area.exit(bs_warm_outer_spiral, bs_cool_center_stone, 'east')
+    area.exit(bs_cool_center_stone, bs_warm_outer_spiral, 'west')
+    area.exit(bs_cool_center_stone, bs_crescent_moss_gap, 'east')
+    area.exit(bs_crescent_moss_gap, bs_cool_center_stone, 'west')
+    area.exit(bs_crescent_moss_gap, bs_tortoise_grazing_edge, 'east')
+    area.exit(bs_tortoise_grazing_edge, bs_crescent_moss_gap, 'west')
+    area.exit(bs_tortoise_grazing_edge, bs_inland_shell_scatter, 'east')
+    area.exit(bs_inland_shell_scatter, bs_tortoise_grazing_edge, 'west')
+    area.exit(bs_inland_shell_scatter, bs_tool_softened_mark, 'east')
+    area.exit(bs_tool_softened_mark, bs_inland_shell_scatter, 'west')
+    area.exit(bs_tool_softened_mark, bs_old_ring_notch, 'east')
+    area.exit(bs_old_ring_notch, bs_tool_softened_mark, 'west')
+    area.exit(bs_old_ring_notch, bs_black_stone_step, 'east')
+    area.exit(bs_black_stone_step, bs_old_ring_notch, 'west')
+    area.exit(bs_black_stone_step, bs_narrow_spiral_walk, 'east')
+    area.exit(bs_narrow_spiral_walk, bs_black_stone_step, 'west')
+    area.exit(bs_narrow_spiral_walk, bs_center_listening_seat, 'east')
+    area.exit(bs_center_listening_seat, bs_narrow_spiral_walk, 'west')
+    area.exit(bs_center_listening_seat, bs_basalt_dust_pocket, 'east')
+    area.exit(bs_basalt_dust_pocket, bs_center_listening_seat, 'west')
+    area.exit(bs_basalt_dust_pocket, bs_round_echo_wall, 'east')
+    area.exit(bs_round_echo_wall, bs_basalt_dust_pocket, 'west')
+    area.exit(bs_round_echo_wall, bs_stone_warm_hollow, 'east')
+    area.exit(bs_stone_warm_hollow, bs_round_echo_wall, 'west')
+    area.exit(bs_stone_warm_hollow, bs_half_buried_ring, 'east')
+    area.exit(bs_half_buried_ring, bs_stone_warm_hollow, 'west')
+    area.exit(bs_half_buried_ring, bs_spiral_return_turn, 'east')
+    area.exit(bs_spiral_return_turn, bs_half_buried_ring, 'west')
+    area.exit(bs_spiral_return_turn, bs_marked_basalt_face, 'east')
+    area.exit(bs_marked_basalt_face, bs_spiral_return_turn, 'west')
+    area.exit(bs_marked_basalt_face, bs_moss_crescent_rise, 'east')
+    area.exit(bs_moss_crescent_rise, bs_marked_basalt_face, 'west')
+    area.exit(bs_moss_crescent_rise, bs_inner_ring_shelf, 'east')
+    area.exit(bs_inner_ring_shelf, bs_moss_crescent_rise, 'west')
+    area.exit(bs_inner_ring_shelf, bs_quiet_black_center, 'east')
+    area.exit(bs_quiet_black_center, bs_inner_ring_shelf, 'west')
+    area.exit(hr_humid_ruin, hr_vine_hidden_wall, 'east')
+    area.exit(hr_vine_hidden_wall, hr_humid_ruin, 'west')
+    area.exit(hr_vine_hidden_wall, hr_shell_fungus_crack, 'east')
+    area.exit(hr_shell_fungus_crack, hr_vine_hidden_wall, 'west')
+    area.exit(hr_shell_fungus_crack, hr_circle_facing_threshold, 'east')
+    area.exit(hr_circle_facing_threshold, hr_shell_fungus_crack, 'west')
+    area.exit(hr_circle_facing_threshold, hr_sunset_plaster_niche, 'east')
+    area.exit(hr_sunset_plaster_niche, hr_circle_facing_threshold, 'west')
+    area.exit(hr_sunset_plaster_niche, hr_rain_mineral_hall, 'east')
+    area.exit(hr_rain_mineral_hall, hr_sunset_plaster_niche, 'west')
+    area.exit(hr_rain_mineral_hall, hr_broken_palm_court, 'east')
+    area.exit(hr_broken_palm_court, hr_rain_mineral_hall, 'west')
+    area.exit(hr_broken_palm_court, hr_root_lifted_floor, 'east')
+    area.exit(hr_root_lifted_floor, hr_broken_palm_court, 'west')
+    area.exit(hr_root_lifted_floor, hr_low_arch_moss, 'east')
+    area.exit(hr_low_arch_moss, hr_root_lifted_floor, 'west')
+    area.exit(hr_low_arch_moss, hr_damp_color_room, 'east')
+    area.exit(hr_damp_color_room, hr_low_arch_moss, 'west')
+    area.exit(hr_damp_color_room, hr_fallen_lintel_seat, 'east')
+    area.exit(hr_fallen_lintel_seat, hr_damp_color_room, 'west')
+    area.exit(hr_fallen_lintel_seat, hr_old_door_without_road, 'east')
+    area.exit(hr_old_door_without_road, hr_fallen_lintel_seat, 'west')
+    area.exit(hr_old_door_without_road, hr_misty_wall_bend, 'east')
+    area.exit(hr_misty_wall_bend, hr_old_door_without_road, 'west')
+    area.exit(hr_misty_wall_bend, hr_hidden_drain_stone, 'east')
+    area.exit(hr_hidden_drain_stone, hr_misty_wall_bend, 'west')
+    area.exit(hr_hidden_drain_stone, hr_soft_fern_chamber, 'east')
+    area.exit(hr_soft_fern_chamber, hr_hidden_drain_stone, 'west')
+    area.exit(hr_soft_fern_chamber, hr_wet_plaster_shelf, 'east')
+    area.exit(hr_wet_plaster_shelf, hr_soft_fern_chamber, 'west')
+    area.exit(hr_wet_plaster_shelf, hr_grey_vine_gallery, 'east')
+    area.exit(hr_grey_vine_gallery, hr_wet_plaster_shelf, 'west')
+    area.exit(hr_grey_vine_gallery, hr_quiet_root_stair, 'east')
+    area.exit(hr_quiet_root_stair, hr_grey_vine_gallery, 'west')
+    area.exit(hr_quiet_root_stair, hr_collapsed_shade_room, 'east')
+    area.exit(hr_collapsed_shade_room, hr_quiet_root_stair, 'west')
+    area.exit(hr_collapsed_shade_room, hr_last_humid_wall, 'east')
+    area.exit(hr_last_humid_wall, hr_collapsed_shade_room, 'west')
+    area.exit(lc_lagoon_crown_mouth, lc_green_blue_step, 'east')
+    area.exit(lc_green_blue_step, lc_lagoon_crown_mouth, 'west')
+    area.exit(lc_green_blue_step, lc_saltfruit_root_bank, 'east')
+    area.exit(lc_saltfruit_root_bank, lc_green_blue_step, 'west')
+    area.exit(lc_saltfruit_root_bank, lc_warm_belly_trail, 'east')
+    area.exit(lc_warm_belly_trail, lc_saltfruit_root_bank, 'west')
+    area.exit(lc_warm_belly_trail, lc_hanging_fern_fish, 'east')
+    area.exit(lc_hanging_fern_fish, lc_warm_belly_trail, 'west')
+    area.exit(lc_hanging_fern_fish, lc_shell_cairn_return, 'east')
+    area.exit(lc_shell_cairn_return, lc_hanging_fern_fish, 'west')
+    area.exit(lc_shell_cairn_return, lc_quiet_lagoon_seat, 'east')
+    area.exit(lc_quiet_lagoon_seat, lc_shell_cairn_return, 'west')
+    area.exit(lc_quiet_lagoon_seat, lc_reed_warm_edge, 'east')
+    area.exit(lc_reed_warm_edge, lc_quiet_lagoon_seat, 'west')
+    area.exit(lc_reed_warm_edge, lc_deep_color_cut, 'east')
+    area.exit(lc_deep_color_cut, lc_reed_warm_edge, 'west')
+    area.exit(lc_deep_color_cut, lc_small_fish_shade, 'east')
+    area.exit(lc_small_fish_shade, lc_deep_color_cut, 'west')
+    area.exit(lc_small_fish_shade, lc_palm_loop_bank, 'east')
+    area.exit(lc_palm_loop_bank, lc_small_fish_shade, 'west')
+    area.exit(lc_palm_loop_bank, lc_shore_track_bar, 'east')
+    area.exit(lc_shore_track_bar, lc_palm_loop_bank, 'west')
+    area.exit(lc_shore_track_bar, lc_clear_water_turn, 'east')
+    area.exit(lc_clear_water_turn, lc_shore_track_bar, 'west')
+    area.exit(lc_clear_water_turn, lc_lagoon_bird_stone, 'east')
+    area.exit(lc_lagoon_bird_stone, lc_clear_water_turn, 'west')
+    area.exit(lc_lagoon_bird_stone, lc_low_return_cairn, 'east')
+    area.exit(lc_low_return_cairn, lc_lagoon_bird_stone, 'west')
+    area.exit(lc_low_return_cairn, lc_fern_dark_pool, 'east')
+    area.exit(lc_fern_dark_pool, lc_low_return_cairn, 'west')
+    area.exit(lc_fern_dark_pool, lc_long_sand_tongue, 'east')
+    area.exit(lc_long_sand_tongue, lc_fern_dark_pool, 'west')
+    area.exit(lc_long_sand_tongue, lc_inner_lagoon_shelf, 'east')
+    area.exit(lc_inner_lagoon_shelf, lc_long_sand_tongue, 'west')
+    area.exit(lc_inner_lagoon_shelf, lc_blue_crown_bend, 'east')
+    area.exit(lc_blue_crown_bend, lc_inner_lagoon_shelf, 'west')
+    area.exit(lc_blue_crown_bend, lc_last_lagoon_cairn, 'east')
+    area.exit(lc_last_lagoon_cairn, lc_blue_crown_bend, 'west')
+    area.exit(gc_humid_path_fork, rp_rain_pools, 'north')
+    area.exit(rp_rain_pools, gc_humid_path_fork, 'south')
+    area.exit(rp_pool_ridge_turn, bs_basalt_ring, 'north')
+    area.exit(bs_basalt_ring, rp_pool_ridge_turn, 'south')
+    area.exit(bs_quiet_black_center, hr_humid_ruin, 'north')
+    area.exit(hr_humid_ruin, bs_quiet_black_center, 'south')
+    area.exit(hr_last_humid_wall, lc_lagoon_crown_mouth, 'north')
+    area.exit(lc_lagoon_crown_mouth, hr_last_humid_wall, 'south')
+    area.exit(gc_korahei_track, 'korahei:lt_central_path', 'west')
+
+    # NPCs
+    _pathfinder = area.npc(gc_loop_stone, 'npc_central_pathfinder_inoa', faction='kauroran', dialogue={'greeting': 'Pathfinder Inoa studies you with open attention.', 'topics': {'help': 'Keeps routes honest where the isle repeats itself.', 'custom': 'Korahei expects guests to learn by helping, listening, and returning what they carry.'}, 'hints': ['Use talk and ask to learn why the errand matters before you run it.']}, ambient={'idle_echoes': ['Pathfinder Inoa adjusts a small detail, making the place easier for the next person.'], 'idle_interval': 90, 'idle_variance': 30})
+    _basalt_listener = area.npc(bs_center_listening_seat, 'npc_basalt_listener_safi', faction='kauroran', dialogue={'greeting': 'Basalt Listener Safi studies you with open attention.', 'topics': {'help': 'Studies old rings through practice, not revelation.', 'custom': 'Korahei expects guests to learn by helping, listening, and returning what they carry.'}, 'hints': ['Use talk and ask to learn why the errand matters before you run it.']}, ambient={'idle_echoes': ['Basalt Listener Safi adjusts a small detail, making the place easier for the next person.'], 'idle_interval': 90, 'idle_variance': 30})
+    _rain_keeper = area.npc(rp_rain_pools, 'npc_rain_pool_keeper_toma', faction='kauroran', dialogue={'greeting': 'Rain-Pool Keeper Toma studies you with open attention.', 'topics': {'help': 'Records water that arrives at inconvenient times.', 'custom': 'Korahei expects guests to learn by helping, listening, and returning what they carry.'}, 'hints': ['Use talk and ask to learn why the errand matters before you run it.']}, ambient={'idle_echoes': ['Rain-Pool Keeper Toma adjusts a small detail, making the place easier for the next person.'], 'idle_interval': 90, 'idle_variance': 30})
+
+    # Quest and delivery item templates
+    area.quest(
+        'central_q_loop_walk',
+        name='Walk the Loop Twice',
+        description='Inoa asks you to walk the central loop deliberately, turning odd terrain into learned orientation rather than random maze friction.',
+        quest_type='exploration',
+        quest_giver='npc_central_pathfinder_inoa',
+        objectives=[{'type': 'investigate', 'target': 'gc_loop_stone', 'count': 1}, {'type': 'investigate', 'target': 'rp_rain_pools', 'count': 1}, {'type': 'investigate', 'target': 'bs_basalt_ring', 'count': 1}],
+        rewards=[{'action_type': 'give_scales', 'amount': 32}, {'action_type': 'give_skill_xp', 'skill_id': 'scholarship', 'count': 10}],
+        next_quest_id='central_q_basalt_listening',
+        prerequisite_quests=['kiai_q_patient_steps'],
+        can_share=True,
+        consequence_small='The quest giver remembers that you helped with care instead of haste.',
+    )
+    area.quest(
+        'central_q_basalt_listening',
+        name='Basalt Listening',
+        description='Safi asks for basalt samples and careful observation, giving players node-adjacent mystery without explaining the impossible too early.',
+        quest_type='gathering',
+        quest_giver='npc_basalt_listener_safi',
+        objectives=[{'type': 'collect', 'target': 'old_ring_basalt', 'count': 3}, {'type': 'investigate', 'target': 'bs_basalt_ring', 'count': 1}, {'type': 'talk_to', 'target': 'npc_rain_pool_keeper_toma', 'count': 1}],
+        rewards=[{'action_type': 'give_scales', 'amount': 34}, {'action_type': 'give_skill_xp', 'skill_id': 'mining', 'count': 10}],
+        next_quest_id=None,
+        prerequisite_quests=['central_q_loop_walk'],
+        can_share=True,
+        consequence_small='The quest giver remembers that you helped with care instead of haste.',
+    )
+    area.quest(
+        'central_q_rain_without_clouds',
+        name='Rain Without Clouds',
+        description="Toma has you compare rain pools and lagoon water so the isle's strangeness feels trackable, not decorative.",
+        quest_type='exploration',
+        quest_giver='npc_rain_pool_keeper_toma',
+        objectives=[{'type': 'investigate', 'target': 'rp_clear_sky_ripple', 'count': 1}, {'type': 'investigate', 'target': 'lc_green_blue_step', 'count': 1}, {'type': 'collect', 'target': 'sunleaf', 'count': 2}],
+        rewards=[{'action_type': 'give_scales', 'amount': 30}, {'action_type': 'give_skill_xp', 'skill_id': 'herbalism', 'count': 8}],
+        next_quest_id=None,
+        prerequisite_quests=[],
+        can_share=True,
+        consequence_small='The quest giver remembers that you helped with care instead of haste.',
+    )
+
+    # Spawns
+    area.spawn(bs_tortoise_grazing_edge, 'basalt_tortoise', count_min=1, count_max=2, respawn_minutes=18)
+    area.spawn(lc_shore_track_bar, 'shore_drake', count_min=1, count_max=1, respawn_minutes=18)
+    area.spawn(rp_silent_frog_bank, 'ring_moth_swarm', count_min=1, count_max=2, respawn_minutes=18)
+    area.spawn(gc_soft_mud_print, 'tideback_lizard', count_min=1, count_max=2, respawn_minutes=18)
+
+    # Gathering pools
+    area.gathering_pool('fish', ['lc_hanging_fern_fish', 'rp_pale_fish_bowl'], ['reef_silverjack', 'tide_eel'], max_active=3, respawn_minutes=12)
+    area.gathering_pool('forage', ['lc_saltfruit_root_bank', 'gc_kelp_scented_shade'], ['saltfruit', 'hearthroot'], max_active=3, respawn_minutes=12)
+    area.gathering_pool('herb', ['rp_tide_mint_bowl', 'gc_warm_fern_run'], ['sunleaf'], max_active=3, respawn_minutes=12)
+    area.gathering_pool('ore', ['bs_marked_basalt_face', 'bs_basalt_dust_pocket'], ['old_ring_basalt'], max_active=3, respawn_minutes=12)
+    area.gathering_pool('hide', ['lc_shore_track_bar', 'bs_tortoise_grazing_edge'], ['shore_drake_hide'], max_active=3, respawn_minutes=12)
+    area.gathering_pool('wood', ['gc_palm_root_arc', 'lc_palm_loop_bank'], ['circle_bamboo'], max_active=3, respawn_minutes=12)
+
+    area.node(
+        bs_basalt_ring,
+        radius=6,
+        lore_fragments=['central_isle_lore_001', 'central_isle_lore_002'],
+        layer_1_overrides={
+            'bs_basalt_ring': {
+                'name': 'Basalt Ring Under Sudden Rain',
+                'desc': 'Rain beads on the basalt while the sky remains bright. The ring feels carefully measured, but it explains nothing by itself.',
+            },
+        },
+    )
+
+    return area.build()

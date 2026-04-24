@@ -66,6 +66,26 @@ class TestZoneImports(unittest.TestCase):
         from world.areas import stagcrown_preserve
         self.assertTrue(hasattr(stagcrown_preserve, "build"))
 
+    def test_korahei_imports(self):
+        from world.areas import korahei
+        self.assertTrue(hasattr(korahei, "build"))
+
+    def test_veluana_outer_reefs_imports(self):
+        from world.areas import veluana_outer_reefs
+        self.assertTrue(hasattr(veluana_outer_reefs, "build"))
+
+    def test_kiai_grounds_imports(self):
+        from world.areas import kiai_grounds
+        self.assertTrue(hasattr(kiai_grounds, "build"))
+
+    def test_veluana_central_isle_imports(self):
+        from world.areas import veluana_central_isle
+        self.assertTrue(hasattr(veluana_central_isle, "build"))
+
+    def test_colonist_ruins_imports(self):
+        from world.areas import colonist_ruins
+        self.assertTrue(hasattr(colonist_ruins, "build"))
+
     def test_equipment_catalog_imports(self):
         from world.areas import equipment_catalog
         self.assertTrue(hasattr(equipment_catalog, "build"))
@@ -75,12 +95,14 @@ class TestZoneImports(unittest.TestCase):
         from world.areas import (
             vaels_crossing, ashreach_plains, reth_foothills,
             cantera_edge, stormhaven_coast, varath_prime, crownroad_north, old_causeway,
-            ironvein_escarpment, stagcrown_preserve, equipment_catalog,
+            ironvein_escarpment, stagcrown_preserve, korahei, veluana_outer_reefs,
+            kiai_grounds, veluana_central_isle, colonist_ruins, equipment_catalog,
         )
         for module in [
             vaels_crossing, ashreach_plains, reth_foothills,
             cantera_edge, stormhaven_coast, varath_prime, crownroad_north, old_causeway,
-            ironvein_escarpment, stagcrown_preserve, equipment_catalog,
+            ironvein_escarpment, stagcrown_preserve, korahei, veluana_outer_reefs,
+            kiai_grounds, veluana_central_isle, colonist_ruins, equipment_catalog,
         ]:
             self.assertTrue(
                 callable(getattr(module, "build", None)),

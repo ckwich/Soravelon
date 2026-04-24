@@ -2830,6 +2830,347 @@ MOB_TEMPLATES = {
         "wander": False,
         "loot_table": "heartwood_ancient",
     },
+    # --- Hub 5: Korahei and Velu'ana wildlife / threats ---
+    "reefcrawler": {
+        "key": "reefcrawler",
+        "mob_type": "reefcrawler",
+        "desc": (
+            "A broad-shelled crustacean scuttles over wet stone, one claw "
+            "held high while the other scrapes algae from the reef. Its shell "
+            "is bright with salt and old nicks from spear points."
+        ),
+        "base_aggression": "neutral",
+        "hp_min": 28,
+        "hp_max": 42,
+        "damage_min": 4,
+        "damage_max": 8,
+        "speed": 0.8,
+        "abilities": [
+            {
+                "ability_id": "claw_snap",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 7,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+            {
+                "ability_id": "shell_brace",
+                "weight": 1,
+                "element": "physical",
+                "damage_base": 0,
+                "cooldown": 6,
+                "condition": "self_below_50hp",
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 20,
+        "wander": True,
+        "loot_table": "shore_crab",
+    },
+    "tideback_lizard": {
+        "key": "tideback lizard",
+        "mob_type": "tideback_lizard",
+        "desc": (
+            "A green-black lizard basks on warm stone, its ridged back slick "
+            "with tidewater. It watches movement with still patience before "
+            "lashing out in quick bursts."
+        ),
+        "base_aggression": "neutral",
+        "hp_min": 45,
+        "hp_max": 68,
+        "damage_min": 7,
+        "damage_max": 13,
+        "speed": 1.15,
+        "abilities": [
+            {
+                "ability_id": "tail_lash",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 11,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.25,
+            },
+            {
+                "ability_id": "salt_bite",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 9,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 2,
+                "effect_magnitude": 2,
+                "application_chance": 0.2,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 12,
+        "wander": True,
+        "loot_table": "wild_boar",
+    },
+    "reef_raider": {
+        "key": "reef raider",
+        "mob_type": "reef_raider",
+        "desc": (
+            "A salt-cloaked raider keeps low among the rocks, carrying a "
+            "hooked blade and a satchel patched with stolen sailcloth. Their "
+            "eyes stay on baskets, boats, and unattended tools."
+        ),
+        "base_aggression": "hostile",
+        "hp_min": 55,
+        "hp_max": 82,
+        "damage_min": 8,
+        "damage_max": 15,
+        "speed": 1.0,
+        "abilities": [
+            {
+                "ability_id": "hook_slash",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 13,
+                "cooldown": 2,
+                "condition": None,
+                "status_effect": "bleed",
+                "effect_duration": 3,
+                "effect_magnitude": 2,
+                "application_chance": 0.3,
+            },
+            {
+                "ability_id": "sand_kick",
+                "weight": 1,
+                "element": "physical",
+                "damage_base": 5,
+                "cooldown": 5,
+                "condition": None,
+                "status_effect": "blind",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.25,
+            },
+        ],
+        "faction": "raider",
+        "is_hunter": False,
+        "detection_range": 3,
+        "flee_threshold": 8,
+        "wander": True,
+        "loot_table": "coastal_raider",
+    },
+    "shore_drake": {
+        "key": "shore drake",
+        "mob_type": "shore_drake",
+        "desc": (
+            "A heavy island reptile lifts its blunt head from the warm sand. "
+            "Salt crystals line the plates of its hide, and its foreclaws are "
+            "made for hauling itself through surf and stone alike."
+        ),
+        "base_aggression": "territorial",
+        "hp_min": 90,
+        "hp_max": 130,
+        "damage_min": 12,
+        "damage_max": 21,
+        "speed": 0.9,
+        "abilities": [
+            {
+                "ability_id": "surf_charge",
+                "weight": 2,
+                "element": "physical",
+                "damage_base": 18,
+                "cooldown": 4,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.25,
+            },
+            {
+                "ability_id": "salt_hide",
+                "weight": 1,
+                "element": "physical",
+                "damage_base": 0,
+                "cooldown": 8,
+                "condition": "self_below_50hp",
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 0,
+        "wander": True,
+        "loot_table": "sea_serpent",
+    },
+    "ring_moth_swarm": {
+        "key": "ring moth swarm",
+        "mob_type": "ring_moth_swarm",
+        "desc": (
+            "A trembling cloud of pale moths rises from old garlands and "
+            "sun-warmed stone. Their wings flash gold when the light catches "
+            "them together."
+        ),
+        "base_aggression": "neutral",
+        "hp_min": 35,
+        "hp_max": 55,
+        "damage_min": 5,
+        "damage_max": 10,
+        "speed": 1.25,
+        "abilities": [
+            {
+                "ability_id": "wing_daze",
+                "weight": 3,
+                "element": "nature",
+                "damage_base": 7,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "confusion",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.3,
+            }
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 2,
+        "flee_threshold": 25,
+        "wander": True,
+        "loot_table": "cliff_harpy",
+    },
+    "basalt_tortoise": {
+        "key": "basalt tortoise",
+        "mob_type": "basalt_tortoise",
+        "desc": (
+            "A broad tortoise with stone-dark plates grazes patiently beside "
+            "the old rings. Moss and tiny shells cling to the cracks of its "
+            "shell, making it look like a moving piece of shore."
+        ),
+        "base_aggression": "neutral",
+        "hp_min": 100,
+        "hp_max": 150,
+        "damage_min": 8,
+        "damage_max": 16,
+        "speed": 0.55,
+        "abilities": [
+            {
+                "ability_id": "shell_bump",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 13,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.2,
+            }
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 1,
+        "flee_threshold": 0,
+        "wander": True,
+        "loot_table": "stone_golem_fragment",
+    },
+    "ruin_jackal": {
+        "key": "ruin jackal",
+        "mob_type": "ruin_jackal",
+        "desc": (
+            "A lean jackal noses through broken stone and dry grass, ribs "
+            "sharp under salt-dulled fur. It circles ruins with the wary "
+            "confidence of an animal that knows every gap."
+        ),
+        "base_aggression": "territorial",
+        "hp_min": 42,
+        "hp_max": 65,
+        "damage_min": 7,
+        "damage_max": 13,
+        "speed": 1.25,
+        "abilities": [
+            {
+                "ability_id": "hamstring_bite",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 10,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": "slow",
+                "effect_duration": 2,
+                "effect_magnitude": 1,
+                "application_chance": 0.25,
+            }
+        ],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 3,
+        "flee_threshold": 15,
+        "wander": True,
+        "loot_table": "wolf",
+    },
+    "charter_looter": {
+        "key": "charter looter",
+        "mob_type": "charter_looter",
+        "desc": (
+            "A hard-eyed scavenger pries at old occupation stone with a short "
+            "bar, more interested in saleable metal than in the names carved "
+            "beneath it."
+        ),
+        "base_aggression": "hostile",
+        "hp_min": 58,
+        "hp_max": 88,
+        "damage_min": 8,
+        "damage_max": 16,
+        "speed": 0.95,
+        "abilities": [
+            {
+                "ability_id": "crowbar_swing",
+                "weight": 3,
+                "element": "physical",
+                "damage_base": 14,
+                "cooldown": 3,
+                "condition": None,
+                "status_effect": None,
+                "effect_duration": 0,
+                "effect_magnitude": 0,
+                "application_chance": 0.0,
+            },
+            {
+                "ability_id": "cheap_shot",
+                "weight": 1,
+                "element": "physical",
+                "damage_base": 8,
+                "cooldown": 5,
+                "condition": None,
+                "status_effect": "stun",
+                "effect_duration": 1,
+                "effect_magnitude": 1,
+                "application_chance": 0.2,
+            },
+        ],
+        "faction": "raider",
+        "is_hunter": False,
+        "detection_range": 3,
+        "flee_threshold": 5,
+        "wander": True,
+        "loot_table": "bandit",
+    },
 }
 
 

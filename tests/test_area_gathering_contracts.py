@@ -17,6 +17,11 @@ ZONE_FILES = {
     "old_causeway": ROOT / "world" / "areas" / "old_causeway.py",
     "ironvein_escarpment": ROOT / "world" / "areas" / "ironvein_escarpment.py",
     "stagcrown_preserve": ROOT / "world" / "areas" / "stagcrown_preserve.py",
+    "korahei": ROOT / "world" / "areas" / "korahei.py",
+    "veluana_outer_reefs": ROOT / "world" / "areas" / "veluana_outer_reefs.py",
+    "kiai_grounds": ROOT / "world" / "areas" / "kiai_grounds.py",
+    "veluana_central_isle": ROOT / "world" / "areas" / "veluana_central_isle.py",
+    "colonist_ruins": ROOT / "world" / "areas" / "colonist_ruins.py",
 }
 
 FISHING_EXPECTED_ZONES = {
@@ -27,6 +32,11 @@ FISHING_EXPECTED_ZONES = {
     "stormhaven_coast",
     "old_causeway",
     "stagcrown_preserve",
+    "korahei",
+    "veluana_outer_reefs",
+    "kiai_grounds",
+    "veluana_central_isle",
+    "colonist_ruins",
 }
 
 
