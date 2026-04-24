@@ -3,6 +3,11 @@
 .claude/graph.json
 .claude/graph-index.json
 .claude/code-map.md
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+.agents/
+AGENTS.md
+CODEX_ROUND_*.md
 
 # Python
 __pycache__/
@@ -10,6 +15,11 @@ __pycache__/
 *.pyo
 *.egg-info/
 *.egg
+.pytest_cache/
+pytest-cache-files-*/
+.venv/
+venv/
+.env
 
 # Evennia runtime artifacts
 server/evennia.db3
@@ -19,6 +29,7 @@ server/*.pid
 
 # Django secrets
 server/conf/secret_settings.py
+server/conf/production_settings.local.py
 
 # IDE / OS
 .vscode/
