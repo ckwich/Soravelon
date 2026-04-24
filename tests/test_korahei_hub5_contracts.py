@@ -22,6 +22,30 @@ START_ROOMS = {
     "colonist_ruins": "ld_quiet_landing",
 }
 
+COMBAT_LOOP_EXPECTATIONS = {
+    "korahei": {"min_spawn_anchors": 4, "min_max_concurrent": 8, "prefixes": {"lt"}},
+    "veluana_outer_reefs": {
+        "min_spawn_anchors": 14,
+        "min_max_concurrent": 24,
+        "prefixes": {"tm", "kp", "wr", "sr"},
+    },
+    "kiai_grounds": {
+        "min_spawn_anchors": 10,
+        "min_max_concurrent": 16,
+        "prefixes": {"cr", "or", "pr", "hr"},
+    },
+    "veluana_central_isle": {
+        "min_spawn_anchors": 12,
+        "min_max_concurrent": 18,
+        "prefixes": {"gc", "rp", "bs", "lc"},
+    },
+    "colonist_ruins": {
+        "min_spawn_anchors": 12,
+        "min_max_concurrent": 18,
+        "prefixes": {"ld", "ar", "bn", "cw"},
+    },
+}
+
 REQUIRED_ANCHORS = {
     "korahei": {
         "ac_arrival_circle",
@@ -120,9 +144,11 @@ def _parse_zone(path):
     data = {
         "text": text,
         "rooms": set(),
+        "room_descs": {},
         "exits": [],
         "npcs": set(),
         "spawns": set(),
+        "spawn_defs": [],
         "named_mobs": set(),
         "items": set(),
         "quests": [],
@@ -152,6 +178,7 @@ def _parse_zone(path):
         if _is_area_call(call, "room"):
             room_id = _literal(call.args[0])
             data["rooms"].add(room_id)
+            data["room_descs"][room_id] = _keyword(call, "desc", "")
             if target_name:
                 room_vars[target_name] = room_id
             continue
@@ -175,7 +202,16 @@ def _parse_zone(path):
             continue
 
         if _is_area_call(call, "spawn"):
-            data["spawns"].add(_literal(call.args[1]))
+            room_id = room_vars.get(_value_or_name(call.args[0]), _value_or_name(call.args[0]))
+            mob_id = _literal(call.args[1])
+            data["spawns"].add(mob_id)
+            data["spawn_defs"].append(
+                {
+                    "room": room_id,
+                    "mob": mob_id,
+                    "count_max": _keyword(call, "count_max", 1),
+                }
+            )
             continue
 
         if _is_area_call(call, "named_mob"):
@@ -485,6 +521,63 @@ class TestKoraheiHub5Contracts(unittest.TestCase):
         for zone_name, data in self.zone_data.items():
             for mob_id in data["spawns"]:
                 self.assertIn(mob_id, MOB_TEMPLATES, f"{zone_name} spawns missing template {mob_id}")
+
+    def test_zones_have_intentional_combat_loops(self):
+        """Combat practice should be available through authored loops, not random sprinkles."""
+        for zone_name, expected in COMBAT_LOOP_EXPECTATIONS.items():
+            spawn_defs = self.zone_data[zone_name]["spawn_defs"]
+            self.assertGreaterEqual(
+                len(spawn_defs),
+                expected["min_spawn_anchors"],
+                f"{zone_name} needs more authored combat anchors",
+            )
+            self.assertGreaterEqual(
+                sum(spawn["count_max"] for spawn in spawn_defs),
+                expected["min_max_concurrent"],
+                f"{zone_name} needs enough concurrent combat targets for repeatable practice",
+            )
+            covered_prefixes = {spawn["room"].split("_", 1)[0] for spawn in spawn_defs}
+            self.assertTrue(
+                expected["prefixes"].issubset(covered_prefixes),
+                f"{zone_name} combat loops should cover {expected['prefixes']}, got {covered_prefixes}",
+            )
+
+    def test_key_and_combat_rooms_have_hand_polished_prose(self):
+        """High-traffic rooms should not retain generated-sounding prose."""
+        for zone_name, data in self.zone_data.items():
+            key_rooms = set(REQUIRED_ANCHORS[zone_name])
+            key_rooms.update(spawn["room"] for spawn in data["spawn_defs"])
+            for room_id in key_rooms:
+                desc = data["room_descs"][room_id]
+                self.assertNotIn(
+                    "This part of the",
+                    desc,
+                    f"{zone_name} {room_id} still has generated prose scaffolding",
+                )
+                self.assertGreaterEqual(
+                    len(desc),
+                    120,
+                    f"{zone_name} {room_id} needs richer hand-polished prose",
+                )
+
+    def test_quest_consequences_are_specific(self):
+        seen = set()
+        generic = "helped with care instead of haste"
+        for zone_name, data in self.zone_data.items():
+            for quest in data["quests"]:
+                consequence = quest.get("consequence_small") or ""
+                self.assertTrue(consequence, f"{zone_name} {quest['quest_id']} needs consequence text")
+                self.assertNotIn(
+                    generic,
+                    consequence,
+                    f"{zone_name} {quest['quest_id']} still uses generic consequence text",
+                )
+                self.assertNotIn(
+                    consequence,
+                    seen,
+                    f"{zone_name} {quest['quest_id']} reuses consequence text",
+                )
+                seen.add(consequence)
 
     def test_content_preserves_dragon_mystery_guardrail(self):
         for zone_name, data in self.zone_data.items():

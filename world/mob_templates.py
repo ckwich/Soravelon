@@ -3171,6 +3171,50 @@ MOB_TEMPLATES = {
         "wander": True,
         "loot_table": "bandit",
     },
+    "weighted_sparring_frame": {
+        "key": "weighted sparring frame",
+        "mob_type": "weighted_sparring_frame",
+        "desc": (
+            "A padded saltpalm frame hung on clever counterweights. It snaps "
+            "back when struck, giving students a safe way to practice timing "
+            "without turning civic training into blood sport."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 70,
+        "hp_max": 95,
+        "damage_min": 4,
+        "damage_max": 8,
+        "speed": 0.85,
+        "abilities": [],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 0,
+        "flee_threshold": 0,
+        "wander": False,
+        "loot_table": None,
+    },
+    "padded_practice_dummy": {
+        "key": "padded practice dummy",
+        "mob_type": "padded_practice_dummy",
+        "desc": (
+            "A broad reed dummy wrapped in patched practice cloth. Chalk marks "
+            "show where learners should aim, while a low sign reminds everyone "
+            "that the point is control, not swagger."
+        ),
+        "base_aggression": "passive",
+        "hp_min": 55,
+        "hp_max": 75,
+        "damage_min": 2,
+        "damage_max": 5,
+        "speed": 0.75,
+        "abilities": [],
+        "faction": None,
+        "is_hunter": False,
+        "detection_range": 0,
+        "flee_threshold": 0,
+        "wander": False,
+        "loot_table": None,
+    },
 }
 
 
