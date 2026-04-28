@@ -22,6 +22,11 @@ ZONE_FILES = {
     "kiai_grounds": ROOT / "world" / "areas" / "kiai_grounds.py",
     "veluana_central_isle": ROOT / "world" / "areas" / "veluana_central_isle.py",
     "colonist_ruins": ROOT / "world" / "areas" / "colonist_ruins.py",
+    "tremen": ROOT / "world" / "areas" / "tremen.py",
+    "greyteeth_lower_passes": ROOT / "world" / "areas" / "greyteeth_lower_passes.py",
+    "tremeneth_high_passes": ROOT / "world" / "areas" / "tremeneth_high_passes.py",
+    "tremeneth_deep_mines": ROOT / "world" / "areas" / "tremeneth_deep_mines.py",
+    "tremeneth_underhalls": ROOT / "world" / "areas" / "tremeneth_underhalls.py",
 }
 
 FISHING_EXPECTED_ZONES = {
@@ -37,6 +42,10 @@ FISHING_EXPECTED_ZONES = {
     "kiai_grounds",
     "veluana_central_isle",
     "colonist_ruins",
+    "greyteeth_lower_passes",
+    "tremeneth_high_passes",
+    "tremeneth_deep_mines",
+    "tremeneth_underhalls",
 }
 
 

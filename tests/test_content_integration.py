@@ -86,6 +86,26 @@ class TestZoneImports(unittest.TestCase):
         from world.areas import colonist_ruins
         self.assertTrue(hasattr(colonist_ruins, "build"))
 
+    def test_tremen_imports(self):
+        from world.areas import tremen
+        self.assertTrue(hasattr(tremen, "build"))
+
+    def test_greyteeth_lower_passes_imports(self):
+        from world.areas import greyteeth_lower_passes
+        self.assertTrue(hasattr(greyteeth_lower_passes, "build"))
+
+    def test_tremeneth_high_passes_imports(self):
+        from world.areas import tremeneth_high_passes
+        self.assertTrue(hasattr(tremeneth_high_passes, "build"))
+
+    def test_tremeneth_deep_mines_imports(self):
+        from world.areas import tremeneth_deep_mines
+        self.assertTrue(hasattr(tremeneth_deep_mines, "build"))
+
+    def test_tremeneth_underhalls_imports(self):
+        from world.areas import tremeneth_underhalls
+        self.assertTrue(hasattr(tremeneth_underhalls, "build"))
+
     def test_equipment_catalog_imports(self):
         from world.areas import equipment_catalog
         self.assertTrue(hasattr(equipment_catalog, "build"))
@@ -96,13 +116,17 @@ class TestZoneImports(unittest.TestCase):
             vaels_crossing, ashreach_plains, reth_foothills,
             cantera_edge, stormhaven_coast, varath_prime, crownroad_north, old_causeway,
             ironvein_escarpment, stagcrown_preserve, korahei, veluana_outer_reefs,
-            kiai_grounds, veluana_central_isle, colonist_ruins, equipment_catalog,
+            kiai_grounds, veluana_central_isle, colonist_ruins, tremen,
+            greyteeth_lower_passes, tremeneth_high_passes, tremeneth_deep_mines,
+            tremeneth_underhalls, equipment_catalog,
         )
         for module in [
             vaels_crossing, ashreach_plains, reth_foothills,
             cantera_edge, stormhaven_coast, varath_prime, crownroad_north, old_causeway,
             ironvein_escarpment, stagcrown_preserve, korahei, veluana_outer_reefs,
-            kiai_grounds, veluana_central_isle, colonist_ruins, equipment_catalog,
+            kiai_grounds, veluana_central_isle, colonist_ruins, tremen,
+            greyteeth_lower_passes, tremeneth_high_passes, tremeneth_deep_mines,
+            tremeneth_underhalls, equipment_catalog,
         ]:
             self.assertTrue(
                 callable(getattr(module, "build", None)),
