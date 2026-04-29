@@ -305,6 +305,7 @@ class AreaBuilder:
         room_obj.db.lore_fragments = kwargs.get("lore_fragments", [])
         room_obj.db.triggers = []
         room_obj.db.custom_commands = []
+        room_obj.db.practice_opportunities = []
 
         # Crafting station tags — clear stale then re-add (D-05 reconciliation)
         room_obj.tags.clear(category="crafting_station")
@@ -794,6 +795,71 @@ class AreaBuilder:
         target.cmdset.add(
             build_dynamic_cmdset(existing, cmdset_key=cmdset_key),
             persistent=True,
+        )
+        return self
+
+    # ------------------------------------------------------------------
+    # practice_opportunity()
+    # ------------------------------------------------------------------
+
+    def practice_opportunity(self, opportunity_id, room, **kwargs):
+        """
+        Register a builder-safe practice opportunity in a room.
+
+        The editable metadata is stored on the room and a dynamic command is
+        wired through action_vocabulary so runtime behavior has one path.
+        """
+        if isinstance(room, str):
+            room_obj = self._rooms.get(room)
+        else:
+            room_obj = room
+        if not room_obj:
+            self._build_warnings.append(
+                f"practice_opportunity(): room '{room}' not found"
+            )
+            return self
+
+        verb = kwargs.get("verb")
+        if not verb:
+            raise AreaBuilderValidationError("practice_opportunity() requires a verb")
+
+        practice_def = {
+            "opportunity_id": opportunity_id,
+            "verb": verb,
+            "target": kwargs.get("target", ""),
+            "skill_awards": kwargs.get("skill_awards", {}),
+            "domain_awards": kwargs.get("domain_awards", {}),
+            "success_text": kwargs.get("success_text", ""),
+            "failure_text": kwargs.get("failure_text", ""),
+            "once_per_character": kwargs.get("once_per_character", False),
+            "cooldown_seconds": kwargs.get("cooldown_seconds", 0),
+        }
+
+        from world.practice_engine import validate_practice_payload
+        valid, validation_msg = validate_practice_payload(practice_def)
+        if not valid:
+            if validation_msg == "That practice is not available.":
+                validation_msg = "practice_opportunity() uses a hidden current-era domain"
+            raise AreaBuilderValidationError(validation_msg)
+
+        existing_practice = list(room_obj.db.practice_opportunities or [])
+        replaced = False
+        for i, existing in enumerate(existing_practice):
+            if existing.get("opportunity_id") == opportunity_id:
+                existing_practice[i] = practice_def
+                replaced = True
+                break
+        if not replaced:
+            existing_practice.append(practice_def)
+        room_obj.db.practice_opportunities = existing_practice
+
+        self.custom_command(
+            room_obj,
+            verb,
+            {"action_type": "grant_practice", **practice_def},
+            visible_in_exits=kwargs.get("visible_in_exits", kwargs.get("visible", False)),
+            aliases=kwargs.get("aliases"),
+            desc=kwargs.get("desc"),
         )
         return self
 

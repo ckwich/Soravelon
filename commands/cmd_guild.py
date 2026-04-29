@@ -40,6 +40,10 @@ class CmdJoinGuild(Command):
             check_guild_eligibility,
             join_guild,
         )
+        from world.remnance_visibility import (
+            domain_is_player_visible,
+            guild_is_player_visible,
+        )
         from world.world_state import ALL_DOMAINS
 
         eligible = check_guild_eligibility(character)
@@ -52,11 +56,11 @@ class CmdJoinGuild(Command):
 
         args = self.args.strip().lower().split()
 
-        # Filter out hidden guilds (vaelborn) unless remnance is discovered
+        # Filter out hidden current-era guilds until a future story unlocks them.
         visible = []
         for gid in eligible:
             guild = GUILDS.get(gid, {})
-            if guild.get("hidden") and not character.db.remnance_discovered:
+            if not guild_is_player_visible(gid, guild, character):
                 continue
             visible.append(gid)
 
@@ -89,6 +93,11 @@ class CmdJoinGuild(Command):
                 return
             if len(args) > 1:
                 secondary = args[1]
+                if not domain_is_player_visible(secondary, character):
+                    character.msg(
+                        "That secondary domain is not available for induction."
+                    )
+                    return
 
         elif len(visible) == 1:
             guild_id = visible[0]
@@ -115,6 +124,8 @@ class CmdJoinGuild(Command):
             scores = character.db.domain_scores or {}
             candidates = []
             for d in ALL_DOMAINS:
+                if not domain_is_player_visible(d, character):
+                    continue
                 if d == primary:
                     continue
                 s = float(scores.get(d, 0.0))
@@ -133,6 +144,8 @@ class CmdJoinGuild(Command):
                 lines.append(f"  |w{d:15}|n (score: {s:.0f}){tag}")
             if not candidates:
                 for d in ALL_DOMAINS:
+                    if not domain_is_player_visible(d, character):
+                        continue
                     if d != primary:
                         lines.append(f"  |w{d}|n")
             lines.append("")

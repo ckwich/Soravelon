@@ -9,7 +9,7 @@ pipeline, including file-based help entries.
 from evennia.commands.default.help import CmdHelp as EvenniaCmdHelp
 
 
-def resolve_ability_help_query(query, abilities):
+def resolve_ability_help_query(query, abilities, include_hidden=False):
     """
     Resolve a help query against the ability registry.
 
@@ -22,13 +22,24 @@ def resolve_ability_help_query(query, abilities):
 
     normalized_id = normalized.replace(" ", "_")
 
-    ability = abilities.get(normalized) or abilities.get(normalized_id)
+    from world.remnance_visibility import ability_is_player_visible
+
+    def _is_visible(ability_data):
+        return include_hidden or ability_is_player_visible(ability_data)
+
+    visible_abilities = {
+        ability_id: ability_data
+        for ability_id, ability_data in abilities.items()
+        if _is_visible(ability_data)
+    }
+
+    ability = visible_abilities.get(normalized) or visible_abilities.get(normalized_id)
     if ability:
         return ability, []
 
     exact_name_matches = [
         ability_data
-        for ability_data in abilities.values()
+        for ability_data in visible_abilities.values()
         if ability_data.get("name", "").lower() == normalized
     ]
     if len(exact_name_matches) == 1:
@@ -37,7 +48,7 @@ def resolve_ability_help_query(query, abilities):
         return None, exact_name_matches
 
     matches = []
-    for ability_id, ability_data in abilities.items():
+    for ability_id, ability_data in visible_abilities.items():
         name_lower = ability_data.get("name", "").lower()
         if ability_id.startswith(normalized_id) or name_lower.startswith(normalized):
             matches.append(ability_data)
@@ -69,8 +80,13 @@ class CmdHelp(EvenniaCmdHelp):
 
         # Lazy import to avoid import-time issues
         from world.ability_registry import ABILITIES
+        from world.remnance_visibility import is_remnance_player_visible
 
-        ability, matches = resolve_ability_help_query(query, ABILITIES)
+        ability, matches = resolve_ability_help_query(
+            query,
+            ABILITIES,
+            include_hidden=is_remnance_player_visible(self.caller),
+        )
 
         if ability:
             self._display_ability_help(ability)

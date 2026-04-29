@@ -188,8 +188,8 @@ LORE_FRAGMENTS = {
             "basalt -- a volcanic rock found nowhere within five hundred "
             "miles. Someone transported them here at enormous cost and "
             "effort. Their alignment corresponds to no known astronomical "
-            "pattern. A Remnance scholar might recognize the stone as "
-            "matching samples from pre-human ruins on the western continent."
+            "pattern. Their grain and tool marks match samples from "
+            "pre-human ruins on the western continent."
         ),
     },
     "lore_seaspray_log": {
@@ -257,9 +257,9 @@ LORE_FRAGMENTS = {
             "by millennia. They are arranged in groups of eight -- the same "
             "notation found on the Ashwatch Tower in Vael's Crossing. "
             "The warmth radiating from them is consistent and sourceless. "
-            "A Remnance scholar would recognize this as a dormant node "
-            "signature -- the mine was dug through it without knowing "
-            "what lay in the rock."
+            "A careful survey would mark this as a dormant node signature "
+            "-- the mine was dug through it without knowing what lay in "
+            "the rock."
         ),
     },
     "lore_reth_golem_terrace": {
@@ -308,8 +308,8 @@ LORE_FRAGMENTS = {
             "Behind the rotting silk in the old nest, the cave wall "
             "bears the familiar eight-circle notation. But here, the "
             "circles are arranged differently -- they overlap, forming "
-            "a chain. A Remnance scholar would recognize this as a "
-            "sequence diagram: instructions, not labels. Whatever "
+            "a chain. The pattern reads like a sequence diagram: "
+            "instructions, not labels. Whatever "
             "process these symbols describe, it was meant to be "
             "performed in order. Grandmother Spider built her first "
             "nest directly over these instructions. Coincidence seems "
@@ -395,9 +395,9 @@ LORE_FRAGMENTS = {
         "text": (
             "The warmth emanating from beneath the Sunken Temple has "
             "no natural source. It is consistent, never varying. A "
-            "Remnance scholar might recognize this as the thermal "
-            "signature of an intact sub-surface node -- dormant but "
-            "not dead. The temple was built directly over it. "
+            "careful comparison against old survey notes identifies it "
+            "as the thermal signature of an intact sub-surface node -- "
+            "dormant but not dead. The temple was built directly over it. "
             "Not coincidentally."
         ),
     },

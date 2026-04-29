@@ -4,11 +4,12 @@ Action Vocabulary for Soravelon.
 Shared dispatch module for all trigger-driven and command-driven game events.
 Every action type in the game routes through execute_action().
 
-16 action types (D-07, D-24):
-  All 16 implemented: teleport, teleport_to_mob, echo, give_item, take_item,
+18 action types (D-07, D-24):
+  Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
                modify_standing, modify_attunement, log_world_event, despawn_self,
                spawn_mob, add_room_flag, give_scales, give_skill_xp,
-               modify_node_failure, set_quest_flag, open_dialogue
+               grant_practice, modify_node_failure, set_quest_flag,
+               open_dialogue, learn_recipe
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
 execute_action() enforces a trigger chain depth limit of 3 (D-19).
@@ -273,6 +274,12 @@ def _handle_give_skill_xp(action_dict, context, _depth):
     return True, ""
 
 
+def _handle_grant_practice(action_dict, context, _depth):
+    """Resolve a builder-authored practice opportunity."""
+    from world.practice_engine import resolve_practice_opportunity
+    return resolve_practice_opportunity(action_dict, context)
+
+
 def _handle_modify_node_failure(action_dict, context, _depth):
     """Adjust node failure percentage for a zone."""
     zone_id = action_dict.get("zone_id")
@@ -439,6 +446,7 @@ ACTION_HANDLERS = {
     "add_room_flag": _action_add_room_flag,
     "give_scales": _handle_give_scales,
     "give_skill_xp": _handle_give_skill_xp,
+    "grant_practice": _handle_grant_practice,
     "modify_node_failure": _handle_modify_node_failure,
     "learn_recipe": _handle_learn_recipe,
 }

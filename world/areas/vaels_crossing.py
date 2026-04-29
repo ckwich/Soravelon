@@ -342,7 +342,7 @@ def build():
             "jagged break where the upper floors collapsed long ago. Faded "
             "ward-glyphs are carved into the foundation stones, their edges "
             "still faintly warm to the touch. The air hums with residual "
-            "Remnance energy -- whatever protections were laid here are "
+            "node-wrought heat -- whatever protections were laid here are "
             "failing."
         ),
         room_type="ruins",
@@ -964,14 +964,13 @@ def build():
 
     gq_remnance_hall = area.room(
         "gq_remnance_hall",
-        name="The Echo Hall - Remnance Guild",
+        name="The Old Echo Archive",
         desc=(
-            "The Remnance Guild occupies the oldest building in the "
-            "Quarter -- its stones darker, its foundations deeper. "
-            "Display cases hold fragments of pre-Imperial artifacts: "
-            "broken pottery, carved stones, a piece of metal whose "
-            "purpose nobody can determine. The guild master speaks "
-            "softly about the past and what has been lost."
+            "The oldest building in the Quarter keeps its public face "
+            "quiet: dark foundation stones, narrow windows, and display "
+            "cases full of pre-Imperial artifacts nobody has managed to "
+            "catalog with confidence. Archivists speak softly here, as if "
+            "the past is easier to handle when no one shouts claims over it."
         ),
         room_type="building",
         indoor=True,
@@ -1103,8 +1102,8 @@ def build():
     # 24. Engineering guild master
     area.npc(gq_engineering_hall, "npc_guildmaster_engineering_pren", faction="consortium", trainer_id="npc_guildmaster_engineering_pren")
 
-    # 25. Remnance guild master
-    area.npc(gq_remnance_hall, "npc_guildmaster_remnance_morwen", faction=None)
+    # 25. Old archive keeper
+    area.npc(gq_remnance_hall, "npc_guildmaster_remnance_morwen", name="Archivist Morwen", faction=None)
 
     # 26. Librarian
     area.npc(gq_library, "npc_librarian_whisp", faction=None)
@@ -2488,9 +2487,9 @@ def build():
         text=(
             "The warmth emanating from beneath the Sunken Temple has "
             "no natural source. It is consistent, never varying. A "
-            "Remnance scholar might recognize this as the thermal "
-            "signature of an intact sub-surface node -- dormant but "
-            "not dead. The temple was built directly over it. "
+            "careful comparison against old survey notes identifies it "
+            "as the thermal signature of an intact sub-surface node -- "
+            "dormant but not dead. The temple was built directly over it. "
             "Not coincidentally."
         ),
         insight_gain=8,
@@ -2734,7 +2733,7 @@ def build():
 
     area.quest("vc_q_tower_mystery",
         name="Echoes of the Tower",
-        description="Guildmaster Morwen wants a clean survey of the three oldest intact sites in the city: the Ashwatch ruins, the Sunken Temple, and the old cistern. The same buried geometry runs through all of them, and she needs more than rumor before she warns the guilds.",
+        description="Archivist Morwen wants a clean survey of the three oldest intact sites in the city: the Ashwatch ruins, the Sunken Temple, and the old cistern. The same buried geometry runs through all of them, and she needs more than rumor before she asks the guilds to treat the pattern seriously.",
         quest_type="exploration",
         quest_giver="npc_guildmaster_remnance_morwen",
         objectives=[
@@ -2748,7 +2747,7 @@ def build():
         rewards=[
             {"action_type": "give_scales", "amount": 100},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 4},
-            {"action_type": "echo", "message": "|gMorwen lays your notes beside older sketches from the library. \"Good. Not ghosts, then. Structure. Repetition. Someone laid this city over a much older thought, and now we can start proving it.\"|n"},
+            {"action_type": "echo", "message": "|gMorwen lays your notes beside older sketches from the library. \"Good. Not ghosts, then. Structure. Repetition. Someone laid this city over a much older thought, and now we can start proving it without making fools of ourselves.\"|n"},
         ],
         # Legacy fields (backward compat)
         objective_type="investigate",

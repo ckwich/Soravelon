@@ -446,6 +446,43 @@ def check_investigate_objectives(character, room):
             _check_quest_completion(character, cq, quest_spec)
 
 
+def check_practice_objectives(character, opportunity_id):
+    """
+    Check active quests for practice objectives matching a completed opportunity.
+
+    Called by practice_engine after a meaningful builder-authored practice
+    interaction succeeds.
+    """
+    _ensure_model()
+
+    active = CharacterQuest.objects.filter(character=character, status="active")
+    for cq in active:
+        quest_spec = _get_quest_spec(cq.quest_id)
+        if not quest_spec:
+            continue
+
+        progress = dict(cq.progress or {})
+        updated = False
+        for obj in (quest_spec.get("objectives") or []):
+            if obj.get("type") != "practice":
+                continue
+            target = obj.get("target", "")
+            if target != opportunity_id:
+                continue
+            key = _make_obj_key("practice", target)
+            required = obj.get("count", 1)
+            current = progress.get(key, 0)
+            if current >= required:
+                continue
+            progress[key] = min(required, current + 1)
+            updated = True
+
+        if updated:
+            cq.progress = progress
+            cq.save(update_fields=["progress"])
+            _check_quest_completion(character, cq, quest_spec)
+
+
 def check_deliver_objectives(character, npc):
     """
     Check active quests for deliver objectives matching this NPC (D-10).

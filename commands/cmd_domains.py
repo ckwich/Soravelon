@@ -2,7 +2,8 @@
 Domain progression display command.
 
 CmdDomains shows the character's domain scores as proficiency descriptors
-(Unaware through Transcendent). Hides Remnance until discovered (D-25).
+(Unaware through Transcendent). Hides current-era Remnance until a future
+world-event unlocks it.
 Shows guild/subclass info if joined.
 """
 
@@ -26,6 +27,7 @@ class CmdDomains(Command):
         character = self.caller
 
         from world.world_state import ALL_DOMAINS
+        from world.remnance_visibility import domain_is_player_visible
         from world.guild_engine import (
             GUILDS,
             SUBCLASSES,
@@ -38,8 +40,7 @@ class CmdDomains(Command):
         lines = ["|wDomain Progression|n", ""]
 
         for domain in ALL_DOMAINS:
-            # D-25: hide Remnance until discovered
-            if domain == "remnance" and not character.db.remnance_discovered:
+            if not domain_is_player_visible(domain, character):
                 continue
             score = float(scores.get(domain, 0.0))
             label = get_domain_proficiency_label(score)

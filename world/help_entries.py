@@ -9,6 +9,7 @@ Each entry in HELP_ENTRY_DICTS is a dict with keys:
   key, text, category (optional), aliases (optional), locks (optional)
 """
 
+from world.remnance_visibility import public_domain_label
 from world.skill_definitions import SKILL_DEFINITIONS
 
 HELP_ENTRY_DICTS = [
@@ -164,7 +165,7 @@ HELP_ENTRY_DICTS = [
         "locks": "read:all()",
         "text": (
             "|wGuild System|n\n\n"
-            "Soravelon has 10 guilds, each tied to a domain of mastery. "
+            "Soravelon has nine known guilds, each tied to a domain of mastery. "
             "Discover guilds by visiting their halls in hub cities, then "
             "type |wjoinguild|n to review any invitations you have earned.\n\n"
             "|cGuild Tier Score (GTS):|n Your advancement within a guild is "
@@ -173,13 +174,13 @@ HELP_ENTRY_DICTS = [
             "|cTier thresholds:|n 0 (join), 20, 50, 85\n\n"
             "|cSubclasses:|n When you develop a secondary domain alongside "
             "your guild's primary, you unlock a unique subclass identity. "
-            "There are 90 possible subclasses across all guilds. Once you "
+            "There are dozens of known subclass paths across the guilds. Once you "
             "choose a guild, finish the oath with "
             "|wjoinguild <guild> <secondary_domain>|n.\n\n"
-            "|w10 Guilds:|n Ironblood (Combat), Veilcraft (Subterfuge), "
+            "|wKnown Guilds:|n Ironblood (Combat), Veilcraft (Subterfuge), "
             "Verdance (Naturalism), Resonance (Resonance), Arcane (Arcana), "
             "Accord (Diplomacy), Thornwork (Alchemy), Warcraft (Tactics), "
-            "Forge (Engineering), Vaelborn (Remnance)"
+            "Forge (Engineering)"
         ),
     },
     {
@@ -189,10 +190,10 @@ HELP_ENTRY_DICTS = [
         "locks": "read:all()",
         "text": (
             "|wDomain System|n\n\n"
-            "There are 10 domains of mastery in Soravelon. Your domain "
+            "There are nine known domains of mastery in Soravelon. Your domain "
             "scores determine your Guild Tier Score and which abilities "
             "you unlock.\n\n"
-            "|c10 Domains:|n\n"
+            "|cKnown Domains:|n\n"
             "  |wCombat|n -- Sustained aggression (Momentum)\n"
             "  |wSubterfuge|n -- Timing and precision (Focus)\n"
             "  |wNaturalism|n -- Managed duality (Balance)\n"
@@ -201,8 +202,7 @@ HELP_ENTRY_DICTS = [
             "  |wDiplomacy|n -- Relationships as power (Influence)\n"
             "  |wAlchemy|n -- Preparation philosophy (Reagents)\n"
             "  |wTactics|n -- Group synergy (Command)\n"
-            "  |wEngineering|n -- Mechanical companions (Components)\n"
-            "  |wRemnance|n -- Knowledge as power (Echoes)\n\n"
+            "  |wEngineering|n -- Mechanical companions (Components)\n\n"
             "Each domain has a unique resource that fuels its abilities. "
             "Type |wdomains|n to see your current domain scores."
         ),
@@ -1192,13 +1192,12 @@ HELP_ENTRY_DICTS = [
             "but the peoples who inherited it understand only fragments of its\n"
             "design. Nodes that once channeled power across entire regions now\n"
             "flicker, fail, and reshape the land when they collapse.\n\n"
-            "|wRemnance|n\n"
-            "The residual magical energy left by the Curse is called Remnance.\n"
-            "It saturates the soil, the water, and the air near failed nodes,\n"
-            "warping flora and fauna into twisted forms. Some scholars believe\n"
-            "Remnance is the Curse itself, still alive and spreading. Others\n"
-            "harvest it as raw fuel for crafting and enchantment. Zones of\n"
-            "heavy Remnance saturation are dangerous but rich in rare materials.\n\n"
+            "|wNode Fallout|n\n"
+            "Failed nodes leave residues in soil, water, and air. These\n"
+            "fallout zones can warp flora and fauna, sour weather, disturb\n"
+            "old machinery, or make a place feel wrong before anyone can\n"
+            "explain why. Scholars disagree about whether those residues are\n"
+            "fuel, sickness, warning sign, or symptom of a deeper break.\n\n"
             "|wThe Five Great Factions|n\n"
             "  |cThe Ironblood Covenant|n -- Militant survivalists who believe\n"
             "    strength alone determines who inherits the dragons' legacy.\n"
@@ -1207,7 +1206,7 @@ HELP_ENTRY_DICTS = [
             "  |cThe Verdant Accord|n -- Druids and naturalists working to heal\n"
             "    the land by restoring failed nodes to their original function.\n"
             "  |cThe Ashen Compact|n -- Pragmatic traders and alchemists who\n"
-            "    profit from Remnance extraction regardless of consequence.\n"
+            "    profit from risky node-residue extraction regardless of consequence.\n"
             "  |cThe Consortium of Coin|n -- A banking and mercantile guild that\n"
             "    controls commerce across every major settlement.\n\n"
             "|wNode Failure and the Shifting World|n\n"
@@ -1220,7 +1219,7 @@ HELP_ENTRY_DICTS = [
             "|wYour Role|n\n"
             "You arrive in Soravelon unaligned -- bound to no faction, attuned\n"
             "to no domain, carrying no legacy. The choices you make will define\n"
-            "your standing with each faction, your mastery across ten domains\n"
+            "your standing with each faction, your mastery across known domains\n"
             "of skill, and ultimately the subclass identity that sets you apart\n"
             "from every other traveler in this broken, beautiful world."
         ),
@@ -1499,7 +1498,7 @@ HELP_ENTRY_DICTS = [
         "key": "vaelborn",
         "aliases": ["guild of vaelborn"],
         "category": "Guilds",
-        "locks": "read:all()",
+        "locks": "read:perm(Developer)",
         "text": (
             "|wGuild of Vaelborn|n\n"
             "|x\"The world forgot what it was named after. We remember.\"|n\n\n"
@@ -1804,6 +1803,7 @@ def _build_skill_help_entry(skill_key, skill_def):
     display_key = name.lower()
     trainer_gate = skill_def.get("trainer_required_above", 50)
     domain_bonus = skill_def.get("domain_bonus", "general")
+    domain_label = public_domain_label(domain_bonus)
     thresholds = _format_skill_thresholds(skill_def.get("thresholds", {}))
     return {
         "key": display_key,
@@ -1813,7 +1813,7 @@ def _build_skill_help_entry(skill_key, skill_def):
         "text": (
             f"|w{name}|n\n\n"
             f"{skill_def.get('description', 'A practical skill used throughout Soravelon.')}\n\n"
-            f"|cDomain Synergy:|n {domain_bonus.title()}\n"
+            f"|cDomain Synergy:|n {domain_label}\n"
             f"|cHow It Improves:|n Use it in the world, practice it directly with "
             f"|wpractice {skill_key}|n, and seek out trainers once you push past "
             f"{trainer_gate}.\n\n"

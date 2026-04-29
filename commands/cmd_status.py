@@ -36,6 +36,10 @@ class CmdStatus(Command):
             derive_max_stamina,
         )
         from world.world_state import ALL_DIMENSIONS, ALL_DOMAINS
+        from world.remnance_visibility import (
+            ability_is_player_visible,
+            domain_is_player_visible,
+        )
         from world.guild_engine import (
             GUILDS,
             SUBCLASSES,
@@ -105,8 +109,7 @@ class CmdStatus(Command):
         domain_scores = char.db.domain_scores or {}
         has_domain = False
         for domain in ALL_DOMAINS:
-            # D-25: hide Remnance until discovered
-            if domain == "remnance" and not char.db.remnance_discovered:
+            if not domain_is_player_visible(domain, char):
                 continue
             score = float(domain_scores.get(domain, 0.0))
             if score > 0:
@@ -144,6 +147,8 @@ class CmdStatus(Command):
         if loadout:
             for ability_id in loadout:
                 ability = get_ability(ability_id)
+                if ability and not ability_is_player_visible(ability, char):
+                    continue
                 name = ability["name"] if ability else ability_id
                 lines.append(f"  |c{name}|n")
         else:

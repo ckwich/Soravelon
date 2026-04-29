@@ -1342,3 +1342,53 @@ class TestReconciliation(AreaBuilderTestBase):
         triggers = r1.db.triggers
         self.assertEqual(len(triggers), 1)
         self.assertEqual(triggers[0]["event"], "on_examine")
+
+
+class TestPracticeOpportunity(AreaBuilderTestBase):
+    def test_practice_opportunity_stores_data_and_registers_dynamic_command(self):
+        """practice_opportunity() stores editable metadata and a grant_practice command."""
+        ab = self._make_builder("practice_zone")
+        room = self._make_room(ab, "workshop")
+
+        ab.practice_opportunity(
+            "workshop_winch_repair",
+            room,
+            verb="repair",
+            target="canal winch",
+            skill_awards={"engineering": 4},
+            domain_awards={"engineering": 120},
+            success_text="You reset the canal winch and mark the cracked gear.",
+            visible_in_exits=True,
+            desc="repair canal winch",
+        )
+
+        practice_defs = room.db.practice_opportunities
+        self.assertEqual(len(practice_defs), 1)
+        self.assertEqual(practice_defs[0]["opportunity_id"], "workshop_winch_repair")
+        self.assertEqual(practice_defs[0]["skill_awards"], {"engineering": 4})
+        self.assertEqual(practice_defs[0]["domain_awards"], {"engineering": 120})
+
+        command_defs = room.db.custom_commands
+        self.assertEqual(len(command_defs), 1)
+        self.assertEqual(command_defs[0]["key"], "repair")
+        self.assertTrue(command_defs[0]["visible_in_exits"])
+        self.assertEqual(command_defs[0]["action_dict"]["action_type"], "grant_practice")
+        self.assertEqual(command_defs[0]["action_dict"]["opportunity_id"], "workshop_winch_repair")
+
+    def test_practice_opportunity_rejects_remnance_domain(self):
+        """Builders cannot author generic practice opportunities that award Remnance."""
+        ab = self._make_builder("practice_zone")
+        room = self._make_room(ab, "sealed_room")
+
+        with self.assertRaises(AreaBuilderValidationError) as cm:
+            ab.practice_opportunity(
+                "sealed_pattern_study",
+                room,
+                verb="study",
+                target="sealed pattern",
+                skill_awards={"investigation": 2},
+                domain_awards={"remnance": 100},
+                success_text="This should not be allowed.",
+            )
+
+        self.assertNotIn("remnance", str(cm.exception).lower())

@@ -2137,9 +2137,9 @@ def build():
             "by millennia. They are arranged in groups of eight -- the same "
             "notation found on the Ashwatch Tower in Vael's Crossing. "
             "The warmth radiating from them is consistent and sourceless. "
-            "A Remnance scholar would recognize this as a dormant node "
-            "signature -- the mine was dug through it without knowing "
-            "what lay in the rock."
+            "A careful survey would mark this as a dormant node signature "
+            "-- the mine was dug through it without knowing what lay in "
+            "the rock."
         ),
         insight_gain=8,
     )
@@ -2194,8 +2194,8 @@ def build():
             "Behind the rotting silk in the old nest, the cave wall "
             "bears the familiar eight-circle notation. But here, the "
             "circles are arranged differently -- they overlap, forming "
-            "a chain. A Remnance scholar would recognize this as a "
-            "sequence diagram: instructions, not labels. Whatever "
+            "a chain. The pattern reads like a sequence diagram: "
+            "instructions, not labels. Whatever "
             "process these symbols describe, it was meant to be "
             "performed in order. Grandmother Spider built her first "
             "nest directly over these instructions. Coincidence seems "

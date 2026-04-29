@@ -119,6 +119,46 @@ class TestCmdQuest(unittest.TestCase):
         self.assertIn("18 Scales", message)
         self.assertIn("+2 Tracking XP", message)
 
+    @patch("world.quest_engine._normalize_quest_spec", side_effect=lambda spec: spec)
+    @patch("world.quest_engine._get_quest_spec", return_value={
+        "name": "The Jammed Winch",
+        "description": "Help the canal crew understand why the old mechanism keeps slipping.",
+        "quest_giver": "npc_canal_foreman",
+        "objectives": [
+            {
+                "type": "practice",
+                "target": "vp_canal_winch_repair",
+                "count": 1,
+                "description": "Repair the canal winch in the north service bay.",
+            },
+        ],
+        "rewards": [
+            {
+                "action_type": "grant_practice",
+                "skill_awards": {"engineering": 4},
+                "domain_awards": {"engineering": 120},
+            },
+        ],
+    })
+    @patch("world.quest_engine.get_active_quests", return_value=[
+        _make_active_quest("jammed_winch", progress={})
+    ])
+    def test_quest_detail_shows_practice_rewards_without_xp_numbers(
+        self,
+        _mock_get_active_quests,
+        _mock_get_spec,
+        _mock_normalize,
+    ):
+        character = _make_character()
+        cmd = self._make_cmd(character, "winch")
+
+        cmd.func()
+
+        message = character.msg.call_args[0][0]
+        self.assertIn("Repair the canal winch", message)
+        self.assertIn("Meaningful practice", message)
+        self.assertNotIn("XP", message)
+
     @patch("world.quest_engine.abandon_quest", return_value=(True, "You abandon the job."))
     @patch("world.quest_engine._normalize_quest_spec", side_effect=lambda spec: spec)
     @patch("world.quest_engine._get_quest_spec", return_value={

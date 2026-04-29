@@ -19,7 +19,11 @@ class DynamicAreaCommand(Command):
 
     def func(self):
         from world.action_vocabulary import execute_action
-        context = {"character": self.caller, "room": self.caller.location}
+        context = {
+            "character": self.caller,
+            "room": self.caller.location,
+            "args": self.args,
+        }
         ok, msg = execute_action(self.action_dict, context)
         if not ok and msg:
             self.caller.msg(msg)

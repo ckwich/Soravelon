@@ -63,6 +63,7 @@ class CmdLoadout(Command):
     def _view_loadout(self, char):
         """Display current active loadout."""
         from world.ability_registry import get_ability
+        from world.remnance_visibility import ability_is_player_visible
 
         loadout = list(char.db.active_loadout or [])
         if not loadout:
@@ -72,6 +73,8 @@ class CmdLoadout(Command):
         lines = ["|wActive Loadout:|n"]
         for i, ability_id in enumerate(loadout, 1):
             ability = get_ability(ability_id)
+            if ability and not ability_is_player_visible(ability, char):
+                continue
             if ability:
                 lines.append(
                     f"  {i}. {ability['name']} (Tier {ability['tier']}, "
@@ -81,16 +84,19 @@ class CmdLoadout(Command):
                 lines.append(f"  {i}. {ability_id} (unknown)")
         char.msg("\n".join(lines))
 
-    def _find_ability_by_name(self, query):
+    def _find_ability_by_name(self, query, char=None):
         """Search ABILITIES by name (case-insensitive prefix match).
 
         Returns (ability_id, ability_dict) or (None, error_message).
         """
         from world.ability_registry import ABILITIES
+        from world.remnance_visibility import ability_is_player_visible
 
         query_lower = query.lower()
         matches = []
         for aid, ability in ABILITIES.items():
+            if not ability_is_player_visible(ability, char):
+                continue
             if ability["name"].lower() == query_lower:
                 return aid, ability
             if ability["name"].lower().startswith(query_lower):
@@ -111,7 +117,7 @@ class CmdLoadout(Command):
             char.msg("Usage: loadout add <ability name>")
             return
 
-        result = self._find_ability_by_name(query)
+        result = self._find_ability_by_name(query, char)
         if result[0] is None:
             char.msg(result[1])
             return
@@ -144,6 +150,7 @@ class CmdLoadout(Command):
     def _remove_ability(self, char, query):
         """Remove an ability from the active loadout."""
         from world.ability_registry import get_ability
+        from world.remnance_visibility import ability_is_player_visible
 
         if not query:
             char.msg("Usage: loadout remove <ability name>")
@@ -159,6 +166,8 @@ class CmdLoadout(Command):
         found_id = None
         for aid in loadout:
             ability = get_ability(aid)
+            if ability and not ability_is_player_visible(ability, char):
+                continue
             if ability and ability["name"].lower().startswith(query_lower):
                 found_id = aid
                 break

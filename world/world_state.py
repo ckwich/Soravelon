@@ -217,12 +217,21 @@ def _check_guild_discovery(character):
     if character.db.guild_id:
         return
     from world.guild_engine import check_guild_eligibility, GUILDS
+    from world.remnance_visibility import guild_is_player_visible
+
     eligible = check_guild_eligibility(character)
     if not eligible:
         return
+    visible = []
+    for guild_id in eligible:
+        guild = GUILDS.get(guild_id, {})
+        if guild_is_player_visible(guild_id, guild, character):
+            visible.append(guild_id)
+    if not visible:
+        return
     # Send recruitment message for first eligible guild
-    guild = GUILDS.get(eligible[0], {})
-    guild_name = guild.get("name", eligible[0])
+    guild = GUILDS.get(visible[0], {})
+    guild_name = guild.get("name", visible[0])
     character.msg(
         f"|y[A messenger approaches with a sealed letter bearing the mark "
         f"of the {guild_name}. Type 'joinguild' to respond.]|n"

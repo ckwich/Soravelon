@@ -2240,8 +2240,8 @@ def build():
             "basalt -- a volcanic rock found nowhere within five hundred "
             "miles. Someone transported them here at enormous cost and "
             "effort. Their alignment corresponds to no known astronomical "
-            "pattern. A Remnance scholar might recognize the stone as "
-            "matching samples from pre-human ruins on the western continent."
+            "pattern. Their grain and tool marks match samples from "
+            "pre-human ruins on the western continent."
         ),
         insight_gain=8,
     )

@@ -156,6 +156,13 @@ class CmdQuest(Command):
                 elif rtype == "give_skill_xp":
                     skill = r.get("skill_id", "?").replace("_", " ").title()
                     lines.append(f"  |g+{r.get('count', 1)} {skill} XP|n")
+                elif rtype == "grant_practice":
+                    skills = sorted((r.get("skill_awards") or r.get("skills") or {}).keys())
+                    if skills:
+                        skill_names = ", ".join(s.replace("_", " ").title() for s in skills)
+                        lines.append(f"  |gMeaningful practice: {skill_names}|n")
+                    else:
+                        lines.append("  |gMeaningful practice|n")
                 elif rtype == "learn_recipe":
                     lines.append(f"  |mRecipe: {r.get('recipe_id', '?').replace('_', ' ').title()}|n")
                 # Skip echo/teleport/spawn_mob in rewards preview

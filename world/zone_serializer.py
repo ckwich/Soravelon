@@ -29,8 +29,9 @@ def load_zone_from_json(zone_data: dict) -> dict:
         zone_data: Parsed dict from a .zone.json file. Expected top-level keys:
             zone (dict, required), rooms (list), exits (list), spawns (list),
             npcs (list), named_mobs (list), patrols (list), triggers (list),
-            custom_commands (list), flight_points (list), flight_routes (list),
-            node (dict or None), quests (list), materials (list), lore_fragments (list)
+            custom_commands (list), practice_opportunities (list),
+            flight_points (list), flight_routes (list), node (dict or None),
+            quests (list), materials (list), lore_fragments (list)
 
     Returns:
         build() report dict: {zone_id, rooms_created, exits_created, warnings, unresolved_exits}
@@ -160,7 +161,17 @@ def load_zone_from_json(zone_data: dict) -> dict:
                       if k not in ("target", "key", "action_dict")}
         area.custom_command(target_id, key, action_dict, **cmd_kwargs)
 
-    # 11. flight_points
+    # 11. practice_opportunities
+    for practice_def in zone_data.get("practice_opportunities", []):
+        room_id = practice_def["room"]
+        opportunity_id = practice_def["opportunity_id"]
+        practice_kwargs = {
+            k: v for k, v in practice_def.items()
+            if k not in ("room", "opportunity_id")
+        }
+        area.practice_opportunity(opportunity_id, room_id, **practice_kwargs)
+
+    # 12. flight_points
     for fp_def in zone_data.get("flight_points", []):
         room_id = fp_def["room"]
         point_id = fp_def["point_id"]
@@ -171,7 +182,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
         fp_kwargs = {k: v for k, v in fp_def.items() if k not in ("room", "point_id")}
         area.flight_point(room_obj, point_id, **fp_kwargs)
 
-    # 12. flight_routes
+    # 13. flight_routes
     for fr_def in zone_data.get("flight_routes", []):
         area.flight_route(
             fr_def["point_a_id"],
@@ -181,7 +192,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
             fr_def.get("echoes", []),
         )
 
-    # 13. node
+    # 14. node
     node_def = zone_data.get("node")
     if node_def:
         center_room_id = node_def["center_room"]
@@ -194,19 +205,19 @@ def load_zone_from_json(zone_data: dict) -> dict:
         else:
             area._build_warnings.append(f"node: center_room '{center_room_id}' not found")
 
-    # 14. quests
+    # 15. quests
     for quest_def in zone_data.get("quests", []):
         quest_id = quest_def["quest_id"]
         quest_kwargs = {k: v for k, v in quest_def.items() if k != "quest_id"}
         area.quest(quest_id, **quest_kwargs)
 
-    # 15. materials
+    # 16. materials
     for mat_def in zone_data.get("materials", []):
         material = mat_def["material"]
         mat_kwargs = {k: v for k, v in mat_def.items() if k != "material"}
         area.material(material, **mat_kwargs)
 
-    # 16. lore_fragments
+    # 17. lore_fragments
     for lf_def in zone_data.get("lore_fragments", []):
         fragment_id = lf_def["fragment_id"]
         room_id = lf_def["room"]

@@ -43,15 +43,13 @@ def get_new_player_guidance(character):
     if not guild_id:
         try:
             from world.guild_engine import GUILDS, check_guild_eligibility
+            from world.remnance_visibility import guild_is_player_visible
 
             eligible = check_guild_eligibility(character) or []
             visible = []
-            remnance_discovered = bool(
-                getattr(character.db, "remnance_discovered", False)
-            )
             for candidate in eligible:
                 guild = GUILDS.get(candidate, {})
-                if guild.get("hidden") and not remnance_discovered:
+                if not guild_is_player_visible(candidate, guild, character):
                     continue
                 visible.append(guild.get("name", candidate))
         except Exception:

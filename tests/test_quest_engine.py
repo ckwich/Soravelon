@@ -774,6 +774,74 @@ class TestCheckInvestigateObjectives(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# Test: check_practice_objectives
+# ---------------------------------------------------------------------------
+
+class TestCheckPracticeObjectives(unittest.TestCase):
+    """Tests for check_practice_objectives."""
+
+    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_practice_opportunity_increments_matching_objective(self, MockCQ, mock_get_spec, mock_check):
+        """Completing a matching practice opportunity increments quest progress."""
+        from world.quest_engine import check_practice_objectives
+
+        char = MagicMock()
+        cq = _make_cq("repair_quest", progress={})
+        MockCQ.objects.filter.return_value = [cq]
+        mock_get_spec.return_value = {
+            "quest_id": "repair_quest",
+            "objectives": [{"type": "practice", "target": "vp_canal_winch_repair", "count": 2}],
+        }
+
+        check_practice_objectives(char, "vp_canal_winch_repair")
+
+        self.assertEqual(cq.progress.get("practice_vp_canal_winch_repair", 0), 1)
+        mock_check.assert_called_once_with(char, cq, mock_get_spec.return_value)
+
+    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_practice_opportunity_is_capped_at_required_count(self, MockCQ, mock_get_spec, mock_check):
+        """Practice objective progress does not exceed the objective count."""
+        from world.quest_engine import check_practice_objectives
+
+        char = MagicMock()
+        cq = _make_cq("repair_quest", progress={"practice_vp_canal_winch_repair": 2})
+        MockCQ.objects.filter.return_value = [cq]
+        mock_get_spec.return_value = {
+            "quest_id": "repair_quest",
+            "objectives": [{"type": "practice", "target": "vp_canal_winch_repair", "count": 2}],
+        }
+
+        check_practice_objectives(char, "vp_canal_winch_repair")
+
+        self.assertEqual(cq.progress.get("practice_vp_canal_winch_repair", 0), 2)
+        mock_check.assert_not_called()
+
+    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_nonmatching_practice_opportunity_does_not_increment(self, MockCQ, mock_get_spec, mock_check):
+        """A different opportunity does not affect practice objectives."""
+        from world.quest_engine import check_practice_objectives
+
+        char = MagicMock()
+        cq = _make_cq("repair_quest", progress={})
+        MockCQ.objects.filter.return_value = [cq]
+        mock_get_spec.return_value = {
+            "quest_id": "repair_quest",
+            "objectives": [{"type": "practice", "target": "vp_canal_winch_repair", "count": 1}],
+        }
+
+        check_practice_objectives(char, "different_practice")
+
+        self.assertEqual(cq.progress.get("practice_vp_canal_winch_repair", 0), 0)
+        mock_check.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
 # Test: check_deliver_objectives
 # ---------------------------------------------------------------------------
 

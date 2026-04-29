@@ -31,6 +31,7 @@ class CmdAbilities(Command):
 
         from world.ability_registry import ABILITIES
         from world.models import CharacterAbility
+        from world.remnance_visibility import ability_is_player_visible
 
         known_ids = list(
             CharacterAbility.objects.filter(
@@ -47,6 +48,8 @@ class CmdAbilities(Command):
         for aid in known_ids:
             ability = ABILITIES.get(aid)
             if not ability:
+                continue
+            if not ability_is_player_visible(ability, character):
                 continue
             domain = ability["domain"]
             tier = ability["tier"]
@@ -71,6 +74,8 @@ class CmdAbilities(Command):
             lines.append("|wActive Loadout|n")
             for aid in loadout:
                 ability = ABILITIES.get(aid)
+                if ability and not ability_is_player_visible(ability, character):
+                    continue
                 name = ability["name"] if ability else aid
                 lines.append(f"  |g{name}|n")
         else:
@@ -118,6 +123,7 @@ class CmdUseAbility(Command):
         # --- ABILITY BRANCH (existing logic) ---
         from world.ability_registry import ABILITIES
         from world.models import CharacterAbility
+        from world.remnance_visibility import ability_is_player_visible
 
         # Get character's known ability ids
         known_ids = list(
@@ -125,6 +131,10 @@ class CmdUseAbility(Command):
                 character=character
             ).values_list("ability_id", flat=True)
         )
+        known_ids = [
+            aid for aid in known_ids
+            if ability_is_player_visible(ABILITIES.get(aid), character)
+        ]
 
         if not known_ids:
             character.msg("You have not yet unlocked any abilities.")

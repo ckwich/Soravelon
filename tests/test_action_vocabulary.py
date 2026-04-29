@@ -77,13 +77,13 @@ class TestActionHandlersRegistry(EvenniaTest):
     """ACTION_HANDLERS dict contains all registered action types."""
 
     def test_handler_count(self):
-        """ACTION_HANDLERS has exactly 17 keys."""
+        """ACTION_HANDLERS has exactly 18 keys."""
         from world.action_vocabulary import ACTION_HANDLERS
 
-        self.assertEqual(len(ACTION_HANDLERS), 17)
+        self.assertEqual(len(ACTION_HANDLERS), 18)
 
     def test_all_expected_action_types_present(self):
-        """All 17 required action types are registered."""
+        """All 18 required action types are registered."""
         from world.action_vocabulary import ACTION_HANDLERS
 
         expected = {
@@ -102,6 +102,7 @@ class TestActionHandlersRegistry(EvenniaTest):
             "add_room_flag",
             "give_scales",
             "give_skill_xp",
+            "grant_practice",
             "modify_node_failure",
             "learn_recipe",
         }
@@ -499,6 +500,29 @@ class TestGiveSkillXpHandler(unittest.TestCase):
         msg_text = char.msg.call_args[0][0]
         self.assertIn("3", msg_text)
         self.assertIn("Herbalism", msg_text)
+
+
+class TestGrantPracticeHandler(unittest.TestCase):
+    """Test grant_practice action handler."""
+
+    def test_calls_practice_engine_with_action_payload_and_context(self):
+        from world.action_vocabulary import execute_action
+
+        char = MagicMock()
+        context = {"character": char, "room": MagicMock(), "args": "canal winch"}
+        action = {
+            "action_type": "grant_practice",
+            "opportunity_id": "vp_canal_winch_repair",
+            "verb": "repair",
+            "target": "canal winch",
+        }
+
+        with patch("world.practice_engine.resolve_practice_opportunity", return_value=(True, "")) as mock_resolve:
+            success, msg = execute_action(action, context)
+
+        self.assertTrue(success)
+        self.assertEqual(msg, "")
+        mock_resolve.assert_called_once_with(action, context)
 
 
 class TestModifyNodeFailureHandler(unittest.TestCase):
