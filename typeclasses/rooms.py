@@ -72,7 +72,7 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
     def return_appearance(self, looker, **kwargs):
         """
         Extend default room appearance to show custom commands marked
-        visible_in_exits=True (D-21). These commands act as exits or
+        visible_in_exits=True (D-21). These commands act as visible
         interactions that builders want discoverable.
         """
         appearance = super().return_appearance(looker, **kwargs)
@@ -89,7 +89,7 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
                 lines.append(f"|w{key}|n - {desc}")
             else:
                 lines.append(f"|w{key}|n")
-        extra = "\nOther exits: " + ", ".join(lines)
+        extra = "\n|wInteractions:|n " + ", ".join(lines)
         return appearance + extra
 
     def get_display_desc(self, looker, **kwargs):

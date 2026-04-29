@@ -123,7 +123,8 @@ Fields:
 - `failure_text`: optional, currently reserved.
 - `once_per_character`: boolean.
 - `cooldown_seconds`: optional integer, currently stored for future use.
-- `visible_in_exits`: boolean, passed through to the dynamic command.
+- `visible_in_exits`: boolean, passed through to the dynamic command and
+  displayed to players under the room `Interactions:` heading.
 - `aliases`: optional list of command aliases.
 - `desc`: optional command/exits hint text.
 

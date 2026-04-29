@@ -752,9 +752,9 @@ class AreaBuilder:
             target_obj_or_id: Target object or room_id/mob_key string
             key: Command keyword players type (e.g., "climb")
             action_dict: Action dict executed when command fires
-            visible_in_exits: If True, appears in room exit list (D-21)
+            visible_in_exits: If True, appears in room Interactions list (D-21)
             aliases: List of alternative keywords
-            desc: Description shown in exit list if visible_in_exits=True
+            desc: Description shown in Interactions list if visible_in_exits=True
         Returns:
             self (for method chaining)
         """

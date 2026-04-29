@@ -94,6 +94,29 @@ class ObjectTests(EvenniaTest):
         self.assertEqual(key.db.weight, 0.0)
 
 
+class RoomDisplayTests(EvenniaTest):
+    """Tests for Soravelon room display additions."""
+
+    def test_visible_custom_commands_render_as_interactions_not_exits(self):
+        from typeclasses.rooms import SoravelonRoom
+
+        room = create_object(SoravelonRoom, key="Workshop")
+        room.db.desc = "A practical room full of useful things."
+        room.db.custom_commands = [
+            {
+                "key": "repair",
+                "desc": "repair canal winch",
+                "visible_in_exits": True,
+            }
+        ]
+
+        appearance = room.return_appearance(self.char1)
+
+        self.assertIn("Interactions:", appearance)
+        self.assertIn("repair canal winch", appearance)
+        self.assertNotIn("Other exits", appearance)
+
+
 class ExitTests(EvenniaTest):
     """Tests for exit typeclasses."""
 
