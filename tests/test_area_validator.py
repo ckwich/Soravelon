@@ -407,5 +407,58 @@ class TestValidateSpawnCondition(unittest.TestCase):
             validate_spawn_condition("node_failure_above_high")
 
 
+class TestValidateLootTableOverrides(unittest.TestCase):
+    """zone-specific loot tables must be safe for world.loot_tables.roll_loot."""
+
+    def test_valid_equipment_drop_override_has_no_errors(self):
+        errors = validate_zone({
+            "zone": {"name": "Drop Zone", "zone_type": "frontier", "continent": "varath"},
+            "rooms": [],
+            "exits": [],
+            "loot_table_overrides": [
+                {
+                    "mob_type": "ash_wolf",
+                    "relevant_skill": "combat",
+                    "base_drop_chance": 0.85,
+                    "drops": [
+                        {
+                            "item_id": "ash_wolf_claw",
+                            "key": "ash wolf claw",
+                            "item_type": "equipment",
+                            "equip_slot": "main_hand",
+                            "value_by_tier": [5, 10, 20, 40, 80],
+                            "rarity_by_tier": ["normal", "normal", "magic", "rare", "legendary"],
+                            "desc_by_tier": ["t1", "t2", "t3", "t4", "t5"],
+                            "damage_min_by_tier": [1, 2, 3, 4, 5],
+                            "damage_max_by_tier": [3, 4, 6, 8, 10],
+                        }
+                    ],
+                }
+            ],
+        })
+
+        self.assertEqual([error for error in errors if error.field_path.startswith("loot_table_overrides")], [])
+
+    def test_invalid_override_reports_runtime_breaking_fields(self):
+        errors = validate_zone({
+            "zone": {"name": "Drop Zone", "zone_type": "frontier", "continent": "varath"},
+            "rooms": [],
+            "exits": [],
+            "loot_table_overrides": [
+                {
+                    "mob_type": "",
+                    "base_drop_chance": "often",
+                    "drops": [{"item_id": "", "key": "", "value_by_tier": [1, 2]}],
+                }
+            ],
+        })
+        field_paths = [error.field_path for error in errors]
+
+        self.assertIn("loot_table_overrides[0].mob_type", field_paths)
+        self.assertIn("loot_table_overrides[0].base_drop_chance", field_paths)
+        self.assertIn("loot_table_overrides[0].drops[0].item_id", field_paths)
+        self.assertIn("loot_table_overrides[0].drops[0].value_by_tier", field_paths)
+
+
 if __name__ == "__main__":
     unittest.main()

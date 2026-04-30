@@ -62,6 +62,92 @@ SUPPORTED_SPAWN_CONDITIONS = (
     "node_failure_above_N",
 )
 
+TIERED_LOOT_FIELDS = {
+    "value_by_tier",
+    "rarity_by_tier",
+    "desc_by_tier",
+    "material_tier_by_tier",
+    "damage_min_by_tier",
+    "damage_max_by_tier",
+    "armor_value_by_tier",
+    "stat_bonuses_by_tier",
+}
+
+
+def _append_error(errors: list, field_path: str, message: str):
+    errors.append(ValidationError(
+        severity="error",
+        field_path=field_path,
+        message=message,
+    ))
+
+
+def _validate_tiered_loot_field(errors: list, drop: dict, field_path: str, field_name: str):
+    value = drop.get(field_name)
+    if not isinstance(value, list) or len(value) != 5:
+        _append_error(errors, field_path, f"{field_name} must be a list with one value for each tier 1-5")
+
+
+def _validate_loot_table_overrides(errors: list, loot_table_overrides: list):
+    if not isinstance(loot_table_overrides, list):
+        _append_error(errors, "loot_table_overrides", "loot_table_overrides must be a list")
+        return
+
+    for table_idx, table in enumerate(loot_table_overrides):
+        table_path = f"loot_table_overrides[{table_idx}]"
+        if not isinstance(table, dict):
+            _append_error(errors, table_path, "loot table override must be an object")
+            continue
+
+        mob_type = table.get("mob_type")
+        if not isinstance(mob_type, str) or not mob_type:
+            _append_error(errors, f"{table_path}.mob_type", "mob_type is required")
+
+        relevant_skill = table.get("relevant_skill", "combat")
+        if not isinstance(relevant_skill, str) or not relevant_skill:
+            _append_error(errors, f"{table_path}.relevant_skill", "relevant_skill must be a skill/domain key")
+
+        base_drop_chance = table.get("base_drop_chance", 0.7)
+        if (
+            not isinstance(base_drop_chance, (int, float))
+            or isinstance(base_drop_chance, bool)
+            or base_drop_chance < 0
+            or base_drop_chance > 1
+        ):
+            _append_error(errors, f"{table_path}.base_drop_chance", "base_drop_chance must be a number from 0 to 1")
+
+        drops = table.get("drops")
+        if not isinstance(drops, list):
+            _append_error(errors, f"{table_path}.drops", "drops must be a list")
+            continue
+
+        for drop_idx, drop in enumerate(drops):
+            drop_path = f"{table_path}.drops[{drop_idx}]"
+            if not isinstance(drop, dict):
+                _append_error(errors, drop_path, "drop must be an object")
+                continue
+
+            for required_field in ["item_id", "key"]:
+                if not isinstance(drop.get(required_field), str) or not drop.get(required_field):
+                    _append_error(errors, f"{drop_path}.{required_field}", f"{required_field} is required")
+
+            for required_tiered_field in ["value_by_tier", "rarity_by_tier", "desc_by_tier"]:
+                _validate_tiered_loot_field(
+                    errors,
+                    drop,
+                    f"{drop_path}.{required_tiered_field}",
+                    required_tiered_field,
+                )
+
+            for optional_tiered_field in TIERED_LOOT_FIELDS - {"value_by_tier", "rarity_by_tier", "desc_by_tier"}:
+                if optional_tiered_field in drop:
+                    _validate_tiered_loot_field(
+                        errors,
+                        drop,
+                        f"{drop_path}.{optional_tiered_field}",
+                        optional_tiered_field,
+                    )
+
 
 # ---------------------------------------------------------------------------
 # validate_zone
@@ -82,6 +168,7 @@ def validate_zone(zone_data: dict) -> list:
     zone = zone_data.get("zone") or {}
     rooms = zone_data.get("rooms") or []
     exits = zone_data.get("exits") or []
+    loot_table_overrides = zone_data.get("loot_table_overrides") or []
 
     # zone.name — required and non-empty
     name = zone.get("name")
@@ -156,6 +243,8 @@ def validate_zone(zone_data: dict) -> list:
                     f"Valid: {sorted(VALID_DIRECTIONS)}"
                 ),
             ))
+
+    _validate_loot_table_overrides(errors, loot_table_overrides)
 
     return errors
 
