@@ -369,11 +369,13 @@ class TestZoneReloadClearsZoneOwnedDefinitions(AreaBuilderTestBase):
         ab.quest("old_quest", quest_type="collection")
         ab.material("old_material", tier=1)
         ab.gathering_pool("ore", ["room_a"], ["iron_ore"])
+        ab.loot_table_override("wolf", drops=[{"item_id": "old_fang", "key": "old fang"}])
 
         self.assertEqual(len(ab._zone_obj.db.item_definitions), 1)
         self.assertEqual(len(ab._zone_obj.db.quest_definitions), 1)
         self.assertEqual(len(ab._zone_obj.db.material_definitions), 1)
         self.assertEqual(len(ab._zone_obj.db.gathering_pools), 1)
+        self.assertIn("wolf", ab._zone_obj.db.loot_table_overrides)
 
         ab.zone(name="Test Zone", zone_type="frontier", continent="varath")
 
@@ -381,6 +383,7 @@ class TestZoneReloadClearsZoneOwnedDefinitions(AreaBuilderTestBase):
         self.assertEqual(ab._zone_obj.db.quest_definitions, [])
         self.assertEqual(ab._zone_obj.db.material_definitions, [])
         self.assertEqual(ab._zone_obj.db.gathering_pools, [])
+        self.assertEqual(ab._zone_obj.db.loot_table_overrides, {})
 
 
 # ------------------------------------------------------------------
@@ -1042,6 +1045,55 @@ class TestAreaBuilderItemMethod(AreaBuilderTestBase):
         defs = ab._zone_obj.db.item_definitions
         self.assertEqual(defs[0]["damage_min"], 8)
         self.assertEqual(defs[0]["damage_max"], 16)
+
+
+class TestAreaBuilderLootTableOverrides(AreaBuilderTestBase):
+    """area.loot_table_override() stores zone-specific random drop definitions."""
+
+    def test_loot_table_override_stores_equipment_drop_table(self):
+        """A zone can replace one mob type's random drops with authored equipment."""
+        ab = self._make_builder()
+
+        ab.loot_table_override(
+            "wolf",
+            relevant_skill="combat",
+            base_drop_chance=0.85,
+            drops=[
+                {
+                    "item_id": "ash_wolf_claw",
+                    "key": "ash wolf claw",
+                    "item_type": "equipment",
+                    "equip_slot": "weapon",
+                    "weight_in_pool": 6,
+                    "damage_min_by_tier": [1, 2, 3, 4, 5],
+                    "damage_max_by_tier": [3, 4, 6, 8, 10],
+                    "value_by_tier": [5, 10, 20, 40, 80],
+                    "rarity_by_tier": ["normal", "normal", "magic", "rare", "epic"],
+                    "desc_by_tier": [
+                        "A chipped ash-wolf claw.",
+                        "A sharp ash-wolf claw.",
+                        "A heat-glossed ash-wolf claw.",
+                        "A dangerous ash-wolf claw.",
+                        "A fang-bright ash-wolf claw.",
+                    ],
+                }
+            ],
+        )
+
+        overrides = ab._zone_obj.db.loot_table_overrides
+        self.assertIn("wolf", overrides)
+        self.assertEqual(overrides["wolf"]["mob_type"], "wolf")
+        self.assertEqual(overrides["wolf"]["relevant_skill"], "combat")
+        self.assertEqual(overrides["wolf"]["base_drop_chance"], 0.85)
+        self.assertEqual(overrides["wolf"]["drops"][0]["item_id"], "ash_wolf_claw")
+        self.assertEqual(overrides["wolf"]["drops"][0]["equip_slot"], "weapon")
+
+    def test_loot_table_override_requires_zone(self):
+        """Calling area.loot_table_override() before zone() raises AreaBuilderValidationError."""
+        ab = AreaBuilder("no_zone_yet")
+
+        with self.assertRaises(AreaBuilderValidationError):
+            ab.loot_table_override("wolf", drops=[])
 
 
 # ------------------------------------------------------------------

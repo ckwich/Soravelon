@@ -19,6 +19,8 @@ Usage::
         return area.build()
 """
 
+import copy
+
 import evennia
 from evennia import create_object
 
@@ -204,6 +206,7 @@ class AreaBuilder:
         zone_obj.db.quest_definitions = []
         zone_obj.db.material_definitions = []
         zone_obj.db.gathering_pools = []
+        zone_obj.db.loot_table_overrides = {}
 
         # Set all zone metadata
         zone_obj.db.zone_id = self._zone_id
@@ -611,6 +614,49 @@ class AreaBuilder:
         if not replaced:
             current.append(item_def)
         self._zone_obj.db.item_definitions = current
+        return self
+
+    # ------------------------------------------------------------------
+    # loot_table_override()
+    # ------------------------------------------------------------------
+
+    def loot_table_override(
+        self,
+        mob_type,
+        *,
+        relevant_skill="combat",
+        base_drop_chance=0.7,
+        drops=None,
+    ):
+        """
+        Register zone-specific random drops for one mob type.
+
+        Stored on zone_obj.db.loot_table_overrides for world.loot_tables.
+        """
+        if not self._zone_obj:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — loot_table_override() called before zone()"
+            )
+        if not isinstance(mob_type, str) or not mob_type:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — loot_table_override() mob_type is required"
+            )
+        if drops is None:
+            drops = []
+        if not isinstance(drops, list):
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — loot_table_override('{mob_type}') drops must be a list"
+            )
+
+        override = {
+            "mob_type": mob_type,
+            "relevant_skill": relevant_skill,
+            "base_drop_chance": base_drop_chance,
+            "drops": copy.deepcopy(drops),
+        }
+        current = dict(self._zone_obj.db.loot_table_overrides or {})
+        current[mob_type] = override
+        self._zone_obj.db.loot_table_overrides = current
         return self
 
     # ------------------------------------------------------------------
