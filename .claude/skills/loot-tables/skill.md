@@ -30,6 +30,8 @@ You are working on **soravelon's loot system** — skill-based tiered drops reso
 - **Zone overrides:** `_resolve_loot_table()` checks `zone_obj.db.loot_table_overrides` first, trying explicit `mob.db.loot_table` before legacy `mob.db.mob_type`, then falling back to module-level `LOOT_TABLES`
 - **Weighted random selection:** `_pick_drop()` uses `weight_in_pool` for weighted random among drops in a table
 - **Item def output:** `_build_item_def()` produces a dict with `item_id`, `key`, `item_type`, `weight`, `rarity`, `value`, `desc` — ready for `item_spawner.create_item_from_template()`
+- **Equipment archetypes:** Equipment drops may include `equipment_archetype`, `affix_profile`, `affix_count`, or `affix_count_by_tier`. `_build_item_def()` delegates these to `world.equipment_archetypes.build_equipment_from_archetype()` so builders can author reusable gear drops without copying full stat arrays into every table.
+- **Affix payloads:** Generated equipment may include `equipment_affixes` and `drop_provenance`. `commands/cmd_inspect.py` surfaces these as appraisal-visible item properties.
 - **Registered tables:** shore_crab, sea_serpent, coastal_raider, cliff_harpy, salt_lurker, wolf, ash_wolf, plains_viper, ashreach_bandit, dust_beetle, steppe_hawk, alpha_ash_wolf, forest_spider, wild_boar, cantera_wolf, vine_creeper, forest_bandit, void_wisp, blighted_stag, heartwood_ancient, mountain_troll, sea_raider, rat, bandit
 - **Loot modes:** Group loot defaults to "personal". Quest drops and Scales are ALWAYS personal regardless of mode
 - **Groups are session-only (`ndb`)** — loot mode dissolves when leader disconnects
@@ -48,6 +50,7 @@ You are working on **soravelon's loot system** — skill-based tiered drops reso
 - **Group Engine:** `world/group_engine.py` — loot distribution modes
 - **Zone Scaling:** `world/zone_scaling.py` — material tier tables
 - **Item Spawner:** `world/item_spawner.py` — `create_item_from_template()` consumes item_def dicts
+- **Equipment Archetypes:** `world/equipment_archetypes.py` — reusable base gear curves, affix definitions, and source-specific affix profiles
 
 ---
 **Last Updated:** 2026-04-30

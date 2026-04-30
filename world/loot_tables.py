@@ -1240,6 +1240,9 @@ LOOT_TABLES = {
                 "item_id": "raider_boarding_axe",
                 "key": "raider's boarding axe",
                 "item_type": "equipment",
+                "equipment_archetype": "cleaving_axe",
+                "affix_profile": "raider_weapon",
+                "affix_count_by_tier": [0, 0, 1, 1, 1],
                 "equip_slot": "main_hand",
                 "scaling_stat": "strength",
                 "material_tier_by_tier": [1, 1, 2, 2, 3],
@@ -1364,6 +1367,9 @@ LOOT_TABLES = {
                 "item_id": "bandit_blade",
                 "key": "notched blade",
                 "item_type": "equipment",
+                "equipment_archetype": "agile_blade",
+                "affix_profile": "bandit_weapon",
+                "affix_count_by_tier": [0, 0, 1, 1, 1],
                 "equip_slot": "main_hand",
                 "scaling_stat": "agility",
                 "material_tier_by_tier": [1, 1, 2, 2, 3],
@@ -1464,8 +1470,36 @@ def _pick_drop(drops, count=1):
     return selected
 
 
-def _build_item_def(drop, tier):
+def _loot_source_for_mob(mob):
+    """Build lightweight provenance for generated item defs."""
+    if not mob:
+        return None
+    source = {
+        "source_type": "mob_drop",
+        "mob_key": getattr(mob, "key", None),
+    }
+    for attr_name in ("mob_type", "loot_table"):
+        value = getattr(mob.db, attr_name, None)
+        if value:
+            source[attr_name] = value
+    room = getattr(mob, "location", None)
+    if room:
+        zone_id = getattr(room.db, "zone_id", None)
+        if zone_id:
+            source["zone_id"] = zone_id
+    return source
+
+
+def _build_item_def(drop, tier, mob=None):
     """Build an item_def dict from a drop entry at a given tier (1-5)."""
+    if drop.get("equipment_archetype"):
+        from world.equipment_archetypes import build_equipment_from_archetype
+        return build_equipment_from_archetype(
+            drop,
+            tier,
+            source=_loot_source_for_mob(mob),
+        )
+
     idx = max(0, min(4, tier - 1))
     item_def = {
         "item_id":   drop["item_id"],
@@ -1548,4 +1582,4 @@ def roll_loot(mob, killer):
     if extra:
         selected.extend(_pick_drop(drops, count=extra))
 
-    return [_build_item_def(drop, tier) for drop in selected]
+    return [_build_item_def(drop, tier, mob=mob) for drop in selected]

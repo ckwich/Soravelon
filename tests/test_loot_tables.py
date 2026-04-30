@@ -85,6 +85,7 @@ class TestRollLootTemplateLootTable(unittest.TestCase):
         mob = _make_mob(mob_type="reef_crawler_variant", loot_table="shore_crab")
         killer = _make_killer({"combat": 50})
         entry = dict(LOOT_TABLES["shore_crab"], base_drop_chance=1.0)
+        entry["drops"] = [LOOT_TABLES["shore_crab"]["drops"][0]]
 
         with patch.dict(LOOT_TABLES, {"shore_crab": entry}):
             results = roll_loot(mob, killer)

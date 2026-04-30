@@ -23,7 +23,7 @@ You are working on **item inspection commands** (`commands/cmd_inspect.py`) — 
 - **Appraisal DC formula:** `RARITY_DC[rarity] + (material_tier * 5)`. Rarity values: common/normal=0, magic=15, rare=30, legendary=45
 - **CmdInspect:** Searches inventory + room. If appraisal skill >= DC, shows full stats via `_format_stats()` and calls `accumulate_skill_use(caller, "appraisal")` for passive gain. Otherwise shows desc + "skill too low" message
 - **CmdCompare:** Parses `<item1> to <item2>` or `<item1> <item2>`. Requires appraisal >= DC for BOTH items. Shows side-by-side stat table
-- **`_get_item_stats()` extracts:** Damage (min-max), Armor, stat_bonuses, Slot, Rarity, Value (Scales), Material Tier — skips zero/empty values
+- **`_get_item_stats()` extracts:** Damage (min-max), Armor, stat_bonuses, generated equipment affix names, drop provenance, Slot, Rarity, Value (Scales), Material Tier — skips zero/empty values
 - **CmdInspect aliases:** `appraise_item`, `examine`
 
 ## Critical Rules
@@ -35,7 +35,8 @@ You are working on **item inspection commands** (`commands/cmd_inspect.py`) — 
 
 ## References
 - **Item Typeclasses:** `typeclasses/objects.py` — `db.damage_min`, `db.damage_max`, `db.armor_value`, `db.stat_bonuses`, `db.rarity`, `db.material_tier`, `db.equipment_slot`, `db.value_scales`
+- **Equipment Archetypes:** `world/equipment_archetypes.py` — generated drops may store `db.equipment_affixes` and `db.drop_provenance`
 - **Skill Engine:** `world/skill_engine.py` — `get_skill_value()` and `accumulate_skill_use()` for progression
 
 ---
-**Last Updated:** 2026-04-14
+**Last Updated:** 2026-04-30
