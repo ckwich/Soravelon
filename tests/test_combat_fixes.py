@@ -675,6 +675,33 @@ class TestCmdLoot(unittest.TestCase):
         self.assertEqual(char.db.carried_scales, 150)
         self.assertEqual(corpse.db.scales, 0)
 
+    def test_loot_transfers_items_from_corpse_container(self):
+        """CmdLoot passes the corpse to inventory pickup so contained drops can move."""
+        mod = _get_cmd_loot()
+        cmd = mod.CmdLoot()
+        cmd.args = ""
+
+        char = _make_character()
+        char.db.carried_scales = 0
+        char.ndb.group_leader_id = None
+
+        corpse = self._make_corpse_instance(killer_id=char.id, scales=0)
+        corpse.can_loot = MagicMock(return_value=(True, ""))
+        item = MagicMock()
+        item.key = "wolf pelt"
+        item.location = corpse
+        corpse.contents = [item]
+
+        char.location.contents = [corpse]
+        cmd.caller = char
+
+        with patch("world.group_engine.is_in_group", return_value=False), \
+             patch("world.inventory_engine.pick_up", return_value=(True, "picked")) as mock_pick_up:
+            cmd.func()
+
+        mock_pick_up.assert_called_once_with(char, item, container=corpse)
+        self.assertIn("wolf pelt", str(char.msg.call_args))
+
 
 # ===========================================================================
 # Test Suite 5: Group loot distribution

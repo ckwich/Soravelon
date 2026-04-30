@@ -374,6 +374,51 @@ class TestMaterialsSection(ZoneSerializerTestBase):
         self.assertIn("iron_ore", mat_calls)
 
 
+class TestLootTableOverridesSection(ZoneSerializerTestBase):
+    def test_loot_table_overrides_passed_to_area_builder(self):
+        """load_zone_from_json maps authored loot override tables into AreaBuilder."""
+        from world.zone_serializer import load_zone_from_json
+        from world.area_builder import AreaBuilder
+
+        override_calls = []
+        original_override = AreaBuilder.loot_table_override
+
+        def recording_override(self_ab, mob_type, **kwargs):
+            override_calls.append((mob_type, kwargs))
+            return original_override(self_ab, mob_type, **kwargs)
+
+        data = _minimal_zone_data("loot_override_serializer_zone")
+        data["loot_table_overrides"] = [
+            {
+                "mob_type": "shore_crab",
+                "relevant_skill": "combat",
+                "base_drop_chance": 1.0,
+                "drops": [
+                    {
+                        "item_id": "brackish_pearl",
+                        "key": "brackish pearl",
+                        "item_type": "item",
+                        "weight": 0.1,
+                        "weight_in_pool": 10,
+                        "value_by_tier": [5, 10, 20, 40, 80],
+                        "rarity_by_tier": ["normal", "normal", "magic", "rare", "rare"],
+                        "desc_by_tier": ["t1", "t2", "t3", "t4", "t5"],
+                    }
+                ],
+            }
+        ]
+
+        with patch.object(AreaBuilder, "loot_table_override", recording_override):
+            load_zone_from_json(data)
+
+        self.assertEqual(len(override_calls), 1)
+        mob_type, kwargs = override_calls[0]
+        self.assertEqual(mob_type, "shore_crab")
+        self.assertEqual(kwargs["relevant_skill"], "combat")
+        self.assertEqual(kwargs["base_drop_chance"], 1.0)
+        self.assertEqual(kwargs["drops"][0]["item_id"], "brackish_pearl")
+
+
 # ---------------------------------------------------------------------------
 # Idempotency test
 # ---------------------------------------------------------------------------

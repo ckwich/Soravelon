@@ -743,7 +743,7 @@ def spawn_corpse(mob, killer):
     )
 
     corpse.db.killer_id = killer.id
-    corpse.db.mob_key = mob.key
+    corpse.db.mob_key = _get_mob_loot_identity(mob)
     corpse.db.mob_rarity = mob.db.rarity or "normal"
     corpse.db.butcherable = True
     corpse.db.butchered = False
@@ -770,6 +770,15 @@ def spawn_corpse(mob, killer):
     delay(grace + open_period, _transition_corpse, corpse.id, "decayed")
 
     return corpse
+
+
+def _get_mob_loot_identity(mob):
+    """Return the stable registry key used by loot/gathering systems."""
+    for attr_name in ("mob_type", "mob_template_key"):
+        value = getattr(mob.db, attr_name, None)
+        if isinstance(value, str) and value:
+            return value
+    return mob.key
 
 
 def _spawn_player_corpse(character, room):

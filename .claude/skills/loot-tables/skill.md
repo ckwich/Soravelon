@@ -26,8 +26,8 @@ You are working on **soravelon's loot system** — skill-based tiered drops reso
 - **Skill-based quality, NOT level-based:** Killer's relevant domain skill score (0-100) maps to material tier (1-5) via `get_material_tier()`. Never use mob level or zone level for drop quality
 - **Rarity tiers:** normal → magic → rare → legendary. Stored in `mob.db.rarity`, default "normal"
 - **Loot modifiers:** `LOOT_TIER_MODIFIERS` maps rarity to `extra_rolls`, `tome_chance`, `ancient_chance`. Extra rolls add weighted random picks from the same drop pool
-- **LOOT_TABLES structure:** Keyed by `mob_type`. Each entry has `relevant_skill`, `base_drop_chance`, and `drops` list. Each drop has `item_id`, `key`, `item_type`, `weight`, `weight_in_pool`, plus `value_by_tier`, `rarity_by_tier`, `desc_by_tier` arrays (5 entries each, indexed by tier 1-5)
-- **Zone overrides:** `_resolve_loot_table()` checks `zone_obj.db.loot_table_overrides` first (keyed by mob_type), falling back to module-level `LOOT_TABLES`
+- **LOOT_TABLES structure:** Keyed by loot table id. Most keys match `mob_type`, but templates may set `mob.db.loot_table` to share a generic table across several mob types. Each entry has `relevant_skill`, `base_drop_chance`, and `drops` list. Each drop has `item_id`, `key`, `item_type`, `weight`, `weight_in_pool`, plus `value_by_tier`, `rarity_by_tier`, `desc_by_tier` arrays (5 entries each, indexed by tier 1-5)
+- **Zone overrides:** `_resolve_loot_table()` checks `zone_obj.db.loot_table_overrides` first, trying explicit `mob.db.loot_table` before legacy `mob.db.mob_type`, then falling back to module-level `LOOT_TABLES`
 - **Weighted random selection:** `_pick_drop()` uses `weight_in_pool` for weighted random among drops in a table
 - **Item def output:** `_build_item_def()` produces a dict with `item_id`, `key`, `item_type`, `weight`, `rarity`, `value`, `desc` — ready for `item_spawner.create_item_from_template()`
 - **Registered tables:** shore_crab, sea_serpent, coastal_raider, cliff_harpy, salt_lurker, wolf, ash_wolf, plains_viper, ashreach_bandit, dust_beetle, steppe_hawk, alpha_ash_wolf, forest_spider, wild_boar, cantera_wolf, vine_creeper, forest_bandit, void_wisp, blighted_stag, heartwood_ancient, mountain_troll, sea_raider, rat, bandit
@@ -41,7 +41,7 @@ You are working on **soravelon's loot system** — skill-based tiered drops reso
 4. **Zone overrides take precedence** — `_resolve_loot_table()` checks zone object first
 5. **Lazy imports for zone_scaling** — `get_zone_obj_for_room` and `get_material_tier` are thin wrappers with deferred imports, patchable in tests
 6. **Follow `(bool, str)` return convention** from base skill for any new functions (note: `roll_loot` returns `list[dict]` as its established API)
-7. **New mob_type loot tables go in LOOT_TABLES dict** — add entries as zones are authored
+7. **New drop pools go in LOOT_TABLES dict** — add entries as zones are authored, and point templates at shared pools with `loot_table` when several mobs should drop the same category of goods
 
 ## References
 - **Mob Affixes:** `world/mob_affixes.py` — rarity tier definitions that feed loot modifiers
@@ -50,4 +50,4 @@ You are working on **soravelon's loot system** — skill-based tiered drops reso
 - **Item Spawner:** `world/item_spawner.py` — `create_item_from_template()` consumes item_def dicts
 
 ---
-**Last Updated:** 2026-04-05
+**Last Updated:** 2026-04-30

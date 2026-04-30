@@ -10,10 +10,11 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 
-def _make_mob(mob_type="wolf", rarity="normal", location=None):
+def _make_mob(mob_type="wolf", rarity="normal", location=None, loot_table=None):
     """Build a minimal mock mob for testing."""
     mob = MagicMock()
     mob.db.mob_type = mob_type
+    mob.db.loot_table = loot_table
     mob.db.rarity = rarity
     mob.location = location
     return mob
@@ -72,6 +73,38 @@ class TestRollLootMissingMobType(unittest.TestCase):
         killer = _make_killer({"combat": 50})
         result = roll_loot(mob, killer)
         self.assertEqual(result, [])
+
+
+class TestRollLootTemplateLootTable(unittest.TestCase):
+    """Runtime loot resolution honors explicit template loot_table keys."""
+
+    def test_explicit_loot_table_used_when_mob_type_has_no_table(self):
+        """Many templates share generic loot tables instead of one table per mob type."""
+        from world.loot_tables import roll_loot, LOOT_TABLES
+
+        mob = _make_mob(mob_type="reef_crawler_variant", loot_table="shore_crab")
+        killer = _make_killer({"combat": 50})
+        entry = dict(LOOT_TABLES["shore_crab"], base_drop_chance=1.0)
+
+        with patch.dict(LOOT_TABLES, {"shore_crab": entry}):
+            results = roll_loot(mob, killer)
+
+        self.assertGreater(len(results), 0)
+        self.assertEqual(results[0]["item_id"], "crab_shell")
+
+    def test_mob_type_fallback_remains_supported(self):
+        """Older mobs without db.loot_table still resolve through db.mob_type."""
+        from world.loot_tables import roll_loot, LOOT_TABLES
+
+        mob = _make_mob(mob_type="wolf", loot_table=None)
+        killer = _make_killer({"combat": 50})
+        entry = dict(LOOT_TABLES["wolf"], base_drop_chance=1.0)
+
+        with patch.dict(LOOT_TABLES, {"wolf": entry}):
+            results = roll_loot(mob, killer)
+
+        self.assertGreater(len(results), 0)
+        self.assertEqual(results[0]["item_id"], "wolf_pelt")
 
     def test_none_mob_type_returns_empty(self):
         from world.loot_tables import roll_loot
@@ -329,6 +362,18 @@ class TestRollLootItemDefShape(unittest.TestCase):
                     f"{mob_type}:{drop['item_id']} is missing equipment stats",
                 )
 
+    def test_authored_drop_item_types_are_spawnable(self):
+        from world.loot_tables import LOOT_TABLES
+
+        spawnable_types = {"item", "equipment", "container", "keyring"}
+        for mob_type, table in LOOT_TABLES.items():
+            for drop in table.get("drops", []):
+                self.assertIn(
+                    drop.get("item_type", "item"),
+                    spawnable_types,
+                    f"{mob_type}:{drop['item_id']} has unsupported item_type",
+                )
+
 
 class TestRollLootZoneOverride(unittest.TestCase):
     """zone_obj.db.loot_table_overrides replaces LOOT_TABLES entry for mob_type."""
@@ -371,6 +416,40 @@ class TestRollLootZoneOverride(unittest.TestCase):
 
         self.assertGreater(len(results), 0)
         self.assertEqual(results[0]["item_id"], "zone_wolf_fang")
+
+    def test_zone_override_can_target_explicit_loot_table(self):
+        """Area-specific overrides can replace a shared loot table key."""
+        from world.loot_tables import roll_loot
+        mob = _make_mob(mob_type="reef_crawler_variant", loot_table="shore_crab")
+        killer = _make_killer({"combat": 50})
+
+        override_entry = {
+            "mob_type": "shore_crab",
+            "relevant_skill": "combat",
+            "base_drop_chance": 1.0,
+            "drops": [
+                {
+                    "item_id": "zone_crab_pearl",
+                    "key": "brackish pearl",
+                    "item_type": "item",
+                    "weight": 0.1,
+                    "weight_in_pool": 10,
+                    "value_by_tier": [5, 10, 20, 40, 80],
+                    "rarity_by_tier": ["normal", "normal", "magic", "rare", "rare"],
+                    "desc_by_tier": ["t1", "t2", "t3", "t4", "t5"],
+                }
+            ],
+        }
+
+        zone_obj = MagicMock()
+        zone_obj.db.loot_table_overrides = {"shore_crab": override_entry}
+
+        with patch("world.loot_tables.get_zone_obj_for_room", return_value=zone_obj):
+            mob.location = MagicMock()
+            results = roll_loot(mob, killer)
+
+        self.assertGreater(len(results), 0)
+        self.assertEqual(results[0]["item_id"], "zone_crab_pearl")
 
     def test_no_zone_obj_falls_back_to_default(self):
         """When get_zone_obj_for_room returns None, LOOT_TABLES is used."""

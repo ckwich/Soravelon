@@ -434,6 +434,27 @@ class TestDeathHandling(unittest.TestCase):
             mock_spawn.assert_called_once_with(mob, killer)
             self.assertIn("slain", msg.lower())
 
+    def test_spawn_corpse_stores_butcherable_mob_type_identity(self):
+        """Corpse butcher identity should use mob_type, not the display name."""
+        from world.combat_engine import spawn_corpse
+
+        mob = _make_mob()
+        mob.key = "Ash Wolf"
+        mob.db.mob_type = "ash_wolf"
+        mob.db.mob_template_key = "ash_wolf_hunter"
+        killer = _make_player()
+
+        corpse = MagicMock()
+        corpse.id = 123
+        with patch("world.group_engine.get_group_member_ids", return_value=[killer.id]), \
+             patch("evennia.create_object", return_value=corpse), \
+             patch("evennia.utils.delay"):
+            result = spawn_corpse(mob, killer)
+
+        self.assertIs(result, corpse)
+        self.assertEqual(corpse.db.mob_key, "ash_wolf")
+        self.assertNotEqual(corpse.db.mob_key, "Ash Wolf")
+
     def test_player_death_creates_corpse(self):
         """handle_player_death moves items to corpse."""
         from world.combat_engine import handle_player_death

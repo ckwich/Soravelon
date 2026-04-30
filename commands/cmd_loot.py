@@ -51,7 +51,7 @@ class CmdLoot(Command):
         from world.inventory_engine import pick_up
         looted_items = []
         for item in list(corpse.contents):
-            success, result_msg = pick_up(character, item)
+            success, result_msg = pick_up(character, item, container=corpse)
             if success:
                 looted_items.append(item.key)
 

@@ -1363,7 +1363,19 @@ LOOT_TABLES = {
             {
                 "item_id": "bandit_blade",
                 "key": "notched blade",
-                "item_type": "weapon",
+                "item_type": "equipment",
+                "equip_slot": "main_hand",
+                "scaling_stat": "agility",
+                "material_tier_by_tier": [1, 1, 2, 2, 3],
+                "damage_min_by_tier": [4, 5, 7, 9, 12],
+                "damage_max_by_tier": [8, 10, 13, 16, 20],
+                "stat_bonuses_by_tier": [
+                    {},
+                    {},
+                    {"agility": 1},
+                    {"agility": 1},
+                    {"agility": 2},
+                ],
                 "weight": 1.5,
                 "weight_in_pool": 5,
                 "value_by_tier":  [8, 18, 35, 70, 140],
@@ -1401,10 +1413,21 @@ LOOT_TABLES = {
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+def _loot_table_keys_for_mob(mob):
+    """Return explicit loot table key first, then legacy mob_type fallback."""
+    keys = []
+    for raw_key in (
+            getattr(mob.db, "loot_table", None),
+            getattr(mob.db, "mob_type", None)):
+        if isinstance(raw_key, str) and raw_key and raw_key not in keys:
+            keys.append(raw_key)
+    return keys
+
+
 def _resolve_loot_table(mob):
     """Return loot table entry for mob, checking zone overrides first."""
-    mob_type = mob.db.mob_type
-    if not mob_type:
+    table_keys = _loot_table_keys_for_mob(mob)
+    if not table_keys:
         return None
 
     # Check zone override
@@ -1412,11 +1435,16 @@ def _resolve_loot_table(mob):
     if room:
         zone_obj = get_zone_obj_for_room(room)
         if zone_obj and zone_obj.db.loot_table_overrides:
-            override = zone_obj.db.loot_table_overrides.get(mob_type)
-            if override:
-                return override
+            for table_key in table_keys:
+                override = zone_obj.db.loot_table_overrides.get(table_key)
+                if override:
+                    return override
 
-    return LOOT_TABLES.get(mob_type)
+    for table_key in table_keys:
+        table = LOOT_TABLES.get(table_key)
+        if table:
+            return table
+    return None
 
 
 def _pick_drop(drops, count=1):

@@ -31,7 +31,8 @@ def load_zone_from_json(zone_data: dict) -> dict:
             npcs (list), named_mobs (list), patrols (list), triggers (list),
             custom_commands (list), practice_opportunities (list),
             flight_points (list), flight_routes (list), node (dict or None),
-            quests (list), materials (list), lore_fragments (list)
+            quests (list), materials (list), loot_table_overrides (list),
+            lore_fragments (list)
 
     Returns:
         build() report dict: {zone_id, rooms_created, exits_created, warnings, unresolved_exits}
@@ -57,7 +58,16 @@ def load_zone_from_json(zone_data: dict) -> dict:
     zone_kwargs = {k: v for k, v in zone_meta.items() if k != "zone_id"}
     area.zone(**zone_kwargs)
 
-    # 3. rooms — build local lookup dict {room_id: room_obj}
+    # 3. loot_table_overrides — zone-owned drop tables keyed by mob/loot table id
+    for override_def in zone_data.get("loot_table_overrides", []):
+        mob_type = override_def["mob_type"]
+        override_kwargs = {
+            k: v for k, v in override_def.items()
+            if k != "mob_type"
+        }
+        area.loot_table_override(mob_type, **override_kwargs)
+
+    # 4. rooms — build local lookup dict {room_id: room_obj}
     rooms_lookup = {}
     for room_def in zone_data.get("rooms", []):
         room_id = room_def["room_id"]
@@ -65,7 +75,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
         room_obj = area.room(room_id, **room_kwargs)
         rooms_lookup[room_id] = room_obj
 
-    # 4. exits
+    # 5. exits
     for exit_def in zone_data.get("exits", []):
         from_room_id = exit_def["from_room"]
         to_room = exit_def["to"]
@@ -93,7 +103,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
                 continue
             area.exit(from_room, to_room_obj, direction, **exit_kwargs)
 
-    # 5. spawns
+    # 6. spawns
     for spawn_def in zone_data.get("spawns", []):
         room_id = spawn_def["room"]
         mob = spawn_def["mob"]
@@ -104,7 +114,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
         spawn_kwargs = {k: v for k, v in spawn_def.items() if k not in ("room", "mob")}
         area.spawn(room_obj, mob, **spawn_kwargs)
 
-    # 6. npcs
+    # 7. npcs
     for npc_def in zone_data.get("npcs", []):
         room_id = npc_def["room"]
         npc_id = npc_def["npc_id"]
@@ -115,7 +125,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
         npc_kwargs = {k: v for k, v in npc_def.items() if k not in ("room", "npc_id")}
         area.npc(room_obj, npc_id, **npc_kwargs)
 
-    # 7. named_mobs
+    # 8. named_mobs
     for nm_def in zone_data.get("named_mobs", []):
         mob_instance_id = nm_def["mob_instance_id"]
         room_id = nm_def["room"]
@@ -126,7 +136,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
         nm_kwargs = {k: v for k, v in nm_def.items() if k not in ("mob_instance_id", "room")}
         area.named_mob(mob_instance_id, room_obj, **nm_kwargs)
 
-    # 8. patrols (mob_key + optional mob placement)
+    # 9. patrols (mob_key + optional mob placement)
     for patrol_def in zone_data.get("patrols", []):
         mob_key = patrol_def["mob_key"]
         mob_room_id = patrol_def.get("mob_room")
@@ -143,7 +153,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
                          if k not in ("mob_key", "mob_room", "mob_attrs")}
         area.patrol(mob_key, route_room_ids, **patrol_kwargs)
 
-    # 9. triggers — source is a room_id string, area.trigger() resolves it internally
+    # 10. triggers — source is a room_id string, area.trigger() resolves it internally
     for trig_def in zone_data.get("triggers", []):
         source_id = trig_def["source"]
         event = trig_def["event"]
@@ -152,7 +162,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
                        if k not in ("source", "event", "actions")}
         area.trigger(source_id, event, actions, **trig_kwargs)
 
-    # 10. custom_commands — target is a room_id string, area.custom_command() resolves it
+    # 11. custom_commands — target is a room_id string, area.custom_command() resolves it
     for cmd_def in zone_data.get("custom_commands", []):
         target_id = cmd_def["target"]
         key = cmd_def["key"]
@@ -161,7 +171,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
                       if k not in ("target", "key", "action_dict")}
         area.custom_command(target_id, key, action_dict, **cmd_kwargs)
 
-    # 11. practice_opportunities
+    # 12. practice_opportunities
     for practice_def in zone_data.get("practice_opportunities", []):
         room_id = practice_def["room"]
         opportunity_id = practice_def["opportunity_id"]
@@ -171,7 +181,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
         }
         area.practice_opportunity(opportunity_id, room_id, **practice_kwargs)
 
-    # 12. flight_points
+    # 13. flight_points
     for fp_def in zone_data.get("flight_points", []):
         room_id = fp_def["room"]
         point_id = fp_def["point_id"]
@@ -182,7 +192,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
         fp_kwargs = {k: v for k, v in fp_def.items() if k not in ("room", "point_id")}
         area.flight_point(room_obj, point_id, **fp_kwargs)
 
-    # 13. flight_routes
+    # 14. flight_routes
     for fr_def in zone_data.get("flight_routes", []):
         area.flight_route(
             fr_def["point_a_id"],
@@ -192,7 +202,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
             fr_def.get("echoes", []),
         )
 
-    # 14. node
+    # 15. node
     node_def = zone_data.get("node")
     if node_def:
         center_room_id = node_def["center_room"]
@@ -205,19 +215,19 @@ def load_zone_from_json(zone_data: dict) -> dict:
         else:
             area._build_warnings.append(f"node: center_room '{center_room_id}' not found")
 
-    # 15. quests
+    # 16. quests
     for quest_def in zone_data.get("quests", []):
         quest_id = quest_def["quest_id"]
         quest_kwargs = {k: v for k, v in quest_def.items() if k != "quest_id"}
         area.quest(quest_id, **quest_kwargs)
 
-    # 16. materials
+    # 17. materials
     for mat_def in zone_data.get("materials", []):
         material = mat_def["material"]
         mat_kwargs = {k: v for k, v in mat_def.items() if k != "material"}
         area.material(material, **mat_kwargs)
 
-    # 17. lore_fragments
+    # 18. lore_fragments
     for lf_def in zone_data.get("lore_fragments", []):
         fragment_id = lf_def["fragment_id"]
         room_id = lf_def["room"]
