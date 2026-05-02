@@ -144,6 +144,48 @@ class TestBasicAttackResolution(unittest.TestCase):
             self.assertEqual(dmg, 0)
             self.assertIn("misses", msg.lower())
 
+    @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
+    @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: d)
+    def test_weapon_family_skill_adds_modest_damage_bonus(self, mock_res, mock_scale, mock_crit):
+        """A matching weapon-family skill slightly improves basic attack damage."""
+        from world.combat_engine import resolve_basic_attack
+
+        player = _make_player(strength=10)
+        mob = _make_mob()
+        weapon = MagicMock()
+        weapon.key = "Practice Sword"
+        weapon.db.damage_min = 10
+        weapon.db.damage_max = 10
+        weapon.db.element = "physical"
+        weapon.db.weapon_family = "blade"
+
+        with patch("world.skill_engine.get_skill_value", return_value=100), \
+             patch("world.skill_engine.accumulate_skill_use") as mock_accumulate:
+            ok, msg, dmg = resolve_basic_attack(player, mob, weapon=weapon)
+
+        self.assertTrue(ok)
+        self.assertIn("TestPlayer", msg)
+        self.assertEqual(dmg, 16)
+        mock_accumulate.assert_any_call(player, "weapon_blades")
+
+    @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
+    @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: d)
+    def test_unarmed_basic_attack_accumulates_unarmed_skill(self, mock_res, mock_scale, mock_crit):
+        """Bare-handed basic attacks should still train the unarmed family."""
+        from world.combat_engine import resolve_basic_attack
+
+        player = _make_player(strength=10)
+        mob = _make_mob()
+
+        with patch("world.skill_engine.get_skill_value", return_value=0), \
+             patch("world.skill_engine.accumulate_skill_use") as mock_accumulate:
+            ok, _, _ = resolve_basic_attack(player, mob, weapon=None)
+
+        self.assertTrue(ok)
+        mock_accumulate.assert_any_call(player, "weapon_unarmed")
+
 
 class TestAbilityDamageResolution(unittest.TestCase):
     """Ability-based damage resolution (CMB-01)."""

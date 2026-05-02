@@ -505,6 +505,36 @@ class TestRollLootRelevantSkill(unittest.TestCase):
         # naturalism=80 → tier 4 → value_by_tier[3]=20
         self.assertEqual(results[0]["value"], 20)
 
+    def test_weapon_family_skill_does_not_drive_drop_tier(self):
+        """Weapon proficiency should not replace the table's relevant_skill for loot quality."""
+        from world.loot_tables import roll_loot, LOOT_TABLES
+
+        mob = _make_mob(mob_type="weapon_skill_loot_test")
+        killer = _make_killer({"combat": 0, "weapon_blades": 100})
+        table = {
+            "mob_type": "weapon_skill_loot_test",
+            "relevant_skill": "combat",
+            "base_drop_chance": 1.0,
+            "drops": [{
+                "item_id": "test_family_blade",
+                "key": "test family blade",
+                "item_type": "equipment",
+                "equipment_archetype": "agile_blade",
+                "weight_in_pool": 1,
+                "value_by_tier": [10, 20, 40, 80, 160],
+                "rarity_by_tier": ["normal", "normal", "magic", "rare", "rare"],
+                "desc_by_tier": ["blade"] * 5,
+            }],
+        }
+
+        with patch.dict(LOOT_TABLES, {"weapon_skill_loot_test": table}):
+            results = roll_loot(mob, killer)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["value"], 10)
+        self.assertEqual(results[0]["material_tier"], 1)
+        self.assertEqual(results[0]["weapon_family"], "blade")
+
 
 if __name__ == "__main__":
     unittest.main()

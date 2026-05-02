@@ -139,6 +139,10 @@ def _compute_raw_damage(attacker, weapon):
             w_max = BARE_HANDS_MAX
             element = "physical"
         raw = random.randint(w_min, w_max) + int(strength * 0.5)
+        from world.weapon_skills import weapon_skill_damage_bonus_for_attack
+        skill_bonus = weapon_skill_damage_bonus_for_attack(attacker, weapon)
+        if skill_bonus:
+            raw = max(1, int(raw * (1 + skill_bonus)))
     else:
         raw_min = attacker.db.ref_damage_min or 8
         raw_max = attacker.db.ref_damage_max or 14
@@ -308,7 +312,9 @@ def resolve_basic_attack(attacker, target, weapon=None):
     # Record stat use
     if attacker_stats:
         from world.base_attributes import record_stat_use
+        from world.weapon_skills import accumulate_weapon_skill_for_attack
         record_stat_use(attacker, "melee_hit")
+        accumulate_weapon_skill_for_attack(attacker, weapon)
     if target_stats:
         from world.base_attributes import record_stat_use
         record_stat_use(target, "damage_taken")

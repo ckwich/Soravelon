@@ -45,7 +45,8 @@ def _make_vendor(
 def _make_item(key="Iron Sword", item_type="equipment", value_scales=25,
                is_quest_item=False, item_id="iron_sword", item_dbid=2001, weight=3.0,
                rarity="normal", equipment_slot="main_hand",
-               stat_bonuses=None, damage_min=8, damage_max=14):
+               stat_bonuses=None, damage_min=8, damage_max=14,
+               weapon_family=None):
     """Create a mock item."""
     item = MagicMock()
     item.id = item_dbid
@@ -61,6 +62,7 @@ def _make_item(key="Iron Sword", item_type="equipment", value_scales=25,
     item.db.stat_bonuses = stat_bonuses or {}
     item.db.damage_min = damage_min
     item.db.damage_max = damage_max
+    item.db.weapon_family = weapon_family
     item.db.armor_value = 0
     item.db.is_quest_item = is_quest_item
     item.can_be_sold = MagicMock(return_value=(True, None))
@@ -286,6 +288,27 @@ class TestSellItem(unittest.TestCase):
         self.assertEqual(
             vendor.db.player_stock["field_ration"]["use_effect"],
             {"type": "heal_hp_stamina", "hp": 5, "stamina": 10},
+        )
+
+    def test_sell_item_preserves_weapon_family_for_resale(self):
+        from world.vendor_engine import sell_item
+
+        char = _make_character(carried_scales=50)
+        vendor = _make_vendor(vendor_accepts=["equipment"])
+        item = _make_item(
+            key="Oddly Named Cutter",
+            item_type="equipment",
+            value_scales=25,
+            item_id="odd_cutter",
+            weapon_family="blade",
+        )
+
+        ok, _ = sell_item(char, vendor, item)
+
+        self.assertTrue(ok)
+        self.assertEqual(
+            vendor.db.player_stock["odd_cutter"]["weapon_family"],
+            "blade",
         )
 
 

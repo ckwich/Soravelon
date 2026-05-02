@@ -33,6 +33,7 @@ class TestItemInspectionAffixes(unittest.TestCase):
             rarity="magic",
             value_scales=46,
             material_tier=2,
+            weapon_family="blade",
             equipment_affixes=[
                 {"id": "balanced", "name": "Balanced"},
                 {"id": "keen", "name": "Keen"},
@@ -42,5 +43,6 @@ class TestItemInspectionAffixes(unittest.TestCase):
 
         stats = _get_item_stats(item)
 
+        self.assertEqual(stats["Weapon Family"], "Blades")
         self.assertEqual(stats["Affixes"], "Balanced, Keen")
         self.assertEqual(stats["Recovered From"], "Test Raider")

@@ -52,6 +52,7 @@ class TestEquipmentArchetypeBuilder(unittest.TestCase):
         self.assertEqual(item["item_id"], "test_blade")
         self.assertEqual(item["item_type"], "equipment")
         self.assertEqual(item["equip_slot"], "main_hand")
+        self.assertEqual(item["weapon_family"], "blade")
         self.assertEqual(item["scaling_stat"], "agility")
         self.assertEqual(item["material_tier"], 2)
         self.assertEqual(item["damage_min"], 8)
@@ -166,5 +167,6 @@ class TestLootTableArchetypeIntegration(unittest.TestCase):
         item = drops[0]
         self.assertEqual(item["item_type"], "equipment")
         self.assertEqual(item["equip_slot"], "main_hand")
+        self.assertEqual(item["weapon_family"], "blade")
         self.assertIn("equipment_affixes", item)
         self.assertEqual(item["drop_provenance"]["source_name"], "Test Raider")

@@ -25,6 +25,7 @@ _PLAYER_STOCK_OPTIONAL_ATTRS = (
     "two_handed",
     "stackable",
     "material_tier",
+    "weapon_family",
 )
 
 

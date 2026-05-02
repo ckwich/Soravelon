@@ -8,6 +8,10 @@ Per D-14: compare shows side-by-side stat comparison.
 
 from commands.command import Command
 from world.skill_engine import get_skill_value, accumulate_skill_use
+from world.weapon_skills import (
+    display_weapon_family,
+    infer_weapon_family_from_item,
+)
 
 # Appraisal DC = (rarity_number * 15) + (material_tier * 5)
 RARITY_DC = {
@@ -33,6 +37,9 @@ def _get_item_stats(item):
     damage_max = item.db.damage_max or 0
     if damage_min or damage_max:
         stats["Damage"] = f"{damage_min}-{damage_max}"
+    weapon_family = infer_weapon_family_from_item(item)
+    if weapon_family:
+        stats["Weapon Family"] = display_weapon_family(weapon_family)
     armor = item.db.armor_value or 0
     if armor:
         stats["Armor"] = str(armor)

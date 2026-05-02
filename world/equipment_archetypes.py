@@ -11,6 +11,8 @@ from __future__ import annotations
 import copy
 import random
 
+from world.weapon_skills import normalize_weapon_family
+
 
 class EquipmentArchetypeError(ValueError):
     """Raised when authored equipment generation data is invalid."""
@@ -24,6 +26,7 @@ EQUIPMENT_ARCHETYPES = {
         "key": "blade",
         "equip_slot": "main_hand",
         "scaling_stat": "agility",
+        "weapon_family": "blade",
         "weight": 1.5,
         "tags": ["weapon", "blade", "light"],
         "material_tier_by_tier": [1, 1, 2, 2, 3],
@@ -42,6 +45,7 @@ EQUIPMENT_ARCHETYPES = {
         "key": "boarding axe",
         "equip_slot": "main_hand",
         "scaling_stat": "strength",
+        "weapon_family": "axe",
         "weight": 2.1,
         "tags": ["weapon", "axe", "heavy"],
         "material_tier_by_tier": [1, 1, 2, 2, 3],
@@ -435,6 +439,14 @@ def build_equipment_from_archetype(drop, tier, rng=None, source=None):
         "scaling_stat": drop.get("scaling_stat", archetype.get("scaling_stat")),
         "material_tier": _tiered_value(drop, "material_tier", idx, None),
     }
+    raw_family = drop.get("weapon_family", archetype.get("weapon_family"))
+    if raw_family:
+        family = normalize_weapon_family(raw_family)
+        if not family:
+            raise EquipmentArchetypeError(
+                f"Unknown weapon family '{raw_family}' for archetype '{archetype_id}'"
+            )
+        item_def["weapon_family"] = family
     if item_def["material_tier"] is None:
         item_def["material_tier"] = _tiered_value(archetype, "material_tier", idx, 0)
 

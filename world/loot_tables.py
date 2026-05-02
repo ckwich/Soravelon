@@ -1532,6 +1532,7 @@ def _build_item_def(drop, tier, mob=None):
         "tool_slot",
         "tool_tag",
         "use_effect",
+        "weapon_family",
     ):
         if field_name in drop:
             item_def[field_name] = copy.deepcopy(drop[field_name])

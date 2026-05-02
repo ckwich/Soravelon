@@ -11,6 +11,8 @@ Each skill has a 0-100 scale with three improvement methods:
 - Trainer sessions: NPC-driven, costs Scales, enhances next practice
 """
 
+from world.weapon_skills import WEAPON_SKILL_DEFINITIONS
+
 # --- Diminishing Returns (same curve as domain XP per D-19) ---
 
 DIMINISHING_BRACKETS = [
@@ -393,6 +395,8 @@ SKILL_DEFINITIONS = {
         },
     },
 }
+
+SKILL_DEFINITIONS.update(WEAPON_SKILL_DEFINITIONS)
 
 # --- Ancestry Skill Seeds (D-20) ---
 # Applied at character creation. Values represent starting proficiency.
