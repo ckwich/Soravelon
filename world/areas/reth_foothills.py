@@ -2116,13 +2116,108 @@ def build():
     # ==================================================================
 
     # 1. Mining Foreman (Consortium faction) -- quest hook about lost miners
-    area.npc(gm_foreman_office, "npc_foreman_halvek", faction="consortium", trainer_id="npc_trainer_smithing_reth")
+    area.npc(
+        gm_foreman_office, "npc_foreman_halvek",
+        faction="consortium",
+        trainer_id="npc_trainer_smithing_reth",
+        dialogue={
+            "greeting": (
+                "Halvek flattens a survey map with both hands. 'If the mine "
+                "wanted to be quiet, it chose a poor week for it. I need facts "
+                "before the Consortium turns fear into policy.'"
+            ),
+            "topics": {
+                "miners": (
+                    "'Three went below with chalk, rope, and enough sense to "
+                    "turn back. Their last marks point from the collapse to "
+                    "the lower passage, then into the deep caverns. Follow the "
+                    "marks in order or you will learn nothing useful.'"
+                ),
+                "survey": (
+                    "'A productive cut is one thing. A productive cut punched "
+                    "through old working stone is another. If the hidden alcove, "
+                    "the foundation, and that old nest agree, I close the seam.'"
+                ),
+                "consortium": (
+                    "'Profit keeps lamps lit. I know that. But coin spends "
+                    "poorly if the mountain starts answering back.'"
+                ),
+            },
+            "base_hints": [
+                "Halvek's map links the collapse, lower passage, and deep caverns with fresh chalk.",
+                "A second sheet on Halvek's desk compares mine cuts against older stonework.",
+            ],
+        },
+    )
 
     # 2. Warden Patrol Captain -- quest about troll activity
-    area.npc(ra_warden_camp, "npc_warden_captain_serra", faction="wardens")
+    area.npc(
+        ra_warden_camp, "npc_warden_captain_serra",
+        faction="wardens",
+        dialogue={
+            "greeting": (
+                "Serra rolls a patrol token between two scarred fingers. 'The "
+                "foothills look open until a boulder stands up and swings. "
+                "Tell me you brought patience as well as steel.'"
+            ),
+            "topics": {
+                "trolls": (
+                    "'They are not wandering at random. The hollow below the "
+                    "switchbacks is active again, and every troll we drive off "
+                    "there buys a safer shift for the mine camps.'"
+                ),
+                "patrol": (
+                    "'Cold ruins judgment faster than fear. Renn's tonic keeps "
+                    "my patrols moving when the wind comes down wrong, which is "
+                    "why a delivery can matter as much as a blade.'"
+                ),
+                "line": (
+                    "'The line is not a wall. It is people watching routes, "
+                    "sharing warnings, and refusing to let one bad pass become "
+                    "everyone's disaster.'"
+                ),
+            },
+            "base_hints": [
+                "Serra's stones mark the troll hollow, the mine entrance, and the western ridge.",
+                "A folded tonic request sits under Serra's patrol knife.",
+            ],
+        },
+    )
 
     # 3. Hermit Alchemist -- rare ingredient dialogue
-    area.npc(wr_hermit_cave, "npc_hermit_alchemist_old_renn", faction=None)
+    area.npc(
+        wr_hermit_cave, "npc_hermit_alchemist_old_renn",
+        faction=None,
+        dialogue={
+            "greeting": (
+                "Renn looks up from a steaming clay cup. 'If you are bleeding, "
+                "sit. If you are asking, speak softly. The mountain gives better "
+                "answers to people who do not shout over it.'"
+            ),
+            "topics": {
+                "tonic": (
+                    "'Serra's patrol tonic is not bravery in a bottle. It is "
+                    "warm hands, clear breath, and fewer foolish deaths on a "
+                    "ridge that does not care who outranks whom.'"
+                ),
+                "ingredients": (
+                    "'Good alpine stock grows where stone holds memory: the herb "
+                    "ledge, the high meadow, the lower meadow, and the spring. "
+                    "Take enough for medicine, not enough to teach the ledges "
+                    "mistrust.'"
+                ),
+                "foundation": (
+                    "'Halvek thinks in claims and supports. I think in patterns "
+                    "that keep turning up where no one planted them. Between us, "
+                    "we may yet become almost wise.'"
+                ),
+            },
+            "base_hints": [
+                "Renn's drying cord separates alpine cuttings by where the stone around them held warmth.",
+                "A half-finished tonic recipe is written over an older sketch of eight radiating chambers.",
+            ],
+        },
+    )
 
     # ==================================================================
     #  LORE FRAGMENTS (D-24: 5 fragments in ruins/caves)
@@ -2228,10 +2323,13 @@ def build():
             {"action_type": "echo", "message": "|gHalvek's weathered face creases with relief. \"Alive, then. Thank the stone. The Consortium will remember this -- and so will I.\"|n"},
         ],
         next_quest_id="rf_q_foundation_survey",
+        one_chance=True,
         # Legacy fields (backward compat)
         objective_type="investigate",
         objective_target="gm_collapse",
         objective_count=1,
+        consequence_small="Halvek pins the survey team's route beside the mine map, turning rumor into a route others can check",
+        consequence_medium="Consortium mine talk can remember that your first answer in Reth was evidence before extraction",
     )
 
     area.quest("rf_q_troll_menace",
@@ -2240,8 +2338,10 @@ def build():
         quest_type="combat",
         quest_giver="npc_warden_captain_serra",
         objectives=[
+            {"type": "investigate", "target": "ls_troll_hollow", "count": 1,
+             "description": "Find the active troll hollow feeding attacks toward the road"},
             {"type": "kill", "target": "rock_troll", "count": 5,
-             "description": "Drive rock trolls out of the lower foothills"},
+             "description": "Drive rock trolls back from the lower foothill routes"},
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 120},
@@ -2253,6 +2353,9 @@ def build():
         objective_type="kill",
         objective_target="rock_troll",
         objective_count=5,
+        one_chance=True,
+        consequence_small="Serra moves a patrol token back onto the lower route after your report proves the troll hollow can be checked",
+        consequence_medium="Warden patrol dialogue can treat you as someone who reads threat routes, not only a tally of bodies",
     )
 
     area.quest("rf_q_rare_ingredients",
@@ -2271,10 +2374,13 @@ def build():
             {"action_type": "learn_recipe", "recipe_id": "mountain_tonic"},
             {"action_type": "echo", "message": "|gRenn sniffs each ingredient with an alchemist's precision. \"Perfect specimens. Here -- I'll teach you the mountain tonic. The recipe is old, older than the Empire.\"|n"},
         ],
+        one_chance=True,
         # Legacy fields (backward compat)
         objective_type="gather",
         objective_target="rare_mountain_ingredient",
         objective_count=4,
+        consequence_small="Renn labels your gathered stock by ledge and weather, making the next patrol tonic a record of where the mountain helped",
+        consequence_medium="The mountain tonic recipe enters your practice history as medicine learned from place, season, and restraint",
     )
 
     area.quest("rf_q_patrol_request",
@@ -2293,9 +2399,12 @@ def build():
             {"action_type": "echo", "message": "|gSerra folds Renn's answer into her map case. \"Good. The line keeps men alive because somebody thinks ahead. Today that somebody was you.\"|n"},
         ],
         next_quest_id="rf_q_rare_ingredients",
+        one_chance=True,
         objective_type="deliver",
         objective_target="npc_hermit_alchemist_old_renn",
         objective_count=1,
+        consequence_small="Serra tucks Renn's answer into the patrol case, and the western ridge gains a planned tonic run before the cold front",
+        consequence_medium="Later Warden route talk can remember that you kept the patrol line alive with preparation instead of rescue",
     )
 
     area.quest("rf_q_foundation_survey",
@@ -2318,9 +2427,12 @@ def build():
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 4},
             {"action_type": "echo", "message": "|gHalvek studies the copied marks in silence before handing them to Renn. \"That is not mine work,\" he mutters. \"That means the mountain owed us warning before it owed us ore.\"|n"},
         ],
+        one_chance=True,
         objective_type="investigate",
         objective_target="gm_hidden_alcove",
         objective_count=1,
+        consequence_small="Halvek files the hidden alcove, foundation, and old nest under one red cord instead of three unrelated hazards",
+        consequence_medium="Reth's mine story can shift from reopening a vein toward proving what older structure the miners disturbed",
     )
 
     area.lore_fragment(

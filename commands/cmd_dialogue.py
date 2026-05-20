@@ -96,12 +96,22 @@ def _find_online_player(player_name):
 def _build_quest_oob_payload(npc, quest_data):
     """Build a stable quest payload for OOB updates from dialogue commands."""
     quest_data = quest_data or {}
+    npc_db = getattr(npc, "db", None)
+    fallback_npc = quest_data.get("quest_giver", "")
     return {
         "event": "accepted",
         "quest_id": quest_data.get("quest_id") or quest_data.get("id") or "",
         "quest_name": quest_data.get("name", "a task"),
-        "npc_id": getattr(npc.db, "npc_id", None) or getattr(npc, "key", ""),
-        "npc_name": getattr(npc.db, "npc_name", None) or getattr(npc, "key", ""),
+        "npc_id": (
+            (getattr(npc_db, "npc_id", None) if npc_db else None)
+            or getattr(npc, "key", "")
+            or fallback_npc
+        ),
+        "npc_name": (
+            (getattr(npc_db, "npc_name", None) if npc_db else None)
+            or getattr(npc, "key", "")
+            or fallback_npc
+        ),
         "description": quest_data.get("description", ""),
         "objectives": quest_data.get("objectives", []),
     }
@@ -498,13 +508,19 @@ class CmdAccept(Command):
             character.ndb.pending_quest_offer = None
             return
 
-        npc_display = npc.db.npc_name or npc.key
         quest_name = quest_data.get("name", "a task") if quest_data else "a task"
-        character.msg(
-            f"|g{npc_display} nods. "
-            f"\"Then it's settled. I'm counting on you.\"|n\n"
-            f"|g[Quest accepted: {quest_name}]|n"
-        )
+        if npc is not None:
+            npc_display = npc.db.npc_name or npc.key
+            character.msg(
+                f"|g{npc_display} nods. "
+                f"\"Then it's settled. I'm counting on you.\"|n\n"
+                f"|g[Quest accepted: {quest_name}]|n"
+            )
+        else:
+            character.msg(
+                "|gThe next lead is yours before the trail goes cold.|n\n"
+                f"|g[Quest accepted: {quest_name}]|n"
+            )
 
         # OOB push for quest accepted
         from world import oob_publisher

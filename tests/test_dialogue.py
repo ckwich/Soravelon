@@ -10,9 +10,63 @@ EvenniaTest for model-backed operations (KnownTopicRecord).
 """
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from evennia.utils.test_resources import EvenniaTest
+
+
+class TestQuestOfferAcceptance(unittest.TestCase):
+    """Quest-offer command edge cases that do not need live Evennia objects."""
+
+    def test_oob_payload_handles_chained_offer_without_npc(self):
+        from commands.cmd_dialogue import _build_quest_oob_payload
+
+        payload = _build_quest_oob_payload(
+            None,
+            {
+                "quest_id": "chain_step_two",
+                "name": "Second Step",
+                "quest_giver": "npc_route_captain",
+            },
+        )
+
+        self.assertEqual(payload["quest_id"], "chain_step_two")
+        self.assertEqual(payload["quest_name"], "Second Step")
+        self.assertEqual(payload["npc_id"], "npc_route_captain")
+        self.assertEqual(payload["npc_name"], "npc_route_captain")
+
+    @patch("world.oob_publisher.push_quest_update")
+    @patch("world.quest_engine.accept_quest")
+    def test_accept_handles_chained_offer_without_live_npc(
+        self,
+        mock_accept,
+        mock_push,
+    ):
+        from commands.cmd_dialogue import CmdAccept
+
+        mock_accept.return_value = (True, "Quest accepted: Second Step")
+        character = MagicMock()
+        character.ndb = SimpleNamespace(
+            pending_quest_offer={
+                "npc": None,
+                "quest": {
+                    "quest_id": "chain_step_two",
+                    "name": "Second Step",
+                    "quest_giver": "npc_route_captain",
+                },
+            }
+        )
+
+        cmd = CmdAccept()
+        cmd.caller = character
+        cmd.func()
+
+        mock_accept.assert_called_once()
+        mock_push.assert_called_once()
+        character.msg.assert_called_once()
+        self.assertIn("Quest accepted: Second Step", character.msg.call_args[0][0])
+        self.assertIsNone(character.ndb.pending_quest_offer)
 
 
 # ---------------------------------------------------------------------------

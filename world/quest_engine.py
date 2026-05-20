@@ -223,7 +223,7 @@ def accept_quest(character, quest_id, quest_spec):
 
     Per D-01: stores character, quest_id, status=active, progress={}.
     Per D-02: rejects if 5 active quests exist.
-    Per D-03: rejects one_chance quest already failed.
+    Per D-03: rejects one_chance quest already failed or completed.
 
     Returns (bool, str).
     """
@@ -242,6 +242,10 @@ def accept_quest(character, quest_id, quest_spec):
             character=character, quest_id=quest_id, status="failed"
         ).exists():
             return False, "This quest is no longer available to you."
+        if CharacterQuest.objects.filter(
+            character=character, quest_id=quest_id, status="complete"
+        ).exists():
+            return False, "You have already completed this quest."
 
     # Check not already active
     if CharacterQuest.objects.filter(
@@ -622,10 +626,11 @@ def _check_quest_completion(character, cq, quest_spec):
     next_id = quest_spec.get("next_quest_id")
     if next_id:
         next_spec = _get_quest_spec(next_id)
-        character.ndb.pending_quest_offer = {
-            "npc": None,  # NPC not in scope at completion — CmdAccept handles gracefully
-            "quest": next_spec or {"quest_id": next_id},
-        }
+        if next_spec:
+            character.ndb.pending_quest_offer = {
+                "npc": None,  # NPC not in scope at completion — CmdAccept handles gracefully
+                "quest": next_spec,
+            }
 
     # Push OOB update if available
     try:
