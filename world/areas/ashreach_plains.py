@@ -1926,13 +1926,110 @@ def build():
     # ==================================================================
 
     # NPC 1: Warden Ranger at the outpost
-    area.npc(outpost_07, "npc_warden_captain_ashwyn", faction="wardens")
+    area.npc(
+        outpost_07, "npc_warden_captain_ashwyn",
+        faction="wardens",
+        dialogue={
+            "greeting": (
+                "Ashwyn lifts two fingers from the tally board. 'If you came "
+                "from Vael's Crossing, you already know the road is louder "
+                "than it should be. Tell me what you saw, then I will tell "
+                "you what still needs doing.'"
+            ),
+            "topics": {
+                "wolves": (
+                    "'The ash wolves used to keep to the ridges unless hunger "
+                    "drove them down. Now they test campfires, follow wagons, "
+                    "and circle children fetching water. Cull enough of them "
+                    "and the road folk will notice the difference by sundown.'"
+                ),
+                "bandits": (
+                    "'The brigands are not starving locals with bad luck. They "
+                    "watch patrol changes, mark merchant wheels, and cut away "
+                    "before we can form a sweep. Clear the camp and you are "
+                    "protecting every honest traveler behind you.'"
+                ),
+                "ashway": (
+                    "'The Ashway is not just a road. It is how Vael's Crossing, "
+                    "the forest watch, and the coast keep from becoming three "
+                    "lonely problems. When it goes blind, people disappear.'"
+                ),
+            },
+            "base_hints": [
+                "Ashwyn's tally board separates wolf sightings from bandit marks.",
+                "Fresh reports on Ashwyn's desk trace trouble from the ridges to the trade road.",
+            ],
+        },
+    )
 
     # NPC 2: Hermit scholar near the ruins
-    area.npc(outpost_15, "npc_hermit_scholar_obed", faction=None)
+    area.npc(
+        outpost_15, "npc_hermit_scholar_obed",
+        faction=None,
+        dialogue={
+            "greeting": (
+                "Obed peers over a slate covered in copied angles. 'Careful "
+                "where you stand. Half the Ashreach is trying to erase its "
+                "own handwriting, and the other half resents being read.'"
+            ),
+            "topics": {
+                "ruins": (
+                    "'Do not go looking for treasure. Look for repetition: "
+                    "the sunk chamber, the wind-cut passage, the buried archive. "
+                    "Places that repeat themselves are trying to be understood.'"
+                ),
+                "archive": (
+                    "'The chamber below the octagonal platform still holds its "
+                    "shape. That matters. Empires reuse stone; older hands leave "
+                    "habits in the measurements.'"
+                ),
+                "ash": (
+                    "'Ash preserves and destroys by turns. It hides a carving "
+                    "for a century, then scours it away in a single bad season. "
+                    "That is why I need witnesses, not just theories.'"
+                ),
+            },
+            "base_hints": [
+                "Obed keeps separate rubbings labeled chamber, channel, and archive.",
+                "A sketch beside Obed marks the octagonal platform without naming what made it.",
+            ],
+        },
+    )
 
     # NPC 3: Traveling merchant on the Ashway
-    area.npc(ash_road_09, "npc_merchant_reva", faction="consortium")
+    area.npc(
+        ash_road_09, "npc_merchant_reva",
+        faction="consortium",
+        dialogue={
+            "greeting": (
+                "Reva weighs you with a merchant's quick arithmetic. 'If you "
+                "are buying, I am delighted. If you are carrying, I am still "
+                "delighted, but in a more urgent way.'"
+            ),
+            "topics": {
+                "order": (
+                    "'Old Korrin knows the smokehouse schedules better than "
+                    "any clerk with clean sleeves. His mark on that order means "
+                    "fish, lamp oil, and salt reach Vael's Crossing before the "
+                    "next wagon spoils in the heat.'"
+                ),
+                "stormhaven": (
+                    "'Stormhaven smells like tar, brine, and people pretending "
+                    "weather is a business partner. Take the east road and keep "
+                    "the paper dry. Korrin will understand the rest.'"
+                ),
+                "road": (
+                    "'A safe road is cheaper than a brave guard. Clear wolves, "
+                    "clear bandits, carry messages, and suddenly everyone calls "
+                    "it prosperity instead of survival.'"
+                ),
+            },
+            "base_hints": [
+                "Reva's satchel has separate oilcloth pockets for orders, coin, and favors owed.",
+                "A Stormhaven tide-table is pinned under Reva's thumb.",
+            ],
+        },
+    )
 
     # NPC 4: Warden outpost commander (delivery target for vc_q_warden_report)
     area.npc(
@@ -1964,7 +2061,21 @@ def build():
                     "Field intelligence is what keeps this outpost running, not "
                     "paperwork from the garrison.'"
                 ),
+                "relay": (
+                    "'Taen at the forest edge reads tracks better than any map. "
+                    "If his watch and mine stop trading notes, the first warning "
+                    "we get will be someone failing to arrive.'"
+                ),
+                "treeline": (
+                    "'Cantera looks quiet from here. That is the trick of it. "
+                    "Carry the satchel west, put it in Taen's hands, and do not "
+                    "let the Ashway's calm talk you into delay.'"
+                ),
             },
+            "base_hints": [
+                "Harven's reports are stacked by route: coast, crossing, and treeline.",
+                "A sealed relay satchel waits beside Harven's field desk.",
+            ],
         },
     )
 
@@ -1989,13 +2100,14 @@ def build():
             {"action_type": "echo", "message": "|gAshwyn marks your tally with grim satisfaction. \"Good hunting. The Ashway will be safer for it -- but I've another matter, if you're willing.\"|n"},
         ],
         next_quest_id="ashreach_bandit_problem",
+        one_chance=True,
         # Legacy fields (backward compat)
         objective_type="kill",
         objective_target="ash_wolf",
         objective_count=10,
         reward_tiers={},
-        consequence_small="Ashwyn remembers you answered the Warden road call",
-        consequence_medium="Warden road talk can acknowledge you as a proven Ashway helper",
+        consequence_small="Travelers on the western Ashway begin mentioning fewer wolf shadows beyond their campfires",
+        consequence_medium="Ashwyn can treat you as a proven road hand when Warden patrol talk turns from wolves to organized threats",
     )
 
     area.quest(
@@ -2015,13 +2127,14 @@ def build():
             {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 3},
             {"action_type": "echo", "message": "|gAshwyn clasps your arm in the Warden salute. \"The Ashway breathes easier tonight. You've done the Wardens a true service.\"|n"},
         ],
+        one_chance=True,
         # Legacy fields (backward compat)
         objective_type="kill",
         objective_target="ashreach_bandit",
         objective_count=6,
         reward_tiers={},
-        consequence_small="Ashwyn treats you as reliable in later Warden conversations",
-        consequence_medium="Local Warden dialogue can remember your Ashway service",
+        consequence_small="Merchants at the outpost can speak of a quieter trade road after the bandit camp breaks",
+        consequence_medium="Warden reports can name you as the reason Ashway patrols shifted from emergency response back to route watching",
     )
 
     area.quest(
@@ -2043,13 +2156,14 @@ def build():
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 5},
             {"action_type": "echo", "message": "|gObed's eyes widen as he reads your rubbings. \"Remarkable. These glyphs predate everything in my collection. Whatever first ordered this place, it was old long before the Empire learned to count it.\"|n"},
         ],
+        one_chance=True,
         # Legacy fields (backward compat)
         objective_type="investigate",
         objective_target="ruins_04",
         objective_count=1,
         reward_tiers={},
-        consequence_small="Obed remembers you as someone who treats old stone seriously",
-        consequence_medium="Your notes deepen your personal trail of pre-Imperial clues",
+        consequence_small="Obed adds your rubbings to his ruin slates instead of filing them as road gossip",
+        consequence_medium="Future ruin conversations can recognize that you helped preserve Ashreach evidence before the ash-wind erased it",
     )
 
     area.quest(
@@ -2069,9 +2183,12 @@ def build():
             {"action_type": "echo", "message": "|gHarven breaks the return seal and nods once. \"Good. A quiet road report is worth a dozen speeches after the fact. The line holds because people like you keep it stitched.\"|n"},
         ],
         next_quest_id="cantera_bandit_lookout",
+        one_chance=True,
         objective_type="deliver",
         objective_target="npc_ranger_forest_edge",
         objective_count=1,
+        consequence_small="Harven's treeline board gains Taen's fresh marks before the next patrol rotation",
+        consequence_medium="The Wardens can treat the Ashway and Cantera edge as one shared watch line instead of two isolated posts",
     )
 
     area.quest(
@@ -2091,9 +2208,12 @@ def build():
             {"action_type": "echo", "message": "|gReva taps the marked order against her palm and grins. \"Perfect. Paper first, cargo second, profit third. That is how the road stays kind to us.\"|n"},
         ],
         next_quest_id="sc_q_deep_cave_rumors",
+        one_chance=True,
         objective_type="deliver",
         objective_target="npc_fisherman_old_korrin",
         objective_count=1,
+        consequence_small="Reva's next wagon can leave with a marked coastal order instead of hopeful arithmetic",
+        consequence_medium="Vael's Crossing supply talk can reflect steadier preserved fish and lamp oil from Stormhaven",
     )
 
     area.lore_fragment(
