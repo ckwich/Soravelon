@@ -1419,6 +1419,7 @@ class TestPracticeOpportunity(AreaBuilderTestBase):
         self.assertEqual(practice_defs[0]["opportunity_id"], "workshop_winch_repair")
         self.assertEqual(practice_defs[0]["skill_awards"], {"engineering": 4})
         self.assertEqual(practice_defs[0]["domain_awards"], {"engineering": 120})
+        self.assertTrue(practice_defs[0]["once_per_character"])
 
         command_defs = room.db.custom_commands
         self.assertEqual(len(command_defs), 1)
@@ -1426,6 +1427,7 @@ class TestPracticeOpportunity(AreaBuilderTestBase):
         self.assertTrue(command_defs[0]["visible_in_exits"])
         self.assertEqual(command_defs[0]["action_dict"]["action_type"], "grant_practice")
         self.assertEqual(command_defs[0]["action_dict"]["opportunity_id"], "workshop_winch_repair")
+        self.assertTrue(command_defs[0]["action_dict"]["once_per_character"])
 
     def test_practice_opportunity_rejects_remnance_domain(self):
         """Builders cannot author generic practice opportunities that award Remnance."""

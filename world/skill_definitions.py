@@ -223,6 +223,20 @@ SKILL_DEFINITIONS = {
             100: "The land provides whatever you need",
         },
     },
+    "survival": {
+        "name": "Survival",
+        "skill_type": "general",
+        "description": "Endure wilderness pressure, find safe camps, and read practical danger signs.",
+        "domain_bonus": "naturalism",
+        "trainer_required_above": 50,
+        "thresholds": {
+            25: "Safe rest spots and obvious hazards identified",
+            50: "Weather, shelter, and trail risk judged reliably",
+            75: "Harsh routes crossed with fewer supplies wasted",
+            90: "Node-stressed wilderness endured without panic",
+            100: "No natural hardship catches you unprepared",
+        },
+    },
     "node_reading": {
         "name": "Node Reading",
         "skill_type": "general",
@@ -349,6 +363,20 @@ SKILL_DEFINITIONS = {
             100: "Nothing stays hidden from your scrutiny",
         },
     },
+    "scholarship": {
+        "name": "Scholarship",
+        "skill_type": "general",
+        "description": "Study records, inscriptions, and old systems to recover reliable knowledge.",
+        "domain_bonus": "resonance",
+        "trainer_required_above": 50,
+        "thresholds": {
+            25: "Common records and local histories interpreted",
+            50: "Contradictory accounts compared without losing the thread",
+            75: "Ancient inscriptions and technical notes reconstructed",
+            90: "Dragon-era references recognized without exposing their full truth",
+            100: "Lost knowledge yields patterns others miss",
+        },
+    },
 
     # --- Gathering Skills (Phase 13, D-13) ---
 
@@ -392,6 +420,20 @@ SKILL_DEFINITIONS = {
             75: "Rare creature materials preserved intact",
             90: "Dragon-era beast remnants handled safely",
             100: "No creature's remains hold secrets from you",
+        },
+    },
+    "leatherworking": {
+        "name": "Leatherworking",
+        "skill_type": "general",
+        "description": "Cure, cut, stitch, and fit hide into durable practical gear.",
+        "domain_bonus": "naturalism",
+        "trainer_required_above": 50,
+        "thresholds": {
+            25: "Basic straps, wraps, and field repairs hold under use",
+            50: "Armor padding and fitted leather goods keep their shape",
+            75: "Rare hides are worked without ruining their strengths",
+            90: "Node-touched hides can be stabilized safely",
+            100: "Every hide becomes exactly what the craft requires",
         },
     },
 }

@@ -2395,6 +2395,107 @@ def build():
     )
 
     # ==================================================================
+    #  PRACTICE OPPORTUNITIES (one-shot journey-start mountaincraft)
+    # ==================================================================
+
+    area.practice_opportunity(
+        "reth_road_test_old_camp_ashes",
+        ra_old_camp,
+        verb="test",
+        target="old camp ashes",
+        skill_awards={"survival": 3, "tracking": 1},
+        domain_awards={"naturalism": 75},
+        success_text="You sift the ash without scattering it and spot the difference between a cold camp, a rushed camp, and a camp abandoned under pressure.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="test old camp ashes",
+    )
+    area.practice_opportunity(
+        "reth_ridge_climb_lookout_rock",
+        ra_lookout_rock,
+        verb="climb",
+        target="lookout rock",
+        skill_awards={"climbing": 3, "navigation": 1},
+        domain_awards={"combat": 60},
+        success_text="You climb with three points of contact and learn why the easiest-looking handhold is not always the safest one.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="climb lookout rock",
+    )
+    area.practice_opportunity(
+        "reth_ledge_follow_goat_trail",
+        ls_goat_trail,
+        verb="track",
+        target="goat trail",
+        skill_awards={"tracking": 3, "climbing": 1},
+        domain_awards={"naturalism": 75},
+        success_text="You follow the goat trail by scuffs and droppings, finding the line that hooves trust and boots usually miss.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="track goat trail",
+    )
+    area.practice_opportunity(
+        "reth_mine_brace_ore_cart",
+        gm_ore_cart_bay,
+        verb="brace",
+        target="ore cart",
+        skill_awards={"engineering": 3, "mining": 1},
+        domain_awards={"engineering": 75},
+        success_text="You chock the ore cart before testing the brake, turning a dangerous roll into a controlled repair lesson.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="brace ore cart",
+    )
+    area.practice_opportunity(
+        "reth_mine_read_ventilation_flow",
+        gm_ventilation_shaft,
+        verb="read",
+        target="ventilation flow",
+        skill_awards={"engineering": 2, "survival": 1},
+        domain_awards={"engineering": 60},
+        success_text="You hold a dust thread in the draft and trace how stale air moves through the shaft before the bad pockets become obvious.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="read ventilation flow",
+    )
+    area.practice_opportunity(
+        "reth_cavern_study_fossil_wall",
+        cn_fossil_wall,
+        verb="study",
+        target="fossil wall",
+        skill_awards={"scholarship": 3, "investigation": 1},
+        domain_awards={"resonance": 60},
+        success_text="You compare shell layers and tool scratches until the wall reads less like decoration and more like a record of old water and older hands.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="study fossil wall",
+    )
+    area.practice_opportunity(
+        "reth_crystal_read_pulse",
+        cn_crystal_alcove,
+        verb="read",
+        target="crystal pulse",
+        skill_awards={"node_reading": 3},
+        domain_awards={"resonance": 75},
+        success_text="You listen with your fingertips near the crystal, catching the uneven pulse that warns where the old stone is still under strain.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="read crystal pulse",
+    )
+    area.practice_opportunity(
+        "reth_windgap_evade_crossgust",
+        ls_wind_gap,
+        verb="evade",
+        target="crossgust",
+        skill_awards={"reflexes": 3},
+        domain_awards={"combat": 60},
+        success_text="You wait for the gust to twist before stepping, learning to react to the mountain's rhythm instead of your own impatience.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="evade crossgust",
+    )
+
+    # ==================================================================
     #  TRIGGERS (09-02: zone entry, recipe learning)
     # ==================================================================
 

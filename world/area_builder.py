@@ -877,7 +877,7 @@ class AreaBuilder:
             "domain_awards": kwargs.get("domain_awards", {}),
             "success_text": kwargs.get("success_text", ""),
             "failure_text": kwargs.get("failure_text", ""),
-            "once_per_character": kwargs.get("once_per_character", False),
+            "once_per_character": kwargs.get("once_per_character", True),
             "cooldown_seconds": kwargs.get("cooldown_seconds", 0),
         }
 

@@ -2187,6 +2187,119 @@ def build():
     )
 
     # ==================================================================
+    #  PRACTICE OPPORTUNITIES (one-shot journey-start fieldcraft)
+    # ==================================================================
+
+    area.practice_opportunity(
+        "ash_road_read_wolf_sign",
+        ash_road_03,
+        verb="track",
+        target="wolf sign",
+        skill_awards={"tracking": 3},
+        domain_awards={"naturalism": 75},
+        success_text="You separate wolf prints from wagon ruts and notice how the pack keeps just outside bowshot of the road.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="track wolf sign",
+    )
+    area.practice_opportunity(
+        "ash_road_chart_smoke_line",
+        ash_road_09,
+        verb="chart",
+        target="smoke line",
+        skill_awards={"navigation": 3, "survival": 1},
+        domain_awards={"tactics": 75},
+        success_text="You line the smoke against road bends and wind direction, marking which plume is campfire and which is old ash stirred loose.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="chart smoke line",
+    )
+    area.practice_opportunity(
+        "ash_grass_sort_medicinal_stalks",
+        grass_03,
+        verb="sort",
+        target="medicinal stalks",
+        skill_awards={"herbalism": 3},
+        domain_awards={"alchemy": 75},
+        success_text="You sort the brittle stalks by scent and sap color until Senna's warning about red tips starts to make practical sense.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="sort medicinal stalks",
+    )
+    area.practice_opportunity(
+        "ash_grass_test_shelter_grass",
+        grass_07,
+        verb="test",
+        target="shelter grass",
+        skill_awards={"survival": 3, "foraging": 1},
+        domain_awards={"naturalism": 75},
+        success_text="You bend the grass with the wind instead of against it, finding the patch that would hide a bedroll without collecting ash.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="test shelter grass",
+    )
+    area.practice_opportunity(
+        "ash_ruins_study_broken_glyphs",
+        ruins_03,
+        verb="study",
+        target="broken glyphs",
+        skill_awards={"scholarship": 3, "investigation": 1},
+        domain_awards={"resonance": 75},
+        success_text="You compare three broken glyphs and realize the repeated mark is a warning placement, not a decorative border.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="study broken glyphs",
+    )
+    area.practice_opportunity(
+        "ash_ruins_read_humming_stone",
+        ruins_06,
+        verb="read",
+        target="humming stone",
+        skill_awards={"node_reading": 3},
+        domain_awards={"resonance": 75},
+        success_text="You keep your palm just above the stone and feel the pulse stutter where old stress still gathers beneath the ash.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="read humming stone",
+    )
+    area.practice_opportunity(
+        "ash_bandit_sneak_brush_blind",
+        bandit_03,
+        verb="sneak",
+        target="brush blind",
+        skill_awards={"stealth": 3},
+        domain_awards={"subterfuge": 75},
+        success_text="You cross behind the brush blind when the canvas snaps in the wind, learning how sound can cover movement better than silence.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="sneak past brush blind",
+    )
+    area.practice_opportunity(
+        "ash_outpost_tend_blistered_scout",
+        outpost_04,
+        verb="tend",
+        target="blistered scout",
+        skill_awards={"first_aid": 3},
+        domain_awards={"alchemy": 75},
+        success_text="You cool the blister before wrapping it, leaving the scout able to stand without turning a small hurt into an infected one.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="tend blistered scout",
+    )
+    area.practice_opportunity(
+        "ash_ridge_brace_loose_cairn",
+        ridge_06,
+        verb="brace",
+        target="loose cairn",
+        skill_awards={"engineering": 2, "navigation": 1},
+        domain_awards={"engineering": 60},
+        success_text="You wedge the marker stone where rain will not roll it downhill, turning a vague cairn back into a usable route sign.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="brace loose cairn",
+    )
+
+    # ==================================================================
     #  TRIGGERS (09-02: zone entry and atmospheric)
     # ==================================================================
 

@@ -268,6 +268,9 @@ def _handle_give_skill_xp(action_dict, context, _depth):
     count = action_dict.get("count", 1)
     if not skill_id:
         return False, "give_skill_xp: missing skill_id"
+    from world.skill_definitions import SKILL_DEFINITIONS
+    if skill_id not in SKILL_DEFINITIONS:
+        return False, f"give_skill_xp: unknown skill_id '{skill_id}'"
     from world.skill_engine import accumulate_skill_use
     accumulate_skill_use(character, skill_id, count)
     character.msg(f"|g[+{count} {skill_id.replace('_', ' ').title()} XP]|n")

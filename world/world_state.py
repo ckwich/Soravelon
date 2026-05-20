@@ -10,24 +10,12 @@ Backend level derived from domain scores — NEVER exposed to players.
 
 from django.db.models import Avg
 
+from world.domain_definitions import ALL_DOMAINS
 from world.models import FactionStanding, ZoneAttunement
 
 # --- Constants ---
 
 ALL_DIMENSIONS = ("reputation", "network", "bond", "legacy", "attunement")
-
-ALL_DOMAINS = (
-    "combat",
-    "subterfuge",
-    "naturalism",
-    "resonance",
-    "arcana",
-    "diplomacy",
-    "alchemy",
-    "tactics",
-    "engineering",
-    "remnance",
-)
 
 # Decay rates per 24h tick (offline only). Legacy never decays.
 DECAY_RATES = {

@@ -449,11 +449,11 @@ class TestGiveSkillXpHandler(unittest.TestCase):
 
         char = MagicMock()
         context = {"character": char}
-        action = {"action_type": "give_skill_xp", "skill_id": "combat", "count": 5}
+        action = {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 5}
         with patch("world.skill_engine.accumulate_skill_use") as mock_acc:
             success, msg = execute_action(action, context)
         self.assertTrue(success)
-        mock_acc.assert_called_once_with(char, "combat", 5)
+        mock_acc.assert_called_once_with(char, "reflexes", 5)
 
     def test_default_count_is_1(self):
         """give_skill_xp defaults to count=1 when not specified."""
@@ -477,6 +477,19 @@ class TestGiveSkillXpHandler(unittest.TestCase):
         success, msg = execute_action(action, context)
         self.assertFalse(success)
         self.assertIn("skill_id", msg.lower())
+
+    def test_unknown_skill_id_fails_without_accumulating(self):
+        """give_skill_xp rejects stale or misspelled skill ids."""
+        from world.action_vocabulary import execute_action
+
+        char = MagicMock()
+        context = {"character": char}
+        action = {"action_type": "give_skill_xp", "skill_id": "not_a_skill", "count": 5}
+        with patch("world.skill_engine.accumulate_skill_use") as mock_acc:
+            success, msg = execute_action(action, context)
+        self.assertFalse(success)
+        self.assertIn("unknown skill_id", msg)
+        mock_acc.assert_not_called()
 
     def test_no_character_fails(self):
         """give_skill_xp with no character in context fails gracefully."""

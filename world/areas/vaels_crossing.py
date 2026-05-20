@@ -2778,6 +2778,108 @@ def build():
     )
 
     # ==================================================================
+    #  PRACTICE OPPORTUNITIES (one-shot journey-start skill contact)
+    # ==================================================================
+
+    area.practice_opportunity(
+        "vc_stable_calm_nervous_mare",
+        hg_stable,
+        verb="calm",
+        target="nervous mare",
+        skill_awards={"animal_handling": 3},
+        domain_awards={"naturalism": 75},
+        success_text="You lower your voice, keep your hands open, and wait until the mare stops fighting the halter. The stablehand notices the patience more than the speed.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="calm nervous mare",
+        aliases=["soothe"],
+    )
+    area.practice_opportunity(
+        "vc_notice_wall_compare_routes",
+        hg_notice_wall,
+        verb="compare",
+        target="road notices",
+        skill_awards={"navigation": 2, "scholarship": 1},
+        domain_awards={"tactics": 60},
+        success_text="You compare old road notices against the fresher Warden marks and pick out which warnings still matter beyond the gate.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="compare road notices",
+    )
+    area.practice_opportunity(
+        "vc_customs_pick_jammed_lockbox",
+        hg_customs_office,
+        verb="pick",
+        target="jammed lockbox",
+        skill_awards={"lockpicking": 3},
+        domain_awards={"subterfuge": 75},
+        success_text="You work the bent lockbox carefully enough to free the clasp without snapping the clerk's only key inside it.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="pick jammed lockbox",
+    )
+    area.practice_opportunity(
+        "vc_tanner_cut_repair_strap",
+        mk_tanner,
+        verb="cut",
+        target="repair strap",
+        skill_awards={"leatherworking": 3},
+        domain_awards={"naturalism": 60},
+        success_text="You cut the strap along the grain instead of across it, then stitch the stress point where the tanner taps the bench.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="cut repair strap",
+    )
+    area.practice_opportunity(
+        "vc_records_study_tariff_ledger",
+        cq_records_office,
+        verb="study",
+        target="tariff ledger",
+        skill_awards={"scholarship": 3, "appraisal": 1},
+        domain_awards={"diplomacy": 60},
+        success_text="You trace three columns of tariffs until a smuggling pattern becomes visible in the spaces between legitimate fees.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="study tariff ledger",
+    )
+    area.practice_opportunity(
+        "vc_medic_tend_field_dressing",
+        iq_medic_building,
+        verb="tend",
+        target="field dressing",
+        skill_awards={"first_aid": 3},
+        domain_awards={"alchemy": 75},
+        success_text="You clean the wound before binding it, and the medic nods once when the cloth holds without cutting off circulation.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="tend field dressing",
+    )
+    area.practice_opportunity(
+        "vc_training_yard_evade_padded_strike",
+        gq_training_yard,
+        verb="evade",
+        target="padded strike",
+        skill_awards={"reflexes": 3},
+        domain_awards={"combat": 75},
+        success_text="You move on the trainer's shoulder twitch instead of the padded blade, learning the warning before the blow.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="evade padded strike",
+    )
+    area.practice_opportunity(
+        "vc_wagon_yard_brace_axle_strap",
+        hg_wagon_yard,
+        verb="brace",
+        target="axle strap",
+        skill_awards={"engineering": 3},
+        domain_awards={"engineering": 75},
+        success_text="You brace the cracked axle strap with a wedge and wire wrap, buying the driver enough miles to reach a proper shop.",
+        once_per_character=True,
+        visible_in_exits=True,
+        desc="brace axle strap",
+    )
+
+    # ==================================================================
     #  TRIGGERS (zone entry, recipe learning, atmospheric)
     # ==================================================================
 
