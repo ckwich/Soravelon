@@ -93,8 +93,7 @@ Anchor NPCs:
 - `npc_barkeep_marta_voss`
 - `npc_broker_carston`
 - `npc_warden_agent_calloway`
-- one ordinary local selected from the live Vael's Crossing catalog during
-  implementation
+- `npc_innkeeper_whistle`
 
 Initial reputation tags:
 
@@ -112,6 +111,41 @@ Initial fact sources:
 - direct social-memory service calls in tests
 
 Combat/crime detection can come later. It should not block this slice.
+
+## Steelman Corrections Before Implementation
+
+These corrections are binding for the implementation pass. If this section
+conflicts with a lower-level task list, this section wins.
+
+The MVP proves a quest-authored local social-memory loop. It should not be
+described as the full Fable-like reputation system until non-quest social fact
+sources such as crime, gifts, vendors, social choices, or observed combat are
+added.
+
+The player-facing proof must be diegetic and non-numeric:
+
+- one immediate quest-completion echo that implies people noticed
+- one later NPC recall from a different NPC in the same settlement
+- one contrasting reaction where two NPCs interpret the same reputation cloud
+  differently
+
+`socialmemory` is a developer/admin inspection command only. If a player-facing
+surface is added later, it must avoid numeric scores and use in-world wording.
+
+`private` and `witnessed` facts must not leak into the settlement reputation
+cloud. For the MVP, `get_local_reputation_cloud()` aggregates only
+`settlement`, `faction`, and `global` facts and filters expired facts. A later
+witness/rumor pass may add NPC-viewer-specific querying and promotion from
+`witnessed` to settlement knowledge.
+
+`NpcRelationship` may ship in the MVP only if it affects at least one
+deterministic context field and one visible NPC response. Otherwise it should be
+deferred instead of existing as unused infrastructure.
+
+The optional LLM layer must not log raw prompts, raw API responses, secrets, or
+player-private data by default. Logging should record bounded metadata such as
+provider, model, cache hit/miss, latency, character counts, validation result,
+and fallback reason.
 
 ## Terminology
 
@@ -263,6 +297,7 @@ Important functions:
   visibility="settlement", weight=1.0, confidence=1.0) -> SocialMemoryFact`
 - `get_local_reputation_cloud(character, settlement_id, *, limit=8) -> list[dict]`
 - `get_npc_social_profile(npc) -> dict`
+- `get_npc_relationship_summary(character, npc) -> dict`
 - `score_npc_reaction(profile, reputation_cloud) -> dict`
 - `build_social_context(character, npc=None, settlement_id=None) -> dict`
 
@@ -282,6 +317,7 @@ Extend `world.dialogue_engine._build_dialogue_context()` to include:
 - `local_reputation_cloud`
 - `npc_social_profile`
 - `npc_social_reaction`
+- `npc_relationship`
 
 The existing context packet shape must remain backward compatible. Add keys;
 do not rename existing keys.
@@ -292,6 +328,8 @@ Extend response conditions with small deterministic conditions:
 - `dislikes_reputation`
 - `fears_reputation`
 - `uses_reputation`
+- `trusts_relationship`
+- `distrusts_relationship`
 
 These conditions are driven by `score_npc_reaction()`, not by the LLM.
 
@@ -311,6 +349,7 @@ Provider-neutral settings:
 - `SORAVELON_NPC_LLM_TIMEOUT_SECONDS`
 - `SORAVELON_NPC_LLM_MAX_INPUT_CHARS`
 - `SORAVELON_NPC_LLM_CACHE_TTL_SECONDS`
+- `SORAVELON_NPC_LLM_MAX_CALLS_PER_MINUTE`
 
 Provider support:
 
@@ -472,14 +511,18 @@ Required proofs:
 - social facts are idempotently recorded by `fact_key`
 - local reputation clouds aggregate tags for one settlement without leaking into
   another settlement
+- local reputation clouds exclude `private`, `witnessed`, and expired facts
 - the same reputation cloud produces different reactions for two NPC profiles
 - dialogue context contains social memory keys without breaking existing keys
 - action vocabulary can record a social fact from a quest-like context
 - LLM disabled path uses deterministic fallback
+- LLM calls are rate guarded when enabled
 - fake LLM valid JSON can render speech
 - fake LLM unsafe or invalid output falls back
 - hidden/forbidden terms are rejected
 - Vael's Crossing anchor NPCs have social profiles and dialogue
+- Vael's Crossing play transcript proves one immediate echo, one later recall,
+  and one contrasting NPC interpretation
 
 Recommended command:
 

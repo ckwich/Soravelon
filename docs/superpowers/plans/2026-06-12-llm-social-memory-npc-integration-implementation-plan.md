@@ -26,6 +26,50 @@ Out of scope:
 - generated quests
 - broad NPC coverage outside Vael's Crossing
 
+## Steelman Corrections Before Implementation
+
+These corrections are binding. If this section conflicts with a later task
+detail, this section wins.
+
+The MVP proves a quest-authored local social-memory loop, not the full
+Fable-like reputation fantasy. Do not claim full reputation coverage until a
+later slice adds non-quest social fact sources such as crime, gifts, vendors,
+social choices, or observed combat.
+
+The player-facing proof must be diegetic and non-numeric:
+
+- one immediate quest-completion echo that implies people noticed
+- one later NPC recall from a different NPC in Vael's Crossing
+- one contrasting reaction where two NPCs interpret the same reputation cloud
+  differently
+
+Use `npc_innkeeper_whistle` as the ordinary local in the Vael's Crossing slice.
+
+`socialmemory` is a developer/admin inspection command only. Do not register it
+with `cmd:all()` or publish player-facing help unless the command is locked to
+builders/admins. A future player command must avoid score numbers and use
+in-world wording.
+
+`get_local_reputation_cloud()` must exclude `private` and `witnessed` facts,
+filter expired facts, and aggregate only `settlement`, `faction`, and `global`
+facts for the MVP. A future witness/rumor slice can add NPC-viewer-specific
+queries and promotion from witnessed knowledge to settlement rumor.
+
+`NpcRelationship` may ship in this MVP only if it drives at least one
+deterministic context field and one visible NPC response. Otherwise defer the
+model and `adjust_npc_relationship` action instead of adding unused
+infrastructure.
+
+The optional LLM path must include a per-character or per-session rate guard and
+must not log raw prompts, raw API responses, API keys, or player-private data by
+default. Log bounded metadata only: provider, model, cache hit/miss, latency,
+input/output character counts, validation result, and fallback reason.
+
+Add a manual or automated transcript proof before final validation: complete
+`vc_q_warden_report` and `vc_q_missing_shipment`, then ask/talk to Maren,
+Calloway, Carston, Marta, and Whistle. The transcript must show at least one
+recall and one contrasting NPC interpretation.
+
 ## File Map
 
 Create:
@@ -47,7 +91,8 @@ Modify:
 - `commands/cmd_dialogue.py`: optional LLM rendering path for `talk`, `ask`, and NPC `tell`.
 - `commands/default_cmdsets.py`: register `CmdSocialMemory`.
 - `world/areas/vaels_crossing.py`: add social profiles and social-memory reward actions for anchor NPCs.
-- `world/help_entries.py`: add direct help for `socialmemory` if command is available to players/builders.
+- `world/help_entries.py`: add direct help for `socialmemory` only if command
+  registration is builder/admin locked.
 - `tests/test_action_vocabulary.py`: add action handler tests and update handler count.
 - `tests/test_dialogue.py`: add dialogue-context and optional LLM fallback tests.
 
@@ -325,6 +370,58 @@ class TestSocialMemoryService(EvenniaTest):
         self.assertEqual(cloud[0]["score"], 2.0)
         self.assertNotIn("generous", [entry["tag"] for entry in cloud])
 
+    def test_local_cloud_excludes_private_witnessed_and_expired_facts(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from world.models import SocialMemoryFact
+        from world.social_memory import get_local_reputation_cloud, record_social_fact
+
+        record_social_fact(
+            self.char1,
+            fact_key="vc_settlement_reliable",
+            fact_type="test",
+            settlement_id="vaels_crossing",
+            tags=["reliable"],
+            summary="Everyone in Vael's Crossing heard this.",
+            visibility="settlement",
+        )
+        record_social_fact(
+            self.char1,
+            fact_key="vc_private_generous",
+            fact_type="test",
+            settlement_id="vaels_crossing",
+            tags=["generous"],
+            summary="Only one person knows this.",
+            visibility="private",
+        )
+        record_social_fact(
+            self.char1,
+            fact_key="vc_witnessed_shrewd",
+            fact_type="test",
+            settlement_id="vaels_crossing",
+            tags=["shrewd"],
+            summary="A witness has not spread this yet.",
+            visibility="witnessed",
+            witness_npc_ids=["npc_barkeep_marta_voss"],
+        )
+        expired = record_social_fact(
+            self.char1,
+            fact_key="vc_expired_reckless",
+            fact_type="test",
+            settlement_id="vaels_crossing",
+            tags=["reckless"],
+            summary="This rumor has gone stale.",
+            visibility="settlement",
+        )
+        SocialMemoryFact.objects.filter(id=expired.id).update(
+            expires_at=timezone.now() - timedelta(days=1)
+        )
+
+        cloud = get_local_reputation_cloud(self.char1, "vaels_crossing")
+        tags = [entry["tag"] for entry in cloud]
+
+        self.assertEqual(tags, ["reliable"])
+
     def test_same_cloud_scores_differently_for_two_profiles(self):
         from world.social_memory import score_npc_reaction
 
@@ -351,6 +448,28 @@ class TestSocialMemoryService(EvenniaTest):
 
         self.assertGreater(broker_reaction["useful_score"], 0)
         self.assertGreater(warden_reaction["dislike_score"], 0)
+
+    def test_build_social_context_includes_npc_relationship(self):
+        from unittest.mock import MagicMock
+        from world.models import NpcRelationship
+        from world.social_memory import build_social_context
+
+        npc = MagicMock()
+        npc.db.npc_id = "npc_warden_agent_calloway"
+        npc.db.zone_id = "vaels_crossing"
+        npc.db.settlement_id = "vaels_crossing"
+        npc.db.social_profile = {}
+        NpcRelationship.objects.create(
+            character=self.char1,
+            npc_id="npc_warden_agent_calloway",
+            trust=70,
+            respect=10,
+        )
+
+        context = build_social_context(self.char1, npc=npc)
+
+        self.assertEqual(context["npc_relationship"]["trust"], 70)
+        self.assertEqual(context["npc_relationship"]["respect"], 10)
 ```
 
 - [ ] **Step 2: Run tests and verify service import fails**
@@ -469,6 +588,8 @@ def record_social_fact(
 
 def get_local_reputation_cloud(character, settlement_id, *, limit=8):
     """Return weighted reputation tags known in a local settlement."""
+    from django.db.models import Q
+    from django.utils import timezone
     from world.models import SocialMemoryFact
 
     if not character or not settlement_id:
@@ -478,7 +599,7 @@ def get_local_reputation_cloud(character, settlement_id, *, limit=8):
         character=character,
         settlement_id=settlement_id,
         visibility__in=["settlement", "faction", "global"],
-    )
+    ).filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
 
     scores = defaultdict(float)
     counts = defaultdict(int)
@@ -511,6 +632,33 @@ def get_npc_social_profile(npc):
         return {}
     profile = npc.db.social_profile or {}
     return profile if isinstance(profile, dict) else {}
+
+
+def get_npc_relationship_summary(character, npc):
+    """Return bounded relationship state for the current character/NPC pair."""
+    if not character or not npc or not hasattr(npc, "db"):
+        return {}
+    npc_id = npc.db.npc_id or getattr(npc, "key", "")
+    if not npc_id:
+        return {}
+
+    from world.models import NpcRelationship
+
+    relationship = NpcRelationship.objects.filter(
+        character=character,
+        npc_id=str(npc_id),
+    ).first()
+    if not relationship:
+        return {}
+
+    return {
+        "npc_id": relationship.npc_id,
+        "affinity": relationship.affinity,
+        "trust": relationship.trust,
+        "fear": relationship.fear,
+        "respect": relationship.respect,
+        "known_tags": list(relationship.known_tags or []),
+    }
 
 
 def score_npc_reaction(profile, reputation_cloud):
@@ -564,11 +712,15 @@ def build_social_context(character, npc=None, settlement_id=None):
         or "unknown"
     )
     cloud = get_local_reputation_cloud(character, clean_settlement)
+    relationship = get_npc_relationship_summary(character, npc)
     return {
+        "character_id": str(getattr(character, "id", "") or ""),
+        "character_key": str(getattr(character, "key", "") or ""),
         "settlement_id": clean_settlement,
         "local_reputation_cloud": cloud,
         "npc_social_profile": profile,
         "npc_social_reaction": score_npc_reaction(profile, cloud),
+        "npc_relationship": relationship,
     }
 ```
 
@@ -955,6 +1107,15 @@ class TestDialogueSocialContext(unittest.TestCase):
         context = {"npc_social_reaction": {"dislike_score": 1.0}}
 
         self.assertTrue(_check_condition("dislikes_reputation", context))
+
+    def test_relationship_trust_conditions(self):
+        from world.dialogue_engine import _check_condition
+
+        trusting = {"npc_relationship": {"trust": 70}}
+        distrustful = {"npc_relationship": {"trust": 30}}
+
+        self.assertTrue(_check_condition("trusts_relationship", trusting))
+        self.assertTrue(_check_condition("distrusts_relationship", distrustful))
 ```
 
 - [ ] **Step 2: Run dialogue tests and verify failure**
@@ -976,16 +1137,13 @@ In `world/dialogue_definitions.py`, add social conditions before `"default"`:
     "dislikes_reputation",
     "fears_reputation",
     "uses_reputation",
+    "trusts_relationship",
+    "distrusts_relationship",
 ```
 
 - [ ] **Step 4: Extend dialogue context and conditions**
 
 In `world/dialogue_engine.py`, inside `_build_dialogue_context()` after quest state population, add:
-
-```python
-    from world.social_memory import build_social_context
-    context.update(build_social_context(character, npc=npc, zone=zone))
-```
 
 ```python
     from world.social_memory import build_social_context
@@ -1004,6 +1162,11 @@ Then in `_check_condition()`, add:
         return float(reaction.get("fear_score") or 0.0) > 0
     if condition == "uses_reputation":
         return float(reaction.get("useful_score") or 0.0) > 0
+    relationship = context.get("npc_relationship") or {}
+    if condition == "trusts_relationship":
+        return float(relationship.get("trust") or 0.0) >= 65
+    if condition == "distrusts_relationship":
+        return float(relationship.get("trust") or 0.0) <= 35
 ```
 
 - [ ] **Step 5: Run dialogue tests**
@@ -1150,6 +1313,54 @@ class TestLlmNpcValidation(unittest.TestCase):
 
         self.assertIsNone(result["speech"])
         self.assertEqual(result["fallback_reason"], "forbidden_term")
+
+    def test_rate_limit_falls_back(self):
+        from world.llm_npc import (
+            FakeNpcLlmProvider,
+            _CACHE,
+            _RATE_GUARD,
+            render_npc_speech,
+        )
+
+        _CACHE.clear()
+        _RATE_GUARD.clear()
+        provider = FakeNpcLlmProvider(
+            json.dumps(
+                {
+                    "speech": "Maren nods once.",
+                    "tone": "neutral",
+                    "referenced_fact_keys": [],
+                    "used_reputation_tags": [],
+                    "safety_notes": [],
+                }
+            )
+        )
+
+        env = {
+            "SORAVELON_NPC_LLM_ENABLED": "true",
+            "SORAVELON_NPC_LLM_CACHE_TTL_SECONDS": "0",
+            "SORAVELON_NPC_LLM_MAX_CALLS_PER_MINUTE": "1",
+        }
+        context = {"character_id": "42", "local_reputation_cloud": []}
+        with patch.dict(os.environ, env):
+            first = render_npc_speech(
+                npc_id="npc_greeter_maren",
+                topic_key="work",
+                deterministic_text="Maren nods.",
+                context=context,
+                provider=provider,
+            )
+            second = render_npc_speech(
+                npc_id="npc_greeter_maren",
+                topic_key="rumors",
+                deterministic_text="Maren nods.",
+                context=context,
+                provider=provider,
+            )
+
+        self.assertEqual(first["speech"], "Maren nods once.")
+        self.assertIsNone(second["speech"])
+        self.assertEqual(second["fallback_reason"], "rate_limited")
 ```
 
 - [ ] **Step 2: Run LLM tests and verify import failure**
@@ -1184,6 +1395,7 @@ FORBIDDEN_TERMS = {
 }
 VALID_TONES = {"neutral", "warm", "wary", "hostile", "amused", "respectful"}
 _CACHE = {}
+_RATE_GUARD = {}
 
 
 class FakeNpcLlmProvider:
@@ -1266,6 +1478,14 @@ def _cache_ttl_seconds():
         return 600
 
 
+def _max_calls_per_minute():
+    raw = os.environ.get("SORAVELON_NPC_LLM_MAX_CALLS_PER_MINUTE", "20")
+    try:
+        return max(1, min(120, int(raw)))
+    except ValueError:
+        return 20
+
+
 def _default_provider():
     api_key = os.environ.get("SORAVELON_NPC_LLM_API_KEY", "")
     base_url = os.environ.get("SORAVELON_NPC_LLM_BASE_URL", "")
@@ -1299,6 +1519,26 @@ def _cache_key(npc_id, topic_key, context):
     return f"{PROMPT_VERSION}|{npc_id}|{topic_key}|{tag_sig}"
 
 
+def _rate_guard_allows(context, now):
+    character_key = str(
+        context.get("character_id") or context.get("character_key") or "unknown"
+    )
+    window_start = int(now // 60) * 60
+    guard_key = (character_key, window_start)
+    count = _RATE_GUARD.get(guard_key, 0)
+    if count >= _max_calls_per_minute():
+        return False
+    _RATE_GUARD[guard_key] = count + 1
+
+    stale_windows = [
+        key for key in _RATE_GUARD
+        if isinstance(key, tuple) and key[1] < window_start - 60
+    ]
+    for key in stale_windows:
+        _RATE_GUARD.pop(key, None)
+    return True
+
+
 def _messages(npc_id, topic_key, deterministic_text, context):
     safe_context = {
         "npc_id": npc_id,
@@ -1308,6 +1548,7 @@ def _messages(npc_id, topic_key, deterministic_text, context):
         "local_reputation_cloud": context.get("local_reputation_cloud", []),
         "npc_social_reaction": context.get("npc_social_reaction", {}),
         "npc_social_profile": context.get("npc_social_profile", {}),
+        "npc_relationship": context.get("npc_relationship", {}),
     }
     return [
         {
@@ -1388,6 +1629,9 @@ def render_npc_speech(
     cached = _CACHE.get(key)
     if cached and ttl and now - cached["created_at"] <= ttl:
         return cached["result"]
+
+    if not _rate_guard_allows(context, now):
+        return {"speech": None, "fallback_reason": "rate_limited"}
 
     try:
         raw = provider.complete(
@@ -1654,7 +1898,7 @@ class CmdSocialMemory(Command):
 
     key = "socialmemory"
     aliases = ["reputationcloud"]
-    locks = "cmd:all()"
+    locks = "cmd:perm(Builder)"
     help_category = "Development"
 
     def func(self):
@@ -1697,7 +1941,7 @@ class CmdSocialMemory(Command):
         character.msg("\n".join(lines))
 ```
 
-- [ ] **Step 4: Register command**
+- [ ] **Step 4: Register command for builders/admins only**
 
 In `commands/default_cmdsets.py`, after social commands registration, add:
 
@@ -1706,9 +1950,10 @@ In `commands/default_cmdsets.py`, after social commands registration, add:
         self.add(CmdSocialMemory())
 ```
 
-- [ ] **Step 5: Add help entry**
+- [ ] **Step 5: Add builder/admin-only help entry**
 
-In `world/help_entries.py`, add a direct `socialmemory` entry matching the local help-entry format in the file. Use this content:
+In `world/help_entries.py`, add a direct `socialmemory` entry only if the help
+system can keep it out of ordinary player help. Use this content:
 
 ```text
 Usage:
@@ -1760,6 +2005,7 @@ ANCHOR_NPCS = {
     "npc_barkeep_marta_voss",
     "npc_broker_carston",
     "npc_warden_agent_calloway",
+    "npc_innkeeper_whistle",
 }
 
 
@@ -1828,6 +2074,7 @@ class TestVaelsCrossingSocialContracts(unittest.TestCase):
 
     def test_vael_quests_record_social_facts(self):
         has_social_fact = False
+        has_relationship = False
         for call in self._quest_calls():
             rewards = self._keywords(call).get("rewards")
             if not isinstance(rewards, ast.List):
@@ -1841,7 +2088,10 @@ class TestVaelsCrossingSocialContracts(unittest.TestCase):
                         data[key.value] = value.value
                 if data.get("action_type") == "record_social_fact":
                     has_social_fact = True
+                if data.get("action_type") == "adjust_npc_relationship":
+                    has_relationship = True
         self.assertTrue(has_social_fact)
+        self.assertTrue(has_relationship)
 ```
 
 - [ ] **Step 2: Run contract tests and verify failure**
@@ -1928,10 +2178,29 @@ social_profile={
 
 for `npc_warden_agent_calloway`.
 
+```python
+social_profile={
+    "settlement_id": "vaels_crossing",
+    "values": {
+        "admires": ["reliable", "generous"],
+        "dislikes": ["reckless"],
+        "fears": [],
+        "finds_useful": ["shrewd"],
+    },
+    "voice": "plainspoken, hospitable, close to road gossip",
+    "public_role": "innkeeper",
+    "rumor_role": "hears what travelers repeat when they think no one is weighing it",
+}
+```
+
+for `npc_innkeeper_whistle`.
+
 - [ ] **Step 4: Add deterministic social response lanes**
 
 For each anchor NPC's authored `dialogue["topics"]`, add at least one topic
 with `likes_reputation` and `dislikes_reputation` variants.
+Calloway must also have at least one `trusts_relationship` variant so the
+`NpcRelationship` model has a visible MVP use.
 
 Example for a `work` topic:
 
@@ -1939,6 +2208,7 @@ Example for a `work` topic:
 "work": {
     "likes_reputation": "You've made yourself useful here. That changes which doors open first.",
     "dislikes_reputation": "People are talking, and not all of it makes my work easier.",
+    "trusts_relationship": "You have handled Warden business cleanly enough that I can be plainer with you.",
     "default": "There is always work where roads meet money and trouble.",
 }
 ```
@@ -1970,6 +2240,18 @@ Warden reward for `vc_q_warden_report`:
 }
 ```
 
+Also add a relationship reward for Calloway on `vc_q_warden_report`:
+
+```python
+{
+    "action_type": "adjust_npc_relationship",
+    "npc_id": "npc_warden_agent_calloway",
+    "trust_delta": 20,
+    "respect_delta": 10,
+    "known_tags": ["reliable", "warden_aligned"],
+}
+```
+
 Consortium reward for `vc_q_missing_shipment`:
 
 ```python
@@ -1980,7 +2262,7 @@ Consortium reward for `vc_q_missing_shipment`:
     "settlement_id": "vaels_crossing",
     "faction_id": "consortium",
     "source_type": "quest",
-    "source_id": "vc_q_broker_route",
+    "source_id": "vc_q_missing_shipment",
     "tags": ["shrewd", "profit_minded"],
     "summary": "Brokers in Vael's Crossing hear that you can make a route pay attention.",
     "visibility": "settlement",
@@ -2031,7 +2313,22 @@ python scripts/run_tests.py tests.test_world_state tests.test_quest_engine tests
 
 Expected: PASS.
 
-- [ ] **Step 3: Run startup smoke if migrations and settings are available**
+- [ ] **Step 3: Capture diegetic social-recognition transcript**
+
+Run a local character through the Vael's Crossing social-memory loop:
+
+1. Complete `vc_q_warden_report`.
+2. Complete `vc_q_missing_shipment`.
+3. Talk/ask about work, rumors, or local trouble with:
+   `npc_greeter_maren`, `npc_warden_agent_calloway`, `npc_broker_carston`,
+   `npc_barkeep_marta_voss`, and `npc_innkeeper_whistle`.
+
+Expected: transcript shows one immediate quest-completion echo, one later recall
+from a different NPC, and one contrast where two NPCs interpret the same
+reputation cloud differently. The transcript must not display numeric scores to
+the player.
+
+- [ ] **Step 4: Run startup smoke if migrations and settings are available**
 
 Run:
 
@@ -2041,7 +2338,7 @@ python scripts/smoke_start.py
 
 Expected: server startup smoke completes without import or migration errors.
 
-- [ ] **Step 4: Inspect migration state**
+- [ ] **Step 5: Inspect migration state**
 
 Run:
 
@@ -2051,7 +2348,7 @@ python -m django showmigrations world --settings server.conf.settings
 
 Expected: social memory migration appears in the `world` migration list.
 
-- [ ] **Step 5: Commit validation-only fixes if needed**
+- [ ] **Step 6: Commit validation-only fixes if needed**
 
 If validation exposed a defect caused by this plan, commit the minimal fix:
 
