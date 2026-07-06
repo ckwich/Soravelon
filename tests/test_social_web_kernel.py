@@ -379,6 +379,94 @@ class TestSocialWebEngine(EvenniaTest):
         self.assertIn("unsupported edge_type", message)
         self.assertIsNone(edge)
 
+    def test_connect_social_nodes_rejects_invalid_directionality_and_integer_fields(self):
+        from world.models import SocialEdge
+        from world.social_engine import connect_social_nodes, ensure_social_node
+
+        calloway = ensure_social_node("npc", "npc_warden_agent_calloway")
+        commander = ensure_social_node("npc", "npc_warden_outpost_commander")
+
+        ok, message, edge = connect_social_nodes(
+            calloway.node_key,
+            commander.node_key,
+            edge_type="official_report",
+            directionality="sideways",
+        )
+        self.assertFalse(ok)
+        self.assertEqual(message, "unsupported directionality: sideways")
+        self.assertIsNone(edge)
+
+        ok, message, edge = connect_social_nodes(
+            calloway.node_key,
+            commander.node_key,
+            edge_type="official_report",
+            latency_seconds=-1,
+        )
+        self.assertFalse(ok)
+        self.assertEqual(message, "latency_seconds must be a non-negative integer")
+        self.assertIsNone(edge)
+
+        ok, message, edge = connect_social_nodes(
+            calloway.node_key,
+            commander.node_key,
+            edge_type="official_report",
+            bandwidth=1.5,
+        )
+        self.assertFalse(ok)
+        self.assertEqual(message, "bandwidth must be a non-negative integer")
+        self.assertIsNone(edge)
+        self.assertEqual(SocialEdge.objects.count(), 0)
+
+    def test_record_social_fact_rejects_unknown_actor_or_scope_nodes(self):
+        from world.models import SocialFact
+        from world.social_engine import ensure_social_node, record_social_fact
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+
+        ok, message, fact = record_social_fact(
+            fact_key="fact:unknown_actor",
+            subject_node_key=player.node_key,
+            actor_node_key="npc:missing_actor",
+            event_type="quest_completed",
+            summary="Unknown actors should be rejected before persistence.",
+        )
+        self.assertFalse(ok)
+        self.assertEqual(message, "unknown actor_node: npc:missing_actor")
+        self.assertIsNone(fact)
+
+        ok, message, fact = record_social_fact(
+            fact_key="fact:unknown_scope",
+            subject_node_key=player.node_key,
+            scope_node_key="npc:missing_scope",
+            event_type="quest_completed",
+            summary="Unknown scopes should be rejected before persistence.",
+        )
+        self.assertFalse(ok)
+        self.assertEqual(message, "unknown scope_node: npc:missing_scope")
+        self.assertIsNone(fact)
+        self.assertFalse(SocialFact.objects.filter(fact_key__startswith="fact:unknown").exists())
+
+    def test_assert_social_claim_rejects_unknown_fact_key(self):
+        from world.models import SocialClaim
+        from world.social_engine import assert_social_claim, ensure_social_node
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+        calloway = ensure_social_node("npc", "npc_warden_agent_calloway")
+
+        ok, message, claim = assert_social_claim(
+            claim_key="claim:unknown_fact",
+            speaker_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            fact_key="fact:missing",
+            claim_type="report",
+            summary="Missing facts should not silently become unattached claims.",
+        )
+
+        self.assertFalse(ok)
+        self.assertEqual(message, "unknown fact: fact:missing")
+        self.assertIsNone(claim)
+        self.assertFalse(SocialClaim.objects.filter(claim_key="claim:unknown_fact").exists())
+
     def test_record_fact_and_claim_create_initial_knowledge(self):
         from world.social_engine import (
             assert_social_claim,
@@ -424,6 +512,149 @@ class TestSocialWebEngine(EvenniaTest):
         )
         self.assertTrue(ok, message)
         self.assertEqual(knowledge.node.node_key, calloway.node_key)
+
+    def test_mark_known_rejects_unknown_source_node(self):
+        from world.models import SocialKnowledge
+        from world.social_engine import ensure_social_node, mark_known, record_social_fact
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+        calloway = ensure_social_node("npc", "npc_warden_agent_calloway")
+        ok, message, fact = record_social_fact(
+            fact_key="fact:known_source_check",
+            subject_node_key=player.node_key,
+            event_type="quest_completed",
+            summary="Known fact for source-node validation.",
+        )
+        self.assertTrue(ok, message)
+
+        ok, message, knowledge = mark_known(
+            node_key=calloway.node_key,
+            fact_key=fact.fact_key,
+            source_node_key="npc:missing_source",
+            channel="direct_witness",
+        )
+
+        self.assertFalse(ok)
+        self.assertEqual(message, "unknown source_node: npc:missing_source")
+        self.assertIsNone(knowledge)
+        self.assertFalse(
+            SocialKnowledge.objects.filter(
+                knowledge_key=f"knowledge:{calloway.node_key}:{fact.fact_key}"
+            ).exists()
+        )
+
+    def test_mark_known_requires_claim_to_reference_supplied_fact(self):
+        from world.models import SocialKnowledge
+        from world.social_engine import (
+            assert_social_claim,
+            ensure_social_node,
+            mark_known,
+            record_social_fact,
+        )
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+        calloway = ensure_social_node("npc", "npc_warden_agent_calloway")
+        ok, message, delivered_fact = record_social_fact(
+            fact_key="fact:delivered_report",
+            subject_node_key=player.node_key,
+            event_type="quest_completed",
+            summary="The player delivered the field report.",
+        )
+        self.assertTrue(ok, message)
+        ok, message, unrelated_fact = record_social_fact(
+            fact_key="fact:unrelated_report",
+            subject_node_key=player.node_key,
+            event_type="quest_completed",
+            summary="The player handled an unrelated report.",
+        )
+        self.assertTrue(ok, message)
+        ok, message, claim = assert_social_claim(
+            claim_key="claim:calloway:unrelated_report",
+            speaker_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            fact_key=unrelated_fact.fact_key,
+            claim_type="report",
+            summary="Calloway reports the unrelated Warden business.",
+            status="supported",
+        )
+        self.assertTrue(ok, message)
+
+        ok, message, knowledge = mark_known(
+            node_key=calloway.node_key,
+            fact_key=delivered_fact.fact_key,
+            claim_key=claim.claim_key,
+            channel="direct_witness",
+        )
+
+        self.assertFalse(ok)
+        self.assertEqual(message, "claim does not reference fact: fact:delivered_report")
+        self.assertIsNone(knowledge)
+        self.assertFalse(
+            SocialKnowledge.objects.filter(
+                knowledge_key=f"knowledge:{calloway.node_key}:{claim.claim_key}"
+            ).exists()
+        )
+
+    def test_mark_known_infers_fact_from_claim_when_fact_key_is_omitted(self):
+        from world.social_engine import (
+            assert_social_claim,
+            ensure_social_node,
+            mark_known,
+            record_social_fact,
+        )
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+        calloway = ensure_social_node("npc", "npc_warden_agent_calloway")
+        ok, message, fact = record_social_fact(
+            fact_key="fact:claim_infers_fact",
+            subject_node_key=player.node_key,
+            event_type="quest_completed",
+            summary="The player delivered the field report.",
+        )
+        self.assertTrue(ok, message)
+        ok, message, claim = assert_social_claim(
+            claim_key="claim:calloway:claim_infers_fact",
+            speaker_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            fact_key=fact.fact_key,
+            claim_type="report",
+            summary="Calloway reports that the player carried Warden business cleanly.",
+            status="supported",
+        )
+        self.assertTrue(ok, message)
+
+        ok, message, knowledge = mark_known(
+            node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+            channel="direct_witness",
+        )
+
+        self.assertTrue(ok, message)
+        self.assertEqual(knowledge.claim, claim)
+        self.assertEqual(knowledge.fact, fact)
+
+    def test_available_now_filter_uses_single_q_filter(self):
+        from django.db.models import Q
+        from world.social_engine import available_now_filter
+
+        class RecordingQuerySet:
+            def __init__(self):
+                self.calls = []
+
+            def filter(self, *args, **kwargs):
+                self.calls.append((args, kwargs))
+                return "filtered"
+
+        queryset = RecordingQuerySet()
+
+        result = available_now_filter(queryset)
+
+        self.assertEqual(result, "filtered")
+        self.assertEqual(len(queryset.calls), 1)
+        args, kwargs = queryset.calls[0]
+        self.assertEqual(kwargs, {})
+        self.assertEqual(len(args), 1)
+        self.assertIsInstance(args[0], Q)
 
     def test_engine_rejects_out_of_range_probability_inputs(self):
         from world.social_engine import (

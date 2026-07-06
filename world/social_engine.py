@@ -2,6 +2,7 @@
 
 import math
 
+from django.db.models import Q
 from django.utils import timezone
 
 from world.social_taxonomy import (
@@ -27,6 +28,12 @@ def _coerce_probability(field_name, value):
     if not math.isfinite(probability) or probability < 0.0 or probability > 1.0:
         return False, f"{field_name} must be between 0.0 and 1.0", None
     return True, "", probability
+
+
+def _coerce_non_negative_int(field_name, value):
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return False, f"{field_name} must be a non-negative integer", None
+    return True, "", value
 
 
 def ensure_social_node(
@@ -125,6 +132,20 @@ def connect_social_nodes(
     if edge_type not in EDGE_TYPES:
         return False, f"unsupported edge_type: {edge_type}", None
 
+    directionality_choices = {choice[0] for choice in SocialEdge.DIRECTION_CHOICES}
+    if directionality not in directionality_choices:
+        return False, f"unsupported directionality: {directionality}", None
+
+    ok, message, latency_seconds = _coerce_non_negative_int(
+        "latency_seconds", latency_seconds
+    )
+    if not ok:
+        return False, message, None
+
+    ok, message, bandwidth = _coerce_non_negative_int("bandwidth", bandwidth)
+    if not ok:
+        return False, message, None
+
     ok, message, trust = _coerce_probability("trust", trust)
     if not ok:
         return False, message, None
@@ -185,7 +206,12 @@ def record_social_fact(
         return False, f"unknown subject_node: {subject_node_key}", None
 
     actor = _get_node(actor_node_key) if actor_node_key else None
+    if actor_node_key and not actor:
+        return False, f"unknown actor_node: {actor_node_key}", None
+
     scope = _get_node(scope_node_key) if scope_node_key else None
+    if scope_node_key and not scope:
+        return False, f"unknown scope_node: {scope_node_key}", None
 
     fact, _created = SocialFact.objects.update_or_create(
         fact_key=fact_key,
@@ -232,6 +258,8 @@ def assert_social_claim(
     speaker = _get_node(speaker_node_key)
     subject = _get_node(subject_node_key)
     fact = _get_fact(fact_key)
+    if fact_key and not fact:
+        return False, f"unknown fact: {fact_key}", None
     if not speaker or not subject:
         return False, "speaker_node and subject_node must both exist", None
 
@@ -292,6 +320,12 @@ def mark_known(
         return False, f"unknown fact: {fact_key}", None
     if claim_key and not claim:
         return False, f"unknown claim: {claim_key}", None
+    if source_node_key and not source:
+        return False, f"unknown source_node: {source_node_key}", None
+    if fact and claim and claim.fact_id != fact.id:
+        return False, f"claim does not reference fact: {fact_key}", None
+    if claim and not fact and claim.fact_id:
+        fact = claim.fact
 
     payload_key = claim_key or fact_key
     knowledge_key = f"knowledge:{node_key}:{payload_key}"
@@ -333,6 +367,4 @@ def record_trace(knowledge, *, from_node=None, to_node=None, edge=None, summary=
 
 def available_now_filter(queryset):
     now = timezone.now()
-    return queryset.filter(available_after__isnull=True) | queryset.filter(
-        available_after__lte=now
-    )
+    return queryset.filter(Q(available_after__isnull=True) | Q(available_after__lte=now))
