@@ -1071,3 +1071,252 @@ class TestSocialWebPropagation(EvenniaTest):
         self.assertEqual(trace[0]["to_node"], commander.node_key)
         self.assertEqual(trace[0]["edge_type"], "warden_report")
         self.assertIn("Calloway", trace[0]["summary"])
+
+
+class TestSocialContextPack(EvenniaTest):
+    """Context packs expose only bounded, cited social knowledge."""
+
+    def _seed_context_graph(self):
+        from world.social_engine import (
+            assert_social_claim,
+            connect_social_nodes,
+            ensure_social_node,
+            mark_known,
+            propagate_social_knowledge,
+            record_social_fact,
+        )
+
+        player = ensure_social_node(
+            "player",
+            str(self.char1.id),
+            display_name=self.char1.key,
+            zone_id="vaels_crossing",
+            settlement_id="vaels_crossing",
+        )
+        calloway = ensure_social_node(
+            "npc",
+            "npc_warden_agent_calloway",
+            display_name="Agent Calloway",
+            zone_id="vaels_crossing",
+            settlement_id="vaels_crossing",
+            faction_id="wardens",
+        )
+        commander = ensure_social_node(
+            "npc",
+            "npc_warden_outpost_commander",
+            display_name="Outpost Commander",
+            zone_id="ashreach_plains",
+            settlement_id="ashreach_outpost",
+            faction_id="wardens",
+        )
+        ok, message, _edge = connect_social_nodes(
+            calloway.node_key,
+            commander.node_key,
+            edge_type="warden_report",
+            directionality="one_way",
+            trust=0.9,
+            scope_tags=["warden", "report"],
+        )
+        self.assertTrue(ok, message)
+        ok, message, fact = record_social_fact(
+            fact_key="fact:context_pack_report",
+            subject_node_key=player.node_key,
+            scope_node_key=calloway.node_key,
+            event_type="quest_completed",
+            summary="The player delivered the sealed report.",
+            tags=["warden", "report", "reliable"],
+            visibility="institutional",
+        )
+        self.assertTrue(ok, message)
+        ok, message, claim = assert_social_claim(
+            claim_key="claim:context_pack_report",
+            speaker_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            fact_key=fact.fact_key,
+            claim_type="report",
+            summary="Calloway says the player did not drop the name.",
+            status="supported",
+        )
+        self.assertTrue(ok, message)
+        ok, message, _knowledge = mark_known(
+            node_key=calloway.node_key,
+            fact_key=fact.fact_key,
+            claim_key=claim.claim_key,
+            channel="official_report",
+            confidence=1.0,
+            spreading=True,
+        )
+        self.assertTrue(ok, message)
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+        self.assertEqual([item.node.node_key for item in propagated], [commander.node_key])
+        return player, calloway, commander, fact, claim
+
+    def _record_commander_context_item(
+        self,
+        *,
+        index,
+        player,
+        calloway,
+        commander,
+        confidence,
+        available_after=None,
+    ):
+        from world.social_engine import assert_social_claim, mark_known, record_social_fact
+
+        ok, message, fact = record_social_fact(
+            fact_key=f"fact:context_bound_{index}",
+            subject_node_key=player.node_key,
+            scope_node_key=calloway.node_key,
+            event_type="quest_completed",
+            summary=f"Context bound fact {index}.",
+            tags=["warden", "report"],
+            visibility="institutional",
+        )
+        self.assertTrue(ok, message)
+        ok, message, claim = assert_social_claim(
+            claim_key=f"claim:context_bound_{index}",
+            speaker_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            fact_key=fact.fact_key,
+            claim_type="report",
+            summary=f"Context bound claim {index}.",
+            status="supported",
+        )
+        self.assertTrue(ok, message)
+        ok, message, knowledge = mark_known(
+            node_key=commander.node_key,
+            fact_key=fact.fact_key,
+            claim_key=claim.claim_key,
+            source_node_key=calloway.node_key,
+            channel="official_report",
+            confidence=confidence,
+            available_after=available_after,
+        )
+        self.assertTrue(ok, message)
+        return fact, claim, knowledge
+
+    def test_query_social_context_returns_known_claims_with_traces(self):
+        from world.social_engine import query_social_context
+
+        player, calloway, commander, fact, claim = self._seed_context_graph()
+
+        context = query_social_context(
+            viewer_node_key=commander.node_key,
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+        )
+
+        self.assertEqual(
+            context["viewer"],
+            {
+                "node_key": commander.node_key,
+                "node_type": "npc",
+                "display_name": "Outpost Commander",
+                "zone_id": "ashreach_plains",
+                "settlement_id": "ashreach_outpost",
+                "faction_id": "wardens",
+            },
+        )
+        self.assertEqual(context["subject"]["node_key"], player.node_key)
+        self.assertEqual(context["purpose"], "dialogue")
+        self.assertEqual(context["facts"][0]["fact_key"], fact.fact_key)
+        self.assertEqual(context["facts"][0]["event_type"], "quest_completed")
+        self.assertEqual(context["facts"][0]["visibility"], "institutional")
+        self.assertEqual(context["facts"][0]["channel"], "official_report")
+        self.assertEqual(context["claims"][0]["claim_key"], claim.claim_key)
+        self.assertEqual(context["claims"][0]["status"], "supported")
+        self.assertEqual(context["claims"][0]["speaker"]["node_key"], calloway.node_key)
+        self.assertEqual(context["claims"][0]["trace"][0]["edge_type"], "warden_report")
+
+    def test_context_excludes_future_knowledge_and_bounds_facts_and_claims(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+        from world.social_engine import query_social_context
+
+        player, calloway, commander, base_fact, base_claim = self._seed_context_graph()
+        future_available_after = timezone.now() + timedelta(hours=1)
+        future_fact, future_claim, _future_knowledge = self._record_commander_context_item(
+            index="future",
+            player=player,
+            calloway=calloway,
+            commander=commander,
+            confidence=1.0,
+            available_after=future_available_after,
+        )
+        first_fact, first_claim, _first_knowledge = self._record_commander_context_item(
+            index="first",
+            player=player,
+            calloway=calloway,
+            commander=commander,
+            confidence=0.8,
+        )
+        second_fact, second_claim, _second_knowledge = self._record_commander_context_item(
+            index="second",
+            player=player,
+            calloway=calloway,
+            commander=commander,
+            confidence=0.7,
+        )
+        third_fact, third_claim, _third_knowledge = self._record_commander_context_item(
+            index="third",
+            player=player,
+            calloway=calloway,
+            commander=commander,
+            confidence=0.6,
+        )
+
+        context = query_social_context(
+            viewer_node_key=commander.node_key,
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+            max_items=2,
+        )
+
+        fact_keys = [item["fact_key"] for item in context["facts"]]
+        claim_keys = [item["claim_key"] for item in context["claims"]]
+        self.assertEqual(len(fact_keys), 2)
+        self.assertEqual(len(claim_keys), 2)
+        self.assertNotIn(future_fact.fact_key, fact_keys)
+        self.assertNotIn(future_claim.claim_key, claim_keys)
+        self.assertIn(base_fact.fact_key, fact_keys)
+        self.assertIn(base_claim.claim_key, claim_keys)
+        self.assertIn(first_fact.fact_key, fact_keys)
+        self.assertNotIn(second_fact.fact_key, fact_keys)
+        self.assertNotIn(third_fact.fact_key, fact_keys)
+        self.assertIn(first_claim.claim_key, claim_keys)
+        self.assertNotIn(second_claim.claim_key, claim_keys)
+        self.assertNotIn(third_claim.claim_key, claim_keys)
+
+    def test_missing_viewer_or_subject_returns_empty_context(self):
+        from world.social_engine import ensure_social_node, query_social_context
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+        commander = ensure_social_node(
+            "npc",
+            "npc_warden_outpost_commander",
+            display_name="Outpost Commander",
+        )
+
+        missing_viewer_context = query_social_context(
+            viewer_node_key="npc:missing_viewer",
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+        )
+        missing_subject_context = query_social_context(
+            viewer_node_key=commander.node_key,
+            subject_node_key="player:missing_subject",
+            purpose="dialogue",
+        )
+
+        self.assertEqual(missing_viewer_context["viewer"], {})
+        self.assertEqual(missing_viewer_context["subject"]["node_key"], player.node_key)
+        self.assertEqual(missing_viewer_context["facts"], [])
+        self.assertEqual(missing_viewer_context["claims"], [])
+        self.assertEqual(missing_subject_context["viewer"]["node_key"], commander.node_key)
+        self.assertEqual(missing_subject_context["subject"], {})
+        self.assertEqual(missing_subject_context["facts"], [])
+        self.assertEqual(missing_subject_context["claims"], [])

@@ -572,3 +572,102 @@ def trace_social_route(*, source_node_key, target_node_key, fact_key="", claim_k
         }
         for trace in traces.order_by("created_at", "id")
     ]
+
+
+def _node_payload(node):
+    if not node:
+        return {}
+    return {
+        "node_key": node.node_key,
+        "node_type": node.node_type,
+        "display_name": node.display_name,
+        "zone_id": node.zone_id,
+        "settlement_id": node.settlement_id,
+        "faction_id": node.faction_id,
+    }
+
+
+def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_items=5):
+    """Build a bounded context packet for deterministic NPC systems."""
+    from world.models import SocialKnowledge
+
+    viewer = _get_node(viewer_node_key)
+    subject = _get_node(subject_node_key)
+    if not viewer or not subject:
+        return {
+            "viewer": _node_payload(viewer),
+            "subject": _node_payload(subject),
+            "purpose": purpose,
+            "facts": [],
+            "claims": [],
+        }
+
+    max_items = max(0, int(max_items))
+    knowledge_qs = SocialKnowledge.objects.filter(node=viewer).select_related(
+        "fact",
+        "claim",
+        "claim__speaker_node",
+        "source_node",
+        "edge",
+    )
+    knowledge_qs = available_now_filter(knowledge_qs).order_by(
+        "-confidence",
+        "-learned_at",
+        "id",
+    )
+
+    facts = []
+    claims = []
+    for knowledge in knowledge_qs:
+        if len(facts) >= max_items and len(claims) >= max_items:
+            break
+
+        if (
+            knowledge.fact
+            and knowledge.fact.subject_node_id == subject.id
+            and len(facts) < max_items
+        ):
+            facts.append(
+                {
+                    "fact_key": knowledge.fact.fact_key,
+                    "event_type": knowledge.fact.event_type,
+                    "summary": knowledge.fact.summary,
+                    "tags": list(knowledge.fact.tags or []),
+                    "visibility": knowledge.fact.visibility,
+                    "confidence": knowledge.confidence,
+                    "channel": knowledge.channel,
+                }
+            )
+
+        if (
+            knowledge.claim
+            and knowledge.claim.subject_node_id == subject.id
+            and len(claims) < max_items
+        ):
+            source_node_key = (
+                knowledge.source_node.node_key if knowledge.source_node else ""
+            )
+            claims.append(
+                {
+                    "claim_key": knowledge.claim.claim_key,
+                    "claim_type": knowledge.claim.claim_type,
+                    "summary": knowledge.claim.summary,
+                    "status": knowledge.claim.status,
+                    "speaker": _node_payload(knowledge.claim.speaker_node),
+                    "confidence": knowledge.confidence,
+                    "channel": knowledge.channel,
+                    "trace": trace_social_route(
+                        source_node_key=source_node_key,
+                        target_node_key=viewer.node_key,
+                        claim_key=knowledge.claim.claim_key,
+                    ),
+                }
+            )
+
+    return {
+        "viewer": _node_payload(viewer),
+        "subject": _node_payload(subject),
+        "purpose": purpose,
+        "facts": facts,
+        "claims": claims,
+    }
