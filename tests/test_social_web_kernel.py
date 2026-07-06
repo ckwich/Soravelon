@@ -1291,6 +1291,114 @@ class TestSocialContextPack(EvenniaTest):
         self.assertNotIn(second_claim.claim_key, claim_keys)
         self.assertNotIn(third_claim.claim_key, claim_keys)
 
+    def test_context_deduplicates_before_applying_max_items(self):
+        from world.models import SocialKnowledge
+        from world.social_engine import query_social_context
+
+        player, calloway, commander, base_fact, base_claim = self._seed_context_graph()
+        SocialKnowledge.objects.create(
+            knowledge_key=(
+                f"knowledge:{commander.node_key}:{base_claim.claim_key}:duplicate"
+            ),
+            node=commander,
+            fact=base_fact,
+            claim=base_claim,
+            source_node=calloway,
+            channel="official_report",
+            confidence=0.85,
+        )
+        distinct_fact, distinct_claim, _distinct_knowledge = (
+            self._record_commander_context_item(
+                index="distinct",
+                player=player,
+                calloway=calloway,
+                commander=commander,
+                confidence=0.8,
+            )
+        )
+
+        context = query_social_context(
+            viewer_node_key=commander.node_key,
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+            max_items=2,
+        )
+
+        self.assertEqual(
+            [item["fact_key"] for item in context["facts"]],
+            [base_fact.fact_key, distinct_fact.fact_key],
+        )
+        self.assertEqual(
+            [item["claim_key"] for item in context["claims"]],
+            [base_claim.claim_key, distinct_claim.claim_key],
+        )
+
+    def test_context_claim_trace_uses_exact_available_knowledge_row(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+        from world.models import SocialEdge, SocialKnowledge, SocialTrace
+        from world.social_engine import query_social_context
+
+        player, calloway, commander, fact, claim = self._seed_context_graph()
+        edge = SocialEdge.objects.get(
+            source_node=calloway,
+            target_node=commander,
+            edge_type="warden_report",
+        )
+        future_knowledge = SocialKnowledge.objects.create(
+            knowledge_key=f"knowledge:{commander.node_key}:{claim.claim_key}:future",
+            node=commander,
+            fact=fact,
+            claim=claim,
+            source_node=calloway,
+            edge=edge,
+            channel="official_report",
+            confidence=1.0,
+            available_after=timezone.now() + timedelta(hours=1),
+        )
+        SocialTrace.objects.create(
+            trace_key=f"trace:{future_knowledge.knowledge_key}:future",
+            knowledge=future_knowledge,
+            from_node=calloway,
+            to_node=commander,
+            edge=edge,
+            summary="Future unavailable trace should not leak into context.",
+        )
+
+        context = query_social_context(
+            viewer_node_key=commander.node_key,
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+        )
+
+        trace_summaries = [
+            item["summary"] for item in context["claims"][0]["trace"]
+        ]
+        self.assertEqual(len(trace_summaries), 1)
+        self.assertNotIn(
+            "Future unavailable trace should not leak into context.",
+            trace_summaries,
+        )
+
+    def test_context_purpose_is_primitive_string(self):
+        from world.social_engine import query_social_context
+
+        class Purpose:
+            def __str__(self):
+                return "dialogue:warden"
+
+        player, _calloway, commander, _fact, _claim = self._seed_context_graph()
+
+        context = query_social_context(
+            viewer_node_key=commander.node_key,
+            subject_node_key=player.node_key,
+            purpose=Purpose(),
+        )
+
+        self.assertEqual(context["purpose"], "dialogue:warden")
+        self.assertIsInstance(context["purpose"], str)
+
     def test_missing_viewer_or_subject_returns_empty_context(self):
         from world.social_engine import ensure_social_node, query_social_context
 

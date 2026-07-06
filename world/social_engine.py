@@ -2,7 +2,7 @@
 
 import math
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 
 from world.social_taxonomy import (
@@ -587,12 +587,34 @@ def _node_payload(node):
     }
 
 
+def _trace_payloads_for_knowledge(knowledge):
+    traces = getattr(knowledge, "_context_traces", None)
+    if traces is None:
+        traces = knowledge.traces.select_related(
+            "from_node",
+            "to_node",
+            "edge",
+        ).order_by("created_at", "id")
+
+    return [
+        {
+            "from_node": trace.from_node.node_key if trace.from_node else "",
+            "to_node": trace.to_node.node_key if trace.to_node else "",
+            "edge_key": trace.edge.edge_key if trace.edge else "",
+            "edge_type": trace.edge.edge_type if trace.edge else "",
+            "summary": trace.summary,
+        }
+        for trace in traces
+    ]
+
+
 def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_items=5):
     """Build a bounded context packet for deterministic NPC systems."""
-    from world.models import SocialKnowledge
+    from world.models import SocialKnowledge, SocialTrace
 
     viewer = _get_node(viewer_node_key)
     subject = _get_node(subject_node_key)
+    purpose = str(purpose)
     if not viewer or not subject:
         return {
             "viewer": _node_payload(viewer),
@@ -603,12 +625,24 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
         }
 
     max_items = max(0, int(max_items))
-    knowledge_qs = SocialKnowledge.objects.filter(node=viewer).select_related(
-        "fact",
-        "claim",
-        "claim__speaker_node",
-        "source_node",
+    trace_qs = SocialTrace.objects.select_related(
+        "from_node",
+        "to_node",
         "edge",
+    ).order_by("created_at", "id")
+    knowledge_qs = (
+        SocialKnowledge.objects.filter(node=viewer)
+        .filter(Q(fact__subject_node=subject) | Q(claim__subject_node=subject))
+        .select_related(
+            "fact",
+            "claim",
+            "claim__speaker_node",
+            "source_node",
+            "edge",
+        )
+        .prefetch_related(
+            Prefetch("traces", queryset=trace_qs, to_attr="_context_traces")
+        )
     )
     knowledge_qs = available_now_filter(knowledge_qs).order_by(
         "-confidence",
@@ -618,6 +652,8 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
 
     facts = []
     claims = []
+    seen_fact_keys = set()
+    seen_claim_keys = set()
     for knowledge in knowledge_qs:
         if len(facts) >= max_items and len(claims) >= max_items:
             break
@@ -625,8 +661,10 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
         if (
             knowledge.fact
             and knowledge.fact.subject_node_id == subject.id
+            and knowledge.fact.fact_key not in seen_fact_keys
             and len(facts) < max_items
         ):
+            seen_fact_keys.add(knowledge.fact.fact_key)
             facts.append(
                 {
                     "fact_key": knowledge.fact.fact_key,
@@ -642,11 +680,10 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
         if (
             knowledge.claim
             and knowledge.claim.subject_node_id == subject.id
+            and knowledge.claim.claim_key not in seen_claim_keys
             and len(claims) < max_items
         ):
-            source_node_key = (
-                knowledge.source_node.node_key if knowledge.source_node else ""
-            )
+            seen_claim_keys.add(knowledge.claim.claim_key)
             claims.append(
                 {
                     "claim_key": knowledge.claim.claim_key,
@@ -656,11 +693,7 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
                     "speaker": _node_payload(knowledge.claim.speaker_node),
                     "confidence": knowledge.confidence,
                     "channel": knowledge.channel,
-                    "trace": trace_social_route(
-                        source_node_key=source_node_key,
-                        target_node_key=viewer.node_key,
-                        claim_key=knowledge.claim.claim_key,
-                    ),
+                    "trace": _trace_payloads_for_knowledge(knowledge),
                 }
             )
 
