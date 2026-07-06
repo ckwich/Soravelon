@@ -46,11 +46,11 @@ def _get_item_stats(item):
     bonuses = item.db.stat_bonuses or {}
     for stat, val in bonuses.items():
         stats[stat.capitalize()] = f"+{val}"
-    affixes = item.db.equipment_affixes or []
+    affixes = getattr(item.db, "equipment_affixes", None) or []
     affix_names = [affix.get("name") for affix in affixes if affix.get("name")]
     if affix_names:
         stats["Affixes"] = ", ".join(affix_names)
-    provenance = item.db.drop_provenance or {}
+    provenance = getattr(item.db, "drop_provenance", None) or {}
     source_name = provenance.get("source_name") if isinstance(provenance, dict) else None
     if source_name:
         stats["Recovered From"] = source_name
