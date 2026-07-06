@@ -425,7 +425,6 @@ class SocialNode(models.Model):
         indexes = [
             models.Index(fields=["node_type", "zone_id"]),
             models.Index(fields=["node_type", "settlement_id"]),
-            models.Index(fields=["faction_id"]),
         ]
 
     def __str__(self):
@@ -471,6 +470,12 @@ class SocialEdge(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(trust__gte=0.0, trust__lte=1.0),
+                name="social_edge_trust_probability",
+            ),
+        ]
         indexes = [
             models.Index(fields=["source_node", "active"]),
             models.Index(fields=["target_node", "active"]),
@@ -530,10 +535,15 @@ class SocialFact(models.Model):
     expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(confidence__gte=0.0, confidence__lte=1.0),
+                name="social_fact_confidence_probability",
+            ),
+        ]
         indexes = [
             models.Index(fields=["subject_node", "visibility"]),
             models.Index(fields=["event_type", "created_at"]),
-            models.Index(fields=["created_at"]),
         ]
 
     def __str__(self):
@@ -578,6 +588,12 @@ class SocialClaim(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(confidence__gte=0.0, confidence__lte=1.0),
+                name="social_claim_confidence_probability",
+            ),
+        ]
         indexes = [
             models.Index(fields=["speaker_node", "claim_type"]),
             models.Index(fields=["subject_node", "status"]),
@@ -632,10 +648,21 @@ class SocialKnowledge(models.Model):
     evidence = models.JSONField(default=dict)
 
     class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(fact__isnull=False) | models.Q(claim__isnull=False)
+                ),
+                name="social_knowledge_has_fact_or_claim",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(confidence__gte=0.0, confidence__lte=1.0),
+                name="social_knowledge_confidence_probability",
+            ),
+        ]
         indexes = [
             models.Index(fields=["node", "channel"]),
             models.Index(fields=["node", "spreading"]),
-            models.Index(fields=["available_after"]),
         ]
 
     def __str__(self):
@@ -676,7 +703,6 @@ class SocialTrace(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["to_node", "created_at"]),
-            models.Index(fields=["created_at"]),
         ]
 
     def __str__(self):

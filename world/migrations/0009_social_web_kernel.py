@@ -61,9 +61,6 @@ class Migration(migrations.Migration):
                         fields=["node_type", "settlement_id"],
                         name="world_socia_node_ty_ad42d3_idx",
                     ),
-                    models.Index(
-                        fields=["faction_id"], name="world_socia_faction_f57de9_idx"
-                    ),
                 ],
             },
         ),
@@ -122,6 +119,12 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
+                "constraints": [
+                    models.CheckConstraint(
+                        condition=models.Q(("trust__gte", 0.0), ("trust__lte", 1.0)),
+                        name="social_edge_trust_probability",
+                    ),
+                ],
                 "indexes": [
                     models.Index(
                         fields=["source_node", "active"],
@@ -206,6 +209,14 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
+                "constraints": [
+                    models.CheckConstraint(
+                        condition=models.Q(
+                            ("confidence__gte", 0.0), ("confidence__lte", 1.0)
+                        ),
+                        name="social_fact_confidence_probability",
+                    ),
+                ],
                 "indexes": [
                     models.Index(
                         fields=["subject_node", "visibility"],
@@ -214,9 +225,6 @@ class Migration(migrations.Migration):
                     models.Index(
                         fields=["event_type", "created_at"],
                         name="world_socia_event_t_4730b9_idx",
-                    ),
-                    models.Index(
-                        fields=["created_at"], name="world_socia_created_3a4431_idx"
                     ),
                 ],
             },
@@ -282,6 +290,14 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
+                "constraints": [
+                    models.CheckConstraint(
+                        condition=models.Q(
+                            ("confidence__gte", 0.0), ("confidence__lte", 1.0)
+                        ),
+                        name="social_claim_confidence_probability",
+                    ),
+                ],
                 "indexes": [
                     models.Index(
                         fields=["speaker_node", "claim_type"],
@@ -366,6 +382,21 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
+                "constraints": [
+                    models.CheckConstraint(
+                        condition=(
+                            models.Q(("fact__isnull", False))
+                            | models.Q(("claim__isnull", False))
+                        ),
+                        name="social_knowledge_has_fact_or_claim",
+                    ),
+                    models.CheckConstraint(
+                        condition=models.Q(
+                            ("confidence__gte", 0.0), ("confidence__lte", 1.0)
+                        ),
+                        name="social_knowledge_confidence_probability",
+                    ),
+                ],
                 "indexes": [
                     models.Index(
                         fields=["node", "channel"],
@@ -374,10 +405,6 @@ class Migration(migrations.Migration):
                     models.Index(
                         fields=["node", "spreading"],
                         name="world_socia_node_id_b74495_idx",
-                    ),
-                    models.Index(
-                        fields=["available_after"],
-                        name="world_socia_availab_aa5495_idx",
                     ),
                 ],
             },
@@ -439,9 +466,6 @@ class Migration(migrations.Migration):
                     models.Index(
                         fields=["to_node", "created_at"],
                         name="world_socia_to_node_e6eecb_idx",
-                    ),
-                    models.Index(
-                        fields=["created_at"], name="world_socia_created_a6bdee_idx"
                     ),
                 ],
             },
