@@ -368,3 +368,148 @@ def record_trace(knowledge, *, from_node=None, to_node=None, edge=None, summary=
 def available_now_filter(queryset):
     now = timezone.now()
     return queryset.filter(Q(available_after__isnull=True) | Q(available_after__lte=now))
+
+
+def _knowledge_payload_tags(knowledge):
+    if knowledge.claim and knowledge.claim.fact_id:
+        return set(normalize_tags(knowledge.claim.fact.tags or []))
+    if knowledge.fact:
+        return set(normalize_tags(knowledge.fact.tags or []))
+    if knowledge.claim:
+        return set(normalize_tags(knowledge.claim.bias_tags or []))
+    return set()
+
+
+def _edge_allows_knowledge(edge, knowledge):
+    if not edge.active:
+        return False
+    scope_tags = set(normalize_tags(edge.scope_tags or []))
+    if not scope_tags:
+        return True
+    payload_tags = _knowledge_payload_tags(knowledge)
+    return bool(scope_tags.intersection(payload_tags))
+
+
+def _outgoing_edges_for(source_node):
+    from world.models import SocialEdge
+
+    return (
+        SocialEdge.objects.filter(source_node=source_node, active=True)
+        .select_related("target_node")
+        .order_by("id")
+    )
+
+
+def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", budget=10):
+    """Copy spreadable knowledge across allowed outgoing contact edges."""
+    from datetime import timedelta
+
+    from world.models import SocialKnowledge
+
+    source = _get_node(source_node_key)
+    if not source:
+        return []
+
+    payload_key = claim_key or fact_key
+    if not payload_key:
+        return []
+
+    ok, _message, budget = _coerce_non_negative_int("budget", budget)
+    if not ok or budget == 0:
+        return []
+
+    source_knowledge_key = f"knowledge:{source_node_key}:{payload_key}"
+    try:
+        source_knowledge = SocialKnowledge.objects.select_related(
+            "fact",
+            "claim",
+            "claim__fact",
+        ).get(
+            knowledge_key=source_knowledge_key,
+            spreading=True,
+        )
+    except SocialKnowledge.DoesNotExist:
+        return []
+
+    propagated = []
+    for edge in _outgoing_edges_for(source)[:budget]:
+        if not _edge_allows_knowledge(edge, source_knowledge):
+            continue
+
+        available_after = None
+        if edge.latency_seconds > 0:
+            available_after = timezone.now() + timedelta(seconds=edge.latency_seconds)
+
+        target = edge.target_node
+        ok, _message, knowledge = mark_known(
+            node_key=target.node_key,
+            fact_key=source_knowledge.fact.fact_key if source_knowledge.fact else "",
+            claim_key=source_knowledge.claim.claim_key if source_knowledge.claim else "",
+            source_node_key=source.node_key,
+            edge_key=edge.edge_key,
+            channel=(
+                "official_report"
+                if edge.edge_type in {"warden_report", "official_report"}
+                else "tavern_rumor"
+            ),
+            confidence=min(source_knowledge.confidence, edge.trust),
+            spreading=True,
+            available_after=available_after,
+            evidence={
+                "propagated_from": source.node_key,
+                "edge_key": edge.edge_key,
+                "payload_key": payload_key,
+            },
+        )
+        if not ok:
+            continue
+
+        source_name = source.display_name or source.node_key
+        target_name = target.display_name or target.node_key
+        record_trace(
+            knowledge,
+            from_node=source,
+            to_node=target,
+            edge=edge,
+            summary=(
+                f"{source_name} propagated {payload_key} to {target_name} "
+                f"through {edge.edge_type}."
+            ),
+        )
+        propagated.append(knowledge)
+    return propagated
+
+
+def trace_social_route(*, source_node_key, target_node_key, fact_key="", claim_key=""):
+    """Return a compact route explanation for admin/debug surfaces."""
+    from world.models import SocialTrace
+
+    target = _get_node(target_node_key)
+    if not target:
+        return []
+
+    traces = SocialTrace.objects.filter(to_node=target).select_related(
+        "from_node",
+        "to_node",
+        "edge",
+        "knowledge",
+        "knowledge__fact",
+        "knowledge__claim",
+    )
+    if source_node_key:
+        traces = traces.filter(from_node__node_key=source_node_key)
+    if fact_key:
+        traces = traces.filter(knowledge__fact__fact_key=fact_key)
+    if claim_key:
+        traces = traces.filter(knowledge__claim__claim_key=claim_key)
+
+    return [
+        {
+            "from_node": trace.from_node.node_key if trace.from_node else "",
+            "to_node": trace.to_node.node_key,
+            "edge_key": trace.edge.edge_key if trace.edge else "",
+            "edge_type": trace.edge.edge_type if trace.edge else "",
+            "summary": trace.summary,
+        }
+        for trace in traces.order_by("created_at", "id")
+    ]

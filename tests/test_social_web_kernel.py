@@ -721,3 +721,177 @@ class TestSocialWebEngine(EvenniaTest):
         self.assertFalse(ok)
         self.assertIn("confidence must be between 0.0 and 1.0", message)
         self.assertIsNone(knowledge)
+
+
+class TestSocialWebPropagation(EvenniaTest):
+    """Knowledge crosses only real contact edges."""
+
+    def _seed_report_graph(self):
+        from world.social_engine import (
+            assert_social_claim,
+            connect_social_nodes,
+            ensure_social_node,
+            mark_known,
+            record_social_fact,
+        )
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+        calloway = ensure_social_node(
+            "npc",
+            "npc_warden_agent_calloway",
+            display_name="Agent Calloway",
+        )
+        commander = ensure_social_node(
+            "npc",
+            "npc_warden_outpost_commander",
+            display_name="Outpost Commander",
+        )
+        innkeeper = ensure_social_node(
+            "npc",
+            "npc_innkeeper_whistle",
+            display_name="Whistle Innkeeper",
+        )
+        ok, message, edge = connect_social_nodes(
+            calloway.node_key,
+            commander.node_key,
+            edge_type="warden_report",
+            directionality="one_way",
+            trust=0.8,
+            latency_seconds=60,
+            scope_tags=["warden", "report", "quest"],
+        )
+        self.assertTrue(ok, message)
+        ok, message, innkeeper_edge = connect_social_nodes(
+            calloway.node_key,
+            innkeeper.node_key,
+            edge_type="inn_traveler",
+            directionality="one_way",
+            trust=0.6,
+            scope_tags=["market"],
+        )
+        self.assertTrue(ok, message)
+        ok, message, fact = record_social_fact(
+            fact_key="fact:test_warden_report_delivered",
+            subject_node_key=player.node_key,
+            scope_node_key=calloway.node_key,
+            event_type="quest_completed",
+            summary="The player delivered Calloway's sealed field report.",
+            tags=["reliable", "warden", "report"],
+            visibility="institutional",
+        )
+        self.assertTrue(ok, message)
+        ok, message, claim = assert_social_claim(
+            claim_key="claim:calloway:test_warden_report_delivered",
+            speaker_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            fact_key=fact.fact_key,
+            claim_type="report",
+            summary="Calloway reports the player carried Warden business cleanly.",
+            status="supported",
+        )
+        self.assertTrue(ok, message)
+        ok, message, knowledge = mark_known(
+            node_key=calloway.node_key,
+            fact_key=fact.fact_key,
+            claim_key=claim.claim_key,
+            channel="official_report",
+            confidence=0.95,
+            spreading=True,
+        )
+        self.assertTrue(ok, message)
+        return player, calloway, commander, innkeeper, edge, innkeeper_edge, fact, claim, knowledge
+
+    def test_propagation_uses_matching_warden_contact_edge(self):
+        from django.utils import timezone
+        from world.models import SocialKnowledge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            innkeeper,
+            _edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        before = timezone.now()
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        target_keys = [item.node.node_key for item in propagated]
+        self.assertEqual(target_keys, [commander.node_key])
+        self.assertNotIn(innkeeper.node_key, target_keys)
+        target_knowledge = propagated[0]
+        self.assertEqual(target_knowledge.confidence, 0.8)
+        self.assertIsNotNone(target_knowledge.available_after)
+        self.assertGreater(target_knowledge.available_after, before)
+        self.assertFalse(
+            SocialKnowledge.objects.filter(
+                node=innkeeper,
+                claim=claim,
+            ).exists()
+        )
+
+    def test_propagation_rejects_edge_without_matching_scope_tags(self):
+        from world.models import SocialEdge, SocialKnowledge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            _innkeeper,
+            edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        SocialEdge.objects.filter(id=edge.id).update(scope_tags=["market"])
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual(propagated, [])
+        self.assertFalse(
+            SocialKnowledge.objects.filter(
+                node=commander,
+                claim=claim,
+            ).exists()
+        )
+
+    def test_trace_social_route_explains_how_target_learned_claim(self):
+        from world.social_engine import propagate_social_knowledge, trace_social_route
+
+        (
+            _player,
+            calloway,
+            commander,
+            _innkeeper,
+            _edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        propagate_social_knowledge(source_node_key=calloway.node_key, claim_key=claim.claim_key)
+
+        trace = trace_social_route(
+            source_node_key=calloway.node_key,
+            target_node_key=commander.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual(len(trace), 1)
+        self.assertEqual(trace[0]["from_node"], calloway.node_key)
+        self.assertEqual(trace[0]["to_node"], commander.node_key)
+        self.assertEqual(trace[0]["edge_type"], "warden_report")
+        self.assertIn("Calloway", trace[0]["summary"])
