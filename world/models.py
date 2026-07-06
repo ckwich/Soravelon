@@ -408,6 +408,281 @@ class WorldEventLog(models.Model):
         return f"{self.event_type}:{self.zone_id}@{self.occurred_at}"
 
 
+class SocialNode(models.Model):
+    """A node in Soravelon's runtime social knowledge graph."""
+
+    node_key = models.CharField(max_length=192, unique=True)
+    node_type = models.CharField(max_length=32, db_index=True)
+    display_name = models.CharField(max_length=160, blank=True, default="")
+    zone_id = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    settlement_id = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    faction_id = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    metadata = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["node_type", "zone_id"]),
+            models.Index(fields=["node_type", "settlement_id"]),
+            models.Index(fields=["faction_id"]),
+        ]
+
+    def __str__(self):
+        return self.node_key
+
+
+class SocialEdge(models.Model):
+    """A contact path that can carry social facts or claims between nodes."""
+
+    DIRECTION_CHOICES = [
+        ("one_way", "One Way"),
+        ("two_way", "Two Way"),
+        ("broadcast", "Broadcast"),
+        ("gatekept", "Gatekept"),
+    ]
+
+    edge_key = models.CharField(max_length=240, unique=True)
+    source_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.CASCADE,
+        related_name="outgoing_social_edges",
+    )
+    target_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.CASCADE,
+        related_name="incoming_social_edges",
+    )
+    edge_type = models.CharField(max_length=64, db_index=True)
+    directionality = models.CharField(
+        max_length=16,
+        choices=DIRECTION_CHOICES,
+        default="one_way",
+    )
+    trust = models.FloatField(default=0.5)
+    latency_seconds = models.PositiveIntegerField(default=0)
+    bandwidth = models.PositiveIntegerField(default=3)
+    secrecy = models.CharField(max_length=32, blank=True, default="")
+    distortion = models.CharField(max_length=32, blank=True, default="")
+    scope_tags = models.JSONField(default=list)
+    blockers = models.JSONField(default=list)
+    active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["source_node", "active"]),
+            models.Index(fields=["target_node", "active"]),
+            models.Index(fields=["edge_type", "active"]),
+        ]
+
+    def __str__(self):
+        return self.edge_key
+
+
+class SocialFact(models.Model):
+    """Authoritative social truth recorded by game systems."""
+
+    VISIBILITY_CHOICES = [
+        ("private", "Private"),
+        ("witnessed", "Witnessed"),
+        ("local", "Local"),
+        ("institutional", "Institutional"),
+        ("route", "Route"),
+        ("global", "Global"),
+    ]
+
+    fact_key = models.CharField(max_length=192, unique=True)
+    subject_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.CASCADE,
+        related_name="subject_social_facts",
+    )
+    actor_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="actor_social_facts",
+    )
+    scope_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scoped_social_facts",
+    )
+    event_type = models.CharField(max_length=64, db_index=True)
+    summary = models.TextField()
+    tags = models.JSONField(default=list)
+    visibility = models.CharField(
+        max_length=16,
+        choices=VISIBILITY_CHOICES,
+        default="local",
+        db_index=True,
+    )
+    evidence = models.JSONField(default=dict)
+    weight = models.FloatField(default=1.0)
+    confidence = models.FloatField(default=1.0)
+    occurred_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["subject_node", "visibility"]),
+            models.Index(fields=["event_type", "created_at"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return self.fact_key
+
+
+class SocialClaim(models.Model):
+    """A social assertion made by a node about a fact or subject."""
+
+    STATUS_CHOICES = [
+        ("supported", "Supported"),
+        ("rumor", "Rumor"),
+        ("contested", "Contested"),
+        ("false", "False"),
+        ("unknown", "Unknown"),
+    ]
+
+    claim_key = models.CharField(max_length=224, unique=True)
+    fact = models.ForeignKey(
+        SocialFact,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="claims",
+    )
+    speaker_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.CASCADE,
+        related_name="spoken_social_claims",
+    )
+    subject_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.CASCADE,
+        related_name="subject_social_claims",
+    )
+    claim_type = models.CharField(max_length=64, db_index=True)
+    summary = models.TextField()
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="rumor")
+    intent = models.CharField(max_length=64, blank=True, default="")
+    bias_tags = models.JSONField(default=list)
+    confidence = models.FloatField(default=0.5)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["speaker_node", "claim_type"]),
+            models.Index(fields=["subject_node", "status"]),
+        ]
+
+    def __str__(self):
+        return self.claim_key
+
+
+class SocialKnowledge(models.Model):
+    """A record that a node knows or believes a fact or claim."""
+
+    knowledge_key = models.CharField(max_length=260, unique=True)
+    node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.CASCADE,
+        related_name="social_knowledge",
+    )
+    fact = models.ForeignKey(
+        SocialFact,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="known_by",
+    )
+    claim = models.ForeignKey(
+        SocialClaim,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="known_by",
+    )
+    source_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sourced_social_knowledge",
+    )
+    edge = models.ForeignKey(
+        SocialEdge,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="carried_social_knowledge",
+    )
+    channel = models.CharField(max_length=64, db_index=True)
+    confidence = models.FloatField(default=0.5)
+    spreading = models.BooleanField(default=False, db_index=True)
+    learned_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    available_after = models.DateTimeField(null=True, blank=True, db_index=True)
+    evidence = models.JSONField(default=dict)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["node", "channel"]),
+            models.Index(fields=["node", "spreading"]),
+            models.Index(fields=["available_after"]),
+        ]
+
+    def __str__(self):
+        return self.knowledge_key
+
+
+class SocialTrace(models.Model):
+    """Audit trail explaining how social knowledge reached a node."""
+
+    trace_key = models.CharField(max_length=280, unique=True)
+    knowledge = models.ForeignKey(
+        SocialKnowledge,
+        on_delete=models.CASCADE,
+        related_name="traces",
+    )
+    from_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="outgoing_social_traces",
+    )
+    to_node = models.ForeignKey(
+        SocialNode,
+        on_delete=models.CASCADE,
+        related_name="incoming_social_traces",
+    )
+    edge = models.ForeignKey(
+        SocialEdge,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="social_traces",
+    )
+    summary = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["to_node", "created_at"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return self.trace_key
+
+
 class SpawnRecord(models.Model):
     """
     Tracks active and respawning mobs per room spawn slot.
