@@ -336,3 +336,157 @@ class TestSocialWebModels(EvenniaTest):
                     channel="official_report",
                     confidence=1.1,
                 )
+
+
+class TestSocialWebEngine(EvenniaTest):
+    """Service APIs provide graph-shaped access over relational models."""
+
+    def test_ensure_social_node_is_idempotent(self):
+        from world.models import SocialNode
+        from world.social_engine import ensure_social_node
+
+        first = ensure_social_node(
+            "npc",
+            "npc_warden_agent_calloway",
+            display_name="Agent Calloway",
+            zone_id="vaels_crossing",
+            settlement_id="vaels_crossing",
+        )
+        second = ensure_social_node(
+            "npc",
+            "npc_warden_agent_calloway",
+            display_name="Agent Calloway",
+            zone_id="vaels_crossing",
+        )
+
+        self.assertEqual(first.id, second.id)
+        self.assertEqual(SocialNode.objects.count(), 1)
+        self.assertEqual(first.node_key, "npc:npc_warden_agent_calloway")
+
+    def test_connect_social_nodes_rejects_unknown_edge_type(self):
+        from world.social_engine import connect_social_nodes, ensure_social_node
+
+        ensure_social_node("npc", "a")
+        ensure_social_node("npc", "b")
+
+        ok, message, edge = connect_social_nodes(
+            "npc:a",
+            "npc:b",
+            edge_type="made_up_channel",
+        )
+
+        self.assertFalse(ok)
+        self.assertIn("unsupported edge_type", message)
+        self.assertIsNone(edge)
+
+    def test_record_fact_and_claim_create_initial_knowledge(self):
+        from world.social_engine import (
+            assert_social_claim,
+            ensure_social_node,
+            mark_known,
+            record_social_fact,
+        )
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+        calloway = ensure_social_node("npc", "npc_warden_agent_calloway")
+
+        ok, message, fact = record_social_fact(
+            fact_key="fact:test_warden_report_delivered",
+            subject_node_key=player.node_key,
+            scope_node_key=calloway.node_key,
+            event_type="quest_completed",
+            summary="The player delivered the field report.",
+            tags=[" reliable ", "Reliable", "warden"],
+            visibility="institutional",
+            evidence={"quest_id": "vc_q_warden_report"},
+        )
+        self.assertTrue(ok, message)
+        self.assertEqual(fact.tags, ["reliable", "warden"])
+
+        ok, message, claim = assert_social_claim(
+            claim_key="claim:calloway:test_warden_report_delivered",
+            speaker_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            fact_key=fact.fact_key,
+            claim_type="report",
+            summary="Calloway says the player carried Warden business cleanly.",
+            status="supported",
+        )
+        self.assertTrue(ok, message)
+
+        ok, message, knowledge = mark_known(
+            node_key=calloway.node_key,
+            fact_key=fact.fact_key,
+            claim_key=claim.claim_key,
+            channel="direct_witness",
+            confidence=1.0,
+            spreading=True,
+        )
+        self.assertTrue(ok, message)
+        self.assertEqual(knowledge.node.node_key, calloway.node_key)
+
+    def test_engine_rejects_out_of_range_probability_inputs(self):
+        from world.social_engine import (
+            assert_social_claim,
+            connect_social_nodes,
+            ensure_social_node,
+            mark_known,
+            record_social_fact,
+        )
+
+        player = ensure_social_node("player", str(self.char1.id), display_name=self.char1.key)
+        calloway = ensure_social_node("npc", "npc_warden_agent_calloway")
+        commander = ensure_social_node("npc", "npc_warden_outpost_commander")
+
+        ok, message, edge = connect_social_nodes(
+            calloway.node_key,
+            commander.node_key,
+            edge_type="official_report",
+            trust=1.1,
+        )
+        self.assertFalse(ok)
+        self.assertIn("trust must be between 0.0 and 1.0", message)
+        self.assertIsNone(edge)
+
+        ok, message, fact = record_social_fact(
+            fact_key="fact:invalid_probability",
+            subject_node_key=player.node_key,
+            event_type="quest_completed",
+            summary="Invalid confidence should be rejected before persistence.",
+            confidence=-0.1,
+        )
+        self.assertFalse(ok)
+        self.assertIn("confidence must be between 0.0 and 1.0", message)
+        self.assertIsNone(fact)
+
+        ok, message, fact = record_social_fact(
+            fact_key="fact:valid_probability",
+            subject_node_key=player.node_key,
+            event_type="quest_completed",
+            summary="Valid confidence should persist.",
+            confidence=1.0,
+        )
+        self.assertTrue(ok, message)
+
+        ok, message, claim = assert_social_claim(
+            claim_key="claim:invalid_probability",
+            speaker_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            fact_key=fact.fact_key,
+            claim_type="report",
+            summary="Invalid claim confidence should be rejected before persistence.",
+            confidence=1.1,
+        )
+        self.assertFalse(ok)
+        self.assertIn("confidence must be between 0.0 and 1.0", message)
+        self.assertIsNone(claim)
+
+        ok, message, knowledge = mark_known(
+            node_key=calloway.node_key,
+            fact_key=fact.fact_key,
+            channel="direct_witness",
+            confidence=-0.1,
+        )
+        self.assertFalse(ok)
+        self.assertIn("confidence must be between 0.0 and 1.0", message)
+        self.assertIsNone(knowledge)
