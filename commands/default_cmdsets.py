@@ -122,6 +122,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdWho())
         self.add(CmdShout())
         self.add(CmdWhisper())
+        from commands.cmd_socialmemory import CmdSocialMemory
+        self.add(CmdSocialMemory())
         # Inspection commands (Phase 15)
         from commands.cmd_inspect import CmdInspect, CmdCompare
         self.add(CmdInspect())
