@@ -274,6 +274,45 @@ class TestNpcStoredOnRoom(AreaBuilderTestBase):
         self.assertEqual(npcs[0]["quest"], "wolves_quest")
 
 
+class TestNpcSocialMetadata(AreaBuilderTestBase):
+    def test_npc_social_profile_and_edges_persist_on_db_attrs(self):
+        ab = self._make_builder("social_authoring_zone")
+        room = self._make_room(ab, "square", name="Square", desc="A square.")
+        social_profile = {
+            "social_role": "warden_contact",
+            "public_trait": "careful Warden contact",
+            "worldview": {
+                "admires": ["reliable"],
+                "dislikes": ["reckless"],
+            },
+        }
+        social_edges = [
+            {
+                "target": "npc:npc_outpost_contact",
+                "edge_type": "warden_report",
+                "directionality": "one_way",
+                "scope_tags": ["warden", "report"],
+            }
+        ]
+
+        npc = ab.npc(
+            room,
+            "npc_social_anchor",
+            name="Social Anchor",
+            social_profile=social_profile,
+            social_edges=social_edges,
+        )
+
+        self.assertEqual(npc.db.social_profile["social_role"], "warden_contact")
+        self.assertEqual(
+            npc.db.social_profile["public_trait"],
+            "careful Warden contact",
+        )
+        self.assertEqual(npc.db.social_edges[0]["edge_type"], "warden_report")
+        self.assertEqual(room.db.npc_definitions[0]["social_profile"], social_profile)
+        self.assertEqual(room.db.npc_definitions[0]["social_edges"], social_edges)
+
+
 # ------------------------------------------------------------------
 # Node tests
 # ------------------------------------------------------------------

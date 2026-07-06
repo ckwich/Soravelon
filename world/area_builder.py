@@ -508,6 +508,8 @@ class AreaBuilder:
             "quest": kwargs.get("quest"),
             "faction": kwargs.get("faction"),
             "standing_required": kwargs.get("standing_required"),
+            "social_profile": kwargs.get("social_profile", {}),
+            "social_edges": kwargs.get("social_edges", []),
         }
 
         current = list(room.db.npc_definitions or [])
@@ -574,7 +576,11 @@ class AreaBuilder:
         npc_obj.db.dialogue_scholar_hints = dialogue.get("scholar_hints", [])
         npc_obj.db.dialogue_warden_hints = dialogue.get("warden_hints", [])
 
-        # --- 4. Ambient data on db attributes (NPC-01) --------------------
+        # --- 4. Social Web authoring metadata -----------------------------
+        npc_obj.db.social_profile = kwargs.get("social_profile", {})
+        npc_obj.db.social_edges = kwargs.get("social_edges", [])
+
+        # --- 5. Ambient data on db attributes (NPC-01) --------------------
         ambient = kwargs.get("ambient", {})
         npc_obj.db.ambient_idle_echoes = ambient.get("idle_echoes", [])
         npc_obj.db.ambient_idle_interval = ambient.get("idle_interval", 60)
