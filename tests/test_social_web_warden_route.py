@@ -129,3 +129,4 @@ class TestVaelWardenSocialRoute(EvenniaTest):
             "warden_report",
         )
         self.assertEqual(innkeeper_context["claims"], [])
+        self.assertEqual(innkeeper_context["facts"], [])
