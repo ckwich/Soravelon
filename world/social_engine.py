@@ -371,13 +371,72 @@ def available_now_filter(queryset):
 
 
 def _knowledge_payload_tags(knowledge):
-    if knowledge.claim and knowledge.claim.fact_id:
-        return set(normalize_tags(knowledge.claim.fact.tags or []))
-    if knowledge.fact:
-        return set(normalize_tags(knowledge.fact.tags or []))
+    tags = set()
+    fact = knowledge.fact
+    if not fact and knowledge.claim and knowledge.claim.fact_id:
+        fact = knowledge.claim.fact
+    if fact:
+        tags.update(normalize_tags(fact.tags or []))
     if knowledge.claim:
-        return set(normalize_tags(knowledge.claim.bias_tags or []))
-    return set()
+        tags.update(normalize_tags(knowledge.claim.bias_tags or []))
+        tags.update(
+            normalize_tags(
+                value
+                for value in (
+                    knowledge.claim.claim_type,
+                    knowledge.claim.status,
+                    knowledge.claim.intent,
+                )
+                if value
+            )
+        )
+    return tags
+
+
+def _source_knowledge_for(source, *, fact_key="", claim_key=""):
+    from django.db.models import Case, IntegerField, Value, When
+    from world.models import SocialKnowledge
+
+    queryset = SocialKnowledge.objects.filter(node=source, spreading=True).select_related(
+        "fact",
+        "claim",
+        "claim__fact",
+    )
+    if fact_key:
+        queryset = queryset.filter(
+            Q(fact__fact_key=fact_key) | Q(claim__fact__fact_key=fact_key)
+        )
+    if claim_key:
+        queryset = queryset.filter(claim__claim_key=claim_key)
+
+    return (
+        available_now_filter(queryset)
+        .annotate(
+            claim_rank=Case(
+                When(claim__isnull=False, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("claim_rank", "id")
+        .first()
+    )
+
+
+def _merged_available_after(existing_knowledge, proposed_available_after):
+    if not existing_knowledge:
+        return proposed_available_after
+    if existing_knowledge.available_after is None or proposed_available_after is None:
+        return None
+    return min(existing_knowledge.available_after, proposed_available_after)
+
+
+def _knowledge_payload_key(knowledge):
+    if knowledge.claim:
+        return knowledge.claim.claim_key
+    if knowledge.fact:
+        return knowledge.fact.fact_key
+    return ""
 
 
 def _edge_allows_knowledge(edge, knowledge):
@@ -418,17 +477,12 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
     if not ok or budget == 0:
         return []
 
-    source_knowledge_key = f"knowledge:{source_node_key}:{payload_key}"
-    try:
-        source_knowledge = SocialKnowledge.objects.select_related(
-            "fact",
-            "claim",
-            "claim__fact",
-        ).get(
-            knowledge_key=source_knowledge_key,
-            spreading=True,
-        )
-    except SocialKnowledge.DoesNotExist:
+    source_knowledge = _source_knowledge_for(
+        source,
+        fact_key=fact_key,
+        claim_key=claim_key,
+    )
+    if not source_knowledge:
         return []
 
     propagated = []
@@ -441,6 +495,11 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
             available_after = timezone.now() + timedelta(seconds=edge.latency_seconds)
 
         target = edge.target_node
+        carried_payload_key = _knowledge_payload_key(source_knowledge)
+        existing_target = SocialKnowledge.objects.filter(
+            knowledge_key=f"knowledge:{target.node_key}:{carried_payload_key}"
+        ).only("available_after").first()
+        available_after = _merged_available_after(existing_target, available_after)
         ok, _message, knowledge = mark_known(
             node_key=target.node_key,
             fact_key=source_knowledge.fact.fact_key if source_knowledge.fact else "",
@@ -453,12 +512,12 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
                 else "tavern_rumor"
             ),
             confidence=min(source_knowledge.confidence, edge.trust),
-            spreading=True,
+            spreading=edge.directionality in {"broadcast", "two_way", "gatekept"},
             available_after=available_after,
             evidence={
                 "propagated_from": source.node_key,
                 "edge_key": edge.edge_key,
-                "payload_key": payload_key,
+                "payload_key": carried_payload_key,
             },
         )
         if not ok:
@@ -472,7 +531,7 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
             to_node=target,
             edge=edge,
             summary=(
-                f"{source_name} propagated {payload_key} to {target_name} "
+                f"{source_name} propagated {carried_payload_key} to {target_name} "
                 f"through {edge.edge_type}."
             ),
         )

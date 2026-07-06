@@ -831,12 +831,188 @@ class TestSocialWebPropagation(EvenniaTest):
         self.assertEqual(target_knowledge.confidence, 0.8)
         self.assertIsNotNone(target_knowledge.available_after)
         self.assertGreater(target_knowledge.available_after, before)
+        self.assertFalse(target_knowledge.spreading)
         self.assertFalse(
             SocialKnowledge.objects.filter(
                 node=innkeeper,
                 claim=claim,
             ).exists()
         )
+
+    def test_propagation_sets_spreading_from_edge_directionality(self):
+        from world.models import SocialEdge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            _commander,
+            _innkeeper,
+            edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+        self.assertEqual(len(propagated), 1)
+        self.assertFalse(propagated[0].spreading)
+
+        SocialEdge.objects.filter(id=edge.id).update(directionality="two_way")
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual(len(propagated), 1)
+        self.assertTrue(propagated[0].spreading)
+
+    def test_fact_only_propagation_prefers_claim_backed_source_knowledge(self):
+        from world.social_engine import mark_known, propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            _innkeeper,
+            _edge,
+            _innkeeper_edge,
+            fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        ok, message, _fact_only_knowledge = mark_known(
+            node_key=calloway.node_key,
+            fact_key=fact.fact_key,
+            channel="direct_witness",
+            confidence=0.4,
+            spreading=True,
+        )
+        self.assertTrue(ok, message)
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            fact_key=fact.fact_key,
+        )
+
+        self.assertEqual(len(propagated), 1)
+        self.assertEqual(propagated[0].node, commander)
+        self.assertEqual(propagated[0].fact, fact)
+        self.assertEqual(propagated[0].claim, claim)
+        self.assertEqual(
+            propagated[0].knowledge_key,
+            f"knowledge:{commander.node_key}:{claim.claim_key}",
+        )
+        self.assertEqual(propagated[0].confidence, 0.8)
+
+    def test_future_source_knowledge_does_not_propagate(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+        from world.models import SocialKnowledge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            _innkeeper,
+            _edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            knowledge,
+        ) = self._seed_report_graph()
+        knowledge.available_after = timezone.now() + timedelta(hours=1)
+        knowledge.save(update_fields=["available_after"])
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual(propagated, [])
+        self.assertFalse(
+            SocialKnowledge.objects.filter(
+                node=commander,
+                claim=claim,
+            ).exists()
+        )
+
+    def test_repeated_propagation_preserves_existing_availability(self):
+        from world.models import SocialEdge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            _commander,
+            _innkeeper,
+            edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+        target_knowledge = propagated[0]
+        first_available_after = target_knowledge.available_after
+        self.assertIsNotNone(first_available_after)
+
+        SocialEdge.objects.filter(id=edge.id).update(latency_seconds=3600)
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        target_knowledge = propagated[0]
+        target_knowledge.refresh_from_db()
+        self.assertEqual(target_knowledge.available_after, first_available_after)
+
+        target_knowledge.available_after = None
+        target_knowledge.save(update_fields=["available_after"])
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        target_knowledge = propagated[0]
+        target_knowledge.refresh_from_db()
+        self.assertIsNone(target_knowledge.available_after)
+
+    def test_claim_metadata_tags_can_satisfy_edge_scope(self):
+        from world.models import SocialEdge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            _innkeeper,
+            edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        SocialEdge.objects.filter(id=edge.id).update(scope_tags=["supported"])
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual([item.node.node_key for item in propagated], [commander.node_key])
+        self.assertEqual(propagated[0].claim, claim)
 
     def test_propagation_rejects_edge_without_matching_scope_tags(self):
         from world.models import SocialEdge, SocialKnowledge
