@@ -22,7 +22,10 @@ NPC dialogue data is stored on db attributes set by AreaBuilder:
 """
 
 import hashlib
+import logging
 import time
+
+from django.db import OperationalError, ProgrammingError
 
 from world.dialogue_definitions import (
     MAX_HINTS_DISPLAYED,
@@ -32,6 +35,9 @@ from world.dialogue_definitions import (
     STANDING_TIER_THRESHOLDS,
     TOPIC_SYNONYMS,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -146,8 +152,12 @@ def _build_social_dialogue_context(npc, character):
             subject_node_key=subject_node_key,
             purpose="dialogue",
         )
-    except Exception:
+    except (OperationalError, ProgrammingError):
         # Social Web schema/runtime can be absent during migrations or focused tests.
+        logger.warning(
+            "Social Web dialogue context unavailable; falling back to empty context.",
+            exc_info=True,
+        )
         return _empty_social_context_packet()
 
 
@@ -246,7 +256,7 @@ def _check_condition(condition, context):
 # Topic response
 # ---------------------------------------------------------------------------
 
-def resolve_topic_response(npc, character, topic_key):
+def resolve_topic_response(npc, character, topic_key, *, context=None):
     """
     Resolve the best response for a topic from an NPC.
 
@@ -259,7 +269,8 @@ def resolve_topic_response(npc, character, topic_key):
     if not topic_data:
         return (None, None)
 
-    context = _build_dialogue_context(npc, character)
+    if context is None:
+        context = _build_dialogue_context(npc, character)
 
     for condition in RESPONSE_PRIORITY:
         if condition in topic_data:

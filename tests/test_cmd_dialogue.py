@@ -73,16 +73,17 @@ class TestCmdTell(unittest.TestCase):
         npc.db.npc_id = "npc_greeter_maren"
         npc.db.dialogue_topics = {"work": {"default": "Start with the tavern."}}
 
+        resolved_context = {"standing_tier": "neutral", "completed_quests": []}
         with patch("commands.cmd_dialogue._find_npc_in_room", return_value=npc), patch(
             "world.dialogue_engine.extract_topic",
             return_value="work",
         ), patch(
             "world.dialogue_engine.resolve_topic_response",
             return_value=("Start with the tavern.", "default"),
-        ), patch(
+        ) as mock_resolve, patch(
             "world.dialogue_engine._build_dialogue_context",
-            return_value={},
-        ), patch(
+            return_value=resolved_context,
+        ) as mock_context, patch(
             "world.dialogue_engine.record_topic_learned"
         ) as mock_record:
             cmd = CmdTell()
@@ -94,4 +95,16 @@ class TestCmdTell(unittest.TestCase):
         second_msg = caller.msg.call_args_list[1][0][0]
         self.assertIn('You tell Maren, "I need work."', first_msg)
         self.assertIn("Start with the tavern.", second_msg)
-        mock_record.assert_called_once()
+        mock_context.assert_called_once_with(npc, caller)
+        mock_resolve.assert_called_once_with(
+            npc,
+            caller,
+            "work",
+            context=resolved_context,
+        )
+        mock_record.assert_called_once_with(
+            caller,
+            "npc_greeter_maren",
+            "work",
+            resolved_context,
+        )

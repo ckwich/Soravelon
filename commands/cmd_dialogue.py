@@ -247,12 +247,17 @@ class CmdAsk(Command):
         npc_display = npc.db.npc_name or npc.key
 
         if topic_key:
-            text, condition = resolve_topic_response(npc, character, topic_key)
+            context = _build_dialogue_context(npc, character)
+            text, condition = resolve_topic_response(
+                npc,
+                character,
+                topic_key,
+                context=context,
+            )
             if text:
                 character.msg(f"|w{npc_display}|n says, \"{text}\"")
                 # Record learned topic
                 npc_id = npc.db.npc_id or npc.key or ""
-                context = _build_dialogue_context(npc, character)
                 record_topic_learned(character, npc_id, topic_key, context)
                 return
 
@@ -352,15 +357,18 @@ class CmdSay(Command):
             if not topic_key:
                 continue
 
+            context = _build_dialogue_context(npc, character)
             response_text, condition = resolve_topic_response(
-                npc, character, topic_key
+                npc,
+                character,
+                topic_key,
+                context=context,
             )
             if response_text:
                 npc_display = npc.db.npc_name or npc.key
                 character.msg(f"\n|w{npc_display}|n responds, \"{response_text}\"")
                 # Record learned
                 npc_id = npc.db.npc_id or npc.key or ""
-                context = _build_dialogue_context(npc, character)
                 record_topic_learned(character, npc_id, topic_key, context)
                 responses += 1
 
@@ -418,13 +426,16 @@ class CmdTell(Command):
             topic_key = extract_topic(text, available_topics)
 
             if topic_key:
+                context = _build_dialogue_context(npc, character)
                 response_text, condition = resolve_topic_response(
-                    npc, character, topic_key
+                    npc,
+                    character,
+                    topic_key,
+                    context=context,
                 )
                 if response_text:
                     character.msg(f"|w{npc_display}|n says, \"{response_text}\"")
                     npc_id = npc.db.npc_id or npc.key or ""
-                    context = _build_dialogue_context(npc, character)
                     record_topic_learned(character, npc_id, topic_key, context)
                     return
 

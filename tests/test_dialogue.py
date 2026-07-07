@@ -305,6 +305,35 @@ class TestTopicPriorityStack(unittest.TestCase):
         self.assertIsNone(text)
         self.assertIsNone(condition)
 
+    @patch("world.dialogue_engine._build_dialogue_context")
+    def test_supplied_context_is_reused_for_topic_resolution(self, mock_ctx):
+        from world.dialogue_engine import resolve_topic_response
+
+        context = {
+            "standing_tier": "friendly",
+            "completed_quests": [],
+            "active_quests": [],
+            "failed_quests": [],
+            "betrayal_flag": False,
+        }
+        npc = self._make_npc({
+            "wolves": {
+                "friendly": "Between friends, the wolves avoid the old road.",
+                "default": "Wolves roam the area.",
+            }
+        })
+
+        text, condition = resolve_topic_response(
+            npc,
+            self._make_char(),
+            "wolves",
+            context=context,
+        )
+
+        mock_ctx.assert_not_called()
+        self.assertEqual(condition, "friendly")
+        self.assertIn("old road", text)
+
 
 # ---------------------------------------------------------------------------
 # D-05: Keyword extraction
@@ -639,7 +668,7 @@ class TestContextPacketInterface(unittest.TestCase):
     @patch("world.quest_engine.get_active_quests", return_value=[])
     @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
     @patch("world.world_state.get_character_context_packet")
-    def test_social_context_query_failure_fails_closed(
+    def test_social_context_schema_unavailable_logs_and_fails_closed(
         self,
         mock_packet,
         mock_tier,
@@ -648,10 +677,11 @@ class TestContextPacketInterface(unittest.TestCase):
         mock_social_context,
     ):
         """Dialogue stays available if Social Web schema/runtime is unavailable."""
+        from django.db import OperationalError
         from world.dialogue_engine import _build_dialogue_context
 
         mock_packet.return_value = {"reputation": 0}
-        mock_social_context.side_effect = RuntimeError("missing social schema")
+        mock_social_context.side_effect = OperationalError("no such table: world_socialnode")
         npc = SimpleNamespace(
             db=SimpleNamespace(
                 zone_id="test_zone",
@@ -662,7 +692,8 @@ class TestContextPacketInterface(unittest.TestCase):
         )
         char = SimpleNamespace(id=42)
 
-        context = _build_dialogue_context(npc, char)
+        with self.assertLogs("world.dialogue_engine", level="WARNING") as logs:
+            context = _build_dialogue_context(npc, char)
 
         self.assertEqual(
             context["social_context"],
@@ -674,6 +705,38 @@ class TestContextPacketInterface(unittest.TestCase):
                 "claims": [],
             },
         )
+        self.assertIn("falling back", "\n".join(logs.output).lower())
+
+    @patch("world.social_engine.query_social_context")
+    @patch("world.models.CharacterQuest.objects")
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_social_context_programming_errors_surface(
+        self,
+        mock_packet,
+        mock_tier,
+        mock_active,
+        mock_cq,
+        mock_social_context,
+    ):
+        """Programming errors in Social Web context building should not be masked."""
+        from world.dialogue_engine import _build_dialogue_context
+
+        mock_packet.return_value = {"reputation": 0}
+        mock_social_context.side_effect = RuntimeError("programming mistake")
+        npc = SimpleNamespace(
+            db=SimpleNamespace(
+                zone_id="test_zone",
+                faction="empire",
+                npc_id="npc_greeter_maren",
+            ),
+            key="Maren",
+        )
+        char = SimpleNamespace(id=42)
+
+        with self.assertRaises(RuntimeError):
+            _build_dialogue_context(npc, char)
 
     @patch("world.models.CharacterQuest.objects")
     @patch("world.quest_engine.get_active_quests", return_value=[])
@@ -742,4 +805,93 @@ class TestContextPacketInterface(unittest.TestCase):
         self.assertEqual(
             _compute_context_hash(context),
             _compute_context_hash(with_social_context),
+        )
+
+
+class TestContextPacketSocialWebIntegration(EvenniaTest):
+    """Model-backed Social Web context reaches dialogue through the real query."""
+
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_build_dialogue_context_reads_model_backed_social_context(
+        self,
+        mock_packet,
+        mock_tier,
+        mock_active,
+    ):
+        from world.dialogue_engine import _build_dialogue_context
+        from world.social_engine import (
+            assert_social_claim,
+            ensure_social_node,
+            mark_known,
+            record_social_fact,
+        )
+
+        mock_packet.return_value = {"reputation": 0, "network": 0}
+        npc_identifier = f"npc_dialogue_context_{self.char1.id}"
+        player = ensure_social_node(
+            "player",
+            str(self.char1.id),
+            display_name=self.char1.key,
+        )
+        npc_node = ensure_social_node(
+            "npc",
+            npc_identifier,
+            display_name="Warden Liaison",
+            zone_id="ashreach_plains",
+            settlement_id="ashreach_outpost",
+            faction_id="wardens",
+        )
+        ok, message, fact = record_social_fact(
+            fact_key=f"fact:dialogue_context:{self.char1.id}",
+            subject_node_key=player.node_key,
+            event_type="quest_completed",
+            summary="The player delivered a sealed Warden report.",
+            tags=["warden", "report"],
+            visibility="institutional",
+        )
+        self.assertTrue(ok, message)
+        ok, message, claim = assert_social_claim(
+            claim_key=f"claim:dialogue_context:{self.char1.id}",
+            speaker_node_key=npc_node.node_key,
+            subject_node_key=player.node_key,
+            fact_key=fact.fact_key,
+            claim_type="report",
+            summary="The liaison says the player kept the Warden report sealed.",
+            status="supported",
+        )
+        self.assertTrue(ok, message)
+        ok, message, _knowledge = mark_known(
+            node_key=npc_node.node_key,
+            fact_key=fact.fact_key,
+            claim_key=claim.claim_key,
+            source_node_key=npc_node.node_key,
+            channel="official_report",
+            confidence=0.95,
+        )
+        self.assertTrue(ok, message)
+
+        npc = SimpleNamespace(
+            db=SimpleNamespace(
+                zone_id="ashreach_plains",
+                faction="wardens",
+                npc_id=npc_identifier,
+            ),
+            key="Warden Liaison",
+        )
+
+        context = _build_dialogue_context(npc, self.char1)
+        social_context = context["social_context"]
+
+        self.assertEqual(social_context["viewer"]["node_key"], npc_node.node_key)
+        self.assertEqual(social_context["subject"]["node_key"], player.node_key)
+        self.assertEqual(social_context["purpose"], "dialogue")
+        self.assertEqual(
+            [item["fact_key"] for item in social_context["facts"]],
+            [fact.fact_key],
+        )
+        self.assertEqual(
+            [item["claim_key"] for item in social_context["claims"]],
+            [claim.claim_key],
         )
