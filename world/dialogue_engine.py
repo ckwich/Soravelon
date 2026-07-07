@@ -97,6 +97,60 @@ def resolve_greeting(npc, character):
 # Dialogue context
 # ---------------------------------------------------------------------------
 
+def _empty_social_context_packet():
+    return {
+        "viewer": {},
+        "subject": {},
+        "purpose": "dialogue",
+        "facts": [],
+        "claims": [],
+    }
+
+
+def _dialogue_node_identifier(value):
+    if value is None or isinstance(value, bool):
+        return ""
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, str):
+        return value.strip()
+    return ""
+
+
+def _npc_social_node_key(npc):
+    if not npc:
+        return ""
+    npc_db = getattr(npc, "db", None)
+    npc_id = _dialogue_node_identifier(getattr(npc_db, "npc_id", None))
+    if not npc_id:
+        npc_id = _dialogue_node_identifier(getattr(npc, "key", None))
+    return f"npc:{npc_id}" if npc_id else ""
+
+
+def _character_social_node_key(character):
+    character_id = _dialogue_node_identifier(getattr(character, "id", None))
+    return f"player:{character_id}" if character_id else ""
+
+
+def _build_social_dialogue_context(npc, character):
+    viewer_node_key = _npc_social_node_key(npc)
+    subject_node_key = _character_social_node_key(character)
+    if not viewer_node_key or not subject_node_key:
+        return _empty_social_context_packet()
+
+    try:
+        from world.social_engine import query_social_context
+
+        return query_social_context(
+            viewer_node_key=viewer_node_key,
+            subject_node_key=subject_node_key,
+            purpose="dialogue",
+        )
+    except Exception:
+        # Social Web schema/runtime can be absent during migrations or focused tests.
+        return _empty_social_context_packet()
+
+
 def _build_dialogue_context(npc, character):
     """
     Build the full context dict for condition evaluation.
@@ -129,6 +183,7 @@ def _build_dialogue_context(npc, character):
             character=character, status="failed"
         ).values_list("quest_id", flat=True)
     )
+    context["social_context"] = _build_social_dialogue_context(npc, character)
 
     return context
 

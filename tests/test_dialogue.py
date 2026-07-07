@@ -547,10 +547,133 @@ class TestContextPacketInterface(unittest.TestCase):
             "attunement", "standing", "trust", "betrayal_flag",
             "companion_present", "guild", "subclass",
             "standing_tier", "active_quests", "completed_quests",
-            "failed_quests",
+            "failed_quests", "social_context",
         }
         missing = required_keys - set(context.keys())
         self.assertEqual(missing, set(), f"Missing context keys: {missing}")
+
+    @patch("world.social_engine.query_social_context")
+    @patch("world.models.CharacterQuest.objects")
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_social_context_packet_from_social_web_kernel(
+        self,
+        mock_packet,
+        mock_tier,
+        mock_active,
+        mock_cq,
+        mock_social_context,
+    ):
+        """NPC-03 includes deterministic Social Web context for later LLM use."""
+        from world.dialogue_engine import _build_dialogue_context
+
+        social_packet = {
+            "viewer": {"node_key": "npc:npc_greeter_maren"},
+            "subject": {"node_key": "player:42"},
+            "purpose": "dialogue",
+            "facts": [],
+            "claims": [],
+        }
+        mock_packet.return_value = {"reputation": 0}
+        mock_social_context.return_value = social_packet
+
+        npc = SimpleNamespace(
+            db=SimpleNamespace(
+                zone_id="test_zone",
+                faction="empire",
+                npc_id="npc_greeter_maren",
+            ),
+            key="Maren",
+        )
+        char = SimpleNamespace(id=42)
+
+        context = _build_dialogue_context(npc, char)
+
+        mock_social_context.assert_called_once_with(
+            viewer_node_key="npc:npc_greeter_maren",
+            subject_node_key="player:42",
+            purpose="dialogue",
+        )
+        self.assertIs(context["social_context"], social_packet)
+
+    @patch("world.social_engine.query_social_context")
+    @patch("world.models.CharacterQuest.objects")
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_missing_social_node_keys_fail_closed_to_empty_packet(
+        self,
+        mock_packet,
+        mock_tier,
+        mock_active,
+        mock_cq,
+        mock_social_context,
+    ):
+        """Missing NPC/player identifiers should not break existing dialogue."""
+        from world.dialogue_engine import _build_dialogue_context
+
+        mock_packet.return_value = {"reputation": 0}
+        npc = SimpleNamespace(
+            db=SimpleNamespace(zone_id="test_zone", faction="empire", npc_id=""),
+            key="",
+        )
+        char = SimpleNamespace(id=None)
+
+        context = _build_dialogue_context(npc, char)
+
+        self.assertEqual(
+            context["social_context"],
+            {
+                "viewer": {},
+                "subject": {},
+                "purpose": "dialogue",
+                "facts": [],
+                "claims": [],
+            },
+        )
+        mock_social_context.assert_not_called()
+
+    @patch("world.social_engine.query_social_context")
+    @patch("world.models.CharacterQuest.objects")
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_social_context_query_failure_fails_closed(
+        self,
+        mock_packet,
+        mock_tier,
+        mock_active,
+        mock_cq,
+        mock_social_context,
+    ):
+        """Dialogue stays available if Social Web schema/runtime is unavailable."""
+        from world.dialogue_engine import _build_dialogue_context
+
+        mock_packet.return_value = {"reputation": 0}
+        mock_social_context.side_effect = RuntimeError("missing social schema")
+        npc = SimpleNamespace(
+            db=SimpleNamespace(
+                zone_id="test_zone",
+                faction="empire",
+                npc_id="npc_greeter_maren",
+            ),
+            key="Maren",
+        )
+        char = SimpleNamespace(id=42)
+
+        context = _build_dialogue_context(npc, char)
+
+        self.assertEqual(
+            context["social_context"],
+            {
+                "viewer": {},
+                "subject": {},
+                "purpose": "dialogue",
+                "facts": [],
+                "claims": [],
+            },
+        )
 
     @patch("world.models.CharacterQuest.objects")
     @patch("world.quest_engine.get_active_quests", return_value=[])
@@ -593,3 +716,30 @@ class TestContextPacketInterface(unittest.TestCase):
         self.assertIn("wolves_hunt", context["active_quests"])
         self.assertIn("completed_quests", context)
         self.assertIn("failed_quests", context)
+
+    def test_context_hash_ignores_social_context(self):
+        """Adding Social Web context must not churn KnownTopicRecord hashes yet."""
+        from world.dialogue_engine import _compute_context_hash
+
+        context = {
+            "standing_tier": "friendly",
+            "reputation": 10,
+            "network": 5,
+            "guild": "warcraft",
+            "completed_quests": ["vc_q_warden_report"],
+        }
+        with_social_context = dict(
+            context,
+            social_context={
+                "viewer": {"node_key": "npc:npc_greeter_maren"},
+                "subject": {"node_key": "player:42"},
+                "purpose": "dialogue",
+                "facts": [{"fact_key": "fact:test"}],
+                "claims": [],
+            },
+        )
+
+        self.assertEqual(
+            _compute_context_hash(context),
+            _compute_context_hash(with_social_context),
+        )
