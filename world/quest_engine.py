@@ -649,14 +649,30 @@ def _pay_rewards(character, quest_spec):
     Execute all reward actions for a completed quest (D-20).
 
     Each reward is an action dict processed by execute_action().
+    Returns a list of failed reward details.
     """
     from world.action_vocabulary import execute_action
 
     context = {"character": character, "room": character.location}
     rewards = quest_spec.get("rewards") or []
+    failures = []
 
-    for reward in rewards:
-        execute_action(reward, context)
+    for index, reward in enumerate(rewards):
+        success, msg = execute_action(reward, context)
+        if success:
+            continue
+        failure = {
+            "index": index,
+            "action_type": reward.get("action_type"),
+            "message": msg,
+        }
+        failures.append(failure)
+        character.msg(
+            "|r[Reward Error]|n "
+            f"{failure['action_type'] or 'unknown'} failed: {msg}"
+        )
+
+    return failures
 
 
 # ---------------------------------------------------------------------------

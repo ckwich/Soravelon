@@ -4,12 +4,12 @@ Action Vocabulary for Soravelon.
 Shared dispatch module for all trigger-driven and command-driven game events.
 Every action type in the game routes through execute_action().
 
-18 action types (D-07, D-24):
+19 action types (D-07, D-24):
   Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
                modify_standing, modify_attunement, log_world_event, despawn_self,
                spawn_mob, add_room_flag, give_scales, give_skill_xp,
                grant_practice, modify_node_failure, set_quest_flag,
-               open_dialogue, learn_recipe
+               open_dialogue, learn_recipe, record_social_event
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
 execute_action() enforces a trigger chain depth limit of 3 (D-19).
@@ -283,6 +283,434 @@ def _handle_grant_practice(action_dict, context, _depth):
     return resolve_practice_opportunity(action_dict, context)
 
 
+def _template_action_value(value, template_context):
+    """Render action templates recursively without changing non-string values."""
+    if isinstance(value, str):
+        return value.format_map(template_context)
+    if isinstance(value, list):
+        return [_template_action_value(item, template_context) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _template_action_value(item, template_context)
+            for key, item in value.items()
+        }
+    return value
+
+
+def _first_present(mapping, *keys, default=""):
+    for key in keys:
+        if key in mapping:
+            return mapping[key]
+    return default
+
+
+def _resolve_social_node_key(value, node_refs, field_name):
+    if not value:
+        return False, f"record_social_event: missing {field_name}", ""
+    node_key = node_refs.get(value, value)
+    if not isinstance(node_key, str) or ":" not in node_key:
+        return False, f"record_social_event: unknown node reference '{value}' for {field_name}", ""
+    return True, "", node_key
+
+
+def _record_social_event_action(action_dict, character):
+    from django.db import transaction
+
+    template_context = {
+        "character_id": str(character.id),
+        "character_key": str(character.key),
+    }
+
+    try:
+        rendered = _template_action_value(action_dict, template_context)
+    except (KeyError, ValueError) as exc:
+        return False, f"record_social_event: invalid template ({exc})"
+
+    with transaction.atomic():
+        success, message = _record_social_event_rendered(rendered)
+        if not success:
+            transaction.set_rollback(True)
+        return success, message
+
+
+def _record_social_event_rendered(rendered):
+    from world.social_engine import (
+        assert_social_claim,
+        connect_social_nodes,
+        ensure_social_node,
+        mark_known,
+        propagate_social_knowledge,
+        record_social_fact,
+    )
+
+    node_defs = rendered.get("nodes") or []
+    if not isinstance(node_defs, list) or not node_defs:
+        return False, "record_social_event: nodes must be a non-empty list"
+
+    node_refs = {}
+    for index, node_def in enumerate(node_defs):
+        if not isinstance(node_def, dict):
+            return False, f"record_social_event: node {index} must be a dict"
+
+        node_type = node_def.get("node_type")
+        identifier = _first_present(node_def, "identifier_template", "identifier")
+        if not node_type or not identifier:
+            return False, f"record_social_event: node {index} missing node_type or identifier"
+
+        try:
+            node = ensure_social_node(
+                node_type,
+                identifier,
+                display_name=_first_present(
+                    node_def,
+                    "display_template",
+                    "display_name_template",
+                    "display",
+                    "display_name",
+                ),
+                zone_id=_first_present(node_def, "zone_template", "zone_id_template", "zone", "zone_id"),
+                settlement_id=_first_present(
+                    node_def,
+                    "settlement_template",
+                    "settlement_id_template",
+                    "settlement",
+                    "settlement_id",
+                ),
+                faction_id=_first_present(
+                    node_def,
+                    "faction_template",
+                    "faction_id_template",
+                    "faction",
+                    "faction_id",
+                ),
+                metadata=node_def.get("metadata") or {},
+            )
+        except ValueError as exc:
+            return False, f"record_social_event: {exc}"
+
+        for ref in (node_def.get("ref"), node_def.get("key"), node.node_key):
+            if ref:
+                node_refs[ref] = node.node_key
+
+    for index, edge_def in enumerate(rendered.get("edges") or []):
+        if not isinstance(edge_def, dict):
+            return False, f"record_social_event: edge {index} must be a dict"
+
+        ok, message, source_node_key = _resolve_social_node_key(
+            _first_present(
+                edge_def,
+                "source_template",
+                "source_node_template",
+                "source_node_key_template",
+                "source",
+                "source_node",
+                "source_node_key",
+            ),
+            node_refs,
+            "edge source",
+        )
+        if not ok:
+            return False, message
+        ok, message, target_node_key = _resolve_social_node_key(
+            _first_present(
+                edge_def,
+                "target_template",
+                "target_node_template",
+                "target_node_key_template",
+                "target",
+                "target_node",
+                "target_node_key",
+            ),
+            node_refs,
+            "edge target",
+        )
+        if not ok:
+            return False, message
+
+        ok, message, _edge = connect_social_nodes(
+            source_node_key,
+            target_node_key,
+            edge_type=edge_def.get("edge_type"),
+            directionality=edge_def.get("directionality", "one_way"),
+            trust=edge_def.get("trust", 0.5),
+            latency_seconds=edge_def.get("latency_seconds", 0),
+            bandwidth=edge_def.get("bandwidth", 3),
+            secrecy=edge_def.get("secrecy", ""),
+            distortion=edge_def.get("distortion", ""),
+            scope_tags=edge_def.get("scope_tags") or [],
+            blockers=edge_def.get("blockers") or [],
+        )
+        if not ok:
+            return False, f"record_social_event: {message}"
+
+    fact_def = rendered.get("fact")
+    if not isinstance(fact_def, dict):
+        return False, "record_social_event: fact must be a dict"
+
+    fact_key = _first_present(fact_def, "fact_key_template", "fact_key")
+    if not fact_key or not fact_def.get("event_type") or not fact_def.get("summary"):
+        return False, "record_social_event: fact missing fact_key, event_type, or summary"
+    ok, message, subject_node_key = _resolve_social_node_key(
+        _first_present(
+            fact_def,
+            "subject_template",
+            "subject_node_template",
+            "subject_node_key_template",
+            "subject",
+            "subject_node",
+            "subject_node_key",
+        ),
+        node_refs,
+        "fact subject",
+    )
+    if not ok:
+        return False, message
+
+    actor_node_key = ""
+    actor_ref = _first_present(
+        fact_def,
+        "actor_template",
+        "actor_node_template",
+        "actor_node_key_template",
+        "actor",
+        "actor_node",
+        "actor_node_key",
+    )
+    if actor_ref:
+        ok, message, actor_node_key = _resolve_social_node_key(
+            actor_ref,
+            node_refs,
+            "fact actor",
+        )
+        if not ok:
+            return False, message
+
+    scope_node_key = ""
+    scope_ref = _first_present(
+        fact_def,
+        "scope_template",
+        "scope_node_template",
+        "scope_node_key_template",
+        "scope",
+        "scope_node",
+        "scope_node_key",
+    )
+    if scope_ref:
+        ok, message, scope_node_key = _resolve_social_node_key(
+            scope_ref,
+            node_refs,
+            "fact scope",
+        )
+        if not ok:
+            return False, message
+
+    ok, message, fact = record_social_fact(
+        fact_key=fact_key,
+        subject_node_key=subject_node_key,
+        actor_node_key=actor_node_key,
+        scope_node_key=scope_node_key,
+        event_type=fact_def.get("event_type"),
+        summary=fact_def.get("summary"),
+        tags=fact_def.get("tags") or [],
+        visibility=fact_def.get("visibility", "local"),
+        evidence=fact_def.get("evidence") or {},
+        weight=fact_def.get("weight", 1.0),
+        confidence=fact_def.get("confidence", 1.0),
+        occurred_at=fact_def.get("occurred_at"),
+        expires_at=fact_def.get("expires_at"),
+    )
+    if not ok:
+        return False, f"record_social_event: {message}"
+
+    claim = None
+    claim_def = rendered.get("claim")
+    if claim_def:
+        if not isinstance(claim_def, dict):
+            return False, "record_social_event: claim must be a dict"
+
+        ok, message, speaker_node_key = _resolve_social_node_key(
+            _first_present(
+                claim_def,
+                "speaker_template",
+                "speaker_node_template",
+                "speaker_node_key_template",
+                "speaker",
+                "speaker_node",
+                "speaker_node_key",
+            ),
+            node_refs,
+            "claim speaker",
+        )
+        if not ok:
+            return False, message
+        ok, message, claim_subject_node_key = _resolve_social_node_key(
+            _first_present(
+                claim_def,
+                "subject_template",
+                "subject_node_template",
+                "subject_node_key_template",
+                "subject",
+                "subject_node",
+                "subject_node_key",
+            ),
+            node_refs,
+            "claim subject",
+        )
+        if not ok:
+            return False, message
+
+        claim_fact_key = _first_present(
+            claim_def,
+            "fact_key_template",
+            "fact_key",
+            default=fact.fact_key,
+        )
+        claim_key = _first_present(claim_def, "claim_key_template", "claim_key")
+        if not claim_key or not claim_def.get("claim_type") or not claim_def.get("summary"):
+            return False, "record_social_event: claim missing claim_key, claim_type, or summary"
+
+        ok, message, claim = assert_social_claim(
+            claim_key=claim_key,
+            speaker_node_key=speaker_node_key,
+            subject_node_key=claim_subject_node_key,
+            fact_key=claim_fact_key,
+            claim_type=claim_def.get("claim_type"),
+            summary=claim_def.get("summary"),
+            status=claim_def.get("status", "rumor"),
+            intent=claim_def.get("intent", ""),
+            bias_tags=claim_def.get("bias_tags") or [],
+            confidence=claim_def.get("confidence", 0.5),
+        )
+        if not ok:
+            return False, f"record_social_event: {message}"
+
+    default_fact_key = fact.fact_key if fact else ""
+    default_claim_key = claim.claim_key if claim else ""
+    knowledge_defs = rendered.get("knowledge") or []
+    if not isinstance(knowledge_defs, list):
+        return False, "record_social_event: knowledge must be a list"
+
+    for index, knowledge_def in enumerate(knowledge_defs):
+        if not isinstance(knowledge_def, dict):
+            return False, f"record_social_event: knowledge {index} must be a dict"
+
+        ok, message, node_key = _resolve_social_node_key(
+            _first_present(
+                knowledge_def,
+                "node_template",
+                "node_key_template",
+                "node",
+                "node_key",
+            ),
+            node_refs,
+            "knowledge node",
+        )
+        if not ok:
+            return False, message
+
+        source_node_key = ""
+        source_ref = _first_present(
+            knowledge_def,
+            "source_template",
+            "source_node_template",
+            "source_node_key_template",
+            "source",
+            "source_node",
+            "source_node_key",
+        )
+        if source_ref:
+            ok, message, source_node_key = _resolve_social_node_key(
+                source_ref,
+                node_refs,
+                "knowledge source",
+            )
+            if not ok:
+                return False, message
+
+        ok, message, _knowledge = mark_known(
+            node_key=node_key,
+            fact_key=_first_present(
+                knowledge_def,
+                "fact_key_template",
+                "fact_key",
+                default=default_fact_key,
+            ),
+            claim_key=_first_present(
+                knowledge_def,
+                "claim_key_template",
+                "claim_key",
+                default=default_claim_key,
+            ),
+            source_node_key=source_node_key,
+            edge_key=knowledge_def.get("edge_key", ""),
+            channel=knowledge_def.get("channel"),
+            confidence=knowledge_def.get("confidence", 0.5),
+            spreading=knowledge_def.get("spreading", False),
+            available_after=knowledge_def.get("available_after"),
+            evidence=knowledge_def.get("evidence") or {},
+        )
+        if not ok:
+            return False, f"record_social_event: {message}"
+
+    propagate_defs = rendered.get("propagate") or []
+    if isinstance(propagate_defs, dict):
+        propagate_defs = [propagate_defs]
+    if not isinstance(propagate_defs, list):
+        return False, "record_social_event: propagate must be a dict or list"
+
+    for index, propagate_def in enumerate(propagate_defs):
+        if not isinstance(propagate_def, dict):
+            return False, f"record_social_event: propagate {index} must be a dict"
+        ok, message, source_node_key = _resolve_social_node_key(
+            _first_present(
+                propagate_def,
+                "source_template",
+                "source_node_template",
+                "source_node_key_template",
+                "source",
+                "source_node",
+                "source_node_key",
+            ),
+            node_refs,
+            "propagate source",
+        )
+        if not ok:
+            return False, message
+        propagated = propagate_social_knowledge(
+            source_node_key=source_node_key,
+            fact_key=_first_present(
+                propagate_def,
+                "fact_key_template",
+                "fact_key",
+                default=default_fact_key,
+            ),
+            claim_key=_first_present(
+                propagate_def,
+                "claim_key_template",
+                "claim_key",
+                default=default_claim_key,
+            ),
+            budget=propagate_def.get("budget", 10),
+        )
+        if propagate_def.get("required") and not propagated:
+            return False, (
+                "record_social_event: required propagation from "
+                f"{source_node_key} carried no knowledge"
+            )
+
+    return True, "Social event recorded."
+
+
+def _handle_record_social_event(action_dict, context, _depth):
+    """Record a declarative Social Web event from a quest or trigger action."""
+    character = context.get("character")
+    if not character:
+        return False, "record_social_event: no character in context"
+    if getattr(character, "id", None) is None or not getattr(character, "key", None):
+        return False, "record_social_event: invalid character context"
+    return _record_social_event_action(action_dict, character)
+
+
 def _handle_modify_node_failure(action_dict, context, _depth):
     """Adjust node failure percentage for a zone."""
     zone_id = action_dict.get("zone_id")
@@ -452,6 +880,7 @@ ACTION_HANDLERS = {
     "grant_practice": _handle_grant_practice,
     "modify_node_failure": _handle_modify_node_failure,
     "learn_recipe": _handle_learn_recipe,
+    "record_social_event": _handle_record_social_event,
 }
 
 

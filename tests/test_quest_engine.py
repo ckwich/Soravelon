@@ -1264,6 +1264,31 @@ class TestPayRewards(unittest.TestCase):
         self.assertEqual(context["character"], char)
         self.assertEqual(context["room"], room)
 
+    @patch("world.action_vocabulary.execute_action")
+    def test_failed_reward_returns_failure_and_notifies_character(self, mock_exec):
+        """_pay_rewards exposes failed action rewards instead of silently dropping them."""
+        from world.quest_engine import _pay_rewards
+
+        char = MagicMock()
+        char.location = MagicMock()
+        mock_exec.return_value = (False, "record_social_event: required propagation")
+
+        spec = {"rewards": [{"action_type": "record_social_event"}]}
+        failures = _pay_rewards(char, spec)
+
+        self.assertEqual(
+            failures,
+            [
+                {
+                    "index": 0,
+                    "action_type": "record_social_event",
+                    "message": "record_social_event: required propagation",
+                }
+            ],
+        )
+        char.msg.assert_called_once()
+        self.assertIn("Reward Error", char.msg.call_args[0][0])
+
 
 # ---------------------------------------------------------------------------
 # Test: get_available_quest_for_npc

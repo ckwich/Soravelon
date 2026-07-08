@@ -6,6 +6,7 @@ loot tables, and zone files. Uses file parsing and imports to check
 actual data structures rather than fragile string matching.
 """
 
+import ast
 import unittest
 import os
 
@@ -21,6 +22,30 @@ def _read_file(relpath):
     """Read a file relative to repo root."""
     with open(os.path.join(BASE, relpath), "r") as f:
         return f.read()
+
+
+def _quest_kwargs(relpath, quest_id):
+    """Return literal keyword args from an authored area.quest() call."""
+    tree = ast.parse(_read_file(relpath))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if not isinstance(node.func, ast.Attribute) or node.func.attr != "quest":
+            continue
+        if not node.args:
+            continue
+        try:
+            authored_quest_id = ast.literal_eval(node.args[0])
+        except (ValueError, SyntaxError):
+            continue
+        if authored_quest_id != quest_id:
+            continue
+        return {
+            keyword.arg: ast.literal_eval(keyword.value)
+            for keyword in node.keywords
+            if keyword.arg
+        }
+    raise AssertionError(f"Could not find area.quest({quest_id!r}) in {relpath}")
 
 
 class TestEquipmentCatalog(unittest.TestCase):
@@ -178,6 +203,44 @@ class TestQuestItemSources(unittest.TestCase):
         content = _read_file("world/areas/vaels_crossing.py")
         self.assertIn("warden_field_report", content)
         self.assertIn('flagged_drop="warden_field_report"', content)
+
+    def test_vaels_warden_report_records_social_route_reward(self):
+        quest = _quest_kwargs("world/areas/vaels_crossing.py", "vc_q_warden_report")
+        social_action = next(
+            reward
+            for reward in quest["rewards"]
+            if reward.get("action_type") == "record_social_event"
+        )
+
+        self.assertEqual(
+            social_action["fact"]["fact_key_template"],
+            "fact:{character_id}:vc_q_warden_report:delivered",
+        )
+        self.assertEqual(
+            social_action["claim"]["claim_key_template"],
+            "claim:calloway:{character_id}:vc_q_warden_report:delivered",
+        )
+        self.assertEqual(social_action["propagate"]["source"], "calloway")
+        self.assertTrue(social_action["propagate"]["required"])
+        self.assertNotIn(
+            "npc_innkeeper_whistle",
+            [
+                node.get("identifier") or node.get("identifier_template")
+                for node in social_action["nodes"]
+            ],
+        )
+        self.assertIn(
+            {
+                "source": "calloway",
+                "target": "harven",
+                "edge_type": "warden_report",
+                "directionality": "one_way",
+                "trust": 0.95,
+                "latency_seconds": 0,
+                "scope_tags": ["warden", "report", "quest"],
+            },
+            social_action["edges"],
+        )
 
     def test_cantera_resupply_uses_delivery_item(self):
         content = _read_file("world/areas/cantera_edge.py")

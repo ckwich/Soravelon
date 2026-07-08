@@ -77,13 +77,13 @@ class TestActionHandlersRegistry(EvenniaTest):
     """ACTION_HANDLERS dict contains all registered action types."""
 
     def test_handler_count(self):
-        """ACTION_HANDLERS has exactly 18 keys."""
+        """ACTION_HANDLERS has exactly 19 keys."""
         from world.action_vocabulary import ACTION_HANDLERS
 
-        self.assertEqual(len(ACTION_HANDLERS), 18)
+        self.assertEqual(len(ACTION_HANDLERS), 19)
 
     def test_all_expected_action_types_present(self):
-        """All 18 required action types are registered."""
+        """All 19 required action types are registered."""
         from world.action_vocabulary import ACTION_HANDLERS
 
         expected = {
@@ -105,6 +105,7 @@ class TestActionHandlersRegistry(EvenniaTest):
             "grant_practice",
             "modify_node_failure",
             "learn_recipe",
+            "record_social_event",
         }
         self.assertEqual(set(ACTION_HANDLERS.keys()), expected)
 
@@ -536,6 +537,189 @@ class TestGrantPracticeHandler(unittest.TestCase):
         self.assertTrue(success)
         self.assertEqual(msg, "")
         mock_resolve.assert_called_once_with(action, context)
+
+
+class TestRecordSocialEventHandler(EvenniaTest):
+    """record_social_event writes durable Social Web state from action rewards."""
+
+    def _warden_report_social_action(self):
+        return {
+            "action_type": "record_social_event",
+            "nodes": [
+                {
+                    "node_type": "player",
+                    "identifier_template": "{character_id}",
+                    "display_name_template": "{character_key}",
+                    "zone_id": "vaels_crossing",
+                    "settlement_id": "vaels_crossing",
+                },
+                {
+                    "node_type": "npc",
+                    "identifier": "npc_warden_agent_calloway",
+                    "display_name": "Agent Calloway",
+                    "zone_id": "vaels_crossing",
+                    "settlement_id": "vaels_crossing",
+                    "faction_id": "wardens",
+                },
+                {
+                    "node_type": "npc",
+                    "identifier": "npc_warden_outpost_commander",
+                    "display_name": "Commander Harven",
+                    "zone_id": "ashreach_plains",
+                    "settlement_id": "ashreach_outpost",
+                    "faction_id": "wardens",
+                },
+                {
+                    "node_type": "npc",
+                    "identifier": "npc_innkeeper_whistle",
+                    "display_name": "Whistle",
+                    "zone_id": "vaels_crossing",
+                    "settlement_id": "vaels_crossing",
+                },
+            ],
+            "edges": [
+                {
+                    "source_node_key": "npc:npc_warden_agent_calloway",
+                    "target_node_key": "npc:npc_warden_outpost_commander",
+                    "edge_type": "warden_report",
+                    "directionality": "one_way",
+                    "trust": 0.95,
+                    "latency_seconds": 0,
+                    "scope_tags": ["warden", "report", "quest"],
+                }
+            ],
+            "fact": {
+                "fact_key_template": "fact:{character_id}:vc_q_warden_report:delivered",
+                "subject_node_key_template": "player:{character_id}",
+                "actor_node_key_template": "player:{character_id}",
+                "scope_node_key": "npc:npc_warden_agent_calloway",
+                "event_type": "quest_completed",
+                "summary": "The player delivered Calloway's sealed field report.",
+                "tags": ["reliable", "warden", "report", "quest"],
+                "visibility": "institutional",
+                "evidence": {"quest_id": "vc_q_warden_report", "source": "quest_reward"},
+            },
+            "claim": {
+                "claim_key_template": "claim:calloway:{character_id}:vc_q_warden_report:delivered",
+                "speaker_node_key": "npc:npc_warden_agent_calloway",
+                "subject_node_key_template": "player:{character_id}",
+                "claim_type": "report",
+                "summary": "Calloway reports that the player carried Warden business cleanly.",
+                "status": "supported",
+                "confidence": 1.0,
+            },
+            "knowledge": [
+                {
+                    "node_key": "npc:npc_warden_agent_calloway",
+                    "channel": "official_report",
+                    "confidence": 1.0,
+                    "spreading": True,
+                }
+            ],
+            "propagate": {
+                "source_node_key": "npc:npc_warden_agent_calloway",
+                "claim_key_template": "claim:calloway:{character_id}:vc_q_warden_report:delivered",
+                "required": True,
+            },
+        }
+
+    def test_records_claim_propagates_route_and_is_idempotent(self):
+        from world.action_vocabulary import execute_action
+        from world.models import (
+            SocialClaim,
+            SocialEdge,
+            SocialFact,
+            SocialKnowledge,
+            SocialNode,
+            SocialTrace,
+        )
+
+        action = self._warden_report_social_action()
+
+        for _repeat in range(2):
+            success, msg = execute_action(action, {"character": self.char1})
+            self.assertTrue(success, msg)
+
+        fact_key = f"fact:{self.char1.id}:vc_q_warden_report:delivered"
+        claim_key = f"claim:calloway:{self.char1.id}:vc_q_warden_report:delivered"
+        player = SocialNode.objects.get(node_key=f"player:{self.char1.id}")
+        calloway = SocialNode.objects.get(node_key="npc:npc_warden_agent_calloway")
+        harven = SocialNode.objects.get(node_key="npc:npc_warden_outpost_commander")
+        whistle = SocialNode.objects.get(node_key="npc:npc_innkeeper_whistle")
+        claim = SocialClaim.objects.get(claim_key=claim_key)
+
+        self.assertEqual(player.display_name, self.char1.key)
+        self.assertEqual(
+            SocialNode.objects.filter(
+                node_key__in=[
+                    player.node_key,
+                    calloway.node_key,
+                    harven.node_key,
+                    whistle.node_key,
+                ]
+            ).count(),
+            4,
+        )
+        self.assertEqual(
+            SocialEdge.objects.filter(
+                source_node=calloway,
+                target_node=harven,
+                edge_type="warden_report",
+            ).count(),
+            1,
+        )
+        self.assertEqual(SocialFact.objects.filter(fact_key=fact_key).count(), 1)
+        self.assertEqual(SocialClaim.objects.filter(claim_key=claim_key).count(), 1)
+        self.assertEqual(
+            SocialKnowledge.objects.filter(claim__claim_key=claim_key).count(),
+            2,
+        )
+        self.assertTrue(
+            SocialKnowledge.objects.filter(node=calloway, claim=claim).exists()
+        )
+        harven_knowledge = SocialKnowledge.objects.get(node=harven, claim=claim)
+        self.assertEqual(harven_knowledge.edge.edge_type, "warden_report")
+        self.assertFalse(
+            SocialKnowledge.objects.filter(node=whistle, claim=claim).exists()
+        )
+        self.assertEqual(
+            SocialTrace.objects.filter(knowledge=harven_knowledge).count(),
+            1,
+        )
+        self.assertEqual(
+            SocialTrace.objects.get(knowledge=harven_knowledge).edge.edge_type,
+            "warden_report",
+        )
+
+    def test_missing_character_fails(self):
+        from world.action_vocabulary import execute_action
+
+        success, msg = execute_action(self._warden_report_social_action(), {})
+
+        self.assertFalse(success)
+        self.assertIn("character", msg)
+
+    def test_required_propagation_failure_rolls_back_social_writes(self):
+        from world.action_vocabulary import execute_action
+        from world.models import SocialFact, SocialNode
+
+        action = self._warden_report_social_action()
+        action["edges"][0]["scope_tags"] = ["market"]
+
+        success, msg = execute_action(action, {"character": self.char1})
+
+        self.assertFalse(success)
+        self.assertIn("required propagation", msg)
+        self.assertFalse(
+            SocialFact.objects.filter(
+                fact_key=f"fact:{self.char1.id}:vc_q_warden_report:delivered"
+            ).exists()
+        )
+        self.assertFalse(
+            SocialNode.objects.filter(
+                node_key="npc:npc_warden_agent_calloway"
+            ).exists()
+        )
 
 
 class TestModifyNodeFailureHandler(unittest.TestCase):

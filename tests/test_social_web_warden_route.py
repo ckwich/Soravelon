@@ -1,47 +1,50 @@
+import ast
+import pathlib
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from evennia.utils.test_resources import EvenniaTest
 
 
+def _authored_quest_kwargs(quest_id):
+    path = pathlib.Path("world/areas/vaels_crossing.py")
+    tree = ast.parse(path.read_text())
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if not isinstance(node.func, ast.Attribute) or node.func.attr != "quest":
+            continue
+        if not node.args:
+            continue
+        try:
+            authored_quest_id = ast.literal_eval(node.args[0])
+        except (SyntaxError, ValueError):
+            continue
+        if authored_quest_id != quest_id:
+            continue
+        return {
+            keyword.arg: ast.literal_eval(keyword.value)
+            for keyword in node.keywords
+            if keyword.arg
+        }
+    raise AssertionError(f"Could not find authored quest {quest_id!r}")
+
+
 class TestVaelWardenSocialRoute(EvenniaTest):
     """Vael's Warden report can travel by contact edge without omniscience."""
 
-    def _seed_warden_report_route(self):
-        from world.models import SocialKnowledge
-        from world.social_engine import (
-            assert_social_claim,
-            connect_social_nodes,
-            ensure_social_node,
-            mark_known,
-            propagate_social_knowledge,
-            query_social_context,
-            record_social_fact,
-        )
+    def _pay_warden_report_rewards(self):
+        from world.quest_engine import _pay_rewards
+        from world.social_engine import ensure_social_node
 
-        player = ensure_social_node(
-            "player",
-            str(self.char1.id),
-            display_name=self.char1.key,
-            zone_id="vaels_crossing",
-            settlement_id="vaels_crossing",
-        )
-        calloway = ensure_social_node(
-            "npc",
-            "npc_warden_agent_calloway",
-            display_name="Agent Calloway",
-            zone_id="vaels_crossing",
-            settlement_id="vaels_crossing",
-            faction_id="wardens",
-        )
-        commander = ensure_social_node(
-            "npc",
-            "npc_warden_outpost_commander",
-            display_name="Outpost Commander",
-            zone_id="ashreach_plains",
-            settlement_id="ashreach_outpost",
-            faction_id="wardens",
-        )
+        from world.models import SocialClaim, SocialFact, SocialNode
+
+        quest = _authored_quest_kwargs("vc_q_warden_report")
+        failures = _pay_rewards(self.char1, quest)
+        self.assertEqual(failures, [])
+
+        fact_key = f"fact:{self.char1.id}:vc_q_warden_report:delivered"
+        claim_key = f"claim:calloway:{self.char1.id}:vc_q_warden_report:delivered"
         innkeeper = ensure_social_node(
             "npc",
             "npc_innkeeper_whistle",
@@ -49,72 +52,14 @@ class TestVaelWardenSocialRoute(EvenniaTest):
             zone_id="vaels_crossing",
             settlement_id="vaels_crossing",
         )
-
-        ok, message, edge = connect_social_nodes(
-            calloway.node_key,
-            commander.node_key,
-            edge_type="warden_report",
-            directionality="one_way",
-            trust=0.95,
-            latency_seconds=0,
-            scope_tags=["warden", "report", "quest"],
+        return (
+            SocialNode.objects.get(node_key=f"player:{self.char1.id}"),
+            SocialNode.objects.get(node_key="npc:npc_warden_agent_calloway"),
+            SocialNode.objects.get(node_key="npc:npc_warden_outpost_commander"),
+            innkeeper,
+            SocialFact.objects.get(fact_key=fact_key),
+            SocialClaim.objects.get(claim_key=claim_key),
         )
-        self.assertTrue(ok, message)
-        self.assertEqual(edge.latency_seconds, 0)
-
-        ok, message, fact = record_social_fact(
-            fact_key=f"fact:{self.char1.id}:vc_q_warden_report:delivered",
-            subject_node_key=player.node_key,
-            actor_node_key=player.node_key,
-            scope_node_key=calloway.node_key,
-            event_type="quest_completed",
-            summary="The player delivered Calloway's sealed field report.",
-            tags=["reliable", "warden", "report", "quest"],
-            visibility="institutional",
-            evidence={"quest_id": "vc_q_warden_report", "source": "test_fixture"},
-        )
-        self.assertTrue(ok, message)
-
-        ok, message, claim = assert_social_claim(
-            claim_key=f"claim:calloway:{self.char1.id}:vc_q_warden_report:delivered",
-            speaker_node_key=calloway.node_key,
-            subject_node_key=player.node_key,
-            fact_key=fact.fact_key,
-            claim_type="report",
-            summary="Calloway reports that the player carried Warden business cleanly.",
-            status="supported",
-            confidence=1.0,
-        )
-        self.assertTrue(ok, message)
-
-        ok, message, knowledge = mark_known(
-            node_key=calloway.node_key,
-            fact_key=fact.fact_key,
-            claim_key=claim.claim_key,
-            channel="official_report",
-            confidence=1.0,
-            spreading=True,
-        )
-        self.assertTrue(ok, message)
-        self.assertEqual(knowledge.node.node_key, calloway.node_key)
-
-        propagated = propagate_social_knowledge(
-            source_node_key=calloway.node_key,
-            claim_key=claim.claim_key,
-        )
-
-        self.assertEqual(
-            [item.node.node_key for item in propagated],
-            [commander.node_key],
-        )
-        self.assertIsNone(propagated[0].available_after)
-        self.assertFalse(
-            SocialKnowledge.objects.filter(
-                node=innkeeper,
-                claim=claim,
-            ).exists()
-        )
-        return player, calloway, commander, innkeeper, fact, claim
 
     def test_warden_report_reaches_outpost_contact_but_not_innkeeper(self):
         from world.social_engine import query_social_context
@@ -126,7 +71,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
             innkeeper,
             _fact,
             claim,
-        ) = self._seed_warden_report_route()
+        ) = self._pay_warden_report_rewards()
 
         commander_context = query_social_context(
             viewer_node_key=commander.node_key,
@@ -158,7 +103,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
     ):
         from world.dialogue_engine import _build_dialogue_context, resolve_topic_response
 
-        self._seed_warden_report_route()
+        self._pay_warden_report_rewards()
         mock_context_packet.return_value = {
             "reputation": 0,
             "network": 0,
