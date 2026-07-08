@@ -1013,6 +1013,10 @@ class AreaBuilder:
             "next_quest_id": kwargs.get("next_quest_id"),
             "prerequisite_quests": kwargs.get("prerequisite_quests", []),
             "one_chance": kwargs.get("one_chance", False),
+            # Social Web quest grammar metadata
+            "incident_seed": kwargs.get("incident_seed"),
+            "quest_archetype": kwargs.get("quest_archetype"),
+            "social_quest_context": kwargs.get("social_quest_context"),
             # Sharing (deferred but stored for future use)
             "can_share": kwargs.get("can_share", False),
             "share_radius": kwargs.get("share_radius", 1),

@@ -378,6 +378,30 @@ class TestQuestStoredOnZone(AreaBuilderTestBase):
         quests = ab._zone_obj.db.quest_definitions
         self.assertEqual(quests[0]["prerequisite_quests"], ["wolf_hunt"])
 
+    def test_quest_preserves_social_quest_metadata(self):
+        """Social quest compiler metadata survives the AreaBuilder quest whitelist."""
+        ab = self._make_builder()
+        social_context = {
+            "purpose": "social_quest_offer",
+            "incident": {"id": "market_square_robbery"},
+            "archetype": {"id": "trace_evidence_chain"},
+            "llm_context": {"provider_call_allowed": False},
+        }
+
+        ab.quest(
+            "sq_market_robbery_sella",
+            quest_type="social",
+            quest_giver="npc_market_vendor_sella",
+            incident_seed="market_square_robbery",
+            quest_archetype="trace_evidence_chain",
+            social_quest_context=social_context,
+        )
+
+        quest = ab._zone_obj.db.quest_definitions[0]
+        self.assertEqual(quest["incident_seed"], "market_square_robbery")
+        self.assertEqual(quest["quest_archetype"], "trace_evidence_chain")
+        self.assertEqual(quest["social_quest_context"], social_context)
+
 
 # ------------------------------------------------------------------
 # Material tests
