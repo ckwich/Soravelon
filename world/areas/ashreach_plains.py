@@ -2056,11 +2056,18 @@ def build():
                     "plains. Everything east of here is wolf country and worse. "
                     "We hold the line with what we have -- which is never enough.'"
                 ),
-                "report": (
-                    "'Vael's Crossing sends reports when they remember we exist. "
-                    "Field intelligence is what keeps this outpost running, not "
-                    "paperwork from the garrison.'"
-                ),
+                "report": {
+                    "social_claim_trace_edge:warden_report": (
+                        "'Calloway's report reached my desk through the Warden "
+                        "line. Field intelligence keeps this outpost running, and "
+                        "today your name is part of why the line held.'"
+                    ),
+                    "default": (
+                        "'Vael's Crossing sends reports when they remember we exist. "
+                        "Field intelligence is what keeps this outpost running, not "
+                        "paperwork from the garrison.'"
+                    ),
+                },
                 "relay": (
                     "'Taen at the forest edge reads tracks better than any map. "
                     "If his watch and mine stop trading notes, the first warning "

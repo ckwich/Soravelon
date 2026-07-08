@@ -1734,6 +1734,18 @@ def build():
                         "I send people out.'"
                     ),
                 },
+                "report": {
+                    "social_claim_status:supported": (
+                        "'Your name is attached to a report I can stand behind. "
+                        "That matters more to the Wardens than a brave story told "
+                        "after the road goes quiet.'"
+                    ),
+                    "default": (
+                        "'If you are asking about reports, keep them sealed, keep "
+                        "them moving, and do not improve the truth to make it sound "
+                        "cleaner than it was.'"
+                    ),
+                },
             },
             "base_hints": ["work", "wardens", "rumors"],
         },

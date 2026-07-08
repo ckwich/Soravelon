@@ -334,6 +334,185 @@ class TestTopicPriorityStack(unittest.TestCase):
         self.assertEqual(condition, "friendly")
         self.assertIn("old road", text)
 
+    def test_social_conditions_match_exact_packet_fields(self):
+        from world.dialogue_engine import resolve_topic_response
+
+        context = {
+            "social_context": {
+                "facts": [
+                    {
+                        "fact_key": "fact:player:vc_q_warden_report:delivered",
+                        "event_type": "quest_completed",
+                        "tags": ["reliable", "report", "warden"],
+                    }
+                ],
+                "claims": [
+                    {
+                        "claim_key": "claim:calloway:player:vc_q_warden_report:delivered",
+                        "claim_type": "report",
+                        "status": "supported",
+                        "trace": [{"edge_type": "warden_report"}],
+                    }
+                ],
+            },
+        }
+        cases = {
+            "social_fact:fact:player:vc_q_warden_report:delivered": "fact key",
+            "social_claim:claim:calloway:player:vc_q_warden_report:delivered": (
+                "claim key"
+            ),
+            "social_fact_tag:warden": "fact tag",
+            "social_fact_event:quest_completed": "fact event",
+            "social_claim_status:supported": "claim status",
+            "social_claim_type:report": "claim type",
+            "social_claim_trace_edge:warden_report": "trace edge",
+        }
+
+        for condition_key, response_text in cases.items():
+            with self.subTest(condition_key=condition_key):
+                npc = self._make_npc({
+                    "report": {
+                        condition_key: response_text,
+                        "default": "Default report response.",
+                    }
+                })
+
+                text, condition = resolve_topic_response(
+                    npc,
+                    self._make_char(),
+                    "report",
+                    context=context,
+                )
+
+                self.assertEqual(condition, condition_key)
+                self.assertEqual(text, response_text)
+
+    def test_social_conditions_use_prefix_priority_before_dict_order(self):
+        from world.dialogue_engine import resolve_topic_response
+
+        context = {
+            "social_context": {
+                "facts": [],
+                "claims": [
+                    {
+                        "claim_key": "claim:calloway:player:report",
+                        "claim_type": "report",
+                        "status": "supported",
+                        "trace": [{"edge_type": "warden_report"}],
+                    }
+                ],
+            },
+        }
+        npc = self._make_npc({
+            "report": {
+                "social_claim_status:supported": "Broad supported response.",
+                "social_claim_trace_edge:warden_report": "Routed Warden response.",
+                "default": "Default report response.",
+            }
+        })
+
+        text, condition = resolve_topic_response(
+            npc,
+            self._make_char(),
+            "report",
+            context=context,
+        )
+
+        self.assertEqual(condition, "social_claim_trace_edge:warden_report")
+        self.assertEqual(text, "Routed Warden response.")
+
+    def test_social_conditions_use_lexicographic_order_within_prefix(self):
+        from world.dialogue_engine import resolve_topic_response
+
+        context = {
+            "social_context": {
+                "facts": [{"fact_key": "fact:1", "tags": ["zeta", "alpha"]}],
+                "claims": [],
+            },
+        }
+        npc = self._make_npc({
+            "report": {
+                "social_fact_tag:zeta": "Zeta tag response.",
+                "social_fact_tag:alpha": "Alpha tag response.",
+                "default": "Default report response.",
+            }
+        })
+
+        text, condition = resolve_topic_response(
+            npc,
+            self._make_char(),
+            "report",
+            context=context,
+        )
+
+        self.assertEqual(condition, "social_fact_tag:alpha")
+        self.assertEqual(text, "Alpha tag response.")
+
+    def test_missing_social_context_falls_through_to_default(self):
+        from world.dialogue_engine import resolve_topic_response
+
+        npc = self._make_npc({
+            "report": {
+                "social_claim_status:supported": "Known report response.",
+                "default": "No report has reached me.",
+            }
+        })
+
+        text, condition = resolve_topic_response(
+            npc,
+            self._make_char(),
+            "report",
+            context={},
+        )
+
+        self.assertEqual(condition, "default")
+        self.assertEqual(text, "No report has reached me.")
+
+    def test_string_topic_data_is_treated_as_default_response(self):
+        from world.dialogue_engine import resolve_topic_response
+
+        npc = self._make_npc({"report": "Plain report response."})
+
+        text, condition = resolve_topic_response(
+            npc,
+            self._make_char(),
+            "report",
+            context={},
+        )
+
+        self.assertEqual(condition, "default")
+        self.assertEqual(text, "Plain report response.")
+
+    def test_quest_complete_still_wins_over_social_condition(self):
+        from world.dialogue_engine import resolve_topic_response
+
+        context = {
+            "completed_quests": ["vc_q_warden_report"],
+            "active_quests": [],
+            "failed_quests": [],
+            "social_context": {
+                "facts": [],
+                "claims": [{"status": "supported"}],
+            },
+        }
+        npc = self._make_npc({
+            "report": {
+                "social_claim_status:supported": "Known report response.",
+                "quest_complete": "Quest-complete report response.",
+                "default": "Default report response.",
+            }
+        })
+
+        text, condition = resolve_topic_response(
+            npc,
+            self._make_char(),
+            "report",
+            context=context,
+        )
+
+        self.assertEqual(condition, "quest_complete")
+        self.assertEqual(text, "Quest-complete report response.")
+
 
 # ---------------------------------------------------------------------------
 # D-05: Keyword extraction

@@ -46,7 +46,21 @@ RESPONSE_PRIORITY = [
     "dragon_present",
     "network_high",
     "reputation_high",
+    "social_context",
     "default",
+]
+
+# Social Web condition prefixes are evaluated when RESPONSE_PRIORITY reaches
+# the "social_context" sentinel. Prefix order is deterministic and specific
+# route evidence beats broader claim metadata.
+SOCIAL_CONDITION_PREFIX_PRIORITY = [
+    "social_fact:",
+    "social_claim:",
+    "social_claim_trace_edge:",
+    "social_fact_tag:",
+    "social_fact_event:",
+    "social_claim_status:",
+    "social_claim_type:",
 ]
 
 # Global synonym dict for keyword extraction.

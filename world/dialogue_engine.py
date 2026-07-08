@@ -32,6 +32,7 @@ from world.dialogue_definitions import (
     NETWORK_HINT_THRESHOLD,
     REPUTATION_HINT_THRESHOLD,
     RESPONSE_PRIORITY,
+    SOCIAL_CONDITION_PREFIX_PRIORITY,
     STANDING_TIER_THRESHOLDS,
     TOPIC_SYNONYMS,
 )
@@ -198,6 +199,128 @@ def _build_dialogue_context(npc, character):
     return context
 
 
+def _normalize_social_condition_value(value):
+    return str(value or "").strip().lower().replace(" ", "_")
+
+
+def _social_condition_suffix(condition, prefix):
+    return condition[len(prefix):].strip()
+
+
+def _social_facts(social_context):
+    return [
+        item for item in (social_context or {}).get("facts", []) or []
+        if isinstance(item, dict)
+    ]
+
+
+def _social_claims(social_context):
+    return [
+        item for item in (social_context or {}).get("claims", []) or []
+        if isinstance(item, dict)
+    ]
+
+
+def _check_social_condition(condition, social_context):
+    """
+    Evaluate generic Social Web condition keys against a bounded packet.
+
+    This intentionally inspects only exact packet fields. It does not scan
+    summaries, infer fuzzy matches, call generators, or touch the database.
+    """
+    if condition.startswith("social_fact:"):
+        fact_key = _social_condition_suffix(condition, "social_fact:")
+        return any(
+            str(fact.get("fact_key") or "") == fact_key
+            for fact in _social_facts(social_context)
+        )
+
+    if condition.startswith("social_claim:"):
+        claim_key = _social_condition_suffix(condition, "social_claim:")
+        return any(
+            str(claim.get("claim_key") or "") == claim_key
+            for claim in _social_claims(social_context)
+        )
+
+    if condition.startswith("social_fact_tag:"):
+        tag = _normalize_social_condition_value(
+            _social_condition_suffix(condition, "social_fact_tag:")
+        )
+        return any(
+            tag in {
+                _normalize_social_condition_value(item)
+                for item in (fact.get("tags") or [])
+            }
+            for fact in _social_facts(social_context)
+        )
+
+    if condition.startswith("social_fact_event:"):
+        event_type = _normalize_social_condition_value(
+            _social_condition_suffix(condition, "social_fact_event:")
+        )
+        return any(
+            _normalize_social_condition_value(fact.get("event_type")) == event_type
+            for fact in _social_facts(social_context)
+        )
+
+    if condition.startswith("social_claim_status:"):
+        status = _normalize_social_condition_value(
+            _social_condition_suffix(condition, "social_claim_status:")
+        )
+        return any(
+            _normalize_social_condition_value(claim.get("status")) == status
+            for claim in _social_claims(social_context)
+        )
+
+    if condition.startswith("social_claim_type:"):
+        claim_type = _normalize_social_condition_value(
+            _social_condition_suffix(condition, "social_claim_type:")
+        )
+        return any(
+            _normalize_social_condition_value(claim.get("claim_type")) == claim_type
+            for claim in _social_claims(social_context)
+        )
+
+    if condition.startswith("social_claim_trace_edge:"):
+        edge_type = _normalize_social_condition_value(
+            _social_condition_suffix(condition, "social_claim_trace_edge:")
+        )
+        for claim in _social_claims(social_context):
+            for trace in claim.get("trace") or []:
+                if not isinstance(trace, dict):
+                    continue
+                if _normalize_social_condition_value(trace.get("edge_type")) == edge_type:
+                    return True
+        return False
+
+    return False
+
+
+def _is_social_condition(condition):
+    return any(
+        condition.startswith(prefix)
+        for prefix in SOCIAL_CONDITION_PREFIX_PRIORITY
+    )
+
+
+def _iter_social_conditions(topic_data):
+    for prefix in SOCIAL_CONDITION_PREFIX_PRIORITY:
+        for condition in sorted(
+            key
+            for key in topic_data
+            if isinstance(key, str) and key.startswith(prefix)
+        ):
+            yield condition
+
+
+def _resolve_social_topic_response(topic_data, context):
+    social_context = (context or {}).get("social_context") or {}
+    for condition in _iter_social_conditions(topic_data):
+        if _check_social_condition(condition, social_context):
+            return (topic_data[condition], condition)
+    return (None, None)
+
+
 def _check_condition(condition, context):
     """
     Evaluate a single condition string against the dialogue context.
@@ -209,6 +332,9 @@ def _check_condition(condition, context):
 
     if condition == "betrayal":
         return bool(context.get("betrayal_flag"))
+
+    if _is_social_condition(condition):
+        return _check_social_condition(condition, context.get("social_context") or {})
 
     # Standing tier conditions
     tier_conditions = {
@@ -269,10 +395,22 @@ def resolve_topic_response(npc, character, topic_key, *, context=None):
     if not topic_data:
         return (None, None)
 
+    if isinstance(topic_data, str):
+        return (topic_data, "default")
+
     if context is None:
         context = _build_dialogue_context(npc, character)
 
     for condition in RESPONSE_PRIORITY:
+        if condition == "social_context":
+            text, social_condition = _resolve_social_topic_response(
+                topic_data,
+                context,
+            )
+            if social_condition:
+                return (text, social_condition)
+            continue
+
         if condition in topic_data:
             if _check_condition(condition, context):
                 return (topic_data[condition], condition)

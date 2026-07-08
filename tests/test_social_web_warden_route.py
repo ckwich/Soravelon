@@ -1,10 +1,13 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from evennia.utils.test_resources import EvenniaTest
 
 
 class TestVaelWardenSocialRoute(EvenniaTest):
     """Vael's Warden report can travel by contact edge without omniscience."""
 
-    def test_warden_report_reaches_outpost_contact_but_not_innkeeper(self):
+    def _seed_warden_report_route(self):
         from world.models import SocialKnowledge
         from world.social_engine import (
             assert_social_claim,
@@ -111,6 +114,19 @@ class TestVaelWardenSocialRoute(EvenniaTest):
                 claim=claim,
             ).exists()
         )
+        return player, calloway, commander, innkeeper, fact, claim
+
+    def test_warden_report_reaches_outpost_contact_but_not_innkeeper(self):
+        from world.social_engine import query_social_context
+
+        (
+            player,
+            _calloway,
+            commander,
+            innkeeper,
+            _fact,
+            claim,
+        ) = self._seed_warden_report_route()
 
         commander_context = query_social_context(
             viewer_node_key=commander.node_key,
@@ -130,3 +146,95 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         )
         self.assertEqual(innkeeper_context["claims"], [])
         self.assertEqual(innkeeper_context["facts"], [])
+
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_warden_report_route_drives_deterministic_dialogue(
+        self,
+        mock_context_packet,
+        _mock_standing_tier,
+        _mock_active_quests,
+    ):
+        from world.dialogue_engine import _build_dialogue_context, resolve_topic_response
+
+        self._seed_warden_report_route()
+        mock_context_packet.return_value = {
+            "reputation": 0,
+            "network": 0,
+            "betrayal_flag": False,
+        }
+        shared_topics = {
+            "report": {
+                "social_claim_status:supported": (
+                    "'I know the report. You carried Warden business cleanly.'"
+                ),
+                "social_claim_trace_edge:warden_report": (
+                    "'Calloway's report reached my desk through the Warden line. "
+                    "That route does not carry praise lightly.'"
+                ),
+                "default": (
+                    "'I have no confirmed Warden report about you.'"
+                ),
+            }
+        }
+
+        def npc(npc_id, key, *, zone_id, faction):
+            return SimpleNamespace(
+                db=SimpleNamespace(
+                    zone_id=zone_id,
+                    faction=faction,
+                    npc_id=npc_id,
+                    dialogue_topics=shared_topics,
+                ),
+                key=key,
+            )
+
+        calloway_npc = npc(
+            "npc_warden_agent_calloway",
+            "Agent Calloway",
+            zone_id="vaels_crossing",
+            faction="wardens",
+        )
+        harven_npc = npc(
+            "npc_warden_outpost_commander",
+            "Commander Harven",
+            zone_id="ashreach_plains",
+            faction="wardens",
+        )
+        whistle_npc = npc(
+            "npc_innkeeper_whistle",
+            "Whistle",
+            zone_id="vaels_crossing",
+            faction=None,
+        )
+
+        calloway_context = _build_dialogue_context(calloway_npc, self.char1)
+        calloway_text, calloway_condition = resolve_topic_response(
+            calloway_npc,
+            self.char1,
+            "report",
+            context=calloway_context,
+        )
+        self.assertEqual(calloway_condition, "social_claim_status:supported")
+        self.assertIn("carried Warden business cleanly", calloway_text)
+
+        harven_context = _build_dialogue_context(harven_npc, self.char1)
+        harven_text, harven_condition = resolve_topic_response(
+            harven_npc,
+            self.char1,
+            "report",
+            context=harven_context,
+        )
+        self.assertEqual(harven_condition, "social_claim_trace_edge:warden_report")
+        self.assertIn("through the Warden line", harven_text)
+
+        whistle_context = _build_dialogue_context(whistle_npc, self.char1)
+        whistle_text, whistle_condition = resolve_topic_response(
+            whistle_npc,
+            self.char1,
+            "report",
+            context=whistle_context,
+        )
+        self.assertEqual(whistle_condition, "default")
+        self.assertIn("no confirmed Warden report", whistle_text)
