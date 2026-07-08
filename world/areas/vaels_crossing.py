@@ -2736,6 +2736,7 @@ def build():
             {"action_type": "echo", "message": "|gCalloway checks the returned seal and gives a rare approving nod. \"Good. That road stays alive because someone walks it on purpose. The Wardens remember that.\"|n"},
         ],
         next_quest_id="ashreach_wolf_overpopulation",
+        one_chance=True,
         # Legacy fields (backward compat)
         objective_type="deliver",
         objective_target="npc_warden_outpost_commander",

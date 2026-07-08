@@ -141,7 +141,6 @@ class CmdTalk(Command):
         from world.dialogue_engine import (
             get_npc_hints,
             get_quest_offer,
-            has_available_quest,
             resolve_greeting,
         )
 
@@ -175,18 +174,17 @@ class CmdTalk(Command):
         check_deliver_objectives(character, npc)
 
         # Quest offer
-        if has_available_quest(npc, character):
-            quest_data = get_quest_offer(npc, character)
-            if quest_data:
-                character.msg(
-                    f"\n|y{npc_display} has a task for you:|n "
-                    f"{quest_data.get('description', 'A mysterious request.')}"
-                )
-                character.msg("|x[Type |waccept|x or |wdecline|x]|n")
-                character.ndb.pending_quest_offer = {
-                    "npc": npc,
-                    "quest": quest_data,
-                }
+        quest_data = get_quest_offer(npc, character)
+        if quest_data:
+            character.msg(
+                f"\n|y{npc_display} has a task for you:|n "
+                f"{quest_data.get('description', 'A mysterious request.')}"
+            )
+            character.msg("|x[Type |waccept|x or |wdecline|x]|n")
+            character.ndb.pending_quest_offer = {
+                "npc": npc,
+                "quest": quest_data,
+            }
 
 
 # ---------------------------------------------------------------------------

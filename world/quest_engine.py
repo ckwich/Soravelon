@@ -65,6 +65,11 @@ def _get_quest_spec(quest_id):
         for qdef in (zo.db.quest_definitions or []):
             if qdef.get("quest_id") == quest_id:
                 return _normalize_quest_spec(qdef)
+    from world.social_quest_offers import get_social_quest_spec_by_id
+
+    social_spec = get_social_quest_spec_by_id(quest_id)
+    if social_spec:
+        return _normalize_quest_spec(social_spec)
     return None
 
 
@@ -727,7 +732,15 @@ def get_available_quest_for_npc(npc, character):
 
         return spec
 
-    return None
+    from world.social_quest_offers import get_social_quest_offer_for_npc
+
+    return get_social_quest_offer_for_npc(
+        npc,
+        character,
+        active_ids=active_ids,
+        complete_ids=complete_ids,
+        failed_ids=failed_ids,
+    )
 
 
 def get_active_quests(character):
