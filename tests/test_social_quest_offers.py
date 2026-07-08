@@ -1,6 +1,7 @@
 """Tests for live Social Web-gated quest offers."""
 
 import ast
+import json
 import pathlib
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -53,6 +54,50 @@ class TestSocialQuestOffers(EvenniaTest):
         )
         self.assertEqual(failures, [])
 
+    def test_offer_rule_registry_returns_isolated_rule_copies(self):
+        from world.social_quest_offer_registry import (
+            get_social_quest_offer_rule_by_npc,
+            get_social_quest_offer_rule_by_quest_id,
+            iter_social_quest_offer_rules,
+        )
+
+        npc_rule = get_social_quest_offer_rule_by_npc("npc_warden_agent_calloway")
+        quest_rule = get_social_quest_offer_rule_by_quest_id(
+            "vc_sq_under_seal_dustwalkers_rest"
+        )
+
+        self.assertEqual(npc_rule["quest_id"], "vc_sq_under_seal_dustwalkers_rest")
+        self.assertEqual(quest_rule["quest_giver"], "npc_warden_agent_calloway")
+        self.assertEqual(npc_rule["description"]["memory_summary_field"], "summary")
+        self.assertIn("explainability", npc_rule)
+        self.assertIn("contest_repair_hooks", npc_rule)
+        self.assertEqual(
+            [rule["quest_id"] for rule in iter_social_quest_offer_rules()],
+            ["vc_sq_under_seal_dustwalkers_rest"],
+        )
+
+        npc_rule["actors"]["witness"]["display_name"] = "Changed"
+        fresh_rule = get_social_quest_offer_rule_by_npc("npc_warden_agent_calloway")
+        self.assertEqual(fresh_rule["actors"]["witness"]["display_name"], "Whistle")
+        self.assertIsInstance(json.dumps(iter_social_quest_offer_rules()), str)
+
+    @patch("world.quest_engine._get_all_quest_specs", return_value=[])
+    def test_unknown_npc_does_not_query_social_context(self, _mock_all_specs):
+        from world.quest_engine import get_available_quest_for_npc
+        from world.social_engine import query_social_context
+
+        with patch(
+            "world.social_engine.query_social_context",
+            wraps=query_social_context,
+        ) as mocked_query:
+            offer = get_available_quest_for_npc(
+                _npc("npc_no_social_quest_rule"),
+                self.char1,
+            )
+
+        self.assertIsNone(offer)
+        mocked_query.assert_not_called()
+
     @patch("world.quest_engine._get_all_quest_specs", return_value=[])
     def test_no_social_offer_without_warden_report_social_context(self, _mock_all_specs):
         from world.models import CharacterQuest
@@ -78,12 +123,19 @@ class TestSocialQuestOffers(EvenniaTest):
 
         self._pay_warden_report_rewards()
 
-        offer = get_available_quest_for_npc(
-            _npc("npc_warden_agent_calloway"),
-            self.char1,
-        )
+        from world.social_engine import query_social_context
+
+        with patch(
+            "world.social_engine.query_social_context",
+            wraps=query_social_context,
+        ) as mocked_query:
+            offer = get_available_quest_for_npc(
+                _npc("npc_warden_agent_calloway"),
+                self.char1,
+            )
 
         self.assertIsNotNone(offer)
+        self.assertEqual(mocked_query.call_count, 1)
         self.assertEqual(offer["quest_id"], "vc_sq_under_seal_dustwalkers_rest")
         self.assertEqual(offer["quest_giver"], "npc_warden_agent_calloway")
         self.assertEqual(offer["incident_seed"], "witness_intimidation")
@@ -101,6 +153,30 @@ class TestSocialQuestOffers(EvenniaTest):
                 "prior_interactions"
             ][0]["topic"],
             "Social Web fact",
+        )
+        self.assertEqual(
+            offer["social_quest_context"]["offer_explainability"]["summary"],
+            "Calloway is acting on the sealed Warden report you delivered.",
+        )
+        self.assertEqual(
+            offer["social_quest_context"]["offer_explainability"]["npc_safe_reason"],
+            "The Wardens have a supported report that you carried sealed business cleanly.",
+        )
+        self.assertEqual(
+            offer["social_quest_context"]["offer_explainability"]["evidence"][0][
+                "summary"
+            ],
+            offer["social_quest_context"]["social_context"]["facts"][0]["summary"],
+        )
+        self.assertEqual(
+            offer["social_quest_context"]["offer_explainability"]["evidence"][0][
+                "channel"
+            ],
+            offer["social_quest_context"]["social_context"]["facts"][0]["channel"],
+        )
+        self.assertIn(
+            "expose_false_claim",
+            offer["social_quest_context"]["contest_repair_hooks"]["future_archetypes"],
         )
         self.assertFalse(
             offer["social_quest_context"]["llm_context"]["provider_call_allowed"]
@@ -179,10 +255,16 @@ class TestSocialQuestOffers(EvenniaTest):
 
     def test_dynamic_social_quest_spec_is_retrievable_for_completion(self):
         from world.quest_engine import _get_quest_spec
+        from world.social_engine import query_social_context
 
-        spec = _get_quest_spec("vc_sq_under_seal_dustwalkers_rest")
+        with patch(
+            "world.social_engine.query_social_context",
+            wraps=query_social_context,
+        ) as mocked_query:
+            spec = _get_quest_spec("vc_sq_under_seal_dustwalkers_rest")
 
         self.assertIsNotNone(spec)
+        mocked_query.assert_not_called()
         self.assertEqual(spec["quest_id"], "vc_sq_under_seal_dustwalkers_rest")
         self.assertEqual(spec["quest_giver"], "npc_warden_agent_calloway")
         self.assertTrue(spec["one_chance"])

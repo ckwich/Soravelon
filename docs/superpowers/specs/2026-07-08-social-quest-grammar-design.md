@@ -39,6 +39,53 @@ live objective step to an existing `quest_engine` objective type.
 - `quest_archetype`
 - `social_quest_context`
 
+## Offer Registry Contract
+
+Live Social Web quest offers should be selected from a data-driven offer
+registry, not from one-off control flow inside dialogue or quest commands.
+
+Each offer rule must declare:
+
+- `quest_id`
+- `quest_giver`
+- `seed_id`
+- `archetype_id`
+- required Social Web grounding, such as fact tags, fact-key fragments, claim
+  status, or trace requirements
+- actor bindings and objective targets
+- description templates that can include bounded Social Web memory summaries
+- player-safe explainability metadata
+- future contest/repair hooks where the offer can later be denied, corrected,
+  reframed, or socially repaired
+
+The registry is not a new source of truth. It is a selector and binder for
+existing Social Web facts, claims, traces, and quest grammar data. Adding a new
+offer should primarily mean adding a new rule plus tests. It should not require
+branching dialogue commands, duplicating quest lifecycle code, or letting an LLM
+choose durable quest structure.
+
+## Explainability And Repair
+
+Every Social Web-gated quest offer should carry a player-safe explanation
+packet in `social_quest_context`. This packet exists for future diegetic
+surfaces such as `ask <npc> about me`, `ask <npc> why`, or non-numeric
+relationship tells. It should answer:
+
+- which known fact or claim made the offer plausible
+- which social channel or node is allowed to know it
+- what the NPC may safely say to the player
+- what the NPC must not imply without an explicit trace
+
+The packet must not expose hidden lore, private unsupported knowledge, numeric
+reputation scores, raw prompts, raw model output, or admin-only identifiers
+unless those identifiers are already part of a player-safe Social Web summary.
+
+Contest and repair hooks are also metadata only at this layer. They reserve
+space for later Social Web gameplay such as `deny`, `confess`, `vouch`, or
+`correct a false claim`, but they do not mutate reputation by themselves.
+Runtime repair must still be implemented through deterministic facts, claims,
+knowledge propagation, and ordinary quest/action effects.
+
 ## Expansion Rules
 
 New seeds should add new categories, roles, evidence, and agendas through
