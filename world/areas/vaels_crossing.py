@@ -1735,7 +1735,7 @@ def build():
                     ),
                 },
                 "report": {
-                    "social_claim_status:supported": (
+                    "social_claim_type:report": (
                         "'Your name is attached to a report I can stand behind. "
                         "That matters more to the Wardens than a brave story told "
                         "after the road goes quiet.'"

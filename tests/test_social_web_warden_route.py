@@ -166,7 +166,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         }
         shared_topics = {
             "report": {
-                "social_claim_status:supported": (
+                "social_claim_type:report": (
                     "'I know the report. You carried Warden business cleanly.'"
                 ),
                 "social_claim_trace_edge:warden_report": (
@@ -216,7 +216,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
             "report",
             context=calloway_context,
         )
-        self.assertEqual(calloway_condition, "social_claim_status:supported")
+        self.assertEqual(calloway_condition, "social_claim_type:report")
         self.assertIn("carried Warden business cleanly", calloway_text)
 
         harven_context = _build_dialogue_context(harven_npc, self.char1)

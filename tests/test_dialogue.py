@@ -9,11 +9,48 @@ Uses unittest.TestCase with MagicMock for pure-logic functions and
 EvenniaTest for model-backed operations (KnownTopicRecord).
 """
 
+import ast
+import pathlib
 import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from evennia.utils.test_resources import EvenniaTest
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+VAELS_CROSSING_PATH = ROOT / "world" / "areas" / "vaels_crossing.py"
+
+
+def _is_area_npc_call(call_node):
+    if not isinstance(call_node, ast.Call):
+        return False
+    func = call_node.func
+    return (
+        isinstance(func, ast.Attribute)
+        and func.attr == "npc"
+        and isinstance(func.value, ast.Name)
+        and func.value.id == "area"
+    )
+
+
+def _extract_authored_npc_dialogue(path, npc_id):
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        call_node = None
+        if isinstance(node, ast.Expr) and _is_area_npc_call(node.value):
+            call_node = node.value
+        elif isinstance(node, ast.Assign) and _is_area_npc_call(node.value):
+            call_node = node.value
+        if call_node is None or len(call_node.args) < 2:
+            continue
+        if ast.literal_eval(call_node.args[1]) != npc_id:
+            continue
+        for keyword in call_node.keywords:
+            if keyword.arg == "dialogue":
+                return ast.literal_eval(keyword.value)
+        return {}
+    raise AssertionError(f"Could not find authored dialogue for {npc_id}")
 
 
 class TestQuestOfferAcceptance(unittest.TestCase):
@@ -467,6 +504,38 @@ class TestTopicPriorityStack(unittest.TestCase):
 
         self.assertEqual(condition, "default")
         self.assertEqual(text, "No report has reached me.")
+
+    def test_calloway_report_topic_ignores_unrelated_supported_claim(self):
+        from world.dialogue_engine import resolve_topic_response
+
+        dialogue = _extract_authored_npc_dialogue(
+            VAELS_CROSSING_PATH,
+            "npc_warden_agent_calloway",
+        )
+        npc = self._make_npc(dialogue.get("topics"))
+        context = {
+            "social_context": {
+                "facts": [],
+                "claims": [
+                    {
+                        "claim_key": "claim:braggart:player:arena_boast",
+                        "claim_type": "boast",
+                        "status": "supported",
+                        "trace": [{"edge_type": "tavern_testimony"}],
+                    }
+                ],
+            },
+        }
+
+        text, condition = resolve_topic_response(
+            npc,
+            self._make_char(),
+            "report",
+            context=context,
+        )
+
+        self.assertEqual(condition, "default")
+        self.assertIn("keep them sealed", text)
 
     def test_string_topic_data_is_treated_as_default_response(self):
         from world.dialogue_engine import resolve_topic_response
