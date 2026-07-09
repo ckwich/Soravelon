@@ -1,5 +1,6 @@
 """High-level deterministic API for Soravelon's Social Web kernel."""
 
+import hashlib
 import math
 
 from django.db.models import Prefetch, Q
@@ -393,6 +394,22 @@ def _knowledge_payload_tags(knowledge):
     return tags
 
 
+def _channel_for_edge_type(edge_type):
+    return {
+        "direct_witness": "direct_witness",
+        "official_report": "official_report",
+        "warden_report": "official_report",
+        "market_route": "market_gossip",
+        "guild_courier": "guild_record",
+        "family_letter": "household_talk",
+        "criminal_whisper": "criminal_whisper",
+        "inn_traveler": "tavern_rumor",
+        "pilgrimage": "song_or_story",
+        "archive_copy": "guild_record",
+        "node_response": "public_notice",
+    }.get(edge_type, "tavern_rumor")
+
+
 def _source_knowledge_for(source, *, fact_key="", claim_key=""):
     from django.db.models import Case, IntegerField, Value, When
     from world.models import SocialKnowledge
@@ -442,21 +459,82 @@ def _knowledge_payload_key(knowledge):
 def _edge_allows_knowledge(edge, knowledge):
     if not edge.active:
         return False
+    if edge.bandwidth <= 0:
+        return False
+    payload_tags = _knowledge_payload_tags(knowledge)
+    blockers = set(normalize_tags(edge.blockers or []))
+    if blockers and not blockers.intersection(payload_tags):
+        return False
     scope_tags = set(normalize_tags(edge.scope_tags or []))
     if not scope_tags:
         return True
-    payload_tags = _knowledge_payload_tags(knowledge)
     return bool(scope_tags.intersection(payload_tags))
 
 
-def _outgoing_edges_for(source_node):
+def _propagation_paths_for(source_node):
     from world.models import SocialEdge
 
-    return (
+    outgoing = list(
         SocialEdge.objects.filter(source_node=source_node, active=True)
         .select_related("target_node")
         .order_by("id")
     )
+    reversible = list(
+        SocialEdge.objects.filter(
+            target_node=source_node,
+            active=True,
+            directionality="two_way",
+        )
+        .select_related("source_node")
+        .order_by("id")
+    )
+    paths = [
+        {"edge": edge, "target": edge.target_node, "reverse": False}
+        for edge in outgoing
+    ]
+    paths.extend(
+        {"edge": edge, "target": edge.source_node, "reverse": True}
+        for edge in reversible
+    )
+    return sorted(paths, key=lambda path: path["edge"].id)
+
+
+def _distorted_claim_key(edge, target, source_knowledge):
+    payload_key = _knowledge_payload_key(source_knowledge)
+    digest = hashlib.sha1(
+        f"{edge.edge_key}|{target.node_key}|{payload_key}|{edge.distortion}".encode(
+            "utf-8"
+        )
+    ).hexdigest()[:16]
+    return f"claim:rumor:{target.id}:{digest}"
+
+
+def _distorted_claim_for_edge(edge, target, source_knowledge):
+    if edge.distortion != "rumor":
+        return source_knowledge.claim
+    if not source_knowledge.claim and not source_knowledge.fact:
+        return None
+
+    source_claim = source_knowledge.claim
+    source_fact = source_knowledge.fact or source_claim.fact
+    source_summary = source_claim.summary if source_claim else source_fact.summary
+    subject = source_fact.subject_node if source_fact else source_claim.subject_node
+    target_name = target.display_name or target.node_key
+    source_key = source_claim.claim_key if source_claim else source_fact.fact_key
+    claim_key = _distorted_claim_key(edge, target, source_knowledge)
+    ok, _message, claim = assert_social_claim(
+        claim_key=claim_key,
+        speaker_node_key=target.node_key,
+        subject_node_key=subject.node_key,
+        fact_key=source_fact.fact_key if source_fact else "",
+        claim_type="rumor",
+        summary=f"A road rumor at {target_name} says: {source_summary}",
+        status="rumor",
+        intent="distorted_propagation",
+        bias_tags=["rumor", "distorted", f"source:{source_key}"],
+        confidence=min(source_knowledge.confidence, edge.trust) * 0.75,
+    )
+    return claim if ok else None
 
 
 def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", budget=10):
@@ -486,7 +564,8 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
         return []
 
     propagated = []
-    for edge in _outgoing_edges_for(source)[:budget]:
+    for path in _propagation_paths_for(source)[:budget]:
+        edge = path["edge"]
         if not _edge_allows_knowledge(edge, source_knowledge):
             continue
 
@@ -494,30 +573,40 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
         if edge.latency_seconds > 0:
             available_after = timezone.now() + timedelta(seconds=edge.latency_seconds)
 
-        target = edge.target_node
-        carried_payload_key = _knowledge_payload_key(source_knowledge)
+        target = path["target"]
+        carried_claim = _distorted_claim_for_edge(edge, target, source_knowledge)
+        carried_fact = source_knowledge.fact
+        if not carried_fact and carried_claim and carried_claim.fact_id:
+            carried_fact = carried_claim.fact
+        carried_payload_key = carried_claim.claim_key if carried_claim else (
+            carried_fact.fact_key if carried_fact else ""
+        )
+        if not carried_payload_key:
+            continue
         existing_target = SocialKnowledge.objects.filter(
             knowledge_key=f"knowledge:{target.node_key}:{carried_payload_key}"
         ).only("available_after").first()
         available_after = _merged_available_after(existing_target, available_after)
+        confidence = min(source_knowledge.confidence, edge.trust)
+        if edge.distortion:
+            confidence *= 0.75
         ok, _message, knowledge = mark_known(
             node_key=target.node_key,
-            fact_key=source_knowledge.fact.fact_key if source_knowledge.fact else "",
-            claim_key=source_knowledge.claim.claim_key if source_knowledge.claim else "",
+            fact_key=carried_fact.fact_key if carried_fact else "",
+            claim_key=carried_claim.claim_key if carried_claim else "",
             source_node_key=source.node_key,
             edge_key=edge.edge_key,
-            channel=(
-                "official_report"
-                if edge.edge_type in {"warden_report", "official_report"}
-                else "tavern_rumor"
-            ),
-            confidence=min(source_knowledge.confidence, edge.trust),
+            channel=_channel_for_edge_type(edge.edge_type),
+            confidence=confidence,
             spreading=edge.directionality in {"broadcast", "two_way", "gatekept"},
             available_after=available_after,
             evidence={
                 "propagated_from": source.node_key,
                 "edge_key": edge.edge_key,
                 "payload_key": carried_payload_key,
+                "reverse": path["reverse"],
+                "distortion": edge.distortion,
+                "source_payload_key": _knowledge_payload_key(source_knowledge),
             },
         )
         if not ok:

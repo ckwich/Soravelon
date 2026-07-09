@@ -1044,6 +1044,196 @@ class TestSocialWebPropagation(EvenniaTest):
             ).exists()
         )
 
+    def test_inactive_and_zero_bandwidth_edges_do_not_propagate(self):
+        from world.models import SocialEdge, SocialKnowledge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            _innkeeper,
+            edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        SocialEdge.objects.filter(id=edge.id).update(active=False)
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual(propagated, [])
+        self.assertFalse(SocialKnowledge.objects.filter(node=commander, claim=claim).exists())
+
+        SocialEdge.objects.filter(id=edge.id).update(active=True, bandwidth=0)
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual(propagated, [])
+        self.assertFalse(SocialKnowledge.objects.filter(node=commander, claim=claim).exists())
+
+    def test_blockers_require_payload_unblock_tag(self):
+        from world.models import SocialEdge, SocialKnowledge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            _innkeeper,
+            edge,
+            _innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        SocialEdge.objects.filter(id=edge.id).update(
+            scope_tags=["warden"],
+            blockers=["field_clearance"],
+        )
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual(propagated, [])
+        self.assertFalse(SocialKnowledge.objects.filter(node=commander, claim=claim).exists())
+
+        claim.bias_tags = ["field_clearance"]
+        claim.save(update_fields=["bias_tags"])
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual([item.node.node_key for item in propagated], [commander.node_key])
+
+    def test_two_way_edges_allow_reverse_propagation_without_one_way_backflow(self):
+        from world.models import SocialEdge, SocialKnowledge
+        from world.social_engine import mark_known, propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            _innkeeper,
+            edge,
+            _innkeeper_edge,
+            fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        SocialKnowledge.objects.filter(node=calloway, claim=claim).delete()
+        ok, message, _commander_knowledge = mark_known(
+            node_key=commander.node_key,
+            fact_key=fact.fact_key,
+            claim_key=claim.claim_key,
+            channel="official_report",
+            confidence=0.9,
+            spreading=True,
+        )
+        self.assertTrue(ok, message)
+
+        propagated = propagate_social_knowledge(
+            source_node_key=commander.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual(propagated, [])
+        self.assertFalse(SocialKnowledge.objects.filter(node=calloway, claim=claim).exists())
+
+        SocialEdge.objects.filter(id=edge.id).update(directionality="two_way")
+        propagated = propagate_social_knowledge(
+            source_node_key=commander.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        self.assertEqual([item.node.node_key for item in propagated], [calloway.node_key])
+
+    def test_edge_type_maps_to_channel_without_flattening_routes(self):
+        from world.models import SocialEdge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            commander,
+            innkeeper,
+            edge,
+            innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        SocialEdge.objects.filter(id=edge.id).update(latency_seconds=0)
+        SocialEdge.objects.filter(id=innkeeper_edge.id).update(
+            edge_type="market_route",
+            scope_tags=["warden"],
+        )
+
+        propagated = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        channels_by_node = {item.node.node_key: item.channel for item in propagated}
+        self.assertEqual(channels_by_node[commander.node_key], "official_report")
+        self.assertEqual(channels_by_node[innkeeper.node_key], "market_gossip")
+
+    def test_distortion_creates_deterministic_rumor_claim_copy(self):
+        from world.models import SocialEdge, SocialKnowledge
+        from world.social_engine import propagate_social_knowledge
+
+        (
+            _player,
+            calloway,
+            _commander,
+            innkeeper,
+            _edge,
+            innkeeper_edge,
+            _fact,
+            claim,
+            _knowledge,
+        ) = self._seed_report_graph()
+        SocialEdge.objects.filter(id=innkeeper_edge.id).update(
+            distortion="rumor",
+            scope_tags=["warden"],
+        )
+
+        first = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+        second = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            claim_key=claim.claim_key,
+        )
+
+        innkeeper_knowledge = [item for item in first if item.node == innkeeper][0]
+        self.assertNotEqual(innkeeper_knowledge.claim.claim_key, claim.claim_key)
+        self.assertEqual(innkeeper_knowledge.claim.claim_type, "rumor")
+        self.assertEqual(innkeeper_knowledge.claim.status, "rumor")
+        self.assertEqual(innkeeper_knowledge.claim.speaker_node, innkeeper)
+        self.assertIn("road rumor", innkeeper_knowledge.claim.summary)
+        self.assertEqual(innkeeper_knowledge.channel, "tavern_rumor")
+        self.assertFalse(
+            SocialKnowledge.objects.filter(
+                node=innkeeper,
+                claim=claim,
+            ).exists()
+        )
+        self.assertEqual(
+            [item.claim.claim_key for item in first if item.node == innkeeper],
+            [item.claim.claim_key for item in second if item.node == innkeeper],
+        )
+
     def test_trace_social_route_explains_how_target_learned_claim(self):
         from world.social_engine import propagate_social_knowledge, trace_social_route
 
