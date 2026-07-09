@@ -45,10 +45,9 @@ def _redact(value, *, key=""):
 
 
 def _llm_context_from_quest(quest_spec):
-    return (
-        ((quest_spec or {}).get("social_quest_context") or {}).get("llm_context")
-        or {}
-    )
+    return ((quest_spec or {}).get("social_quest_context") or {}).get(
+        "llm_context"
+    ) or {}
 
 
 def build_social_quest_render_payload(quest_spec):

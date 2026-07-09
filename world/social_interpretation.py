@@ -164,11 +164,15 @@ def _evidence_channels(social_context):
 
 
 def _has_supported_evidence(tags):
-    return bool({"supported", "official_report", "warden_report", "reliable"} & set(tags))
+    return bool(
+        {"supported", "official_report", "warden_report", "reliable"} & set(tags)
+    )
 
 
 def _has_any_context(social_context):
-    return bool((social_context or {}).get("facts") or (social_context or {}).get("claims"))
+    return bool(
+        (social_context or {}).get("facts") or (social_context or {}).get("claims")
+    )
 
 
 def build_social_interpretation(npc_id, social_context):

@@ -139,13 +139,16 @@ class TestCmdDeny(unittest.TestCase):
             claim=MagicMock(),
         )
 
-        with patch(
-            "commands.cmd_dialogue._find_npc_in_room",
-            return_value=npc,
-        ) as mock_find, patch(
-            "world.social_claim_repair.deny_social_claim",
-            return_value=result,
-        ) as mock_deny:
+        with (
+            patch(
+                "commands.cmd_dialogue._find_npc_in_room",
+                return_value=npc,
+            ) as mock_find,
+            patch(
+                "world.social_claim_repair.deny_social_claim",
+                return_value=result,
+            ) as mock_deny,
+        ):
             cmd = CmdDeny()
             cmd.caller = caller
             cmd.args = "Whistle about me"

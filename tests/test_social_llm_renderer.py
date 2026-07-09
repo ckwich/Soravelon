@@ -84,9 +84,7 @@ class TestSocialLLMRenderer(unittest.TestCase):
         quest["social_quest_context"]["llm_context"]["provider_call_allowed"] = True
         provider = _RecordingProvider(
             {
-                "speech": (
-                    "Remember the sealed report? Whistle needs quiet help now."
-                ),
+                "speech": ("Remember the sealed report? Whistle needs quiet help now."),
                 "tone_tags": ["personal", "quiet"],
             }
         )

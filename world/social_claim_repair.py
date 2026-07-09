@@ -19,20 +19,12 @@ class ClaimRepairResult:
 
 def _npc_id(npc):
     npc_db = getattr(npc, "db", None)
-    return (
-        getattr(npc_db, "npc_id", "")
-        or getattr(npc, "key", "")
-        or "unknown_npc"
-    )
+    return getattr(npc_db, "npc_id", "") or getattr(npc, "key", "") or "unknown_npc"
 
 
 def _display_name(obj):
     obj_db = getattr(obj, "db", None)
-    return (
-        getattr(obj_db, "npc_name", "")
-        or getattr(obj, "key", "")
-        or str(obj)
-    )
+    return getattr(obj_db, "npc_name", "") or getattr(obj, "key", "") or str(obj)
 
 
 def _ensure_actor_nodes(character, npc):
