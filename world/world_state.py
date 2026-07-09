@@ -40,6 +40,11 @@ DIMINISHING_BRACKETS = [
 ]
 
 
+def _as_typeclass(obj):
+    """Return the live typeclass for ObjectDB rows and already-wrapped objects."""
+    return getattr(obj, "typeclass", obj)
+
+
 # --- Dimension Score Management ---
 
 def set_dimension_score(character, dimension, value):
@@ -83,10 +88,7 @@ def decay_tick_all():
         db_tags__db_category="character_type",
     )
     for char_db in characters:
-        try:
-            char = char_db.typeclass
-        except AttributeError:
-            char = char_db
+        char = _as_typeclass(char_db)
         if char.is_connected:
             continue  # skip online characters
         apply_decay(char)
@@ -414,7 +416,7 @@ def session_xp_safety_flush(*args, **kwargs):
         db_tags__db_category="character_type",
     )
     for char_db in characters:
-        char = char_db.typeclass
+        char = _as_typeclass(char_db)
         if char.is_connected:
             commit_session_xp(char)
             # Flush ALL accumulators consistently (F6 fix)

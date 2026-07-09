@@ -55,7 +55,7 @@ class CmdSetAncestry(Command):
                 lines.append(f"  |w{name:15}|n Starting ability: {ability}")
             lines.append("")
             lines.append("Usage: |wancestry <name>|n")
-            lines.append("Selvar requires: |wancestry selvar <summer|winter>|n")
+            lines.append("Selvar requires: |wancestry selvar <summer||winter>|n")
             character.msg("\n".join(lines))
             return
 

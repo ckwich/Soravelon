@@ -12,65 +12,51 @@ random room placement with configurable limits.
 import random
 
 import evennia
+from typeclasses.scripts import SoravelonScript
 
 
 # ---------------------------------------------------------------------------
 # GatheringPoolScript
 # ---------------------------------------------------------------------------
 
+class _GatheringPoolScript(SoravelonScript):
+    """Persistent Evennia script managing one gathering pool."""
+
+    def at_script_creation(self):
+        super().at_script_creation()
+        self.db.pool_id = ""
+        self.db.zone_id = ""
+        self.db.eligible_room_ids = []
+        self.db.materials = []
+        self.db.max_active = 3
+        self.db.respawn_minutes = 15
+        self.db.respawn_variance = 5
+        self.db.tier_floor = 1
+        self.db.tier_ceiling = 3
+        self.db.active_node_ids = []
+        self.db.last_depleted_room_id = None
+        self.key = "gathering_pool"
+        self.interval = 120
+        self.persistent = True
+
+    def at_repeat(self):
+        """Prune dead nodes, spawn replacements if under max_active."""
+        _prune_and_refill(self)
+
+
 class GatheringPoolScript:
     """
     Manages one gathering pool's node lifecycle. Attached to zone object.
 
-    Actual Evennia Script subclass created dynamically at runtime via
-    _get_pool_script_class() to avoid import-time typeclass resolution.
-    This class defines the at_script_creation and at_repeat methods that
-    the dynamic subclass inherits.
+    Kept as a lightweight compatibility shim. The actual Evennia Script
+    subclass must live at module scope because Evennia persists and reloads
+    script typeclass paths across restarts.
     """
-
-    @staticmethod
-    def _create_script_class():
-        """
-        Return a dynamic Script subclass to avoid import-time Evennia
-        typeclass resolution (same pattern as CombatScript).
-        """
-        from typeclasses.scripts import SoravelonScript
-
-        class _GatheringPoolScript(SoravelonScript):
-            """Runtime gathering pool script."""
-
-            def at_script_creation(self):
-                super().at_script_creation()
-                self.db.pool_id = ""
-                self.db.zone_id = ""
-                self.db.eligible_room_ids = []
-                self.db.materials = []
-                self.db.max_active = 3
-                self.db.respawn_minutes = 15
-                self.db.respawn_variance = 5
-                self.db.tier_floor = 1
-                self.db.tier_ceiling = 3
-                self.db.active_node_ids = []
-                self.db.last_depleted_room_id = None
-                self.key = "gathering_pool"
-                self.interval = 120  # check every 2 minutes for orphaned nodes
-                self.persistent = True
-
-            def at_repeat(self):
-                """Prune dead nodes, spawn replacements if under max_active."""
-                _prune_and_refill(self)
-
-        return _GatheringPoolScript
-
-    # Class-level cache for the dynamic subclass
-    _cls_cache = None
 
     @classmethod
     def get_class(cls):
-        """Return the cached dynamic script class."""
-        if cls._cls_cache is None:
-            cls._cls_cache = cls._create_script_class()
-        return cls._cls_cache
+        """Return the persistent Evennia script class."""
+        return _GatheringPoolScript
 
 
 # ---------------------------------------------------------------------------

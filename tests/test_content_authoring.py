@@ -6,15 +6,15 @@ loot tables, and zone files. Uses file parsing and imports to check
 actual data structures rather than fragile string matching.
 """
 
+import os
 import ast
 import unittest
-import os
 
 # Paths relative to repo root
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.conf.settings")
-import django
+import django  # noqa: E402
 django.setup()
 
 
@@ -46,6 +46,24 @@ def _quest_kwargs(relpath, quest_id):
             if keyword.arg
         }
     raise AssertionError(f"Could not find area.quest({quest_id!r}) in {relpath}")
+
+
+def _item_ids(relpath):
+    """Return literal item ids from authored area.item() calls."""
+    tree = ast.parse(_read_file(relpath))
+    item_ids = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if not isinstance(node.func, ast.Attribute) or node.func.attr != "item":
+            continue
+        if not node.args:
+            continue
+        try:
+            item_ids.add(ast.literal_eval(node.args[0]))
+        except (ValueError, SyntaxError):
+            continue
+    return item_ids
 
 
 class TestEquipmentCatalog(unittest.TestCase):
@@ -161,7 +179,6 @@ class TestLootTables(unittest.TestCase):
         self.assertIn("bandit", self.tables)
         bandit = self.tables["bandit"]
         drops = bandit.get("drops", [])
-        drop_ids = [d.get("item_id", d.get("item")) for d in drops]
         self.assertTrue(len(drops) >= 2,
                        "Bandit loot table should have at least 2 drops")
 
@@ -203,6 +220,10 @@ class TestQuestItemSources(unittest.TestCase):
         content = _read_file("world/areas/vaels_crossing.py")
         self.assertIn("warden_field_report", content)
         self.assertIn('flagged_drop="warden_field_report"', content)
+        self.assertIn(
+            "warden_field_report",
+            _item_ids("world/areas/vaels_crossing.py"),
+        )
 
     def test_vaels_warden_report_records_social_route_reward(self):
         quest = _quest_kwargs("world/areas/vaels_crossing.py", "vc_q_warden_report")

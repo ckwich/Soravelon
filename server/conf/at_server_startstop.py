@@ -31,11 +31,20 @@ def at_server_start():
     how it was shut down.
     """
     from evennia import TICKER_HANDLER
+    from world.banking import banking_payment_tick
+    from world.dialogue_engine import ambient_npc_tick
+    from world.mob_spawner import spawn_tick
+    from world.node_helpers import node_failure_tick
+    from world.wander_system import wander_tick
+    from world.world_state import (
+        session_xp_safety_flush,
+        world_state_decay_tick,
+    )
 
     # World-state decay — fires every 24 real hours (86400 seconds)
     TICKER_HANDLER.add(
         interval=86400,
-        callback="world.world_state.world_state_decay_tick",
+        callback=world_state_decay_tick,
         idstring="world_state_decay",
         persistent=True,
     )
@@ -43,7 +52,7 @@ def at_server_start():
     # Session XP safety flush — fires every 10 minutes (600 seconds)
     TICKER_HANDLER.add(
         interval=600,
-        callback="world.world_state.session_xp_safety_flush",
+        callback=session_xp_safety_flush,
         idstring="session_xp_flush",
         persistent=True,
     )
@@ -51,7 +60,7 @@ def at_server_start():
     # Node failure tick — fires every 30 seconds
     TICKER_HANDLER.add(
         interval=30,
-        callback="world.node_helpers.node_failure_tick",
+        callback=node_failure_tick,
         idstring="node_failure_tick",
         persistent=True,
     )
@@ -59,7 +68,7 @@ def at_server_start():
     # Banking recurring payment processing — daily
     TICKER_HANDLER.add(
         interval=86400,
-        callback="world.banking.banking_payment_tick",
+        callback=banking_payment_tick,
         idstring="banking_payment_tick",
         persistent=True,
     )
@@ -67,7 +76,7 @@ def at_server_start():
     # Mob spawn ticker — processes due SpawnRecords every 60s (D-02)
     TICKER_HANDLER.add(
         interval=60,
-        callback="world.mob_spawner.spawn_tick",
+        callback=spawn_tick,
         idstring="spawn_tick",
         persistent=True,
     )
@@ -75,7 +84,7 @@ def at_server_start():
     # Wandering mob movement — fires every 60 seconds (D-27)
     TICKER_HANDLER.add(
         interval=60,
-        callback="world.wander_system.wander_tick",
+        callback=wander_tick,
         idstring="wander_tick",
         persistent=True,
     )
@@ -83,7 +92,7 @@ def at_server_start():
     # NPC ambient idle echoes — fires every 15 seconds (NPC-01)
     TICKER_HANDLER.add(
         interval=15,
-        callback="world.dialogue_engine.ambient_npc_tick",
+        callback=ambient_npc_tick,
         idstring="npc_ambient_tick",
         persistent=True,
     )

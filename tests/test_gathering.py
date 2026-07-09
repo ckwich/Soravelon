@@ -9,7 +9,7 @@ Uses unittest.TestCase for pure-computation tests and MagicMock for object simul
 """
 
 import unittest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +95,19 @@ class TestMaterialRegistry(unittest.TestCase):
 
 class TestGatheringPoolSpawn(unittest.TestCase):
     """Test node spawning and depletion in gathering pools."""
+
+    def test_gathering_pool_script_typeclass_path_is_loadable(self):
+        """Evennia can reload persisted gathering pool scripts by import path."""
+        from evennia.utils.utils import class_from_module
+        from typeclasses.scripts import SoravelonScript
+        from world.gathering_engine import GatheringPoolScript
+
+        script_cls = class_from_module(
+            "world.gathering_engine._GatheringPoolScript"
+        )
+
+        self.assertIs(script_cls, GatheringPoolScript.get_class())
+        self.assertTrue(issubclass(script_cls, SoravelonScript))
 
     def _make_pool_script(self, eligible_room_ids=None, max_active=3):
         """Create a mock pool script with standard defaults."""

@@ -2475,6 +2475,12 @@ def build():
               value=25,
               desc="A cloudy liquid that neutralizes most common poisons.")
 
+    # --- Quest Items ---
+    area.item("warden_field_report", key="warden field report",
+              item_type="item", weight=0.2, rarity="normal", value=0,
+              is_quest_item=True,
+              desc="A wax-sealed dispatch tube packed with patrol reports and route warnings from Vael's Crossing.")
+
     # ==================================================================
     #  LORE FRAGMENTS (D-10 landmarks, atmospheric discoveries)
     # ==================================================================

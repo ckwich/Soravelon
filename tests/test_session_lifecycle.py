@@ -173,14 +173,17 @@ class TestSessionLifecycle(unittest.TestCase):
         mock_stop_regen.assert_called_once_with(char)
 
     def test_guidance_prompts_for_missing_ancestry(self):
+        from evennia.utils.ansi import parse_ansi
         from world.session_lifecycle import get_new_player_guidance
 
         char = _make_character(ancestry=None)
 
         guidance = get_new_player_guidance(char)
+        rendered = parse_ansi(guidance, strip_ansi=True)
 
-        self.assertIn("choose an ancestry", guidance.lower())
-        self.assertIn("ancestry", guidance.lower())
+        self.assertIn("choose an ancestry", rendered.lower())
+        self.assertIn("ancestry", rendered.lower())
+        self.assertIn("ancestry selvar <summer|winter>", rendered)
 
     @patch("world.guild_engine.check_guild_eligibility", return_value=["ironblood"])
     @patch("world.guild_engine.GUILDS", {"ironblood": {"name": "Ironblood"}})

@@ -212,7 +212,9 @@ class TestSpawnSingleMob(_MobSpawnerTestBase):
         self.evennia_stub.create_object.assert_called_once()
         call_kwargs = self.evennia_stub.create_object.call_args
         self.assertEqual(call_kwargs[1]["key"], "wolf")
-        self.assertEqual(call_kwargs[1]["location"], self.room)
+        self.assertIsNone(call_kwargs[1]["location"])
+        self.assertEqual(mob.location, self.room)
+        mob.move_to.assert_not_called()
 
     def test_sets_zone_id_from_room(self):
         mob = self.spawner.spawn_single_mob(self.spawn_def, self.room)

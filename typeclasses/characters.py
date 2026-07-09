@@ -13,6 +13,10 @@ from evennia.objects.objects import DefaultCharacter
 from .objects import ObjectParent
 
 
+START_ROOM_ID = "hg_arrival"
+START_ROOM_ZONE_ID = "vaels_crossing"
+
+
 class Character(ObjectParent, DefaultCharacter):
     """
     The Character typeclass for Soravelon.
@@ -58,6 +62,7 @@ class Character(ObjectParent, DefaultCharacter):
 
         # Exploration state
         self.db.discovered_exits = []
+        self.db.needs_start_location = True
 
         # Command alias system (CMD-03, CMD-04, CMD-05)
         self.db.aliases = {}           # persistent alias dict: {alias_key: expansion_string}
@@ -78,8 +83,67 @@ class Character(ObjectParent, DefaultCharacter):
         # Tag for queryset filtering
         self.tags.add("player_character", category="character_type")
 
+    def _get_start_location(self):
+        """Return Soravelon's authored new-character room if it is loaded."""
+        try:
+            import evennia
+
+            candidates = evennia.search_tag(START_ROOM_ID, category="room_id") or []
+        except (AttributeError, RuntimeError, TypeError):
+            return None
+
+        for room in candidates:
+            if getattr(room.db, "zone_id", None) == START_ROOM_ZONE_ID:
+                return room
+        return None
+
+    def _place_at_start_location_if_available(self):
+        """Move brand-new characters out of Limbo once the start room exists."""
+        room = self._get_start_location()
+        if not room:
+            return False
+        self.home = room
+        if self.location != room:
+            self.location = room
+        self.db.needs_start_location = False
+        return True
+
+    def _ensure_start_location(self):
+        """Repair characters created before area content finished loading."""
+        current_location = self.location
+        current_home = self.home
+        location_limboish = (
+            current_location is None
+            or getattr(current_location, "key", None) == "Limbo"
+        )
+        home_limboish = getattr(current_home, "key", None) == "Limbo"
+        unplaced_without_ancestry = (
+            location_limboish and not getattr(self.db, "ancestry", None)
+        )
+        if (
+            not getattr(self.db, "needs_start_location", False)
+            and not unplaced_without_ancestry
+            and not home_limboish
+        ):
+            return False
+
+        room = self._get_start_location()
+        if not room:
+            return False
+
+        self.home = room
+        should_move = (
+            getattr(self.db, "needs_start_location", False)
+            or unplaced_without_ancestry
+        )
+        if should_move and self.location != room:
+            self.move_to(room, quiet=True)
+        self.db.needs_start_location = False
+        return True
+
     def at_post_puppet(self, **kwargs):
         """Called after a player connects to this character."""
+        self._ensure_start_location()
         super().at_post_puppet(**kwargs)
         from world.session_lifecycle import on_login
         on_login(self)

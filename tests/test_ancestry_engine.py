@@ -205,6 +205,26 @@ class TestAncestryRejection(unittest.TestCase):
         mock_modify.assert_not_called()
 
 
+class TestAncestryCommandOutput(unittest.TestCase):
+    """Player-facing ancestry usage text renders literal separators."""
+
+    def test_no_arg_usage_renders_selvar_coat_separator(self):
+        from evennia.utils.ansi import parse_ansi
+
+        from commands.cmd_ancestry import CmdSetAncestry
+
+        char = _mock_character()
+        char.msg = MagicMock()
+        cmd = CmdSetAncestry()
+        cmd.caller = char
+        cmd.args = ""
+
+        cmd.func()
+
+        rendered = parse_ansi(char.msg.call_args.args[0], strip_ansi=True)
+        self.assertIn("ancestry selvar <summer|winter>", rendered)
+
+
 # ===========================================================================
 # Trait lookup
 # ===========================================================================

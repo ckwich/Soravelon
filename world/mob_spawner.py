@@ -138,7 +138,9 @@ def spawn_single_mob(spawn_def, room):
     """
     from typeclasses.mobs import SoravelonMob
 
-    mob = evennia.create_object(SoravelonMob, key=spawn_def["mob"], location=room)
+    # Create off-room first. Evennia renders the destination room during
+    # first-save if location is set, before template/affix state is installed.
+    mob = evennia.create_object(SoravelonMob, key=spawn_def["mob"], location=None)
 
     mob.db.zone_id = room.db.zone_id
     mob.db.base_disposition = spawn_def.get("base_disposition", 0.0)
@@ -161,6 +163,7 @@ def spawn_single_mob(spawn_def, room):
         mob.db.flee_threshold = 20
 
     mob.initialize_for_spawn(room)
+    mob.location = room
     _maybe_attach_patrol(mob, spawn_def, room)
 
     # Tag wandering mobs for efficient lookup by wander_tick (D-27)

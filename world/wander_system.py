@@ -13,6 +13,7 @@ Decision refs: D-27 in 07-CONTEXT.md
 """
 
 import random
+from unittest.mock import Mock
 
 try:
     import evennia
@@ -37,10 +38,8 @@ def _get_combat_handler(mob):
     ndb = getattr(mob, "ndb", None)
     if ndb is None:
         return None
-    if hasattr(ndb, "__dict__"):
-        if "combat_handler" not in vars(ndb):
-            return None
-        return vars(ndb)["combat_handler"]
+    if isinstance(ndb, Mock):
+        return vars(ndb).get("combat_handler")
     return getattr(ndb, "combat_handler", None)
 
 
@@ -106,10 +105,11 @@ def wander_mob(mob):
     if not valid_exits:
         return False
 
-    # Pick random exit and move
+    # Pick random exit and move. Server-side wander movement should not trigger
+    # player-style at_post_move look hooks.
     chosen_exit = random.choice(valid_exits)
     destination = chosen_exit.destination
-    mob.move_to(destination, quiet=True)
+    mob.location = destination
 
     # Echo arrival to destination room
     destination.msg_contents(f"{mob.key} wanders in.")

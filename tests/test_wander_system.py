@@ -4,9 +4,8 @@ Tests for the wandering mob system.
 Uses unittest.TestCase + MagicMock — pure-logic module with no Evennia DB needed.
 """
 
-import random
 import unittest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 
 class TestWanderMob(unittest.TestCase):
@@ -17,7 +16,8 @@ class TestWanderMob(unittest.TestCase):
         mob = MagicMock()
         mob.db.wander = wander
         mob.db.is_dead = is_dead
-        mob.ndb.combat_script = MagicMock() if in_combat else None
+        if in_combat:
+            mob.ndb.combat_handler = MagicMock()
 
         # Patrol script check
         if has_patrol:
@@ -65,7 +65,8 @@ class TestWanderMob(unittest.TestCase):
             result = wander_mob(mob)
 
         self.assertTrue(result)
-        mob.move_to.assert_called_once_with(dest_room, quiet=True)
+        self.assertEqual(mob.location, dest_room)
+        mob.move_to.assert_not_called()
 
     def test_skips_mob_if_wander_false(self):
         """wander_mob skips mob if mob.db.wander is False."""
@@ -92,10 +93,47 @@ class TestWanderMob(unittest.TestCase):
         from world.wander_system import wander_mob
 
         mob = self._make_mob(wander=True, in_combat=True)
+        dest_room = self._make_room("zone_a")
+        exit_obj = self._make_exit(dest_room)
+        mob.location.exits = [exit_obj]
+        mob.location.db.zone_id = "zone_a"
+
         result = wander_mob(mob)
 
         self.assertFalse(result)
+        self.assertNotEqual(mob.location, dest_room)
         mob.move_to.assert_not_called()
+
+    def test_combat_handler_guard_handles_none_internal_dict(self):
+        """Evennia ndb handlers can expose a non-dict vars() result."""
+        from world.wander_system import _get_combat_handler
+
+        class NdbWithNoneDict:
+            @property
+            def __dict__(self):
+                return None
+
+        mob = MagicMock()
+        mob.ndb = NdbWithNoneDict()
+
+        self.assertIsNone(_get_combat_handler(mob))
+
+    def test_combat_handler_guard_reads_dynamic_ndb_attribute(self):
+        """Evennia ndb holders can resolve combat_handler outside __dict__."""
+        from world.wander_system import _get_combat_handler
+
+        handler = object()
+
+        class DynamicNdb:
+            def __getattr__(self, name):
+                if name == "combat_handler":
+                    return handler
+                raise AttributeError(name)
+
+        mob = MagicMock()
+        mob.ndb = DynamicNdb()
+
+        self.assertIs(_get_combat_handler(mob), handler)
 
     def test_skips_mob_with_active_patrol(self):
         """wander_mob skips mob if mob has active PatrolScript."""
@@ -196,7 +234,8 @@ class TestWanderMob(unittest.TestCase):
         valid_exits = mock_random.choice.call_args[0][0]
         self.assertEqual(len(valid_exits), 2)
         self.assertTrue(result)
-        mob.move_to.assert_called_once_with(dest2, quiet=True)
+        self.assertEqual(mob.location, dest2)
+        mob.move_to.assert_not_called()
 
     def test_echoes_arrival_message(self):
         """wander_mob echoes an arrival message to the destination room."""

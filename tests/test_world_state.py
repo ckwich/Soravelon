@@ -73,7 +73,6 @@ class TestAttunementDualRepresentation(EvenniaTest):
             update_zone_attunement,
             recalculate_attunement_aggregate,
         )
-        from world.models import ZoneAttunement
 
         update_zone_attunement(self.char1, "cantera_forest", 75.0)
         update_zone_attunement(self.char1, "tremen", 25.0)
@@ -302,6 +301,33 @@ class TestDecayPausedOnline(EvenniaTest):
             decay_tick_all()
 
         self.assertEqual(self.char1.db.reputation_score, 50.0)
+
+
+class TestSessionXpSafetyFlush(EvenniaTest):
+    """The safety flush ticker must handle live Evennia query results."""
+
+    def test_online_typeclass_result_flushes_without_typeclass_attribute(self):
+        """Evennia 6 may return an already-wrapped Character from ObjectDB filters."""
+        from unittest.mock import patch
+        from world.world_state import session_xp_safety_flush
+
+        class OnlineCharacter:
+            @property
+            def is_connected(self):
+                return True
+
+        character = OnlineCharacter()
+        with (
+            patch("evennia.objects.models.ObjectDB.objects.filter", return_value=[character]),
+            patch("world.world_state.commit_session_xp") as commit_xp,
+            patch("world.skill_engine.commit_skill_accumulators") as commit_skills,
+            patch("world.base_attributes.commit_stat_growth") as commit_stats,
+        ):
+            session_xp_safety_flush()
+
+        commit_xp.assert_called_once_with(character)
+        commit_skills.assert_called_once_with(character)
+        commit_stats.assert_called_once_with(character)
 
 
 class TestWorldEventLogCreation(EvenniaTest):

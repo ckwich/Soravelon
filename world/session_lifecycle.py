@@ -35,7 +35,7 @@ def get_new_player_guidance(character):
         return (
             "|y[Before you head out, choose an ancestry with "
             "|wancestry <human|kau'roran|veth>|n or "
-            "|wancestry selvar <summer|winter>|n. "
+            "|wancestry selvar <summer||winter>|n. "
             "Use |whelp ancestry|n for the full breakdown.]|n"
         )
 
