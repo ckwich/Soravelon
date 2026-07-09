@@ -186,6 +186,98 @@ class TestBasicAttackResolution(unittest.TestCase):
         self.assertTrue(ok)
         mock_accumulate.assert_any_call(player, "weapon_unarmed")
 
+    @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: d)
+    def test_weapon_uses_authored_scaling_stat_instead_of_strength(
+        self,
+        mock_res,
+        mock_scale,
+    ):
+        from world.combat_engine import resolve_basic_attack
+
+        player = _make_player(strength=100, agility=10)
+        mob = _make_mob()
+        weapon = MagicMock()
+        weapon.key = "Practice Dagger"
+        weapon.db.damage_min = 10
+        weapon.db.damage_max = 10
+        weapon.db.scaling_stat = "agility"
+        weapon.db.element = "physical"
+        weapon.db.weapon_family = "blade"
+
+        with patch(
+            "world.equipment_effects.get_effective_stats",
+            return_value=player.db.base_stats,
+        ) as mock_effective_stats, patch(
+            "world.combat_engine.random.random",
+            return_value=1.0,
+        ), patch(
+            "world.weapon_skills.weapon_skill_damage_bonus_for_attack",
+            return_value=0,
+        ), patch("world.weapon_skills.accumulate_weapon_skill_for_attack"):
+            ok, _, damage = resolve_basic_attack(player, mob, weapon=weapon)
+
+        self.assertTrue(ok)
+        self.assertEqual(damage, 15)
+        mock_effective_stats.assert_called_once_with(player)
+
+    def test_mob_raw_damage_retains_inventory_free_path(self):
+        from world.combat_engine import _compute_raw_damage
+
+        mob = _make_mob(ref_min=12, ref_max=12)
+        with patch(
+            "world.equipment_effects.get_effective_stats",
+            side_effect=AssertionError("mob effective equipment queried"),
+        ), patch(
+            "world.equipment_effects.get_weapon_damage_profile",
+            side_effect=AssertionError("mob weapon equipment queried"),
+        ):
+            damage, element = _compute_raw_damage(mob, weapon=None)
+
+        self.assertEqual(damage, 12)
+        self.assertEqual(element, "physical")
+
+
+class TestEquipmentArmorInCombat(unittest.TestCase):
+    @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
+    @patch("world.zone_scaling.get_mob_damage_for_player", return_value=(20, 20))
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: d)
+    @patch("world.equipment_effects.get_total_equipped_armor", return_value=50)
+    def test_player_equipped_armor_mitigates_incoming_damage(
+        self,
+        mock_armor,
+        mock_resistance,
+        mock_scale,
+        mock_crit,
+    ):
+        from world.combat_engine import resolve_basic_attack
+
+        mob = _make_mob(ref_min=20, ref_max=20)
+        player = _make_player()
+
+        ok, _, damage = resolve_basic_attack(mob, player)
+
+        self.assertTrue(ok)
+        self.assertEqual(damage, 10)
+        mock_armor.assert_called_once_with(player)
+
+    def test_mob_target_does_not_query_player_equipment_armor(self):
+        from world.combat_engine import _apply_incoming_damage
+
+        attacker = _make_player()
+        mob = _make_mob(hp=80)
+        with patch(
+            "world.equipment_effects.get_total_equipped_armor",
+            side_effect=AssertionError("mob armor inventory queried"),
+        ):
+            damage, absorbed, reflected = _apply_incoming_damage(
+                attacker,
+                mob,
+                20,
+            )
+
+        self.assertEqual((damage, absorbed, reflected), (20, 0, 0))
+
 
 class TestAbilityDamageResolution(unittest.TestCase):
     """Ability-based damage resolution (CMB-01)."""
@@ -328,6 +420,35 @@ class TestAbilityDamageResolution(unittest.TestCase):
         _, _, high_dmg = resolve_ability_damage(high_player, ability, mob)
 
         self.assertGreater(high_dmg, low_dmg)
+
+    @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
+    @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)
+    @patch("world.zone_scaling.apply_resistance", side_effect=lambda d, e, t: d)
+    def test_ability_aggregates_equipment_once_for_all_scaling_stats(
+        self,
+        mock_res,
+        mock_scale,
+        mock_crit,
+    ):
+        from world.combat_engine import resolve_ability_damage
+
+        player = _make_player()
+        mob = _make_mob()
+        ability = {
+            "name": "Coordinated Strike",
+            "damage_base": 20,
+            "scaling_primary": "combat",
+            "scaling_secondary": "tactics",
+            "element": "physical",
+        }
+        with patch(
+            "world.equipment_effects.get_effective_stats",
+            return_value=player.db.base_stats,
+        ) as mock_effective_stats:
+            ok, _, _damage = resolve_ability_damage(player, ability, mob)
+
+        self.assertTrue(ok)
+        mock_effective_stats.assert_called_once_with(player)
 
     @patch("world.combat_engine.roll_crit", return_value=(False, 1.0))
     @patch("world.zone_scaling.get_player_damage_to_mob", side_effect=lambda d, m, c: d)

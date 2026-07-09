@@ -273,25 +273,33 @@ BASE_STAMINA = 30
 STAMINA_PER_ENDURANCE = 2
 
 
-def derive_max_hp(character):
+def derive_max_hp(character, effective_stats=None):
     """
     Derive maximum HP from Endurance stat and backend level.
 
     Formula: base_hp(50) + endurance*5 + backend_level*10
     """
-    stats = character.db.base_stats or {}
+    if effective_stats is None:
+        from world.equipment_effects import get_effective_stats
+
+        effective_stats = get_effective_stats(character)
+    stats = effective_stats
     endurance = stats.get("endurance", 10)
     backend_level = character.db.backend_level or 1
     return BASE_HP + (endurance * HP_PER_ENDURANCE) + (backend_level * HP_PER_LEVEL)
 
 
-def derive_max_stamina(character):
+def derive_max_stamina(character, effective_stats=None):
     """
     Derive maximum stamina from Endurance stat.
 
     Formula: base_stamina(30) + endurance*2
     """
-    stats = character.db.base_stats or {}
+    if effective_stats is None:
+        from world.equipment_effects import get_effective_stats
+
+        effective_stats = get_effective_stats(character)
+    stats = effective_stats
     endurance = stats.get("endurance", 10)
     return BASE_STAMINA + (endurance * STAMINA_PER_ENDURANCE)
 
@@ -322,7 +330,9 @@ def get_actions_per_turn(character):
 
     Formula: floor(1 + agility / 30). Min 1, practical max 4.
     """
-    stats = character.db.base_stats or {}
+    from world.equipment_effects import get_effective_stats
+
+    stats = get_effective_stats(character)
     agility = stats.get("agility", 10)
     actions = int(1 + agility / 30)
     return max(1, min(4, actions))
@@ -352,7 +362,9 @@ def get_initiative(combatant):
     # Check if this is a character (has base_stats) or a mob (has speed)
     base_stats = combatant.db.base_stats
     if base_stats:
-        agility = base_stats.get("agility", 10)
+        from world.equipment_effects import get_effective_stats
+
+        agility = get_effective_stats(combatant).get("agility", 10)
         return agility + random.randint(1, 20)
     else:
         # Mob: use speed attribute

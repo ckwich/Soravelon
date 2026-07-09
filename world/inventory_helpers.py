@@ -3,7 +3,7 @@ Inventory weight calculation helpers.
 """
 
 
-def get_carry_state(character):
+def get_carry_state(character, effective_stats=None):
     """
     Compute character's current carry state.
     Returns: "normal" / "encumbered" / "heavy" / "overloaded"
@@ -12,7 +12,11 @@ def get_carry_state(character):
     from evennia.objects.models import ObjectDB
 
     BASE_CAPACITY = 10
-    strength = (character.db.base_stats or {}).get("strength", 10)
+    if effective_stats is None:
+        from world.equipment_effects import get_effective_stats
+
+        effective_stats = get_effective_stats(character)
+    strength = effective_stats.get("strength", 10)
     capacity = BASE_CAPACITY + (strength * 5)
 
     records = list(InventoryItem.objects.filter(

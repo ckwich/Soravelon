@@ -50,6 +50,9 @@ class CmdStatus(Command):
         from world.banking import get_balance
         from world.ancestry_engine import ANCESTRY_TRAITS
         from world.ability_registry import get_ability
+        from world.equipment_effects import get_effective_stats
+
+        effective_stats = get_effective_stats(char)
 
         lines = []
 
@@ -65,9 +68,12 @@ class CmdStatus(Command):
 
         # --- Vitals ---
         lines.append("|wVitals|n")
-        max_hp = derive_max_hp(char)
+        max_hp = derive_max_hp(char, effective_stats=effective_stats)
         current_hp = char.ndb.hp if char.ndb.hp is not None else max_hp
-        max_stamina = derive_max_stamina(char)
+        max_stamina = derive_max_stamina(
+            char,
+            effective_stats=effective_stats,
+        )
         current_stamina = char.ndb.stamina if char.ndb.stamina is not None else max_stamina
         lines.append(f"  |wHP:|n       |y{current_hp}|n / |y{max_hp}|n")
         lines.append(f"  |wStamina:|n  |y{current_stamina}|n / |y{max_stamina}|n")
@@ -90,9 +96,8 @@ class CmdStatus(Command):
 
         # --- Stats (descriptors ONLY -- D-07) ---
         lines.append("|wAttributes|n")
-        base_stats = char.db.base_stats or {}
         for stat in STAT_NAMES:
-            value = base_stats.get(stat, 10)
+            value = effective_stats.get(stat, 10)
             descriptor = get_stat_descriptor(stat, value)
             lines.append(f"  {stat.capitalize():12s} |c{descriptor}|n")
         lines.append("")

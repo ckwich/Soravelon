@@ -18,6 +18,8 @@ Exports:
 import random
 import time
 
+from world.equipment_effects import BARE_HANDS_MAX, BARE_HANDS_MIN
+
 # ---------------------------------------------------------------------------
 # Domain-to-stat mapping (validated against ability_registry.py)
 #
@@ -38,10 +40,6 @@ DOMAIN_TO_STAT = {
     "remnance": "mana",
 }
 
-# Bare-hands fallback damage range
-BARE_HANDS_MIN = 3
-BARE_HANDS_MAX = 6
-
 # Base crit chance for characters
 BASE_CRIT_CHANCE = 0.05
 # Acuity bonus per point (0.2% = 0.002)
@@ -56,7 +54,7 @@ CRIT_MULTIPLIER = 2.0
 # Critical hit system (D-20)
 # ---------------------------------------------------------------------------
 
-def roll_crit(attacker):
+def roll_crit(attacker, effective_stats=None):
     """
     Roll for critical hit. Acuity-driven for characters, flat for mobs.
 
@@ -69,7 +67,12 @@ def roll_crit(attacker):
     base_stats = attacker.db.base_stats
     if base_stats:
         # Character: Acuity-based crit
-        acuity = _get_modified_stat_value(attacker, "acuity", 10)
+        acuity = _get_modified_stat_value(
+            attacker,
+            "acuity",
+            10,
+            effective_stats=effective_stats,
+        )
         crit_chance = BASE_CRIT_CHANCE + (acuity * ACUITY_CRIT_BONUS)
     else:
         # Mob: flat crit chance
@@ -118,10 +121,10 @@ def apply_elite_boss_scaling(damage, mob_rarity, is_incoming=True):
 # Private helpers
 # ---------------------------------------------------------------------------
 
-def _compute_raw_damage(attacker, weapon):
+def _compute_raw_damage(attacker, weapon, effective_stats=None):
     """Compute base raw damage for character or mob attacker.
 
-    Characters use equipped weapon (or bare hands) + strength modifier.
+    Characters use equipped weapon (or bare hands) + its authored stat.
     Mobs use ref_damage_min/max range.
 
     Returns:
@@ -129,16 +132,19 @@ def _compute_raw_damage(attacker, weapon):
     """
     attacker_stats = attacker.db.base_stats
     if attacker_stats:
-        strength = _get_modified_stat_value(attacker, "strength", 10)
-        if weapon:
-            w_min = weapon.db.damage_min or BARE_HANDS_MIN
-            w_max = weapon.db.damage_max or BARE_HANDS_MAX
-            element = weapon.db.element or "physical"
-        else:
-            w_min = BARE_HANDS_MIN
-            w_max = BARE_HANDS_MAX
-            element = "physical"
-        raw = random.randint(w_min, w_max) + int(strength * 0.5)
+        from world.equipment_effects import get_weapon_damage_profile
+
+        profile = get_weapon_damage_profile(weapon)
+        scaling_value = _get_modified_stat_value(
+            attacker,
+            profile.scaling_stat,
+            10,
+            effective_stats=effective_stats,
+        )
+        raw = random.randint(profile.minimum, profile.maximum) + int(
+            scaling_value * 0.5
+        )
+        element = profile.element
         from world.weapon_skills import weapon_skill_damage_bonus_for_attack
         skill_bonus = weapon_skill_damage_bonus_for_attack(attacker, weapon)
         if skill_bonus:
@@ -151,13 +157,21 @@ def _compute_raw_damage(attacker, weapon):
     return raw, element
 
 
-def _get_modified_stat_value(actor, stat_name, default=10):
-    """Return a base stat with temporary status-effect boosts applied."""
-    base_stats = actor.db.base_stats or {}
-    if not base_stats:
+def _get_modified_stat_value(
+    actor,
+    stat_name,
+    default=10,
+    effective_stats=None,
+):
+    """Return an equipment-aware stat with temporary effects applied."""
+    if effective_stats is None:
+        from world.equipment_effects import get_effective_stats
+
+        effective_stats = get_effective_stats(actor)
+    if not effective_stats:
         return default
 
-    value = base_stats.get(stat_name, default)
+    value = effective_stats.get(stat_name, default)
 
     from world.status_effects import get_effect_modifiers
 
@@ -200,6 +214,17 @@ def _apply_incoming_damage(attacker, target, damage, ignore_reduction=False, ign
     dmg_reduction = 0.0 if ignore_reduction else target_mods.get("damage_reduction", 0.0)
     if dmg_reduction > 0:
         final = max(1, int(final * (1 - dmg_reduction)))
+
+    if not ignore_reduction and target.db.base_stats:
+        from world.equipment_effects import (
+            apply_armor_mitigation,
+            get_total_equipped_armor,
+        )
+
+        final = apply_armor_mitigation(
+            final,
+            get_total_equipped_armor(target),
+        )
 
     if ignore_absorb:
         absorbed = 0
@@ -257,14 +282,26 @@ def resolve_basic_attack(attacker, target, weapon=None):
         return (False, f"{target.key} evades {attacker.key}'s attack!", 0)
 
     attacker_stats = attacker.db.base_stats
+    effective_stats = None
+    if attacker_stats:
+        from world.equipment_effects import get_effective_stats
 
-    raw, element = _compute_raw_damage(attacker, weapon)
+        effective_stats = get_effective_stats(attacker)
+
+    raw, element = _compute_raw_damage(
+        attacker,
+        weapon,
+        effective_stats=effective_stats,
+    )
 
     # Critical hit
     if next_attack.get("guaranteed_crit"):
         is_crit, crit_mult = True, CRIT_MULTIPLIER
     else:
-        is_crit, crit_mult = roll_crit(attacker)
+        is_crit, crit_mult = roll_crit(
+            attacker,
+            effective_stats=effective_stats,
+        )
     raw = int(raw * crit_mult)
     raw += int(next_attack.get("bonus_damage", 0))
     raw = max(1, int(raw * (1 + attacker_mods.get("damage_bonus", 0.0))))
@@ -383,16 +420,30 @@ def resolve_ability_damage(character, ability, target):
         ability_name = ability.get("name", "ability")
         return (False, f"{target.key} evades {character.key}'s {ability_name}!", 0)
 
+    from world.equipment_effects import get_effective_stats
+
+    effective_stats = get_effective_stats(character)
+
     # Stat lookups via domain-to-stat mapping
     primary_stat_name = DOMAIN_TO_STAT.get(
         ability.get("scaling_primary", "combat"), "strength"
     )
-    primary_stat = _get_modified_stat_value(character, primary_stat_name, 10)
+    primary_stat = _get_modified_stat_value(
+        character,
+        primary_stat_name,
+        10,
+        effective_stats=effective_stats,
+    )
 
     secondary_domain = ability.get("scaling_secondary")
     if secondary_domain:
         secondary_stat_name = DOMAIN_TO_STAT.get(secondary_domain, "strength")
-        secondary_stat = _get_modified_stat_value(character, secondary_stat_name, 10)
+        secondary_stat = _get_modified_stat_value(
+            character,
+            secondary_stat_name,
+            10,
+            effective_stats=effective_stats,
+        )
     else:
         secondary_stat = 0
 
@@ -414,7 +465,10 @@ def resolve_ability_damage(character, ability, target):
     if params.get("guaranteed_crit") or next_attack.get("guaranteed_crit"):
         is_crit, crit_mult = True, CRIT_MULTIPLIER
     else:
-        is_crit, crit_mult = roll_crit(character)
+        is_crit, crit_mult = roll_crit(
+            character,
+            effective_stats=effective_stats,
+        )
     raw = int(raw * crit_mult)
     raw += int(next_attack.get("bonus_damage", 0))
     raw = max(1, int(raw * (1 + attacker_mods.get("damage_bonus", 0.0))))
@@ -526,10 +580,18 @@ def resolve_heal(character, ability, target):
     """
     from world.base_attributes import derive_max_hp
 
+    from world.equipment_effects import get_effective_stats
+
+    effective_stats = get_effective_stats(character)
     primary_stat_name = DOMAIN_TO_STAT.get(
         ability.get("scaling_primary", "naturalism"), "resonance"
     )
-    primary_stat = _get_modified_stat_value(character, primary_stat_name, 10)
+    primary_stat = _get_modified_stat_value(
+        character,
+        primary_stat_name,
+        10,
+        effective_stats=effective_stats,
+    )
 
     params = ability.get("effect_params", {})
     heal_base = (

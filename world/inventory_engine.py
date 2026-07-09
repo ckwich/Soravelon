@@ -370,6 +370,10 @@ def equip_item(character, item):
     record.equipment_slot = slot
     record.save()
 
+    from world.equipment_effects import clamp_current_resources_to_effective_caps
+
+    clamp_current_resources_to_effective_caps(character)
+
     return True, f"You equip the {item.key}."
 
 
@@ -385,6 +389,10 @@ def unequip_item(character, item):
     record.is_equipped = False
     record.equipment_slot = None
     record.save()
+
+    from world.equipment_effects import clamp_current_resources_to_effective_caps
+
+    clamp_current_resources_to_effective_caps(character)
 
     return True, f"You unequip the {item.key}."
 
@@ -440,8 +448,10 @@ def get_inventory_display_data(character):
     from world.inventory_helpers import get_carry_state
 
     BASE_CAPACITY = 10
-    base_stats = character.db.base_stats or {}
-    strength = base_stats.get("strength", 10) or 10
+    from world.equipment_effects import get_effective_stats
+
+    effective_stats = get_effective_stats(character)
+    strength = effective_stats.get("strength", 10) or 10
     carry_capacity = BASE_CAPACITY + (strength * 5)
 
     records = InventoryItem.objects.filter(
@@ -454,7 +464,10 @@ def get_inventory_display_data(character):
         "carried": [],
         "keyring": [],
         "carried_scales": (character.db.carried_scales or 0),
-        "carry_state": get_carry_state(character),
+        "carry_state": get_carry_state(
+            character,
+            effective_stats=effective_stats,
+        ),
         "carry_weight": 0.0,
         "carry_capacity": carry_capacity,
     }

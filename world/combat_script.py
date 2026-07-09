@@ -627,8 +627,9 @@ class CombatScript:
                 character.msg("|rYou are incapacitated and cannot flee!|n")
                 return
             # Speed + skill check (simple roll)
-            base_stats = character.db.base_stats or {}
-            agility = base_stats.get("agility", 10)
+            from world.equipment_effects import get_effective_stats
+
+            agility = get_effective_stats(character).get("agility", 10)
             flee_roll = random.randint(1, 20) + agility // 5
             if flee_roll >= 12:
                 # Success -- move to random adjacent exit
