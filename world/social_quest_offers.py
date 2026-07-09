@@ -171,6 +171,9 @@ def _compile_offer_from_rule(rule, *, social_context=None, require_social_ground
     context["contest_repair_hooks"] = copy.deepcopy(
         rule.get("contest_repair_hooks") or {}
     )
+    from world.social_llm_renderer import render_social_quest_offer
+
+    context["rendered_offer"] = render_social_quest_offer(spec)
     return spec
 
 

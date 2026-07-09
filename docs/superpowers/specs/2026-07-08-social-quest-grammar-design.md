@@ -169,3 +169,11 @@ It must not:
 
 Provider integration should add a renderer beside this grammar, not replace the
 grammar.
+
+The first live seam is `world.social_llm_renderer`. It builds a
+DeepSeek-compatible chat payload only from redacted `llm_context.prompt_inputs`
+and returns deterministic fallback speech by default. A provider call is allowed
+only when the caller explicitly passes `allow_provider_call=True` and the quest
+context itself has `provider_call_allowed=True`. Offer compilation attaches the
+fallback render packet for playtest visibility, but it never reads API keys,
+calls a model, mutates quests, or writes Social Web state.
