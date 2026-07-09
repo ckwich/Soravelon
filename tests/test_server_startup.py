@@ -41,16 +41,23 @@ class TestServerStartup(unittest.TestCase):
         )
         module = importlib.util.module_from_spec(spec)
         env = {
-            "SECRET_KEY": "test-secret",
-            "ALLOWED_HOSTS": "localhost,127.0.0.1",
-            "DATABASE_ENGINE": "sqlite3",
-            "DATABASE_NAME": "server/evennia.db3",
+            "SECRET_KEY": (
+                "soravelon-production-test-key-"
+                "0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            ),
+            "ALLOWED_HOSTS": "game.example.test",
+            "CSRF_TRUSTED_ORIGINS": "https://game.example.test",
+            "DATABASE_ENGINE": "postgresql",
+            "DATABASE_NAME": "soravelon_test",
+            "DATABASE_USER": "soravelon_test",
+            "DATABASE_PASSWORD": "database-test-password",
             "WEBSERVER_PORT": "4401",
             "WEBSERVER_INTERNAL_PORT": "4405",
             "WEBSOCKET_CLIENT_PORT": "4402",
             "SSH_PORT": "4404",
+            "SSH_ENABLED": "true",
         }
-        with patch.dict("os.environ", env, clear=False):
+        with patch.dict("os.environ", env, clear=True):
             assert spec.loader is not None
             spec.loader.exec_module(module)
 
