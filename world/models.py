@@ -32,14 +32,15 @@ class FactionStanding(models.Model):
 
     class Meta:
         constraints = [
-            # Use UniqueConstraint with condition to handle NULL subfaction_id.
-            # unique_together treats NULLs as distinct on PostgreSQL, allowing
-            # duplicate top-level faction rows. This constraint uses
-            # nulls_distinct=False to prevent that.
+            models.UniqueConstraint(
+                fields=["character", "faction_id"],
+                condition=models.Q(subfaction_id__isnull=True),
+                name="unique_top_faction_standing",
+            ),
             models.UniqueConstraint(
                 fields=["character", "faction_id", "subfaction_id"],
-                name="unique_faction_standing",
-                nulls_distinct=False,
+                condition=models.Q(subfaction_id__isnull=False),
+                name="unique_subfaction_standing",
             ),
         ]
         indexes = [
@@ -279,7 +280,10 @@ class CharacterGuild(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["guild_id"]),
+            models.Index(
+                fields=["guild_id"],
+                name="world_charac_guild_i_idx",
+            ),
         ]
 
     def __str__(self):
@@ -306,7 +310,10 @@ class CharacterAbility(models.Model):
     class Meta:
         unique_together = ("character", "ability_id")
         indexes = [
-            models.Index(fields=["character_id", "ability_id"]),
+            models.Index(
+                fields=["character_id", "ability_id"],
+                name="world_charac_charact_idx",
+            ),
         ]
 
     def __str__(self):
@@ -346,8 +353,14 @@ class CharacterQuest(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["character", "status"]),
-            models.Index(fields=["character", "quest_id"]),
+            models.Index(
+                fields=["character", "status"],
+                name="world_cq_char_status_idx",
+            ),
+            models.Index(
+                fields=["character", "quest_id"],
+                name="world_cq_char_quest_idx",
+            ),
         ]
 
     def __str__(self):
@@ -376,7 +389,10 @@ class KnownTopicRecord(models.Model):
     class Meta:
         unique_together = ("character", "npc_id", "topic_key")
         indexes = [
-            models.Index(fields=["character", "npc_id"]),
+            models.Index(
+                fields=["character", "npc_id"],
+                name="world_known_charact_424052_idx",
+            ),
         ]
 
     def __str__(self):
@@ -726,8 +742,14 @@ class SpawnRecord(models.Model):
     class Meta:
         unique_together = ("room_id", "spawn_index")
         indexes = [
-            models.Index(fields=["respawn_at"]),
-            models.Index(fields=["is_named"]),
+            models.Index(
+                fields=["respawn_at"],
+                name="world_spawn_respawn_idx",
+            ),
+            models.Index(
+                fields=["is_named"],
+                name="world_spawn_is_named_idx",
+            ),
         ]
 
     def __str__(self):
@@ -754,7 +776,10 @@ class CharacterRecipe(models.Model):
     class Meta:
         unique_together = ("character", "recipe_id")
         indexes = [
-            models.Index(fields=["character_id", "recipe_id"]),
+            models.Index(
+                fields=["character_id", "recipe_id"],
+                name="world_chara_charact_cbd173_idx",
+            ),
         ]
 
     def __str__(self):

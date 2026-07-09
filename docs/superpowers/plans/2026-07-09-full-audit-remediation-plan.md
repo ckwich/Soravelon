@@ -202,7 +202,9 @@ RED:
 
 Implementation:
 
-- give current indexes their historical explicit names;
+- give current indexes stable explicit names; preserve historical names when
+  they pass Django's portable-name checks, and deliberately rename the two
+  overlong legacy quest indexes;
 - deliberately choose and migrate the five primary-key types;
 - replace `nulls_distinct=False` with explicit conditional uniqueness that is
   truthful on both SQLite and PostgreSQL;
