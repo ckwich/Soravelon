@@ -80,6 +80,20 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdEquip())
         self.add(CmdUnequip())
         self.add(CmdGear())
+        from commands.cmd_inventory import (
+            CmdDrop,
+            CmdGet,
+            CmdGive,
+            CmdInventory,
+            CmdPut,
+            CmdTake,
+        )
+        self.add(CmdGet())
+        self.add(CmdDrop())
+        self.add(CmdGive())
+        self.add(CmdPut())
+        self.add(CmdTake())
+        self.add(CmdInventory())
         # Node interaction
         from world.node_commands import CmdStabilize
         self.add(CmdStabilize())

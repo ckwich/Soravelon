@@ -99,11 +99,11 @@ def _apply_stamina(character, amount):
 
 
 def _destroy(character, item):
-    """Remove consumed item from inventory and DB."""
-    from world.models import InventoryItem
-    InventoryItem.objects.filter(
-        character_id=character.id, item_id=item.id
-    ).delete()
-    item.delete()
+    """Remove a consumed item through the atomic ownership authority."""
+    from world.inventory_engine import destroy_owned_item
+
+    destroyed, message = destroy_owned_item(character, item)
+    if not destroyed:
+        raise RuntimeError(message)
     from world.oob_publisher import push_inventory_update
     push_inventory_update(character)

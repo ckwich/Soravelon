@@ -259,16 +259,9 @@ class TestCreateItemFromTemplate(unittest.TestCase):
 
     def test_registers_inventory_when_location_is_player_character(self):
         """Direct-to-player item spawns create authoritative inventory records."""
-        class _FakeTags:
-            def has(self, key, category=None):
-                return key == "player_character" and category == "character_type"
-
-            def get(self, key, category=None):
-                return self.has(key, category)
-
         class _FakeCharacter:
-            def __init__(self):
-                self.tags = _FakeTags()
+            def is_typeclass(self, path, exact=False):
+                return path == "typeclasses.characters.Character" and not exact
 
         item_def = {
             "item_id": "iron_sword",
@@ -292,12 +285,9 @@ class TestCreateItemFromTemplate(unittest.TestCase):
 
     def test_registration_failure_deletes_created_item_before_reraising(self):
         """A failed ownership write cannot leak its already-created object."""
-        class _FakeTags:
-            def has(self, key, category=None):
-                return key == "player_character" and category == "character_type"
-
         class _FakeCharacter:
-            tags = _FakeTags()
+            def is_typeclass(self, path, exact=False):
+                return path == "typeclasses.characters.Character" and not exact
 
         item_def = {
             "item_id": "iron_sword",

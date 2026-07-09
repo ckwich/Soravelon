@@ -588,3 +588,119 @@ class TestRecurringPaymentPreConstraintAudit(TransactionTestCase):
 
         with self.assertRaisesRegex(RuntimeError, "recurring_duplicate_contract"):
             executor.migrate(self.migrate_to)
+
+
+class TestUniqueEquippedSlotMigration(TransactionTestCase):
+    """Valid equipment survives while duplicate slot occupancy is rejected."""
+
+    migrate_from = [("world", "0013_recurring_payment_integrity")]
+    migrate_to = [("world", "0014_unique_equipped_slot")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        InventoryItem = old_apps.get_model("world", "InventoryItem")
+        character = ObjectDB.objects.create(
+            db_key="Equipment Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        first_item = ObjectDB.objects.create(
+            db_key="First Migration Helm",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+            db_location_id=character.pk,
+        )
+        second_item = ObjectDB.objects.create(
+            db_key="Second Migration Helm",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+            db_location_id=character.pk,
+        )
+        self.character_id = character.pk
+        self.second_item_id = second_item.pk
+        self.equipped_id = InventoryItem.objects.create(
+            character_id=character.pk,
+            item_id=first_item.pk,
+            quantity=1,
+            is_equipped=True,
+            equipment_slot="head",
+        ).pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_preserves_valid_equipment_and_enforces_unique_slot(self):
+        InventoryItem = self.apps.get_model("world", "InventoryItem")
+        equipped = InventoryItem.objects.get(pk=self.equipped_id)
+        self.assertTrue(equipped.is_equipped)
+        self.assertEqual(equipped.equipment_slot, "head")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            InventoryItem.objects.create(
+                character_id=self.character_id,
+                item_id=self.second_item_id,
+                quantity=1,
+                is_equipped=True,
+                equipment_slot="head",
+            )
+
+
+class TestUniqueEquippedSlotPreConstraintAudit(TransactionTestCase):
+    """Legacy duplicate equipped slots stop instead of choosing player gear."""
+
+    migrate_from = [("world", "0013_recurring_payment_integrity")]
+    migrate_to = [("world", "0014_unique_equipped_slot")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        InventoryItem = old_apps.get_model("world", "InventoryItem")
+
+        character = ObjectDB.objects.create(
+            db_key="Duplicate Equipment Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        for index in range(2):
+            item = ObjectDB.objects.create(
+                db_key=f"Duplicate Migration Helm {index}",
+                db_date_created=timezone.now(),
+                db_lock_storage="",
+                db_location_id=character.pk,
+            )
+            InventoryItem.objects.create(
+                character_id=character.pk,
+                item_id=item.pk,
+                quantity=1,
+                is_equipped=True,
+                equipment_slot="head",
+            )
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        old_apps.get_model("world", "InventoryItem").objects.all().delete()
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_aborts_before_unique_slot_constraint(self):
+        executor = MigrationExecutor(connection)
+
+        with self.assertRaisesRegex(RuntimeError, "duplicate_equipped_slot"):
+            executor.migrate(self.migrate_to)

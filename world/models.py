@@ -162,6 +162,11 @@ class InventoryItem(models.Model):
 
     class Meta:
         constraints = [
+            models.UniqueConstraint(
+                fields=["character", "equipment_slot"],
+                condition=models.Q(is_equipped=True),
+                name="unique_equipped_slot",
+            ),
             models.CheckConstraint(
                 condition=models.Q(quantity__gt=0),
                 name="inventory_quantity_positive",

@@ -684,17 +684,13 @@ def handle_player_death(character):
     room = character.location
     if room:
         corpse = _spawn_player_corpse(character, room)
-        # Move all carried items into corpse and clean up inventory records
-        item_ids = [item.id for item in character.contents]
-        for item in list(character.contents):
-            item.move_to(corpse, quiet=True)
-        # Delete InventoryItem rows for transferred items
-        if item_ids:
-            from world.models import InventoryItem
-            InventoryItem.objects.filter(
-                character_id=character.id,
-                item_id__in=item_ids,
-            ).delete()
+        from world.inventory_engine import move_owned_items_to_world_container
+
+        move_owned_items_to_world_container(
+            character,
+            list(character.contents),
+            corpse,
+        )
 
     character.ndb.hp = 0
     msg = f"|r{character.key} has fallen!|n"

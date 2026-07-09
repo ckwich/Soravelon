@@ -32,24 +32,18 @@ _RESERVED_KEYS = frozenset(
 
 
 def _is_player_inventory_owner(location):
-    """Return True when location is a real Soravelon player character."""
+    """Return True only for Soravelon's real Character typeclass contract."""
     if location is None:
         return False
-    if type(location).__module__.startswith("unittest.mock"):
-        return False
-    tags = getattr(location, "tags", None)
-    if not tags:
-        return False
-    for method_name in ("has", "get"):
-        method = getattr(tags, method_name, None)
-        if not callable(method):
-            continue
-        try:
-            if bool(method("player_character", category="character_type")):
-                return True
-        except TypeError:
-            continue
-    return False
+    checker = getattr(type(location), "is_typeclass", None)
+    return bool(
+        callable(checker)
+        and checker(
+            location,
+            "typeclasses.characters.Character",
+            exact=False,
+        )
+    )
 
 
 def _register_player_inventory(item, location, item_def):

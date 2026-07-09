@@ -630,14 +630,19 @@ class TestDeathHandling(unittest.TestCase):
         player.contents = [item1, item2]
 
         with patch("world.combat_engine._spawn_player_corpse") as mock_corpse, \
-             patch("world.models.InventoryItem.objects"), \
+             patch(
+                 "world.inventory_engine.move_owned_items_to_world_container"
+             ) as mock_transfer, \
              patch("world.banking.on_character_death"):
-            mock_corpse.return_value = MagicMock()
+            corpse = MagicMock()
+            mock_corpse.return_value = corpse
             msg = handle_player_death(player)
             mock_corpse.assert_called_once()
-            # Items should have been moved
-            item1.move_to.assert_called_once()
-            item2.move_to.assert_called_once()
+            mock_transfer.assert_called_once_with(
+                player,
+                [item1, item2],
+                corpse,
+            )
             self.assertIn("fallen", msg.lower())
 
     def test_check_death_at_zero(self):

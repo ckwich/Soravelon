@@ -338,14 +338,4 @@ class SoravelonKeyringItem(SoravelonItem):
         )
 
     def at_get(self, getter, **kwargs):
-        """Ensure InventoryItem record has keyring=True on pickup."""
-        from world.models import InventoryItem
-        InventoryItem.objects.update_or_create(
-            character_id=getter.id,
-            item_id=self.id,
-            defaults={
-                "quantity": 1,
-                "keyring": True,
-                "is_quest_item": bool(self.db.is_quest_item),
-            }
-        )
+        """Ownership is registered atomically by the inventory engine."""
