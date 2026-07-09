@@ -97,16 +97,18 @@ DEFAULT_CHANNELS.extend(
 
 SORAVELON_ENV = os.environ.get("SORAVELON_ENV", "development").lower()
 if SORAVELON_ENV == "production":
+    from server.conf.production_settings import *
+elif SORAVELON_ENV == "development":
+    ######################################################################
+    # Development-only settings from an ignored local file.
+    ######################################################################
     try:
-        from server.conf.production_settings import *
-    except ImportError:
-        print("production_settings.py file not found; using development defaults.")
-
-
-######################################################################
-# Settings given in secret_settings.py override those in this file.
-######################################################################
-try:
-    from server.conf.secret_settings import *
-except ImportError:
-    print("secret_settings.py file not found or failed to import.")
+        from server.conf.secret_settings import *
+    except ModuleNotFoundError as exc:
+        if exc.name != "server.conf.secret_settings":
+            raise
+else:
+    raise RuntimeError(
+        f"Unsupported SORAVELON_ENV '{SORAVELON_ENV}'. "
+        "Expected 'development' or 'production'."
+    )
