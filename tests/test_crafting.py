@@ -349,6 +349,31 @@ class TestStationCheck(EvenniaTest):
 class TestCraftItemIntegration(unittest.TestCase):
     """craft_item should honor station and processing quality rules."""
 
+    def test_create_crafted_item_spawns_the_complete_catalog_template(self):
+        from world.crafting_definitions import RECIPE_REGISTRY
+        from world.crafting_engine import _create_crafted_item
+
+        character = MagicMock()
+        recipe = RECIPE_REGISTRY["iron_dagger"]
+        crafted_item = MagicMock(key="Fine Iron Dagger")
+
+        with patch(
+            "world.item_spawner.create_item_from_template",
+            return_value=crafted_item,
+        ) as mock_create:
+            result = _create_crafted_item(character, recipe, "fine")
+
+        self.assertIs(result, crafted_item)
+        item_def = mock_create.call_args.args[0]
+        self.assertEqual(item_def["item_id"], "iron_dagger")
+        self.assertEqual(item_def["item_type"], "equipment")
+        self.assertEqual(item_def["equip_slot"], "main_hand")
+        self.assertEqual(item_def["scaling_stat"], "agility")
+        self.assertGreater(item_def["damage_min"], 0)
+        self.assertGreaterEqual(item_def["damage_max"], item_def["damage_min"])
+        self.assertEqual(item_def["quality"], "fine")
+        self.assertTrue(item_def["crafted"])
+
     def test_standard_craft_uses_station_bonus_in_quality_roll(self):
         from world.crafting_engine import craft_item
 

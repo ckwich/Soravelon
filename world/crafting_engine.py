@@ -333,51 +333,33 @@ def _create_crafted_item(character, recipe, quality):
     """
     Create the output item from a recipe with the given quality tier.
 
-    Uses item_spawner.create_item_from_template if available, otherwise
-    creates a basic Evennia object with quality metadata. Places item
-    in character's inventory. Returns the created item or None.
+    Resolves the recipe's canonical catalog template, overlays only
+    instance-specific crafting metadata, and places the item in the
+    character's inventory. Returns the created item or None.
     """
     output = recipe.get("output", {})
     template_id = output.get("template_id", "unknown")
-    quality_display = QUALITY_DISPLAY.get(quality, quality)
     item_name = f"{quality.capitalize()} {recipe['name']}"
+    overrides = {
+        "key": item_name,
+        "quality": quality,
+        "quality_modifier": get_quality_modifier(quality),
+        "crafted": True,
+        "recipe_id": template_id,
+        "base_item_type": output.get("base_item_type", "misc"),
+    }
+
+    from world.item_catalog import ItemTemplateNotFound
+    from world.item_spawner import create_item_from_catalog
 
     try:
-        from world.item_spawner import create_item_from_template
-
-        # Build a proper item_def dict from recipe output + quality metadata
-        item_def = dict(output)  # copy to avoid mutating recipe
-        item_def["quality"] = quality
-        item_def["quality_modifier"] = get_quality_modifier(quality)
-        item_def["crafted"] = True
-        item_def.setdefault("key", item_name)
-        item_def.setdefault("item_type", output.get("base_item_type", "item"))
-
-        item = create_item_from_template(item_def, location=character)
-        if item:
-            return item
-    except ImportError:
-        pass
-
-    # Fallback: create a basic Evennia object with crafting metadata
-    from evennia.utils.create import create_object
-
-    item = create_object(
-        typeclass="typeclasses.objects.SoravelonObject",
-        key=item_name,
-        location=character,
-    )
-
-    if item:
-        item.db.crafted = True
-        item.db.quality = quality
-        item.db.quality_modifier = get_quality_modifier(quality)
-        item.db.recipe_id = template_id
-        item.db.base_item_type = output.get("base_item_type", "misc")
-        item.tags.add(template_id, category="item_tag")
-        item.tags.add(output.get("base_item_type", "misc"), category="item_type")
-
-    return item
+        return create_item_from_catalog(
+            template_id,
+            location=character,
+            overrides=overrides,
+        )
+    except ItemTemplateNotFound:
+        return None
 
 
 # --- Main Craft Entry Point ---

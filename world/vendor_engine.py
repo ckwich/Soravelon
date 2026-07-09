@@ -8,7 +8,7 @@ All functions return (bool, str) tuples per project convention.
 
 import copy
 import math
-from world.areas.equipment_catalog import CATALOG
+from world.item_catalog import CATALOG
 from world.inventory_engine import unregister_item_ownership
 from world.item_spawner import create_item_from_template
 

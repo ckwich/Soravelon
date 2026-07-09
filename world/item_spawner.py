@@ -6,6 +6,9 @@ Item definitions are stored on zone_obj.db.item_definitions via area.item().
 
 create_item_from_template(item_def, location=None) is the primary entry point.
 Called by action_vocabulary._action_give_item and loot_tables.roll_loot.
+
+create_item_from_catalog(template_id, location=None, overrides=None) resolves a
+shared canonical template before delegating to create_item_from_template().
 """
 
 import evennia
@@ -118,3 +121,18 @@ def create_item_from_template(item_def, location=None):
     _register_player_inventory(item, location, item_def)
 
     return item
+
+
+def create_item_from_catalog(template_id, location=None, overrides=None):
+    """Create one canonical catalog item with optional per-instance metadata.
+
+    ``get_item_template`` returns a deep copy, so applying crafting quality or
+    other instance-specific overrides cannot mutate the shared catalog.
+    Unknown ids raise ``ItemTemplateNotFound`` to the owning caller.
+    """
+    from world.item_catalog import get_item_template
+
+    item_def = get_item_template(template_id)
+    if overrides:
+        item_def.update(overrides)
+    return create_item_from_template(item_def, location=location)

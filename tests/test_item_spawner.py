@@ -290,6 +290,22 @@ class TestCreateItemFromTemplate(unittest.TestCase):
             keyring=False,
         )
 
+    def test_create_item_from_catalog_resolves_full_template_and_overrides_copy(self):
+        from world.item_catalog import CATALOG
+        from world.item_spawner import create_item_from_catalog
+
+        original_key = CATALOG["iron_dagger"]["key"]
+        result = create_item_from_catalog(
+            "iron_dagger",
+            overrides={"key": "Fine Iron Dagger", "quality": "fine"},
+        )
+
+        self.assertEqual(result.db.item_type, "equipment")
+        self.assertEqual(result.db.equipment_slot, "main_hand")
+        self.assertEqual(result.db.scaling_stat, "agility")
+        self.assertEqual(result.db.quality, "fine")
+        self.assertEqual(CATALOG["iron_dagger"]["key"], original_key)
+
 
 if __name__ == "__main__":
     unittest.main()
