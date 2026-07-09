@@ -10,6 +10,8 @@ Records are created lazily — only when first needed. No record = default/neutr
 
 from django.db import models
 
+from world.economy_ids import new_operation_id
+
 
 class FactionStanding(models.Model):
     """
@@ -159,6 +161,29 @@ class InventoryItem(models.Model):
     acquired_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantity__gt=0),
+                name="inventory_quantity_positive",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        is_equipped=False,
+                        equipment_slot__isnull=True,
+                    )
+                    | (
+                        models.Q(
+                            is_equipped=True,
+                            equipment_slot__isnull=False,
+                            container_id__isnull=True,
+                        )
+                        & ~models.Q(equipment_slot="")
+                    )
+                ),
+                name="inventory_equipment_state",
+            ),
+        ]
         indexes = [
             models.Index(fields=["character_id", "is_equipped"]),
             models.Index(fields=["character_id", "keyring"]),
@@ -180,6 +205,14 @@ class BankAccount(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_accessed = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(balance__gte=0),
+                name="bank_balance_nonnegative",
+            ),
+        ]
+
     def __str__(self):
         return f"char={self.character_id}:balance={self.balance}"
 
@@ -196,8 +229,24 @@ class BankTransaction(models.Model):
     description = models.CharField(max_length=256, blank=True)
     occurred_at = models.DateTimeField(auto_now_add=True)
     related_id = models.CharField(max_length=64, null=True, blank=True)
+    operation_id = models.CharField(
+        max_length=128,
+        unique=True,
+        default=new_operation_id,
+        editable=False,
+    )
 
     class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(amount=0),
+                name="bank_tx_amount_nonzero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(balance_after__gte=0),
+                name="bank_tx_balance_nonnegative",
+            ),
+        ]
         indexes = [
             models.Index(fields=["character_id", "occurred_at"]),
             models.Index(fields=["character_id", "transaction_type"]),
@@ -238,9 +287,8 @@ class DebtRecord(models.Model):
         on_delete=models.CASCADE,
         related_name="debt_records",
     )
-    # NOT unique — a character can have multiple debt records over time
-    # (one active, others paid/hunted/forgiven). Application-level check
-    # in create_debt() enforces one active debt at a time.
+    # A character may retain historical resolved debts, but the conditional
+    # database constraint below permits only one active record.
     amount = models.IntegerField()
     deadline_playtime_seconds = models.IntegerField()
     status = models.CharField(max_length=16, default="active")
@@ -248,12 +296,137 @@ class DebtRecord(models.Model):
     resolved_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["character"],
+                condition=models.Q(status="active"),
+                name="unique_active_debt",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name="debt_amount_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(deadline_playtime_seconds__gte=0),
+                name="debt_deadline_nonnegative",
+            ),
+        ]
         indexes = [
             models.Index(fields=["character_id", "status"]),
         ]
 
     def __str__(self):
         return f"char={self.character_id}:debt={self.amount}:{self.status}"
+
+
+class BankDraft(models.Model):
+    """Durable identity and lifecycle state for a Consortium bank draft."""
+
+    STATUS_CHOICES = [
+        ("issued", "Issued"),
+        ("redeemed", "Redeemed"),
+        ("void", "Void"),
+    ]
+
+    draft_key = models.CharField(max_length=160, unique=True)
+    issuer_character = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="issued_bank_drafts",
+    )
+    issuer_character_ref = models.BigIntegerField()
+    denomination = models.IntegerField()
+    item_id = models.BigIntegerField(unique=True)
+    operation_id = models.CharField(
+        max_length=128,
+        unique=True,
+        default=new_operation_id,
+        editable=False,
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default="issued",
+    )
+    issued_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_operation_id = models.CharField(
+        max_length=128,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    redeemed_by = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="redeemed_bank_drafts",
+    )
+    redeemer_character_ref = models.BigIntegerField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(denomination__gt=0),
+                name="bank_draft_amount_positive",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        status="issued",
+                        resolved_at__isnull=True,
+                        resolution_operation_id__isnull=True,
+                        redeemer_character_ref__isnull=True,
+                    )
+                    | models.Q(
+                        status="redeemed",
+                        resolved_at__isnull=False,
+                        resolution_operation_id__isnull=False,
+                        redeemer_character_ref__isnull=False,
+                    )
+                    | models.Q(
+                        status="void",
+                        resolved_at__isnull=False,
+                        resolution_operation_id__isnull=False,
+                        redeemer_character_ref__isnull=True,
+                    )
+                ),
+                name="bank_draft_state_coherent",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    (
+                        models.Q(issuer_character__isnull=True)
+                        | models.Q(
+                            issuer_character_id=models.F("issuer_character_ref")
+                        )
+                    )
+                    & (
+                        models.Q(redeemed_by__isnull=True)
+                        | models.Q(
+                            redeemed_by_id=models.F("redeemer_character_ref")
+                        )
+                    )
+                ),
+                name="bank_draft_actor_refs_match",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["issuer_character", "status"],
+                name="world_draft_issuer_status_idx",
+            ),
+            models.Index(
+                fields=["status", "issued_at"],
+                name="world_draft_status_issued_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.draft_key}:{self.denomination}:{self.status}"
 
 
 class CharacterGuild(models.Model):

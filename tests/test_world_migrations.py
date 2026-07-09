@@ -256,3 +256,220 @@ class TestSocialKnowledgePayloadMigration(TransactionTestCase):
                 claim_id=self.claim_id,
                 channel="official_report",
             )
+
+
+class TestEconomyIntegrityMigration(TransactionTestCase):
+    """Economy and inventory invariants become durable without losing rows."""
+
+    migrate_from = [("world", "0011_social_knowledge_payload_xor")]
+    migrate_to = [("world", "0012_economy_integrity_schema")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        BankAccount = old_apps.get_model("world", "BankAccount")
+        BankTransaction = old_apps.get_model("world", "BankTransaction")
+        DebtRecord = old_apps.get_model("world", "DebtRecord")
+        InventoryItem = old_apps.get_model("world", "InventoryItem")
+
+        character = ObjectDB.objects.create(
+            db_key="Economy Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        item = ObjectDB.objects.create(
+            db_key="Migration Satchel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+            db_location_id=character.pk,
+        )
+        invalid_balance_character = ObjectDB.objects.create(
+            db_key="Negative Balance Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        self.character_id = character.pk
+        self.invalid_balance_character_id = invalid_balance_character.pk
+        self.account_id = BankAccount.objects.create(
+            character_id=character.pk,
+            balance=100,
+        ).pk
+        self.transaction_id = BankTransaction.objects.create(
+            character_id=character.pk,
+            transaction_type="migration_seed",
+            amount=100,
+            balance_after=100,
+            description="Migration sentinel",
+        ).pk
+        self.debt_id = DebtRecord.objects.create(
+            character_id=character.pk,
+            amount=50,
+            deadline_playtime_seconds=600,
+            status="active",
+        ).pk
+        self.inventory_id = InventoryItem.objects.create(
+            character_id=character.pk,
+            item_id=item.pk,
+            quantity=1,
+        ).pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_preserves_rows_and_backfills_operation_identity(self):
+        BankAccount = self.apps.get_model("world", "BankAccount")
+        BankTransaction = self.apps.get_model("world", "BankTransaction")
+        DebtRecord = self.apps.get_model("world", "DebtRecord")
+        InventoryItem = self.apps.get_model("world", "InventoryItem")
+
+        self.assertEqual(BankAccount.objects.get(pk=self.account_id).balance, 100)
+        transaction_row = BankTransaction.objects.get(pk=self.transaction_id)
+        self.assertEqual(
+            transaction_row.operation_id,
+            f"legacy-bank-transaction-{self.transaction_id}",
+        )
+        self.assertEqual(DebtRecord.objects.get(pk=self.debt_id).amount, 50)
+        self.assertEqual(InventoryItem.objects.get(pk=self.inventory_id).quantity, 1)
+
+    def test_enforces_balance_debt_inventory_and_operation_constraints(self):
+        BankAccount = self.apps.get_model("world", "BankAccount")
+        BankTransaction = self.apps.get_model("world", "BankTransaction")
+        DebtRecord = self.apps.get_model("world", "DebtRecord")
+        InventoryItem = self.apps.get_model("world", "InventoryItem")
+
+        invalid_creates = (
+            lambda: BankAccount.objects.create(
+                character_id=self.invalid_balance_character_id,
+                balance=-1,
+            ),
+            lambda: DebtRecord.objects.create(
+                character_id=self.character_id,
+                amount=25,
+                deadline_playtime_seconds=300,
+                status="active",
+            ),
+            lambda: InventoryItem.objects.create(
+                character_id=self.character_id,
+                item_id=9001,
+                quantity=0,
+            ),
+            lambda: InventoryItem.objects.create(
+                character_id=self.character_id,
+                item_id=9002,
+                quantity=1,
+                is_equipped=True,
+            ),
+            lambda: InventoryItem.objects.create(
+                character_id=self.character_id,
+                item_id=9003,
+                quantity=1,
+                is_equipped=True,
+                equipment_slot="head",
+                container_id=9004,
+            ),
+            lambda: BankTransaction.objects.create(
+                character_id=self.character_id,
+                transaction_type="duplicate_operation",
+                amount=1,
+                balance_after=101,
+                operation_id=f"legacy-bank-transaction-{self.transaction_id}",
+            ),
+        )
+        for invalid_create in invalid_creates:
+            with self.assertRaises(IntegrityError), transaction.atomic():
+                invalid_create()
+
+    def test_creates_durable_stateful_bank_drafts(self):
+        BankDraft = self.apps.get_model("world", "BankDraft")
+        ObjectDB = self.apps.get_model("objects", "ObjectDB")
+
+        draft = BankDraft.objects.create(
+            draft_key="draft:migration-sentinel",
+            issuer_character_id=self.character_id,
+            issuer_character_ref=self.character_id,
+            denomination=75,
+            item_id=9100,
+            operation_id="operation:migration-draft-issued",
+        )
+        self.assertEqual(draft.status, "issued")
+        self.assertIsNone(draft.resolved_at)
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            BankDraft.objects.create(
+                draft_key="draft:invalid-denomination",
+                issuer_character_id=self.character_id,
+                issuer_character_ref=self.character_id,
+                denomination=0,
+                item_id=9101,
+                operation_id="operation:invalid-denomination",
+            )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            BankDraft.objects.create(
+                draft_key="draft:invalid-redeemed-state",
+                issuer_character_id=self.character_id,
+                issuer_character_ref=self.character_id,
+                denomination=25,
+                item_id=9102,
+                operation_id="operation:invalid-redeemed",
+                status="redeemed",
+            )
+
+        ObjectDB.objects.filter(pk=self.character_id).delete()
+        draft.refresh_from_db()
+        self.assertIsNone(draft.issuer_character_id)
+        self.assertEqual(draft.issuer_character_ref, self.character_id)
+
+
+class TestEconomyIntegrityPreConstraintAudit(TransactionTestCase):
+    """The migration refuses inconsistent legacy state instead of deleting it."""
+
+    migrate_from = [("world", "0011_social_knowledge_payload_xor")]
+    migrate_to = [("world", "0012_economy_integrity_schema")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        BankAccount = old_apps.get_model("world", "BankAccount")
+        character = ObjectDB.objects.create(
+            db_key="Invalid Economy Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        self.invalid_account_id = BankAccount.objects.create(
+            character_id=character.pk,
+            balance=-10,
+        ).pk
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        old_apps.get_model("world", "BankAccount").objects.filter(
+            pk=self.invalid_account_id,
+        ).delete()
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_aborts_before_constraints_when_legacy_rows_are_invalid(self):
+        executor = MigrationExecutor(connection)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "bank_account_negative_balance",
+        ):
+            executor.migrate(self.migrate_to)
