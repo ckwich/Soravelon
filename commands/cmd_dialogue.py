@@ -62,16 +62,33 @@ def _find_npc_in_room(character, npc_name):
 
     npc_name_lower = npc_name.strip().lower()
 
+    prefix_match = None
+    token_match = None
+
     for obj in character.location.contents:
         if not isinstance(obj, SoravelonMob) or not obj.db.is_npc:
             continue
-        obj_name = (obj.db.npc_name or obj.key or "").lower()
-        if obj_name == npc_name_lower:
-            return obj
-        if obj_name.startswith(npc_name_lower):
-            return obj
+        obj_names = [
+            (obj.db.npc_name or "").lower(),
+            (obj.key or "").lower(),
+        ]
+        obj_names = [name for name in obj_names if name]
 
-    return None
+        if any(name == npc_name_lower for name in obj_names):
+            return obj
+        if prefix_match is None and any(
+            name.startswith(npc_name_lower)
+            for name in obj_names
+        ):
+            prefix_match = obj
+        if token_match is None and any(
+            token.startswith(npc_name_lower)
+            for name in obj_names
+            for token in name.split()
+        ):
+            token_match = obj
+
+    return prefix_match or token_match
 
 
 def _is_tellable_player(target):

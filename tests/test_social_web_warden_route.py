@@ -3,7 +3,9 @@ import pathlib
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from evennia import create_object
 from evennia.utils.test_resources import EvenniaTest
+from django.db.models import Q
 
 
 def _authored_quest_kwargs(quest_id):
@@ -60,6 +62,19 @@ class TestVaelWardenSocialRoute(EvenniaTest):
             SocialFact.objects.get(fact_key=fact_key),
             SocialClaim.objects.get(claim_key=claim_key),
         )
+
+    def _make_room_npc(self, *, key, npc_name, npc_id, faction=None):
+        from typeclasses.mobs import SoravelonMob
+
+        npc = create_object(SoravelonMob, key=key, location=self.char1.location)
+        npc.db.is_npc = True
+        npc.db.combat_enabled = False
+        npc.db.npc_name = npc_name
+        npc.db.npc_id = npc_id
+        npc.db.faction = faction
+        npc.db.zone_id = "vaels_crossing"
+        npc.db.dialogue_topics = {}
+        return npc
 
     def test_warden_report_reaches_outpost_contact_but_not_innkeeper(self):
         from world.social_engine import query_social_context
@@ -183,3 +198,142 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         )
         self.assertEqual(whistle_condition, "default")
         self.assertIn("no confirmed Warden report", whistle_text)
+
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_player_can_ask_calloway_why_after_social_offer_but_not_whistle(
+        self,
+        mock_context_packet,
+        _mock_standing_tier,
+        _mock_active_quests,
+    ):
+        from commands.cmd_dialogue import CmdAsk, CmdTalk
+        from world.models import CharacterQuest, SocialEdge, SocialKnowledge
+        from world.social_engine import query_social_context
+
+        (
+            player,
+            calloway_node,
+            _harven_node,
+            innkeeper_node,
+            fact,
+            claim,
+        ) = self._pay_warden_report_rewards()
+        payload_query = Q(fact=fact) | Q(claim=claim)
+        self.assertEqual(
+            set(
+                SocialKnowledge.objects.filter(payload_query).values_list(
+                    "node__node_key",
+                    flat=True,
+                )
+            ),
+            {
+                "npc:npc_warden_agent_calloway",
+                "npc:npc_warden_outpost_commander",
+            },
+        )
+        self.assertFalse(
+            SocialEdge.objects.filter(
+                Q(source_node=innkeeper_node) | Q(target_node=innkeeper_node)
+            ).exists()
+        )
+
+        calloway_context = query_social_context(
+            viewer_node_key=calloway_node.node_key,
+            subject_node_key=player.node_key,
+            purpose="quest_offer",
+        )
+        self.assertEqual(
+            [item["fact_key"] for item in calloway_context["facts"]],
+            [fact.fact_key],
+        )
+        self.assertEqual(
+            [item["claim_key"] for item in calloway_context["claims"]],
+            [claim.claim_key],
+        )
+
+        CharacterQuest.objects.create(
+            character=self.char1,
+            quest_id="vc_q_warden_report",
+            status="complete",
+            progress={},
+        )
+        mock_context_packet.return_value = {
+            "reputation": 0,
+            "network": 0,
+            "betrayal_flag": False,
+        }
+
+        calloway = self._make_room_npc(
+            key="Agent Calloway",
+            npc_name="Agent Calloway",
+            npc_id="npc_warden_agent_calloway",
+            faction="wardens",
+        )
+        self._make_room_npc(
+            key="Whistle",
+            npc_name="Whistle",
+            npc_id="npc_innkeeper_whistle",
+            faction=None,
+        )
+
+        with patch("world.dialogue_engine.resolve_greeting", return_value=("Speak.", "neutral")), patch(
+            "world.dialogue_engine.get_npc_hints",
+            return_value=[],
+        ), patch("world.quest_engine.check_talk_to_objectives"), patch(
+            "world.quest_engine.check_deliver_objectives"
+        ), patch.object(self.char1, "msg") as mock_msg:
+            talk = CmdTalk()
+            talk.caller = self.char1
+            talk.args = "Calloway"
+            talk.func()
+
+            pending_offer = self.char1.ndb.pending_quest_offer
+            self.assertIsNotNone(pending_offer)
+            self.assertIs(pending_offer["npc"], calloway)
+            self.assertEqual(
+                pending_offer["quest"]["quest_id"],
+                "vc_sq_under_seal_dustwalkers_rest",
+            )
+
+            mock_msg.reset_mock()
+            ask_calloway = CmdAsk()
+            ask_calloway.caller = self.char1
+            ask_calloway.args = "Calloway why"
+            ask_calloway.func()
+
+            calloway_text = mock_msg.call_args[0][0]
+            self.assertIn("supported report", calloway_text)
+            self.assertIn("sealed field report", calloway_text)
+            self.assertIn("official report", calloway_text)
+            for forbidden in (
+                "fact:",
+                "claim:",
+                "npc:",
+                "player:",
+                "edge:",
+                "edge_key",
+                "node_key",
+                "fact_key",
+                "claim_key",
+                "confidence",
+                "0.95",
+                "1.0",
+                "warden_report",
+                "Harven",
+                "raw_prompt",
+                "provider",
+            ):
+                self.assertNotIn(forbidden, calloway_text)
+
+            mock_msg.reset_mock()
+            ask_whistle = CmdAsk()
+            ask_whistle.caller = self.char1
+            ask_whistle.args = "Whistle why"
+            ask_whistle.func()
+
+            whistle_text = mock_msg.call_args[0][0]
+            self.assertIn("nothing I can fairly speak to", whistle_text)
+            self.assertNotIn("Warden report", whistle_text)
+            self.assertNotIn("sealed field report", whistle_text)

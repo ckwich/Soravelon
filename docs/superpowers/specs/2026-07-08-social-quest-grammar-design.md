@@ -107,10 +107,18 @@ multi-word NPC why form:
 - `ask <npc> about me`
 - `ask <npc> why`
 - `ask <multi word npc> why`
+- surname/token shorthand such as `ask Calloway why` when the visible NPC name
+  is `Agent Calloway`
 
 Specific why-topics such as `ask <npc> why wolves` should continue through
 normal authored topic resolution rather than being swallowed by the explanation
 surface.
+
+The Warden proof route is the first live contract for this surface: after the
+Warden report reward records Calloway's institutional knowledge, `talk
+Calloway` may surface the Social Web-gated follow-up offer and `ask Calloway
+why` may explain it from the pending offer. Whistle must not explain Warden
+report knowledge unless a real Social Web route gives Whistle that knowledge.
 
 It must not expose:
 
