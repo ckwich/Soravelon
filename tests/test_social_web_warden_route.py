@@ -41,7 +41,10 @@ class TestVaelWardenSocialRoute(EvenniaTest):
 
         from world.models import SocialClaim, SocialFact, SocialNode
 
-        quest = _authored_quest_kwargs("vc_q_warden_report")
+        quest = {
+            "quest_id": "vc_q_warden_report",
+            **_authored_quest_kwargs("vc_q_warden_report"),
+        }
         failures = _pay_rewards(self.char1, quest)
         self.assertEqual(failures, [])
 
@@ -74,7 +77,19 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         npc.db.faction = faction
         npc.db.zone_id = "vaels_crossing"
         npc.db.dialogue_topics = {}
+        npc.tags.add(npc_id, category="npc_id")
         return npc
+
+    def _make_zone_object_with_items(self, *, zone_id, item_ids, quest_definitions=None):
+        from evennia.objects.objects import DefaultObject
+        from world.areas.equipment_catalog import CATALOG
+
+        zone = create_object(DefaultObject, key=f"test_zone_{zone_id}_{self.char1.id}")
+        zone.tags.add("zone_object", category="object_type")
+        zone.db.zone_id = zone_id
+        zone.db.item_definitions = [dict(CATALOG[item_id]) for item_id in item_ids]
+        zone.db.quest_definitions = list(quest_definitions or [])
+        return zone
 
     def test_warden_report_reaches_outpost_contact_but_not_innkeeper(self):
         from world.social_engine import query_social_context
@@ -106,6 +121,151 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         )
         self.assertEqual(innkeeper_context["claims"], [])
         self.assertEqual(innkeeper_context["facts"], [])
+
+    @patch("world.oob_publisher.push_quest_update")
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_player_path_accepts_delivers_and_records_warden_report_social_reward(
+        self,
+        mock_context_packet,
+        _mock_standing_tier,
+        _mock_active_quests,
+        _mock_push_quest_update,
+    ):
+        from commands.cmd_dialogue import CmdAccept, CmdTalk
+        from world.models import CharacterQuest, SocialClaim, SocialFact, SocialKnowledge
+
+        self.char1.location.db.zone_id = "vaels_crossing"
+        quest = {
+            "quest_id": "vc_q_warden_report",
+            **_authored_quest_kwargs("vc_q_warden_report"),
+        }
+        self.assertEqual(quest["rewards"][2]["action_type"], "record_social_event")
+        self.assertEqual(len(quest["rewards"][2]["nodes"]), 3)
+        zone = self._make_zone_object_with_items(
+            zone_id="vaels_crossing",
+            item_ids=["warden_field_report"],
+            quest_definitions=[quest],
+        )
+        self.assertEqual(len(zone.db.quest_definitions[0]["rewards"][2]["nodes"]), 3)
+        mock_context_packet.return_value = {
+            "reputation": 0,
+            "network": 0,
+            "betrayal_flag": False,
+        }
+
+        calloway = self._make_room_npc(
+            key="Agent Calloway",
+            npc_name="Agent Calloway",
+            npc_id="npc_warden_agent_calloway",
+            faction="wardens",
+        )
+        harven = self._make_room_npc(
+            key="Commander Harven",
+            npc_name="Commander Harven",
+            npc_id="npc_warden_outpost_commander",
+            faction="wardens",
+        )
+
+        self.char1.ndb.pending_quest_offer = {"npc": calloway, "quest": quest}
+
+        def search_tag_side_effect(tag, category=None):
+            if tag == "zone_object" and category == "object_type":
+                return [zone]
+            return []
+
+        with patch(
+            "evennia.search_tag",
+            side_effect=search_tag_side_effect,
+        ), patch.object(self.char1, "msg") as mock_msg:
+            accept = CmdAccept()
+            accept.caller = self.char1
+            accept.func()
+
+        accept_output = "\n".join(str(call.args[0]) for call in mock_msg.call_args_list)
+        self.assertTrue(
+            CharacterQuest.objects.filter(
+                character=self.char1,
+                quest_id="vc_q_warden_report",
+            ).exists(),
+            accept_output,
+        )
+
+        cq = CharacterQuest.objects.get(
+            character=self.char1,
+            quest_id="vc_q_warden_report",
+        )
+        self.assertEqual(cq.status, "active")
+        self.assertEqual(
+            cq.progress,
+            {"deliver_npc_warden_outpost_commander": 0},
+        )
+        self.assertTrue(
+            any(
+                item.tags.has("warden_field_report", category="item_tag")
+                for item in self.char1.contents
+            )
+        )
+
+        from world.action_vocabulary import execute_action
+
+        with patch(
+            "world.action_vocabulary.execute_action",
+            wraps=execute_action,
+        ) as mock_execute_action, patch(
+            "evennia.search_tag",
+            side_effect=search_tag_side_effect,
+        ), patch.object(self.char1, "msg") as mock_talk_msg:
+            talk = CmdTalk()
+            talk.caller = self.char1
+            talk.args = "Harven"
+            talk.func()
+        talk_output = "\n".join(str(call.args[0]) for call in mock_talk_msg.call_args_list)
+        executed_social_actions = [
+            call.args[0]
+            for call in mock_execute_action.call_args_list
+            if call.args and call.args[0].get("action_type") == "record_social_event"
+        ]
+        self.assertTrue(executed_social_actions)
+        self.assertEqual(len(executed_social_actions[0].get("nodes") or []), 3)
+
+        cq.refresh_from_db()
+        self.assertEqual(cq.status, "complete")
+        self.assertEqual(
+            cq.progress,
+            {"deliver_npc_warden_outpost_commander": 1},
+        )
+        self.assertFalse(
+            any(
+                item.tags.has("warden_field_report", category="item_tag")
+                for item in self.char1.contents
+            )
+        )
+
+        fact_key = f"fact:{self.char1.id}:vc_q_warden_report:delivered"
+        claim_key = f"claim:calloway:{self.char1.id}:vc_q_warden_report:delivered"
+        self.assertTrue(
+            SocialFact.objects.filter(fact_key=fact_key).exists(),
+            talk_output,
+        )
+        self.assertTrue(
+            SocialClaim.objects.filter(claim_key=claim_key).exists(),
+            talk_output,
+        )
+        self.assertEqual(
+            set(
+                SocialKnowledge.objects.filter(claim__claim_key=claim_key).values_list(
+                    "node__node_key",
+                    flat=True,
+                )
+            ),
+            {
+                "npc:npc_warden_agent_calloway",
+                "npc:npc_warden_outpost_commander",
+            },
+        )
+        self.assertIs(harven.location, self.char1.location)
 
     @patch("world.quest_engine.get_active_quests", return_value=[])
     @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")

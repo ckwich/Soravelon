@@ -98,7 +98,7 @@ def _handle_give_item(action_dict, context, _depth):
         if not item_def:
             return False, f"give_item: template '{template_id}' not found in zone"
         from world.item_spawner import create_item_from_template
-        item = create_item_from_template(item_def, location=None)
+        item = create_item_from_template(item_def, location=room)
         from world.inventory_engine import pick_up
         return pick_up(character, item)
 
@@ -287,13 +287,17 @@ def _template_action_value(value, template_context):
     """Render action templates recursively without changing non-string values."""
     if isinstance(value, str):
         return value.format_map(template_context)
-    if isinstance(value, list):
-        return [_template_action_value(item, template_context) for item in value]
-    if isinstance(value, dict):
+    if hasattr(value, "items"):
         return {
             key: _template_action_value(item, template_context)
-            for key, item in value.items()
+            for key, item in dict(value.items()).items()
         }
+    if isinstance(value, (bytes, bytearray)):
+        return value
+    try:
+        return [_template_action_value(item, template_context) for item in value]
+    except TypeError:
+        pass
     return value
 
 
@@ -311,6 +315,21 @@ def _resolve_social_node_key(value, node_refs, field_name):
     if not isinstance(node_key, str) or ":" not in node_key:
         return False, f"record_social_event: unknown node reference '{value}' for {field_name}", ""
     return True, "", node_key
+
+
+def _action_sequence(value):
+    if isinstance(value, (str, bytes, bytearray)) or hasattr(value, "items"):
+        return None
+    try:
+        return list(value)
+    except TypeError:
+        return None
+
+
+def _action_mapping(value):
+    if not hasattr(value, "items"):
+        return None
+    return dict(value.items())
 
 
 def _record_social_event_action(action_dict, character):
@@ -343,13 +362,14 @@ def _record_social_event_rendered(rendered):
         record_social_fact,
     )
 
-    node_defs = rendered.get("nodes") or []
-    if not isinstance(node_defs, list) or not node_defs:
+    node_defs = _action_sequence(rendered.get("nodes") or [])
+    if not node_defs:
         return False, "record_social_event: nodes must be a non-empty list"
 
     node_refs = {}
     for index, node_def in enumerate(node_defs):
-        if not isinstance(node_def, dict):
+        node_def = _action_mapping(node_def)
+        if node_def is None:
             return False, f"record_social_event: node {index} must be a dict"
 
         node_type = node_def.get("node_type")
@@ -392,8 +412,12 @@ def _record_social_event_rendered(rendered):
             if ref:
                 node_refs[ref] = node.node_key
 
-    for index, edge_def in enumerate(rendered.get("edges") or []):
-        if not isinstance(edge_def, dict):
+    edge_defs = _action_sequence(rendered.get("edges") or [])
+    if edge_defs is None:
+        return False, "record_social_event: edges must be a list"
+    for index, edge_def in enumerate(edge_defs):
+        edge_def = _action_mapping(edge_def)
+        if edge_def is None:
             return False, f"record_social_event: edge {index} must be a dict"
 
         ok, message, source_node_key = _resolve_social_node_key(
@@ -444,7 +468,8 @@ def _record_social_event_rendered(rendered):
             return False, f"record_social_event: {message}"
 
     fact_def = rendered.get("fact")
-    if not isinstance(fact_def, dict):
+    fact_def = _action_mapping(fact_def)
+    if fact_def is None:
         return False, "record_social_event: fact must be a dict"
 
     fact_key = _first_present(fact_def, "fact_key_template", "fact_key")
@@ -525,7 +550,8 @@ def _record_social_event_rendered(rendered):
     claim = None
     claim_def = rendered.get("claim")
     if claim_def:
-        if not isinstance(claim_def, dict):
+        claim_def = _action_mapping(claim_def)
+        if claim_def is None:
             return False, "record_social_event: claim must be a dict"
 
         ok, message, speaker_node_key = _resolve_social_node_key(
@@ -586,12 +612,13 @@ def _record_social_event_rendered(rendered):
 
     default_fact_key = fact.fact_key if fact else ""
     default_claim_key = claim.claim_key if claim else ""
-    knowledge_defs = rendered.get("knowledge") or []
-    if not isinstance(knowledge_defs, list):
+    knowledge_defs = _action_sequence(rendered.get("knowledge") or [])
+    if knowledge_defs is None:
         return False, "record_social_event: knowledge must be a list"
 
     for index, knowledge_def in enumerate(knowledge_defs):
-        if not isinstance(knowledge_def, dict):
+        knowledge_def = _action_mapping(knowledge_def)
+        if knowledge_def is None:
             return False, f"record_social_event: knowledge {index} must be a dict"
 
         ok, message, node_key = _resolve_social_node_key(
@@ -653,13 +680,16 @@ def _record_social_event_rendered(rendered):
             return False, f"record_social_event: {message}"
 
     propagate_defs = rendered.get("propagate") or []
-    if isinstance(propagate_defs, dict):
+    if hasattr(propagate_defs, "items"):
         propagate_defs = [propagate_defs]
-    if not isinstance(propagate_defs, list):
+    else:
+        propagate_defs = _action_sequence(propagate_defs)
+    if propagate_defs is None:
         return False, "record_social_event: propagate must be a dict or list"
 
     for index, propagate_def in enumerate(propagate_defs):
-        if not isinstance(propagate_def, dict):
+        propagate_def = _action_mapping(propagate_def)
+        if propagate_def is None:
             return False, f"record_social_event: propagate {index} must be a dict"
         ok, message, source_node_key = _resolve_social_node_key(
             _first_present(
