@@ -272,6 +272,20 @@ class RecurringPayment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["character", "payment_type"],
+                name="unique_recurring_payment",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name="recurring_amount_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(interval_days__gt=0),
+                name="recurring_interval_positive",
+            ),
+        ]
         indexes = [
             models.Index(fields=["character_id", "payment_type"]),
             models.Index(fields=["next_due", "active"]),

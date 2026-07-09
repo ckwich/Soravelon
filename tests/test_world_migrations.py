@@ -473,3 +473,118 @@ class TestEconomyIntegrityPreConstraintAudit(TransactionTestCase):
             "bank_account_negative_balance",
         ):
             executor.migrate(self.migrate_to)
+
+
+class TestRecurringPaymentIntegrityMigration(TransactionTestCase):
+    """Recurring contracts survive the new database invariants."""
+
+    migrate_from = [("world", "0012_economy_integrity_schema")]
+    migrate_to = [("world", "0013_recurring_payment_integrity")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        RecurringPayment = old_apps.get_model("world", "RecurringPayment")
+        character = ObjectDB.objects.create(
+            db_key="Recurring Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        self.character_id = character.pk
+        self.payment_id = RecurringPayment.objects.create(
+            character_id=character.pk,
+            payment_type="death_insurance",
+            amount=50,
+            interval_days=7,
+            next_due=timezone.now(),
+        ).pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_preserves_valid_contract_and_enforces_all_constraints(self):
+        RecurringPayment = self.apps.get_model("world", "RecurringPayment")
+        payment = RecurringPayment.objects.get(pk=self.payment_id)
+        self.assertEqual(payment.amount, 50)
+        self.assertEqual(payment.interval_days, 7)
+
+        invalid_creates = (
+            lambda: RecurringPayment.objects.create(
+                character_id=self.character_id,
+                payment_type="death_insurance",
+                amount=75,
+                interval_days=7,
+                next_due=timezone.now(),
+            ),
+            lambda: RecurringPayment.objects.create(
+                character_id=self.character_id,
+                payment_type="invalid_amount",
+                amount=0,
+                interval_days=7,
+                next_due=timezone.now(),
+            ),
+            lambda: RecurringPayment.objects.create(
+                character_id=self.character_id,
+                payment_type="invalid_interval",
+                amount=50,
+                interval_days=0,
+                next_due=timezone.now(),
+            ),
+        )
+        for invalid_create in invalid_creates:
+            with self.assertRaises(IntegrityError), transaction.atomic():
+                invalid_create()
+
+
+class TestRecurringPaymentPreConstraintAudit(TransactionTestCase):
+    """Legacy duplicate contracts stop migration instead of being merged."""
+
+    migrate_from = [("world", "0012_economy_integrity_schema")]
+    migrate_to = [("world", "0013_recurring_payment_integrity")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        RecurringPayment = old_apps.get_model("world", "RecurringPayment")
+        character = ObjectDB.objects.create(
+            db_key="Duplicate Recurring Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        for amount in (50, 75):
+            RecurringPayment.objects.create(
+                character_id=character.pk,
+                payment_type="death_insurance",
+                amount=amount,
+                interval_days=7,
+                next_due=timezone.now(),
+            )
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        old_apps.get_model("world", "RecurringPayment").objects.all().delete()
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_aborts_before_unique_constraint(self):
+        executor = MigrationExecutor(connection)
+
+        with self.assertRaisesRegex(RuntimeError, "recurring_duplicate_contract"):
+            executor.migrate(self.migrate_to)
