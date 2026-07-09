@@ -501,7 +501,7 @@ def _propagation_paths_for(source_node):
 
 def _distorted_claim_key(edge, target, source_knowledge):
     payload_key = _knowledge_payload_key(source_knowledge)
-    digest = hashlib.sha1(
+    digest = hashlib.sha256(
         f"{edge.edge_key}|{target.node_key}|{payload_key}|{edge.distortion}".encode(
             "utf-8"
         )

@@ -87,7 +87,7 @@ def _find_repairable_claim(npc_node_key, character_node_key, topic_text):
 
 
 def _denial_claim_key(character_node_key, npc_node_key, answered_claim_key):
-    digest = hashlib.sha1(
+    digest = hashlib.sha256(
         f"{character_node_key}|{npc_node_key}|{answered_claim_key}".encode("utf-8")
     ).hexdigest()[:16]
     character_id = character_node_key.split(":", 1)[-1]
