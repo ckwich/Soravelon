@@ -6,7 +6,6 @@
 .claude/scheduled_tasks.lock
 .claude/worktrees/
 .agents/
-AGENTS.md
 CODEX_ROUND_*.md
 
 # Python
@@ -24,7 +23,8 @@ venv/
 # Evennia runtime artifacts
 server/evennia.db3
 server/evennia.db3-journal
-server/logs/*.log
+server/logs/
+server/.static/
 server/*.pid
 
 # Django secrets
@@ -38,6 +38,3 @@ server/conf/production_settings.local.py
 *.swo
 Thumbs.db
 .DS_Store
-
-# Planning artifacts (local only)
-.planning/
