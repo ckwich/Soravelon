@@ -196,6 +196,19 @@ def _build_dialogue_context(npc, character):
         ).values_list("quest_id", flat=True)
     )
     context["social_context"] = _build_social_dialogue_context(npc, character)
+    try:
+        from world.social_interpretation import build_social_interpretation
+
+        context["social_interpretation"] = build_social_interpretation(
+            _npc_identifier(npc),
+            context["social_context"],
+        )
+    except Exception:
+        logger.warning(
+            "Social Web interpretation unavailable; falling back to empty packet.",
+            exc_info=True,
+        )
+        context["social_interpretation"] = {}
 
     return context
 
