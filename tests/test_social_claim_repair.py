@@ -64,7 +64,6 @@ class TestSocialClaimRepairService(EvenniaTest):
         self.assertTrue(ok, message)
         ok, message, _knowledge = mark_known(
             node_key=innkeeper.node_key,
-            fact_key=fact.fact_key,
             claim_key=claim.claim_key,
             source_node_key=witness.node_key,
             channel="tavern_rumor",

@@ -107,7 +107,6 @@ class TestSocialWebModels(EvenniaTest):
         knowledge = SocialKnowledge.objects.create(
             knowledge_key="knowledge:commander:claim:calloway:warden_report_delivered",
             node=commander,
-            fact=fact,
             claim=claim,
             source_node=calloway,
             edge=edge,
@@ -124,8 +123,9 @@ class TestSocialWebModels(EvenniaTest):
             summary="Official Warden report carried the claim from Calloway to the commander.",
         )
 
-        self.assertEqual(knowledge.fact.fact_key, "fact:warden_report_delivered")
+        self.assertIsNone(knowledge.fact)
         self.assertEqual(knowledge.claim.claim_key, "claim:calloway:warden_report_delivered")
+        self.assertEqual(knowledge.claim.fact, fact)
         self.assertEqual(trace.edge.edge_type, "official_report")
         self.assertEqual(
             calloway.outgoing_social_edges.get(edge_key=edge.edge_key),
@@ -152,6 +152,43 @@ class TestSocialWebModels(EvenniaTest):
                 SocialKnowledge.objects.create(
                     knowledge_key="knowledge:commander:empty",
                     node=commander,
+                    channel="official_report",
+                )
+
+    def test_social_knowledge_rejects_fact_and_claim_together(self):
+        from django.db import IntegrityError, transaction
+        from world.models import SocialClaim, SocialFact, SocialKnowledge, SocialNode
+
+        player = SocialNode.objects.create(
+            node_key=f"player:{self.char1.id}",
+            node_type="player",
+        )
+        calloway = SocialNode.objects.create(
+            node_key="npc:npc_warden_agent_calloway",
+            node_type="npc",
+        )
+        fact = SocialFact.objects.create(
+            fact_key="fact:dual_payload_rejected",
+            subject_node=player,
+            event_type="quest_completed",
+            summary="The report arrived.",
+        )
+        claim = SocialClaim.objects.create(
+            claim_key="claim:dual_payload_rejected",
+            fact=fact,
+            speaker_node=calloway,
+            subject_node=player,
+            claim_type="report",
+            summary="Calloway says the report arrived.",
+        )
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                SocialKnowledge.objects.create(
+                    knowledge_key="knowledge:dual_payload_rejected",
+                    node=calloway,
+                    fact=fact,
+                    claim=claim,
                     channel="official_report",
                 )
 
@@ -239,7 +276,6 @@ class TestSocialWebModels(EvenniaTest):
                 SocialKnowledge.objects.create(
                     knowledge_key="knowledge:invalid_low_confidence",
                     node=commander,
-                    fact=fact,
                     claim=claim,
                     edge=edge,
                     channel="official_report",
@@ -330,7 +366,6 @@ class TestSocialWebModels(EvenniaTest):
                 SocialKnowledge.objects.create(
                     knowledge_key="knowledge:invalid_high_confidence",
                     node=commander,
-                    fact=fact,
                     claim=claim,
                     edge=edge,
                     channel="official_report",
@@ -502,16 +537,26 @@ class TestSocialWebEngine(EvenniaTest):
         )
         self.assertTrue(ok, message)
 
-        ok, message, knowledge = mark_known(
+        ok, message, fact_knowledge = mark_known(
             node_key=calloway.node_key,
             fact_key=fact.fact_key,
+            channel="direct_witness",
+            confidence=1.0,
+            spreading=False,
+        )
+        self.assertTrue(ok, message)
+        ok, message, claim_knowledge = mark_known(
+            node_key=calloway.node_key,
             claim_key=claim.claim_key,
             channel="direct_witness",
             confidence=1.0,
             spreading=True,
         )
         self.assertTrue(ok, message)
-        self.assertEqual(knowledge.node.node_key, calloway.node_key)
+        self.assertEqual(fact_knowledge.node.node_key, calloway.node_key)
+        self.assertEqual(claim_knowledge.node.node_key, calloway.node_key)
+        self.assertIsNone(fact_knowledge.claim)
+        self.assertIsNone(claim_knowledge.fact)
 
     def test_mark_known_rejects_unknown_source_node(self):
         from world.models import SocialKnowledge
@@ -543,7 +588,7 @@ class TestSocialWebEngine(EvenniaTest):
             ).exists()
         )
 
-    def test_mark_known_requires_claim_to_reference_supplied_fact(self):
+    def test_mark_known_rejects_fact_and_claim_together(self):
         from world.models import SocialKnowledge
         from world.social_engine import (
             assert_social_claim,
@@ -561,20 +606,13 @@ class TestSocialWebEngine(EvenniaTest):
             summary="The player delivered the field report.",
         )
         self.assertTrue(ok, message)
-        ok, message, unrelated_fact = record_social_fact(
-            fact_key="fact:unrelated_report",
-            subject_node_key=player.node_key,
-            event_type="quest_completed",
-            summary="The player handled an unrelated report.",
-        )
-        self.assertTrue(ok, message)
         ok, message, claim = assert_social_claim(
-            claim_key="claim:calloway:unrelated_report",
+            claim_key="claim:calloway:delivered_report",
             speaker_node_key=calloway.node_key,
             subject_node_key=player.node_key,
-            fact_key=unrelated_fact.fact_key,
+            fact_key=delivered_fact.fact_key,
             claim_type="report",
-            summary="Calloway reports the unrelated Warden business.",
+            summary="Calloway reports the Warden business.",
             status="supported",
         )
         self.assertTrue(ok, message)
@@ -587,7 +625,7 @@ class TestSocialWebEngine(EvenniaTest):
         )
 
         self.assertFalse(ok)
-        self.assertEqual(message, "claim does not reference fact: fact:delivered_report")
+        self.assertEqual(message, "fact_key and claim_key are mutually exclusive")
         self.assertIsNone(knowledge)
         self.assertFalse(
             SocialKnowledge.objects.filter(
@@ -595,7 +633,7 @@ class TestSocialWebEngine(EvenniaTest):
             ).exists()
         )
 
-    def test_mark_known_infers_fact_from_claim_when_fact_key_is_omitted(self):
+    def test_mark_known_keeps_claim_knowledge_separate_from_linked_fact(self):
         from world.social_engine import (
             assert_social_claim,
             ensure_social_node,
@@ -631,7 +669,21 @@ class TestSocialWebEngine(EvenniaTest):
 
         self.assertTrue(ok, message)
         self.assertEqual(knowledge.claim, claim)
-        self.assertEqual(knowledge.fact, fact)
+        self.assertIsNone(knowledge.fact)
+        self.assertEqual(knowledge.claim.fact, fact)
+
+        from world.social_engine import query_social_context
+
+        context = query_social_context(
+            viewer_node_key=calloway.node_key,
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+        )
+        self.assertEqual(context["facts"], [])
+        self.assertEqual(
+            [item["claim_key"] for item in context["claims"]],
+            [claim.claim_key],
+        )
 
     def test_available_now_filter_uses_single_q_filter(self):
         from django.db.models import Q
@@ -788,11 +840,11 @@ class TestSocialWebPropagation(EvenniaTest):
             claim_type="report",
             summary="Calloway reports the player carried Warden business cleanly.",
             status="supported",
+            bias_tags=["warden", "report", "quest"],
         )
         self.assertTrue(ok, message)
         ok, message, knowledge = mark_known(
             node_key=calloway.node_key,
-            fact_key=fact.fact_key,
             claim_key=claim.claim_key,
             channel="official_report",
             confidence=0.95,
@@ -872,7 +924,7 @@ class TestSocialWebPropagation(EvenniaTest):
         self.assertEqual(len(propagated), 1)
         self.assertTrue(propagated[0].spreading)
 
-    def test_fact_only_propagation_prefers_claim_backed_source_knowledge(self):
+    def test_fact_only_propagation_never_substitutes_a_linked_claim(self):
         from world.social_engine import mark_known, propagate_social_knowledge
 
         (
@@ -903,12 +955,12 @@ class TestSocialWebPropagation(EvenniaTest):
         self.assertEqual(len(propagated), 1)
         self.assertEqual(propagated[0].node, commander)
         self.assertEqual(propagated[0].fact, fact)
-        self.assertEqual(propagated[0].claim, claim)
+        self.assertIsNone(propagated[0].claim)
         self.assertEqual(
             propagated[0].knowledge_key,
-            f"knowledge:{commander.node_key}:{claim.claim_key}",
+            f"knowledge:{commander.node_key}:{fact.fact_key}",
         )
-        self.assertEqual(propagated[0].confidence, 0.8)
+        self.assertEqual(propagated[0].confidence, 0.4)
 
     def test_future_source_knowledge_does_not_propagate(self):
         from datetime import timedelta
@@ -1106,7 +1158,7 @@ class TestSocialWebPropagation(EvenniaTest):
         self.assertEqual(propagated, [])
         self.assertFalse(SocialKnowledge.objects.filter(node=commander, claim=claim).exists())
 
-        claim.bias_tags = ["field_clearance"]
+        claim.bias_tags = ["warden", "report", "field_clearance"]
         claim.save(update_fields=["bias_tags"])
         propagated = propagate_social_knowledge(
             source_node_key=calloway.node_key,
@@ -1133,7 +1185,6 @@ class TestSocialWebPropagation(EvenniaTest):
         SocialKnowledge.objects.filter(node=calloway, claim=claim).delete()
         ok, message, _commander_knowledge = mark_known(
             node_key=commander.node_key,
-            fact_key=fact.fact_key,
             claim_key=claim.claim_key,
             channel="official_report",
             confidence=0.9,
@@ -1326,22 +1377,41 @@ class TestSocialContextPack(EvenniaTest):
             claim_type="report",
             summary="Calloway says the player did not drop the name.",
             status="supported",
+            bias_tags=["warden", "report", "reliable"],
         )
         self.assertTrue(ok, message)
-        ok, message, _knowledge = mark_known(
+        ok, message, _fact_knowledge = mark_known(
             node_key=calloway.node_key,
             fact_key=fact.fact_key,
+            channel="official_report",
+            confidence=1.0,
+            spreading=True,
+        )
+        self.assertTrue(ok, message)
+        ok, message, _claim_knowledge = mark_known(
+            node_key=calloway.node_key,
             claim_key=claim.claim_key,
             channel="official_report",
             confidence=1.0,
             spreading=True,
         )
         self.assertTrue(ok, message)
-        propagated = propagate_social_knowledge(
+        propagated_facts = propagate_social_knowledge(
+            source_node_key=calloway.node_key,
+            fact_key=fact.fact_key,
+        )
+        propagated_claims = propagate_social_knowledge(
             source_node_key=calloway.node_key,
             claim_key=claim.claim_key,
         )
-        self.assertEqual([item.node.node_key for item in propagated], [commander.node_key])
+        self.assertEqual(
+            [item.node.node_key for item in propagated_facts],
+            [commander.node_key],
+        )
+        self.assertEqual(
+            [item.node.node_key for item in propagated_claims],
+            [commander.node_key],
+        )
         return player, calloway, commander, fact, claim
 
     def _record_commander_context_item(
@@ -1374,11 +1444,20 @@ class TestSocialContextPack(EvenniaTest):
             claim_type="report",
             summary=f"Context bound claim {index}.",
             status="supported",
+            bias_tags=["warden", "report"],
+        )
+        self.assertTrue(ok, message)
+        ok, message, _fact_knowledge = mark_known(
+            node_key=commander.node_key,
+            fact_key=fact.fact_key,
+            source_node_key=calloway.node_key,
+            channel="official_report",
+            confidence=confidence,
+            available_after=available_after,
         )
         self.assertTrue(ok, message)
         ok, message, knowledge = mark_known(
             node_key=commander.node_key,
-            fact_key=fact.fact_key,
             claim_key=claim.claim_key,
             source_node_key=calloway.node_key,
             channel="official_report",
@@ -1506,7 +1585,6 @@ class TestSocialContextPack(EvenniaTest):
                 f"knowledge:{commander.node_key}:{base_claim.claim_key}:duplicate"
             ),
             node=commander,
-            fact=base_fact,
             claim=base_claim,
             source_node=calloway,
             channel="official_report",
@@ -1554,7 +1632,6 @@ class TestSocialContextPack(EvenniaTest):
         future_knowledge = SocialKnowledge.objects.create(
             knowledge_key=f"knowledge:{commander.node_key}:{claim.claim_key}:future",
             node=commander,
-            fact=fact,
             claim=claim,
             source_node=calloway,
             edge=edge,

@@ -607,10 +607,19 @@ class TestRecordSocialEventHandler(EvenniaTest):
                 "summary": "Calloway reports that the player carried Warden business cleanly.",
                 "status": "supported",
                 "confidence": 1.0,
+                "bias_tags": ["warden", "report", "quest"],
             },
             "knowledge": [
                 {
                     "node_key": "npc:npc_warden_agent_calloway",
+                    "fact_key_template": "fact:{character_id}:vc_q_warden_report:delivered",
+                    "channel": "official_report",
+                    "confidence": 1.0,
+                    "spreading": False,
+                },
+                {
+                    "node_key": "npc:npc_warden_agent_calloway",
+                    "claim_key_template": "claim:calloway:{character_id}:vc_q_warden_report:delivered",
                     "channel": "official_report",
                     "confidence": 1.0,
                     "spreading": True,
@@ -670,6 +679,13 @@ class TestRecordSocialEventHandler(EvenniaTest):
         )
         self.assertEqual(SocialFact.objects.filter(fact_key=fact_key).count(), 1)
         self.assertEqual(SocialClaim.objects.filter(claim_key=claim_key).count(), 1)
+        self.assertTrue(
+            SocialKnowledge.objects.filter(
+                node=calloway,
+                fact__fact_key=fact_key,
+                claim__isnull=True,
+            ).exists()
+        )
         self.assertEqual(
             SocialKnowledge.objects.filter(claim__claim_key=claim_key).count(),
             2,
@@ -690,6 +706,57 @@ class TestRecordSocialEventHandler(EvenniaTest):
             SocialTrace.objects.get(knowledge=harven_knowledge).edge.edge_type,
             "warden_report",
         )
+        self.assertIsNone(harven_knowledge.fact)
+
+    def test_knowledge_payload_must_be_explicit_and_unambiguous(self):
+        from world.action_vocabulary import execute_action
+
+        for knowledge_def in (
+            {
+                "node_key": "npc:npc_warden_agent_calloway",
+                "channel": "official_report",
+            },
+            {
+                "node_key": "npc:npc_warden_agent_calloway",
+                "fact_key_template": "fact:{character_id}:vc_q_warden_report:delivered",
+                "claim_key_template": "claim:calloway:{character_id}:vc_q_warden_report:delivered",
+                "channel": "official_report",
+            },
+        ):
+            action = self._warden_report_social_action()
+            action["knowledge"] = [knowledge_def]
+
+            success, message = execute_action(action, {"character": self.char1})
+
+            self.assertFalse(success)
+            self.assertIn(
+                "knowledge 0 must name exactly one of fact_key or claim_key",
+                message,
+            )
+
+    def test_propagation_payload_must_be_explicit_and_unambiguous(self):
+        from world.action_vocabulary import execute_action
+
+        for propagate_def in (
+            {
+                "source_node_key": "npc:npc_warden_agent_calloway",
+            },
+            {
+                "source_node_key": "npc:npc_warden_agent_calloway",
+                "fact_key_template": "fact:{character_id}:vc_q_warden_report:delivered",
+                "claim_key_template": "claim:calloway:{character_id}:vc_q_warden_report:delivered",
+            },
+        ):
+            action = self._warden_report_social_action()
+            action["propagate"] = propagate_def
+
+            success, message = execute_action(action, {"character": self.char1})
+
+            self.assertFalse(success)
+            self.assertIn(
+                "propagate 0 must name exactly one of fact_key or claim_key",
+                message,
+            )
 
     def test_missing_character_fails(self):
         from world.action_vocabulary import execute_action

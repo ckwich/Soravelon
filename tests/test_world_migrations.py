@@ -150,3 +150,109 @@ class TestWorldSchemaReconciliationMigration(TransactionTestCase):
             faction_id="wardens",
             subfaction_id="river_watch",
         )
+
+
+class TestSocialKnowledgePayloadMigration(TransactionTestCase):
+    """Legacy inferred facts are removed before the XOR constraint lands."""
+
+    migrate_from = [("world", "0010_reconcile_world_schema")]
+    migrate_to = [("world", "0011_social_knowledge_payload_xor")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+
+        SocialNode = old_apps.get_model("world", "SocialNode")
+        SocialFact = old_apps.get_model("world", "SocialFact")
+        SocialClaim = old_apps.get_model("world", "SocialClaim")
+        SocialKnowledge = old_apps.get_model("world", "SocialKnowledge")
+
+        player = SocialNode.objects.create(
+            node_key="player:migration_social_payload",
+            node_type="player",
+        )
+        calloway = SocialNode.objects.create(
+            node_key="npc:migration_social_payload_calloway",
+            node_type="npc",
+        )
+        fact = SocialFact.objects.create(
+            fact_key="fact:migration_social_payload",
+            subject_node=player,
+            event_type="quest_completed",
+            summary="The report arrived.",
+        )
+        claim = SocialClaim.objects.create(
+            claim_key="claim:migration_social_payload",
+            fact=fact,
+            speaker_node=calloway,
+            subject_node=player,
+            claim_type="report",
+            summary="Calloway says the report arrived.",
+        )
+        self.node_id = calloway.pk
+        self.fact_id = fact.pk
+        self.claim_id = claim.pk
+        self.dual_id = SocialKnowledge.objects.create(
+            knowledge_key="knowledge:migration_social_payload:dual",
+            node=calloway,
+            fact=fact,
+            claim=claim,
+            channel="official_report",
+        ).pk
+        self.fact_only_id = SocialKnowledge.objects.create(
+            knowledge_key="knowledge:migration_social_payload:fact",
+            node=calloway,
+            fact=fact,
+            channel="direct_witness",
+        ).pk
+        self.claim_only_id = SocialKnowledge.objects.create(
+            knowledge_key="knowledge:migration_social_payload:claim",
+            node=calloway,
+            claim=claim,
+            channel="official_report",
+        ).pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_conservatively_keeps_claim_for_legacy_dual_rows(self):
+        SocialKnowledge = self.apps.get_model("world", "SocialKnowledge")
+
+        dual = SocialKnowledge.objects.get(pk=self.dual_id)
+        self.assertIsNone(dual.fact_id)
+        self.assertEqual(dual.claim_id, self.claim_id)
+
+        fact_only = SocialKnowledge.objects.get(pk=self.fact_only_id)
+        self.assertEqual(fact_only.fact_id, self.fact_id)
+        self.assertIsNone(fact_only.claim_id)
+
+        claim_only = SocialKnowledge.objects.get(pk=self.claim_only_id)
+        self.assertIsNone(claim_only.fact_id)
+        self.assertEqual(claim_only.claim_id, self.claim_id)
+
+    def test_enforces_exactly_one_payload_after_migration(self):
+        SocialKnowledge = self.apps.get_model("world", "SocialKnowledge")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            SocialKnowledge.objects.create(
+                knowledge_key="knowledge:migration_social_payload:neither",
+                node_id=self.node_id,
+                channel="official_report",
+            )
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            SocialKnowledge.objects.create(
+                knowledge_key="knowledge:migration_social_payload:both_again",
+                node_id=self.node_id,
+                fact_id=self.fact_id,
+                claim_id=self.claim_id,
+                channel="official_report",
+            )

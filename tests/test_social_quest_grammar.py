@@ -319,6 +319,11 @@ class TestCompiledSocialQuestReward(EvenniaTest):
                 }
             ],
         )
+        self.assertEqual(
+            quest["rewards"][0]["knowledge"][0]["claim_key_template"],
+            "claim:npc_market_vendor_sella:{character_id}:sq_market_robbery_sella:completed",
+        )
+        self.assertNotIn("fact_key", quest["rewards"][0]["knowledge"][0])
 
         success, message = execute_action(
             quest["rewards"][0],

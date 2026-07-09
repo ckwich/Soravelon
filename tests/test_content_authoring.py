@@ -242,7 +242,30 @@ class TestQuestItemSources(unittest.TestCase):
             "claim:calloway:{character_id}:vc_q_warden_report:delivered",
         )
         self.assertEqual(social_action["propagate"]["source"], "calloway")
+        self.assertEqual(
+            social_action["propagate"]["claim_key_template"],
+            "claim:calloway:{character_id}:vc_q_warden_report:delivered",
+        )
         self.assertTrue(social_action["propagate"]["required"])
+        self.assertEqual(
+            social_action["knowledge"],
+            [
+                {
+                    "node": "calloway",
+                    "fact_key_template": "fact:{character_id}:vc_q_warden_report:delivered",
+                    "channel": "official_report",
+                    "confidence": 1.0,
+                    "spreading": False,
+                },
+                {
+                    "node": "calloway",
+                    "claim_key_template": "claim:calloway:{character_id}:vc_q_warden_report:delivered",
+                    "channel": "official_report",
+                    "confidence": 1.0,
+                    "spreading": True,
+                },
+            ],
+        )
         self.assertNotIn(
             "npc_innkeeper_whistle",
             [

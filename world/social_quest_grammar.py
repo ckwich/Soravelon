@@ -1123,6 +1123,7 @@ def _default_social_reward(context, *, quest_id, quest_giver):
         "knowledge": [
             {
                 "node": "quest_giver",
+                "claim_key_template": f"claim:{speaker_id}:{{character_id}}:{quest_id}:completed",
                 "channel": "direct_witness",
                 "confidence": 0.8,
                 "spreading": True,

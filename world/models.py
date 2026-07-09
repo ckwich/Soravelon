@@ -667,9 +667,10 @@ class SocialKnowledge(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    models.Q(fact__isnull=False) | models.Q(claim__isnull=False)
+                    models.Q(fact__isnull=False, claim__isnull=True)
+                    | models.Q(fact__isnull=True, claim__isnull=False)
                 ),
-                name="social_knowledge_has_fact_or_claim",
+                name="social_knowledge_exactly_one_payload",
             ),
             models.CheckConstraint(
                 condition=models.Q(confidence__gte=0.0, confidence__lte=1.0),

@@ -119,6 +119,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
             commander_context["claims"][0]["trace"][0]["edge_type"],
             "warden_report",
         )
+        self.assertEqual(commander_context["facts"], [])
         self.assertEqual(innkeeper_context["claims"], [])
         self.assertEqual(innkeeper_context["facts"], [])
 
@@ -264,6 +265,14 @@ class TestVaelWardenSocialRoute(EvenniaTest):
                 "npc:npc_warden_agent_calloway",
                 "npc:npc_warden_outpost_commander",
             },
+        )
+        self.assertEqual(
+            set(
+                SocialKnowledge.objects.filter(
+                    fact__fact_key=fact_key,
+                ).values_list("node__node_key", flat=True)
+            ),
+            {"npc:npc_warden_agent_calloway"},
         )
         self.assertIs(harven.location, self.char1.location)
 

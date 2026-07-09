@@ -300,6 +300,8 @@ def mark_known(
         return False, f"unsupported channel: {channel}", None
     if not fact_key and not claim_key:
         return False, "fact_key or claim_key is required", None
+    if fact_key and claim_key:
+        return False, "fact_key and claim_key are mutually exclusive", None
 
     ok, message, confidence = _coerce_probability("confidence", confidence)
     if not ok:
@@ -323,11 +325,6 @@ def mark_known(
         return False, f"unknown claim: {claim_key}", None
     if source_node_key and not source:
         return False, f"unknown source_node: {source_node_key}", None
-    if fact and claim and claim.fact_id != fact.id:
-        return False, f"claim does not reference fact: {fact_key}", None
-    if claim and not fact and claim.fact_id:
-        fact = claim.fact
-
     payload_key = claim_key or fact_key
     knowledge_key = f"knowledge:{node_key}:{payload_key}"
     knowledge, _created = SocialKnowledge.objects.update_or_create(
@@ -374,8 +371,6 @@ def available_now_filter(queryset):
 def _knowledge_payload_tags(knowledge):
     tags = set()
     fact = knowledge.fact
-    if not fact and knowledge.claim and knowledge.claim.fact_id:
-        fact = knowledge.claim.fact
     if fact:
         tags.update(normalize_tags(fact.tags or []))
     if knowledge.claim:
@@ -417,14 +412,11 @@ def _source_knowledge_for(source, *, fact_key="", claim_key=""):
     queryset = SocialKnowledge.objects.filter(node=source, spreading=True).select_related(
         "fact",
         "claim",
-        "claim__fact",
     )
     if fact_key:
-        queryset = queryset.filter(
-            Q(fact__fact_key=fact_key) | Q(claim__fact__fact_key=fact_key)
-        )
+        queryset = queryset.filter(fact__fact_key=fact_key, claim__isnull=True)
     if claim_key:
-        queryset = queryset.filter(claim__claim_key=claim_key)
+        queryset = queryset.filter(claim__claim_key=claim_key, fact__isnull=True)
 
     return (
         available_now_filter(queryset)
@@ -575,9 +567,7 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
 
         target = path["target"]
         carried_claim = _distorted_claim_for_edge(edge, target, source_knowledge)
-        carried_fact = source_knowledge.fact
-        if not carried_fact and carried_claim and carried_claim.fact_id:
-            carried_fact = carried_claim.fact
+        carried_fact = None if carried_claim else source_knowledge.fact
         carried_payload_key = carried_claim.claim_key if carried_claim else (
             carried_fact.fact_key if carried_fact else ""
         )
@@ -592,8 +582,8 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
             confidence *= 0.75
         ok, _message, knowledge = mark_known(
             node_key=target.node_key,
-            fact_key=carried_fact.fact_key if carried_fact else "",
             claim_key=carried_claim.claim_key if carried_claim else "",
+            fact_key=carried_fact.fact_key if carried_fact else "",
             source_node_key=source.node_key,
             edge_key=edge.edge_key,
             channel=_channel_for_edge_type(edge.edge_type),

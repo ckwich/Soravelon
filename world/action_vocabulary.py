@@ -610,8 +610,6 @@ def _record_social_event_rendered(rendered):
         if not ok:
             return False, f"record_social_event: {message}"
 
-    default_fact_key = fact.fact_key if fact else ""
-    default_claim_key = claim.claim_key if claim else ""
     knowledge_defs = _action_sequence(rendered.get("knowledge") or [])
     if knowledge_defs is None:
         return False, "record_social_event: knowledge must be a list"
@@ -654,20 +652,26 @@ def _record_social_event_rendered(rendered):
             if not ok:
                 return False, message
 
+        knowledge_fact_key = _first_present(
+            knowledge_def,
+            "fact_key_template",
+            "fact_key",
+        )
+        knowledge_claim_key = _first_present(
+            knowledge_def,
+            "claim_key_template",
+            "claim_key",
+        )
+        if bool(knowledge_fact_key) == bool(knowledge_claim_key):
+            return False, (
+                f"record_social_event: knowledge {index} must name exactly one "
+                "of fact_key or claim_key"
+            )
+
         ok, message, _knowledge = mark_known(
             node_key=node_key,
-            fact_key=_first_present(
-                knowledge_def,
-                "fact_key_template",
-                "fact_key",
-                default=default_fact_key,
-            ),
-            claim_key=_first_present(
-                knowledge_def,
-                "claim_key_template",
-                "claim_key",
-                default=default_claim_key,
-            ),
+            fact_key=knowledge_fact_key,
+            claim_key=knowledge_claim_key,
             source_node_key=source_node_key,
             edge_key=knowledge_def.get("edge_key", ""),
             channel=knowledge_def.get("channel"),
@@ -706,20 +710,25 @@ def _record_social_event_rendered(rendered):
         )
         if not ok:
             return False, message
+        propagate_fact_key = _first_present(
+            propagate_def,
+            "fact_key_template",
+            "fact_key",
+        )
+        propagate_claim_key = _first_present(
+            propagate_def,
+            "claim_key_template",
+            "claim_key",
+        )
+        if bool(propagate_fact_key) == bool(propagate_claim_key):
+            return False, (
+                f"record_social_event: propagate {index} must name exactly one "
+                "of fact_key or claim_key"
+            )
         propagated = propagate_social_knowledge(
             source_node_key=source_node_key,
-            fact_key=_first_present(
-                propagate_def,
-                "fact_key_template",
-                "fact_key",
-                default=default_fact_key,
-            ),
-            claim_key=_first_present(
-                propagate_def,
-                "claim_key_template",
-                "claim_key",
-                default=default_claim_key,
-            ),
+            fact_key=propagate_fact_key,
+            claim_key=propagate_claim_key,
             budget=propagate_def.get("budget", 10),
         )
         if propagate_def.get("required") and not propagated:

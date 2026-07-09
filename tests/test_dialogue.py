@@ -1376,9 +1376,16 @@ class TestContextPacketSocialWebIntegration(EvenniaTest):
             status="supported",
         )
         self.assertTrue(ok, message)
-        ok, message, _knowledge = mark_known(
+        ok, message, _fact_knowledge = mark_known(
             node_key=npc_node.node_key,
             fact_key=fact.fact_key,
+            source_node_key=npc_node.node_key,
+            channel="official_report",
+            confidence=0.95,
+        )
+        self.assertTrue(ok, message)
+        ok, message, _claim_knowledge = mark_known(
+            node_key=npc_node.node_key,
             claim_key=claim.claim_key,
             source_node_key=npc_node.node_key,
             channel="official_report",
