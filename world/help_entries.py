@@ -575,6 +575,20 @@ HELP_ENTRY_DICTS = [
         ),
     },
     {
+        "key": "deny",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n deny <npc> about me\n\n"
+            "Answer a rumor or contested claim an NPC already knows about you. "
+            "This creates a new Social Web denial claim the NPC heard directly "
+            "from you; it does not erase the original rumor or edit hidden "
+            "standing numbers.\n\n"
+            "|wExample:|n\n"
+            "  > deny Whistle about me"
+        ),
+    },
+    {
         "key": "accept",
         "category": "Commands",
         "locks": "read:all()",
@@ -1079,6 +1093,21 @@ HELP_ENTRY_DICTS = [
             "that a whisper happened, but not the content.\n\n"
             "|wExample:|n\n"
             "  > whisper Arden Take the left flank."
+        ),
+    },
+    {
+        "key": "socialmemory",
+        "aliases": ["socialweb"],
+        "category": "Admin",
+        "locks": "read:perm(Builders)",
+        "text": (
+            "|wUsage:|n socialmemory <viewer_node_key> <subject_node_key>\n\n"
+            "Inspect the bounded Social Web context one node knows about "
+            "another. This is an admin/debug surface for facts, claims, "
+            "channels, and traces; players should learn reputation through "
+            "dialogue and world reaction instead.\n\n"
+            "|wExample:|n\n"
+            "  > socialmemory npc:npc_innkeeper_whistle player:42"
         ),
     },
     {
