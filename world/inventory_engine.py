@@ -389,6 +389,48 @@ def unequip_item(character, item):
     return True, f"You unequip the {item.key}."
 
 
+def equip_items_in_empty_slots(character, items):
+    """Equip eligible items while preserving every occupied equipment slot.
+
+    Non-equipment and same-slot extras remain carried. Invalid equipment or an
+    unexpected equip failure aborts so the issuing caller can roll back.
+    """
+    for item in items:
+        slot = item.db.equipment_slot
+        if not slot:
+            continue
+
+        # ring1 is an authored default for either ring slot. Let equip_item
+        # choose ring2 only when at least one ring slot remains empty.
+        occupied_slots = {slot}
+        if slot == "ring1":
+            occupied_slots.add("ring2")
+        if InventoryItem.objects.filter(
+            character_id=character.id,
+            is_equipped=True,
+            equipment_slot__in=occupied_slots,
+        ).count() == len(occupied_slots):
+            continue
+
+        # A two-handed item cannot safely auto-equip over an occupied off hand.
+        if (
+            slot == "main_hand"
+            and bool(item.db.two_handed)
+            and InventoryItem.objects.filter(
+                character_id=character.id,
+                is_equipped=True,
+                equipment_slot="off_hand",
+            ).exists()
+        ):
+            continue
+
+        equipped, message = equip_item(character, item)
+        if not equipped:
+            return False, message
+
+    return True, ""
+
+
 # ---------------------------------------------------------------------------
 # Query helpers
 # ---------------------------------------------------------------------------

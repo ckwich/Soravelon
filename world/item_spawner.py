@@ -11,7 +11,12 @@ create_item_from_catalog(template_id, location=None, overrides=None) resolves a
 shared canonical template before delegating to create_item_from_template().
 """
 
+import logging
+
 import evennia
+
+
+logger = logging.getLogger("evennia")
 
 _TYPECLASS_MAP = {
     "equipment": "typeclasses.objects.SoravelonEquipment",
@@ -100,25 +105,35 @@ def create_item_from_template(item_def, location=None):
         location=location,
     )
 
-    # Standard attrs — always set explicitly
-    item.db.item_type  = item_type
-    item.db.weight     = item_def.get("weight", 0.5)
-    item.db.rarity     = item_def.get("rarity", "normal")
-    item.db.desc       = item_def.get("desc", "")
-    item.db.value_scales = item_def.get("value", 0)
-    item.db.equipment_slot = item_def.get("equip_slot")  # None for non-equipment
+    try:
+        # Standard attrs — always set explicitly
+        item.db.item_type = item_type
+        item.db.weight = item_def.get("weight", 0.5)
+        item.db.rarity = item_def.get("rarity", "normal")
+        item.db.desc = item_def.get("desc", "")
+        item.db.value_scales = item_def.get("value", 0)
+        item.db.equipment_slot = item_def.get("equip_slot")
 
-    # Extra attrs — anything not in the reserved key set
-    for k, v in item_def.items():
-        if k not in _RESERVED_KEYS:
-            setattr(item.db, k, v)
+        # Extra attrs — anything not in the reserved key set
+        for k, v in item_def.items():
+            if k not in _RESERVED_KEYS:
+                setattr(item.db, k, v)
 
-    # Set item_tag for crafting ingredient matching (Phase 13 requirement)
-    item_id = item_def.get("item_id")
-    if item_id:
-        item.tags.add(item_id, category="item_tag")
+        # Set item_tag for crafting ingredient matching (Phase 13 requirement)
+        item_id = item_def.get("item_id")
+        if item_id:
+            item.tags.add(item_id, category="item_tag")
 
-    _register_player_inventory(item, location, item_def)
+        _register_player_inventory(item, location, item_def)
+    except Exception:
+        try:
+            item.delete()
+        except Exception:
+            logger.exception(
+                "item_spawner: failed to clean up partially initialized item %s",
+                getattr(item, "id", "unknown"),
+            )
+        raise
 
     return item
 

@@ -290,6 +290,32 @@ class TestCreateItemFromTemplate(unittest.TestCase):
             keyring=False,
         )
 
+    def test_registration_failure_deletes_created_item_before_reraising(self):
+        """A failed ownership write cannot leak its already-created object."""
+        class _FakeTags:
+            def has(self, key, category=None):
+                return key == "player_character" and category == "character_type"
+
+        class _FakeCharacter:
+            tags = _FakeTags()
+
+        item_def = {
+            "item_id": "iron_sword",
+            "key": "iron sword",
+            "item_type": "equipment",
+            "weight": 2.0,
+            "desc": "A test sword.",
+            "value": 5,
+        }
+        self.mock_inventory_engine.register_item_ownership.side_effect = (
+            RuntimeError("registration failed")
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "registration failed"):
+            self.create_item_from_template(item_def, location=_FakeCharacter())
+
+        self.mock_item.delete.assert_called_once_with()
+
     def test_create_item_from_catalog_resolves_full_template_and_overrides_copy(self):
         from world.item_catalog import CATALOG
         from world.item_spawner import create_item_from_catalog

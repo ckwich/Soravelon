@@ -27,7 +27,11 @@ _ANCESTRY_PATCHES = [
 def _mock_character(ancestry=None, selvar_coat=None):
     """Create a MagicMock character with db attributes for ancestry tests."""
     char = MagicMock()
-    char.db = SimpleNamespace(ancestry=ancestry, selvar_coat=selvar_coat)
+    char.db = SimpleNamespace(
+        ancestry=ancestry,
+        selvar_coat=selvar_coat,
+        carried_scales=0,
+    )
     char.id = 1  # Prevent MagicMock auto-attribute from breaking DB queries
     return char
 
@@ -37,7 +41,10 @@ class _AncestryTestBase(unittest.TestCase):
 
     def setUp(self):
         self._patchers = [
-            patch("world.ancestry_engine._grant_starter_kit"),
+            patch(
+                "world.ancestry_engine._grant_starter_kit",
+                return_value=(True, ""),
+            ),
             patch("world.skill_engine.apply_ancestry_skill_seeds"),
             patch("world.ability_engine.sync_character_ability_unlocks"),
         ]
@@ -203,6 +210,146 @@ class TestAncestryRejection(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("unknown", msg.lower())
         mock_modify.assert_not_called()
+
+
+class TestStarterKitContracts(unittest.TestCase):
+    """Starter kits are canonical, mechanically valid, and all-or-clean."""
+
+    def test_every_starter_item_resolves_through_the_canonical_catalog(self):
+        from world.ancestry_engine import STARTER_KITS
+        from world.item_catalog import get_item_template
+
+        for ancestry_id, template_ids in STARTER_KITS.items():
+            with self.subTest(ancestry_id=ancestry_id):
+                self.assertTrue(template_ids)
+                for template_id in template_ids:
+                    self.assertIsInstance(template_id, str)
+                    self.assertEqual(
+                        get_item_template(template_id)["item_id"],
+                        template_id,
+                    )
+
+    def test_starter_armor_uses_canonical_armor_value(self):
+        from world.ancestry_engine import STARTER_KITS
+        from world.item_catalog import get_item_template
+
+        for ancestry_id, template_ids in STARTER_KITS.items():
+            chest_items = [
+                get_item_template(template_id)
+                for template_id in template_ids
+                if get_item_template(template_id).get("equip_slot") == "chest"
+            ]
+            with self.subTest(ancestry_id=ancestry_id):
+                self.assertEqual(len(chest_items), 1)
+                self.assertGreater(chest_items[0].get("armor_value", 0), 0)
+                self.assertNotIn("armor", chest_items[0])
+
+    def test_starter_kit_uses_catalog_and_auto_equips_only_after_full_issue(self):
+        from world.ancestry_engine import STARTER_KITS, _grant_starter_kit
+
+        char = _mock_character()
+        created = [MagicMock(key=template_id) for template_id in STARTER_KITS["human"]]
+
+        with patch(
+            "world.item_spawner.create_item_from_catalog",
+            side_effect=created,
+        ) as mock_create, patch(
+            "world.item_spawner.create_item_from_template",
+            side_effect=AssertionError("legacy template path used"),
+        ), patch(
+            "world.inventory_engine.equip_items_in_empty_slots",
+            return_value=(True, ""),
+        ) as mock_equip:
+            ok, msg = _grant_starter_kit(char, "human")
+
+        self.assertTrue(ok, msg)
+        self.assertEqual(
+            [entry.args[0] for entry in mock_create.call_args_list],
+            STARTER_KITS["human"],
+        )
+        mock_equip.assert_called_once_with(char, created)
+        self.assertEqual(char.db.carried_scales, 50)
+
+    def test_partial_item_creation_rolls_back_every_created_item(self):
+        from world.ancestry_engine import _grant_starter_kit
+
+        char = _mock_character()
+        char.db.carried_scales = 7
+        first_item = MagicMock(key="Iron Sword")
+
+        with patch(
+            "world.item_spawner.create_item_from_catalog",
+            side_effect=[first_item, RuntimeError("spawn failed")],
+        ), patch(
+            "world.item_spawner.create_item_from_template",
+            side_effect=[first_item, RuntimeError("spawn failed")],
+        ), patch(
+            "world.inventory_engine.unregister_item_ownership",
+        ) as mock_unregister:
+            ok, msg = _grant_starter_kit(char, "human")
+
+        self.assertFalse(ok)
+        self.assertIn("starter kit", msg.lower())
+        mock_unregister.assert_called_once_with(char, first_item)
+        first_item.delete.assert_called_once_with()
+        self.assertEqual(char.db.carried_scales, 7)
+
+    def test_auto_equip_failure_rolls_back_every_created_item(self):
+        from world.ancestry_engine import STARTER_KITS, _grant_starter_kit
+
+        char = _mock_character()
+        char.db.carried_scales = 7
+        created = [
+            MagicMock(key=template_id)
+            for template_id in STARTER_KITS["human"]
+        ]
+
+        with patch(
+            "world.item_spawner.create_item_from_catalog",
+            side_effect=created,
+        ), patch(
+            "world.inventory_engine.equip_items_in_empty_slots",
+            return_value=(False, "equip failed"),
+        ), patch(
+            "world.inventory_engine.unregister_item_ownership",
+        ) as mock_unregister:
+            ok, msg = _grant_starter_kit(char, "human")
+
+        self.assertFalse(ok)
+        self.assertIn("starter kit", msg.lower())
+        self.assertEqual(
+            mock_unregister.call_args_list,
+            [call(char, item) for item in reversed(created)],
+        )
+        for item in created:
+            item.delete.assert_called_once_with()
+        self.assertEqual(char.db.carried_scales, 7)
+
+    @patch("world.ability_engine.sync_character_ability_unlocks")
+    @patch("world.skill_engine.apply_ancestry_skill_seeds")
+    @patch("world.world_state.modify_standing")
+    @patch(
+        "world.ancestry_engine._grant_starter_kit",
+        return_value=(False, "Starter kit creation failed."),
+    )
+    def test_failed_starter_issue_does_not_commit_ancestry(
+        self,
+        mock_grant,
+        mock_standing,
+        mock_skill_seeds,
+        mock_unlocks,
+    ):
+        from world.ancestry_engine import set_ancestry
+
+        char = _mock_character()
+        ok, msg = set_ancestry(char, "human")
+
+        self.assertFalse(ok)
+        self.assertIn("starter kit", msg.lower())
+        self.assertIsNone(char.db.ancestry)
+        mock_standing.assert_not_called()
+        mock_skill_seeds.assert_not_called()
+        mock_unlocks.assert_not_called()
 
 
 class TestAncestryCommandOutput(unittest.TestCase):

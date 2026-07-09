@@ -93,129 +93,29 @@ VALID_COATS = ("summer", "winter")
 
 
 # ---------------------------------------------------------------------------
-# Starter kits -- items granted when ancestry is chosen
+# Starter kits -- canonical item ids granted when ancestry is chosen
 # ---------------------------------------------------------------------------
 
-_HEALING_POTION = {
-    "item_id": "healing_potion",
-    "key": "Healing Potion",
-    "item_type": "item",
-    "weight": 0.3,
-    "rarity": "normal",
-    "value": 10,
-    "desc": "A small vial of crimson liquid that restores health.",
-    "heal_amount": 30,
-}
-
-_LOCKPICK = {
-    "item_id": "lockpick",
-    "key": "Lockpick",
-    "item_type": "item",
-    "weight": 0.1,
-    "rarity": "normal",
-    "value": 5,
-    "desc": "A slender tool for working locks.",
-}
-
-_IRON_SWORD = {
-    "item_id": "iron_sword",
-    "key": "Iron Sword",
-    "item_type": "equipment",
-    "equip_slot": "main_hand",
-    "weight": 3.0,
-    "rarity": "normal",
-    "value": 25,
-    "desc": "A simple but sturdy iron blade.",
-    "damage_min": 4,
-    "damage_max": 8,
-}
-
-_IRON_SPEAR = {
-    "item_id": "iron_spear",
-    "key": "Iron Spear",
-    "item_type": "equipment",
-    "equip_slot": "main_hand",
-    "weight": 4.0,
-    "rarity": "normal",
-    "value": 25,
-    "desc": "A long iron-tipped spear favored by the Kau'roran.",
-    "damage_min": 5,
-    "damage_max": 9,
-}
-
-_IRON_DAGGER = {
-    "item_id": "iron_dagger",
-    "key": "Iron Dagger",
-    "item_type": "equipment",
-    "equip_slot": "main_hand",
-    "weight": 1.0,
-    "rarity": "normal",
-    "value": 15,
-    "desc": "A keen iron dagger, balanced for quick strikes.",
-    "damage_min": 3,
-    "damage_max": 6,
-}
-
-_IRON_STAFF = {
-    "item_id": "iron_staff",
-    "key": "Iron Staff",
-    "item_type": "equipment",
-    "equip_slot": "main_hand",
-    "weight": 3.5,
-    "rarity": "normal",
-    "value": 25,
-    "desc": "An iron-shod staff etched with faint warding runes.",
-    "damage_min": 3,
-    "damage_max": 7,
-    "stat_bonuses": {"intellect": 1},
-}
-
-_LEATHER_ARMOR = {
-    "item_id": "leather_armor",
-    "key": "Leather Armor",
-    "item_type": "equipment",
-    "equip_slot": "chest",
-    "weight": 5.0,
-    "rarity": "normal",
-    "value": 30,
-    "desc": "Cured leather armor offering modest protection.",
-    "armor": 3,
-}
-
-_HIDE_ARMOR = {
-    "item_id": "hide_armor",
-    "key": "Hide Armor",
-    "item_type": "equipment",
-    "equip_slot": "chest",
-    "weight": 7.0,
-    "rarity": "normal",
-    "value": 35,
-    "desc": "Thick hide plates stitched over heavy leather. Sturdy.",
-    "armor": 4,
-}
-
-_CLOTH_ROBES = {
-    "item_id": "cloth_robes",
-    "key": "Cloth Robes",
-    "item_type": "equipment",
-    "equip_slot": "chest",
-    "weight": 2.0,
-    "rarity": "normal",
-    "value": 20,
-    "desc": "Simple robes of woven cloth, light and unencumbering.",
-    "armor": 1,
-    "stat_bonuses": {"intellect": 1},
-}
-
 STARTER_KITS = {
-    "human": [_IRON_SWORD, _LEATHER_ARMOR, _HEALING_POTION, _HEALING_POTION],
-    "kauroran": [_IRON_SPEAR, _HIDE_ARMOR, _HEALING_POTION, _HEALING_POTION],
-    "veth": [
-        _IRON_DAGGER, _IRON_DAGGER, _LEATHER_ARMOR,
-        _HEALING_POTION, _HEALING_POTION, _LOCKPICK,
+    "human": [
+        "iron_sword", "leather_vest",
+        "minor_healing_potion", "minor_healing_potion",
     ],
-    "selvar": [_IRON_STAFF, _CLOTH_ROBES, _HEALING_POTION, _HEALING_POTION],
+    "kauroran": [
+        "iron_spear", "hide_armor",
+        "minor_healing_potion", "minor_healing_potion",
+    ],
+    "veth": [
+        "iron_dagger", "iron_dagger", "leather_vest",
+        "minor_healing_potion", "minor_healing_potion", "lockpick",
+    ],
+    "selvar": [
+        "iron_staff", "cloth_robes",
+        "minor_healing_potion", "minor_healing_potion",
+    ],
 }
+
+STARTING_SCALES = 50
 
 
 # ---------------------------------------------------------------------------
@@ -238,11 +138,15 @@ def set_ancestry(character, ancestry_id, coat=None):
     if ancestry_id == "selvar":
         if coat not in VALID_COATS:
             return False, f"Selvar ancestry requires a coat choice: {VALID_COATS}"
-        character.db.selvar_coat = coat
 
+    kit_created, kit_message = _grant_starter_kit(character, ancestry_id)
+    if not kit_created:
+        return False, kit_message
+
+    if ancestry_id == "selvar":
+        character.db.selvar_coat = coat
     character.db.ancestry = ancestry_id
     _apply_starting_standings(character, ancestry_id)
-    _grant_starter_kit(character, ancestry_id)
 
     # Apply ancestry skill seeds (D-20)
     from world.skill_engine import apply_ancestry_skill_seeds
@@ -278,29 +182,63 @@ def get_ancestry_trait(character, trait_name, default=None):
 # ---------------------------------------------------------------------------
 
 def _grant_starter_kit(character, ancestry_id):
-    """Create starter items for the chosen ancestry and place them in character inventory."""
+    """Issue one complete starter kit or clean up every item created for it."""
     import logging
     logger = logging.getLogger("evennia")
 
     kit = STARTER_KITS.get(ancestry_id, [])
     if not kit:
-        return
+        return False, "No starter kit is configured for that ancestry."
 
+    from world.inventory_engine import (
+        equip_items_in_empty_slots,
+        unregister_item_ownership,
+    )
+    from world.item_spawner import create_item_from_catalog
+
+    created_items = []
     try:
-        from world.item_spawner import create_item_from_template
-    except ImportError:
-        logger.warning("ancestry_engine: item_spawner not available, skipping starter kit")
-        return
+        for template_id in kit:
+            item = create_item_from_catalog(template_id, location=character)
+            if item is None:
+                raise RuntimeError(f"item spawner returned no {template_id}")
+            created_items.append(item)
 
-    for item_def in kit:
-        try:
-            create_item_from_template(item_def, location=character)
-        except Exception as err:
-            logger.warning("ancestry_engine: failed to create starter item %s: %s",
-                           item_def.get("item_id", "unknown"), err)
+        equipped, equip_message = equip_items_in_empty_slots(
+            character,
+            created_items,
+        )
+        if not equipped:
+            raise RuntimeError(equip_message)
+    except Exception as err:
+        logger.warning(
+            "ancestry_engine: starter kit issuance failed for %s: %s",
+            ancestry_id,
+            err,
+        )
+        for item in reversed(created_items):
+            try:
+                unregister_item_ownership(character, item)
+            except Exception as cleanup_err:
+                logger.warning(
+                    "ancestry_engine: failed to unregister starter item %s: %s",
+                    getattr(item, "key", "unknown"),
+                    cleanup_err,
+                )
+            try:
+                item.delete()
+            except Exception as cleanup_err:
+                logger.warning(
+                    "ancestry_engine: failed to delete starter item %s: %s",
+                    getattr(item, "key", "unknown"),
+                    cleanup_err,
+                )
+        return False, "Starter kit creation failed. Your ancestry was not changed."
 
-    # Grant starting currency
-    character.db.carried_scales = 50
+    character.db.carried_scales = (
+        character.db.carried_scales or 0
+    ) + STARTING_SCALES
+    return True, ""
 
 
 def _apply_starting_standings(character, ancestry_id):

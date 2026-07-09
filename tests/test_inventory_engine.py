@@ -363,6 +363,50 @@ class TestUnequipNotEquippedFails(InvTestBase):
         self.assertFalse(success)
 
 
+class TestEquipItemsInEmptySlots(InvTestBase):
+    def test_auto_equip_fills_empty_slots_without_displacing_existing_gear(self):
+        from world.inventory_engine import equip_item, equip_items_in_empty_slots
+
+        existing_chest = self._make_equipment(
+            "existing coat", "chest", location=self.char1
+        )
+        starter_chest = self._make_equipment(
+            "starter vest", "chest", location=self.char1
+        )
+        starter_weapon = self._make_equipment(
+            "starter sword", "main_hand", location=self.char1
+        )
+        equip_item(self.char1, existing_chest)
+
+        ok, msg = equip_items_in_empty_slots(
+            self.char1,
+            [starter_chest, starter_weapon],
+        )
+
+        self.assertTrue(ok, msg)
+        existing_record = InventoryItem.objects.get(item_id=existing_chest.id)
+        chest_record = InventoryItem.objects.get(item_id=starter_chest.id)
+        weapon_record = InventoryItem.objects.get(item_id=starter_weapon.id)
+        self.assertTrue(existing_record.is_equipped)
+        self.assertFalse(chest_record.is_equipped)
+        self.assertTrue(weapon_record.is_equipped)
+        self.assertEqual(weapon_record.equipment_slot, "main_hand")
+
+    def test_auto_equip_equips_only_one_item_per_empty_slot(self):
+        from world.inventory_engine import equip_items_in_empty_slots
+
+        first = self._make_equipment("first dagger", "main_hand", self.char1)
+        second = self._make_equipment("second dagger", "main_hand", self.char1)
+
+        ok, msg = equip_items_in_empty_slots(self.char1, [first, second])
+
+        self.assertTrue(ok, msg)
+        first_record = InventoryItem.objects.get(item_id=first.id)
+        second_record = InventoryItem.objects.get(item_id=second.id)
+        self.assertTrue(first_record.is_equipped)
+        self.assertFalse(second_record.is_equipped)
+
+
 # --- Encumbrance ---
 
 class TestOverloadedBlocksMovement(InvTestBase):
