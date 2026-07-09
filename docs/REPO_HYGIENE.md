@@ -1,52 +1,75 @@
-# Repo Hygiene
+# Repository Hygiene Gate
 
-Soravelon currently has one known repo-level failure mode: tracked content under `.claude/worktrees/`.
+Soravelon's release gate audits the Git index for sensitive, transient, and
+generated files. It deliberately does not reject ignored, untracked local
+runtime files: those belong on a developer machine, but never in a release
+commit.
 
-## Why it matters
-
-If `.claude/worktrees/` contains tracked gitlinks or tracked copied files, normal commands such as `git status` can fail or become noisy. That breaks release review, clean deployment checks, and any workflow that depends on a trustworthy worktree.
-
-## Audit
-
-Run:
+## Run the gate
 
 ```bash
 python scripts/audit_repo_hygiene.py
 ```
 
-If the repo is clean, the script exits successfully. If not, it reports the tracked entries under `.claude/worktrees`.
+Exit codes:
 
-## Repair
+- `0`: no forbidden tracked paths
+- `1`: one or more forbidden paths are tracked
+- `2`: Git index inspection failed, so release verification must stop
 
-The safe intent is:
+Failure output contains sorted repository-relative paths only. The gate never
+reads or prints file contents, including secret files.
 
-1. remove tracked `.claude/worktrees` entries from the git index
-2. keep `.claude/worktrees/` ignored going forward
-3. delete the physical directories only after reviewing whether anything local still matters
+## Rejected tracked paths
 
-This repo includes a repair helper:
+The gate fails when the index contains:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\repair_tracked_worktrees.ps1
+- anything Git currently considers ignored
+- `.env` or `.env.*` files other than `*.example`
+- non-example `server/conf/secret_settings*` modules
+- runtime output under `server/logs/`
+- collected static output under `server/.static/`
+- `.claude/worktrees/` content
+- SQLite and similar local database files, including journal/WAL companions
+- temporary or backup artifacts under `world/areas/`
+- known generated agent, Python cache, virtualenv, PID, and repository-analysis
+  artifacts
+
+The specific path checks remain active even if an ignore rule is accidentally
+removed. The tracked-ignored check catches new ignored artifact families
+without requiring a script change.
+
+## Intentionally durable files
+
+The gate does not classify these as artifacts:
+
+- `AGENTS.md`
+- tracked `.planning/` documents
+- `.env.example`
+- `server/conf/secret_settings.example.py`
+
+They remain valid source-controlled project context unless a separate project
+decision explicitly retires them.
+
+## Repair procedure
+
+Review every reported path before changing the index. For a local artifact that
+must remain on disk, remove only its tracked entry and ensure the corresponding
+ignore rule exists. Do not delete or reset unrelated working-tree changes.
+
+Example:
+
+```bash
+git rm --cached -- path/to/local-artifact
+python scripts/audit_repo_hygiene.py
 ```
 
-That command removes tracked `.claude/worktrees` entries from the git index with `git update-index --force-remove`. It does not delete the directories from disk.
-
-## Current state
-
-As of 2026-04-18:
-
-- `python scripts/audit_repo_hygiene.py` passes
-- `.claude/worktrees/` is no longer tracked in the git index
-- the nested worktree directories were removed from disk after audit review
-- `git worktree list` shows only the main Soravelon repo
-
-The staged `.claude/worktrees/...` deletions visible in `git status` are expected and should be committed as part of the cleanup.
+Secrets require more than index cleanup: rotate the exposed value and assess
+Git-history remediation separately.
 
 ## Release expectation
 
-Before any public launch cutover:
-
-- `git status` must work from the main repo root
-- `.claude/worktrees/` must be ignored and untracked
-- release commits must not include transient agent worktree state
+The hygiene gate must pass on the exact release index before tests, migrations,
+or deployment begin. A clean working tree is a separate release requirement;
+this script owns only the stronger question of whether the commit itself would
+ship forbidden files.
