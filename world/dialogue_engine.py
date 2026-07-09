@@ -23,6 +23,7 @@ NPC dialogue data is stored on db attributes set by AreaBuilder:
 
 import hashlib
 import logging
+import re
 import time
 
 from django.db import OperationalError, ProgrammingError
@@ -319,6 +320,181 @@ def _resolve_social_topic_response(topic_data, context):
         if _check_social_condition(condition, social_context):
             return (topic_data[condition], condition)
     return (None, None)
+
+
+SOCIAL_EXPLANATION_TOPICS = {
+    "me",
+    "myself",
+    "why",
+    "why me",
+    "why trust me",
+    "why do you trust me",
+    "why are you asking me",
+    "why did you ask me",
+    "what have you heard about me",
+    "what do you know about me",
+}
+
+UNSAFE_SOCIAL_TEXT_PATTERNS = (
+    re.compile(r"\b(?:fact|claim|npc|player|edge|node):", re.IGNORECASE),
+    re.compile(
+        r"\b(?:fact_key|claim_key|node_key|edge_key|raw_prompt|model_output)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\b(?:provider|admin|hidden lore|confidence)\b", re.IGNORECASE),
+    re.compile(r"\b0\.\d+\b"),
+)
+
+UNSAFE_SOCIAL_VISIBILITIES = {"private", "admin", "hidden", "secret"}
+
+
+def _normalize_social_explanation_text(text):
+    normalized = str(text or "").strip().lower().replace("?", " ")
+    normalized = " ".join(normalized.split())
+    if normalized.startswith("about "):
+        normalized = normalized[len("about "):].strip()
+    return normalized
+
+
+def is_social_explanation_topic(text):
+    """Return True when player input asks for NPC knowledge about the player."""
+    return _normalize_social_explanation_text(text) in SOCIAL_EXPLANATION_TOPICS
+
+
+def _humanize_social_channel(value):
+    text = str(value or "").strip().replace("_", " ")
+    return " ".join(text.split())
+
+
+def _is_safe_social_text(value):
+    text = str(value or "").strip()
+    if not text:
+        return False
+    return not any(pattern.search(text) for pattern in UNSAFE_SOCIAL_TEXT_PATTERNS)
+
+
+def _safe_social_text(value):
+    text = str(value or "").strip()
+    return text if _is_safe_social_text(text) else ""
+
+
+def _safe_social_evidence(items, *, default_kind):
+    evidence = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        visibility = _normalize_social_condition_value(item.get("visibility"))
+        if visibility in UNSAFE_SOCIAL_VISIBILITIES:
+            continue
+
+        summary = _safe_social_text(item.get("summary"))
+        if not summary:
+            continue
+        channel = _humanize_social_channel(item.get("channel"))
+        if channel and not _is_safe_social_text(channel):
+            continue
+        evidence.append(
+            {
+                "kind": str(item.get("kind") or default_kind),
+                "summary": summary,
+                "channel": channel,
+                "status": str(item.get("status") or "").strip(),
+            }
+        )
+    return evidence
+
+
+def _evidence_from_social_context(social_context):
+    return (
+        _safe_social_evidence((social_context or {}).get("facts"), default_kind="fact")
+        + _safe_social_evidence(
+            (social_context or {}).get("claims"),
+            default_kind="claim",
+        )
+    )
+
+
+def _npc_identifier(npc):
+    npc_db = getattr(npc, "db", None)
+    return (
+        _dialogue_node_identifier(getattr(npc_db, "npc_id", None))
+        or _dialogue_node_identifier(getattr(npc, "key", None))
+    )
+
+
+def _pending_offer_explainability_for_npc(npc, pending_offer):
+    if not isinstance(pending_offer, dict):
+        return {}
+
+    quest = pending_offer.get("quest") or {}
+    if not isinstance(quest, dict):
+        return {}
+
+    offer_npc = pending_offer.get("npc")
+    quest_giver = _dialogue_node_identifier(quest.get("quest_giver"))
+    if offer_npc is not npc and quest_giver != _npc_identifier(npc):
+        return {}
+
+    social_quest_context = quest.get("social_quest_context") or {}
+    explainability = social_quest_context.get("offer_explainability") or {}
+    return explainability if isinstance(explainability, dict) else {}
+
+
+def _format_social_explanation(*, summary="", reason="", evidence=None):
+    evidence = list(evidence or [])[:2]
+    pieces = []
+    summary = _safe_social_text(summary)
+    reason = _safe_social_text(reason)
+
+    if summary:
+        pieces.append(summary)
+    if reason and reason != summary:
+        pieces.append(reason)
+
+    if evidence:
+        evidence_parts = []
+        for item in evidence:
+            item_summary = item.get("summary", "")
+            channel = item.get("channel", "")
+            if channel:
+                evidence_parts.append(f"Through {channel}: {item_summary}")
+            else:
+                evidence_parts.append(item_summary)
+        pieces.append("What I can point to is this: " + " ".join(evidence_parts))
+
+    if not pieces:
+        return "I have heard nothing I can fairly speak to."
+
+    pieces.append("That shapes how I speak with you.")
+    return " ".join(pieces)
+
+
+def resolve_social_explanation(npc, character, *, context=None, pending_offer=None):
+    """
+    Build a player-safe explanation of what this NPC can say about the player.
+
+    The response is diegetic and bounded to Social Web summaries/reasons. It
+    intentionally omits raw fact keys, claim keys, node ids, traces, confidence
+    scores, prompts, model output, and withheld implications.
+    """
+    if context is None:
+        context = _build_dialogue_context(npc, character)
+
+    offer_explainability = _pending_offer_explainability_for_npc(npc, pending_offer)
+    if offer_explainability:
+        return _format_social_explanation(
+            summary=offer_explainability.get("summary", ""),
+            reason=offer_explainability.get("npc_safe_reason", ""),
+            evidence=_safe_social_evidence(
+                offer_explainability.get("evidence"),
+                default_kind="evidence",
+            ),
+        )
+
+    social_context = (context or {}).get("social_context") or {}
+    return _format_social_explanation(
+        evidence=_evidence_from_social_context(social_context),
+    )
 
 
 def _check_condition(condition, context):

@@ -86,6 +86,45 @@ space for later Social Web gameplay such as `deny`, `confess`, `vouch`, or
 Runtime repair must still be implemented through deterministic facts, claims,
 knowledge propagation, and ordinary quest/action effects.
 
+## Player-Facing Explanation Surface
+
+The first player-facing Social Web explanation surface is dialogue, not a
+numeric relationship panel. `ask <npc> about me` and narrow why-phrases such as
+`ask <npc> why` should let an NPC explain what they can fairly say about the
+player.
+
+This surface may use:
+
+- `social_quest_context.offer_explainability` from a pending quest offer from
+  the same NPC
+- current `query_social_context()` summaries available through the dialogue
+  context packet
+- player-safe evidence summaries and humanized channels
+
+The command parser should support explicit topic syntax and the common
+multi-word NPC why form:
+
+- `ask <npc> about me`
+- `ask <npc> why`
+- `ask <multi word npc> why`
+
+Specific why-topics such as `ask <npc> why wolves` should continue through
+normal authored topic resolution rather than being swallowed by the explanation
+surface.
+
+It must not expose:
+
+- raw `fact_key`, `claim_key`, node keys, trace internals, or confidence scores
+- numeric reputation/standing/trust values
+- hidden lore, admin-only identifiers, or unsupported private knowledge
+- raw prompts, model output, or provider metadata
+- withheld implications reserved for authoring safety
+
+When no safe summary exists, the NPC should say that they have heard nothing
+they can fairly speak to. Do not fill the gap with generated color. Summary and
+channel fields are not automatically safe; reject private/admin/hidden
+visibility and raw-looking text instead of laundering it into dialogue.
+
 ## Expansion Rules
 
 New seeds should add new categories, roles, evidence, and agendas through

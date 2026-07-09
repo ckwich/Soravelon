@@ -24,6 +24,30 @@ from commands.command import Command
 MAX_DIALOGUE_LENGTH = 500  # Cap player dialogue input to prevent spam/DOS
 
 
+def _split_ask_target_and_topic(character, args):
+    """Resolve an ask target and topic, allowing multi-word NPC names."""
+    if " about " in args:
+        parts = args.split(" about ", 1)
+        npc_name = parts[0].strip()
+        topic_text = parts[1].strip()
+        if not npc_name or not topic_text:
+            return (None, topic_text)
+        return (_find_npc_in_room(character, npc_name), topic_text)
+
+    words = args.split()
+    if len(words) < 2:
+        return (None, "")
+
+    for split_index in range(len(words) - 1, 0, -1):
+        npc_name = " ".join(words[:split_index])
+        topic_text = " ".join(words[split_index:]).strip()
+        npc = _find_npc_in_room(character, npc_name)
+        if npc:
+            return (npc, topic_text)
+
+    return (None, " ".join(words[1:]).strip())
+
+
 def _find_npc_in_room(character, npc_name):
     """
     Search room.contents for an NPC matching npc_name.
@@ -206,7 +230,9 @@ class CmdAsk(Command):
 
     def func(self):
         from world.dialogue_engine import (
+            is_social_explanation_topic,
             record_topic_learned,
+            resolve_social_explanation,
             resolve_topic_response,
             _build_dialogue_context,
         )
@@ -218,31 +244,38 @@ class CmdAsk(Command):
             character.msg("|yAsk whom about what? Usage: ask <npc> about <topic>|n")
             return
 
-        # Parse: split on " about " first, then fall back to first_word rest
-        if " about " in args:
-            parts = args.split(" about ", 1)
-            npc_name = parts[0].strip()
-            topic_text = parts[1].strip()
-        else:
-            parts = args.split(None, 1)
-            npc_name = parts[0]
-            topic_text = parts[1].strip() if len(parts) > 1 else ""
+        npc, topic_text = _split_ask_target_and_topic(character, args)
 
         if not topic_text:
             character.msg("|yAsk about what? Usage: ask <npc> about <topic>|n")
             return
 
-        npc = _find_npc_in_room(character, npc_name)
         if not npc:
             character.msg("|rYou don't see anyone by that name here.|n")
+            return
+
+        npc_display = npc.db.npc_name or npc.key
+
+        if is_social_explanation_topic(topic_text):
+            context = _build_dialogue_context(npc, character)
+            pending_offer = getattr(
+                getattr(character, "ndb", None),
+                "pending_quest_offer",
+                None,
+            )
+            text = resolve_social_explanation(
+                npc,
+                character,
+                context=context,
+                pending_offer=pending_offer,
+            )
+            character.msg(f"|w{npc_display}|n says, \"{text}\"")
             return
 
         # Normalize topic via extract_topic for synonym/partial matching
         from world.dialogue_engine import extract_topic
         available_topics = list((npc.db.dialogue_topics or {}).keys())
         topic_key = extract_topic(topic_text, available_topics)
-
-        npc_display = npc.db.npc_name or npc.key
 
         if topic_key:
             context = _build_dialogue_context(npc, character)

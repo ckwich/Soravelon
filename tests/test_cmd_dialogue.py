@@ -39,6 +39,122 @@ def _make_char(name, is_npc=False, sessions_count=1):
 
 
 class TestCmdAsk(unittest.TestCase):
+    def test_ask_about_me_uses_social_explanation_surface(self):
+        from commands.cmd_dialogue import CmdAsk
+
+        caller = _make_char("Caller")
+        npc = MagicMock()
+        npc.key = "Maren"
+        npc.db.npc_name = "Maren"
+        npc.db.npc_id = "npc_greeter_maren"
+        npc.db.dialogue_topics = {"work": {"default": "Start with the tavern."}}
+
+        resolved_context = {
+            "standing_tier": "neutral",
+            "social_context": {"facts": [], "claims": []},
+        }
+        with patch("commands.cmd_dialogue._find_npc_in_room", return_value=npc), patch(
+            "world.dialogue_engine.is_social_explanation_topic",
+            return_value=True,
+        ) as mock_is_social_topic, patch(
+            "world.dialogue_engine.resolve_social_explanation",
+            return_value="I have heard enough to speak plainly with you.",
+        ) as mock_social_explanation, patch(
+            "world.dialogue_engine._build_dialogue_context",
+            return_value=resolved_context,
+        ) as mock_context, patch(
+            "world.dialogue_engine.extract_topic"
+        ) as mock_extract, patch(
+            "world.dialogue_engine.resolve_topic_response"
+        ) as mock_topic_response, patch(
+            "world.dialogue_engine.record_topic_learned"
+        ) as mock_record:
+            cmd = CmdAsk()
+            cmd.caller = caller
+            cmd.args = "Maren about me"
+            cmd.func()
+
+        caller.msg.assert_called_once()
+        self.assertIn("I have heard enough", caller.msg.call_args[0][0])
+        mock_is_social_topic.assert_called_once_with("me")
+        mock_context.assert_called_once_with(npc, caller)
+        mock_social_explanation.assert_called_once_with(
+            npc,
+            caller,
+            context=resolved_context,
+            pending_offer=None,
+        )
+        mock_extract.assert_not_called()
+        mock_topic_response.assert_not_called()
+        mock_record.assert_not_called()
+
+    def test_ask_multiword_npc_why_uses_social_explanation_surface(self):
+        from commands.cmd_dialogue import CmdAsk
+
+        caller = _make_char("Caller")
+        npc = MagicMock()
+        npc.key = "Agent Calloway"
+        npc.db.npc_name = "Agent Calloway"
+        npc.db.npc_id = "npc_warden_agent_calloway"
+        npc.db.dialogue_topics = {"report": {"default": "Under seal."}}
+
+        def find_npc(_character, name):
+            return npc if name == "Agent Calloway" else None
+
+        with patch("commands.cmd_dialogue._find_npc_in_room", side_effect=find_npc), patch(
+            "world.dialogue_engine._build_dialogue_context",
+            return_value={"social_context": {"facts": [], "claims": []}},
+        ), patch(
+            "world.dialogue_engine.resolve_social_explanation",
+            return_value="The Wardens have reason to hear you out.",
+        ), patch(
+            "world.dialogue_engine.extract_topic"
+        ) as mock_extract:
+            cmd = CmdAsk()
+            cmd.caller = caller
+            cmd.args = "Agent Calloway why"
+            cmd.func()
+
+        self.assertIn("Wardens have reason", caller.msg.call_args[0][0])
+        mock_extract.assert_not_called()
+
+    def test_ask_why_specific_topic_stays_normal_topic_resolution(self):
+        from commands.cmd_dialogue import CmdAsk
+
+        caller = _make_char("Caller")
+        npc = MagicMock()
+        npc.key = "Maren"
+        npc.db.npc_name = "Maren"
+        npc.db.npc_id = "npc_greeter_maren"
+        npc.db.dialogue_topics = {"wolves": {"default": "They hunt near the road."}}
+
+        def find_npc(_character, name):
+            return npc if name == "Maren" else None
+
+        with patch("commands.cmd_dialogue._find_npc_in_room", side_effect=find_npc), patch(
+            "world.dialogue_engine.extract_topic",
+            return_value="wolves",
+        ) as mock_extract, patch(
+            "world.dialogue_engine.resolve_topic_response",
+            return_value=("They hunt near the road.", "default"),
+        ) as mock_topic_response, patch(
+            "world.dialogue_engine._build_dialogue_context",
+            return_value={"standing_tier": "neutral", "social_context": {}},
+        ), patch(
+            "world.dialogue_engine.resolve_social_explanation"
+        ) as mock_social_explanation, patch(
+            "world.dialogue_engine.record_topic_learned"
+        ):
+            cmd = CmdAsk()
+            cmd.caller = caller
+            cmd.args = "Maren why wolves"
+            cmd.func()
+
+        mock_extract.assert_called_once_with("why wolves", ["wolves"])
+        mock_topic_response.assert_called_once()
+        mock_social_explanation.assert_not_called()
+        self.assertIn("They hunt near the road.", caller.msg.call_args[0][0])
+
     def test_ask_reuses_built_context_for_matched_topic(self):
         from commands.cmd_dialogue import CmdAsk
 

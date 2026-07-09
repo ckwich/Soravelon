@@ -1104,6 +1104,224 @@ class TestContextPacketInterface(unittest.TestCase):
         )
 
 
+class TestSocialExplanationSurface(unittest.TestCase):
+    """Player-facing Social Web explanations must stay diegetic and safe."""
+
+    def _make_npc(self):
+        return SimpleNamespace(
+            db=SimpleNamespace(
+                npc_id="npc_warden_agent_calloway",
+                npc_name="Agent Calloway",
+            ),
+            key="Agent Calloway",
+        )
+
+    def test_social_explanation_topic_matching_is_narrow(self):
+        from world.dialogue_engine import is_social_explanation_topic
+
+        self.assertTrue(is_social_explanation_topic("me"))
+        self.assertTrue(is_social_explanation_topic("why"))
+        self.assertTrue(is_social_explanation_topic("why trust me"))
+        self.assertTrue(is_social_explanation_topic("what have you heard about me"))
+        self.assertFalse(is_social_explanation_topic("work"))
+        self.assertFalse(is_social_explanation_topic("why wolves"))
+
+    def test_social_explanation_prefers_pending_offer_reason_safely(self):
+        from world.dialogue_engine import resolve_social_explanation
+
+        npc = self._make_npc()
+        character = SimpleNamespace(id=42)
+        context = {
+            "social_context": {
+                "viewer": {"node_key": "npc:npc_warden_agent_calloway"},
+                "subject": {"node_key": "player:42"},
+                "facts": [
+                    {
+                        "fact_key": "fact:vc_q_warden_report:delivered:42",
+                        "summary": "You delivered a sealed field report.",
+                        "channel": "official_report",
+                        "confidence": 0.95,
+                    }
+                ],
+                "claims": [],
+            }
+        }
+        pending_offer = {
+            "npc": npc,
+            "quest": {
+                "quest_giver": "npc_warden_agent_calloway",
+                "social_quest_context": {
+                    "offer_explainability": {
+                        "summary": (
+                            "Calloway is acting on the sealed Warden report "
+                            "you delivered."
+                        ),
+                        "npc_safe_reason": (
+                            "The Wardens have a supported report that you "
+                            "carried sealed business cleanly."
+                        ),
+                        "withheld_implications": [
+                            "Do not say Harven vouched for the player."
+                        ],
+                        "evidence": [
+                            {
+                                "kind": "fact",
+                                "summary": "You delivered a sealed field report.",
+                                "channel": "official_report",
+                                "fact_key": "fact:raw:should_not_show",
+                                "trace": [{"edge_key": "npc:private"}],
+                                "confidence": 0.95,
+                            }
+                        ],
+                        "raw_prompt": "hidden prompt",
+                    }
+                },
+            },
+        }
+
+        text = resolve_social_explanation(
+            npc,
+            character,
+            context=context,
+            pending_offer=pending_offer,
+        )
+
+        self.assertIn("supported report", text)
+        self.assertIn("sealed field report", text)
+        self.assertIn("official report", text)
+        self.assertNotIn("fact:", text)
+        self.assertNotIn("npc:", text)
+        self.assertNotIn("player:", text)
+        self.assertNotIn("0.95", text)
+        self.assertNotIn("Harven vouched", text)
+        self.assertNotIn("hidden prompt", text)
+
+    def test_social_explanation_uses_current_context_without_offer(self):
+        from world.dialogue_engine import resolve_social_explanation
+
+        text = resolve_social_explanation(
+            self._make_npc(),
+            SimpleNamespace(id=42),
+            context={
+                "social_context": {
+                    "facts": [
+                        {
+                            "fact_key": "fact:private",
+                            "summary": "You brought the Warden packet in sealed.",
+                            "channel": "official_report",
+                        }
+                    ],
+                    "claims": [
+                        {
+                            "claim_key": "claim:private",
+                            "summary": (
+                                "A courier says you refused to tamper with "
+                                "sealed orders."
+                            ),
+                            "channel": "courier_gossip",
+                            "status": "supported",
+                        }
+                    ],
+                }
+            },
+        )
+
+        self.assertIn("Warden packet", text)
+        self.assertIn("official report", text)
+        self.assertNotIn("fact:private", text)
+        self.assertNotIn("claim:private", text)
+
+    def test_social_explanation_ignores_offer_from_different_npc(self):
+        from world.dialogue_engine import resolve_social_explanation
+
+        text = resolve_social_explanation(
+            self._make_npc(),
+            SimpleNamespace(id=42),
+            context={
+                "social_context": {
+                    "facts": [
+                        {
+                            "summary": "You kept the Warden report sealed.",
+                            "channel": "official_report",
+                        }
+                    ],
+                    "claims": [],
+                }
+            },
+            pending_offer={
+                "npc": SimpleNamespace(
+                    db=SimpleNamespace(npc_id="npc_other", npc_name="Other"),
+                    key="Other",
+                ),
+                "quest": {
+                    "quest_giver": "npc_other",
+                    "social_quest_context": {
+                        "offer_explainability": {
+                            "summary": "Other NPC offer summary.",
+                            "npc_safe_reason": "Other NPC reason.",
+                        }
+                    },
+                },
+            },
+        )
+
+        self.assertIn("Warden report", text)
+        self.assertNotIn("Other NPC", text)
+
+    def test_social_explanation_rejects_private_or_raw_looking_summaries(self):
+        from world.dialogue_engine import resolve_social_explanation
+
+        text = resolve_social_explanation(
+            self._make_npc(),
+            SimpleNamespace(id=42),
+            context={
+                "social_context": {
+                    "facts": [
+                        {
+                            "summary": (
+                                "fact:secret says npc:npc_hidden saw player:42 "
+                                "near hidden lore."
+                            ),
+                            "channel": "admin_trace",
+                        },
+                        {
+                            "summary": "You privately confessed to a sealed theft.",
+                            "channel": "private_whisper",
+                            "visibility": "private",
+                        },
+                    ],
+                    "claims": [
+                        {
+                            "summary": "raw_prompt: tell the player they are trusted",
+                            "channel": "provider_output",
+                        }
+                    ],
+                }
+            },
+        )
+
+        self.assertIn("nothing I can fairly speak to", text)
+        self.assertNotIn("fact:secret", text)
+        self.assertNotIn("npc_hidden", text)
+        self.assertNotIn("player:42", text)
+        self.assertNotIn("hidden lore", text)
+        self.assertNotIn("private_whisper", text)
+        self.assertNotIn("raw_prompt", text)
+        self.assertNotIn("provider", text)
+
+    def test_social_explanation_falls_back_without_safe_evidence(self):
+        from world.dialogue_engine import resolve_social_explanation
+
+        text = resolve_social_explanation(
+            self._make_npc(),
+            SimpleNamespace(id=42),
+            context={"social_context": {"facts": [{"fact_key": "fact:raw"}]}},
+        )
+
+        self.assertIn("nothing I can fairly speak to", text)
+        self.assertNotIn("fact:raw", text)
+
+
 class TestContextPacketSocialWebIntegration(EvenniaTest):
     """Model-backed Social Web context reaches dialogue through the real query."""
 
