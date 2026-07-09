@@ -708,7 +708,7 @@ def _compute_context_hash(context):
         str(len(context.get("completed_quests") or [])),
     ]
     raw = "|".join(parts)
-    return hashlib.md5(raw.encode()).hexdigest()[:16]
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
 # ---------------------------------------------------------------------------
