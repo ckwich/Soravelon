@@ -448,6 +448,53 @@ class BankDraft(models.Model):
         return f"{self.draft_key}:{self.denomination}:{self.status}"
 
 
+class GameOperation(models.Model):
+    """Exactly-once receipt for cross-system player state mutations."""
+
+    operation_id = models.CharField(
+        max_length=128,
+        unique=True,
+        default=new_operation_id,
+        editable=False,
+    )
+    character = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="game_operations",
+    )
+    character_ref = models.BigIntegerField()
+    operation_type = models.CharField(max_length=48)
+    related_id = models.CharField(max_length=160)
+    result = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(character__isnull=True)
+                    | models.Q(character_id=models.F("character_ref"))
+                ),
+                name="game_operation_actor_ref_matches",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["character", "operation_type"],
+                name="world_gameop_actor_type_idx",
+            ),
+            models.Index(
+                fields=["operation_type", "related_id"],
+                name="world_gameop_type_related_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.operation_type}:{self.operation_id}"
+
+
 class CharacterGuild(models.Model):
     """
     Character guild membership record.

@@ -9,6 +9,7 @@ import random
 
 from world.inventory_transactions import (
     _get_container_contents_weight as _get_container_contents_weight,
+    consume_owned_quantities as consume_owned_quantities,
     destroy_owned_item as destroy_owned_item,
     drop_item as drop_item,
     equip_item as equip_item,

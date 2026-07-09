@@ -8,11 +8,11 @@ of truth. ``ObjectDB.db_location`` and ``InventoryItem`` commit together.
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from numbers import Integral
 
 from django.db import transaction
 
+from world.atomic_state import atomic_evennia_state
 from world.models import InventoryItem
 
 
@@ -26,70 +26,6 @@ class _MutationRejected(RuntimeError):
 
 def _after_write(checkpoint: str) -> None:
     """Failure-injection seam for rollback contract tests."""
-
-
-class _CacheRepairTracker:
-    """Repair Evennia's shared model/Attribute caches after DB rollback."""
-
-    def __init__(self):
-        self._objects = {}
-        self._attributes = {}
-
-    def track(self, obj, *, attributes=()):
-        object_id = getattr(obj, "id", None)
-        if not isinstance(object_id, Integral) or isinstance(object_id, bool):
-            return obj
-        self._objects[object_id] = obj
-        for name in attributes:
-            attribute = obj.attributes.get(name, return_obj=True)
-            self._attributes[(object_id, name)] = (
-                attribute is not None,
-                attribute.value if attribute is not None else None,
-            )
-        return obj
-
-    def repair(self):
-        from django.core.exceptions import ObjectDoesNotExist
-        from evennia.objects.models import ObjectDB
-        from evennia.utils.dbserialize import to_pickle
-
-        for object_id, obj in self._objects.items():
-            try:
-                stale_location_id = obj.__dict__.get("db_location_id")
-                stored_location_id = ObjectDB.objects.filter(
-                    pk=object_id,
-                ).values_list("db_location_id", flat=True).get()
-                obj.pk = object_id
-                obj.__dict__["db_location_id"] = stored_location_id
-                obj._state.fields_cache.pop("db_location", None)
-                obj.attributes.reset_cache()
-                for (tracked_id, name), (existed, value) in self._attributes.items():
-                    if tracked_id != object_id or not existed:
-                        continue
-                    attribute = obj.attributes.get(name, return_obj=True)
-                    if attribute is not None:
-                        # The database already rolled back. Repair only the
-                        # shared in-memory model that Evennia's idmapper retained.
-                        attribute.db_value = to_pickle(value)
-                for location_id in {stale_location_id, stored_location_id} - {None}:
-                    location = ObjectDB.objects.filter(pk=location_id).first()
-                    if location:
-                        location.contents_cache.init()
-            except ObjectDoesNotExist:
-                obj.flush_from_cache(force=True)
-
-
-@contextmanager
-def _atomic_inventory_state(*objects):
-    tracker = _CacheRepairTracker()
-    for obj in objects:
-        tracker.track(obj)
-    try:
-        with transaction.atomic():
-            yield tracker
-    except Exception:
-        tracker.repair()
-        raise
 
 
 def _lock_objects(*object_ids):
@@ -247,7 +183,7 @@ def register_item_ownership(
     if requested_quantity is None:
         raise ValueError("Inventory quantity must be a positive whole number.")
 
-    with _atomic_inventory_state(item):
+    with atomic_evennia_state(item):
         _lock_characters(character)
         locked_item = _locked_item(item)
         if not locked_item:
@@ -327,7 +263,7 @@ def unregister_item_ownership(character, item):
     if not ObjectDB.objects.filter(pk=item_id).exists():
         return False
 
-    with _atomic_inventory_state(item):
+    with atomic_evennia_state(item):
         _lock_characters(character)
         locked_item = _locked_item(item)
         if not locked_item:
@@ -343,7 +279,7 @@ def unregister_item_ownership(character, item):
 def destroy_owned_item(character, item):
     """Delete an owned object and its metadata as one durable mutation."""
 
-    with _atomic_inventory_state(item):
+    with atomic_evennia_state(item):
         _lock_characters(character)
         locked_item = _locked_item(item)
         if not locked_item:
@@ -358,11 +294,63 @@ def destroy_owned_item(character, item):
         return True, ""
 
 
+def consume_owned_quantities(character, consume_specs):
+    """Consume validated owned quantities as one all-or-nothing mutation."""
+
+    requested = {}
+    source_items = {}
+    for spec in consume_specs:
+        item = spec["item"]
+        quantity = _quantity(spec.get("quantity", 1))
+        if quantity is None:
+            raise ValueError("Consumed quantity must be a positive whole number.")
+        requested[item.id] = requested.get(item.id, 0) + quantity
+        source_items[item.id] = item
+    if not requested:
+        return True, ""
+
+    with atomic_evennia_state(*source_items.values()) as tracker:
+        _lock_characters(character)
+        locked_items = _lock_objects(*requested)
+        if len(locked_items) != len(requested):
+            return False, "One of the ingredients no longer exists."
+        records = {
+            record.item_id: record
+            for record in InventoryItem.objects.select_for_update().filter(
+                character_id=character.id,
+                item_id__in=requested,
+            )
+        }
+        if len(records) != len(requested):
+            return False, "One of the ingredients is no longer yours."
+
+        for item_id, quantity in requested.items():
+            item = locked_items[item_id]
+            tracker.track(item)
+            record = records[item_id]
+            if item.db_location_id != character.id or record.quantity < quantity:
+                return False, "An ingredient quantity changed before crafting."
+
+        for item_id, quantity in requested.items():
+            item = locked_items[item_id]
+            record = records[item_id]
+            if record.quantity > quantity:
+                record.quantity -= quantity
+                record.save(update_fields=["quantity"])
+                _after_write("owned_quantity_decremented")
+            else:
+                record.delete()
+                _after_write("ownership_unregistered")
+                item.delete()
+                _after_write("consumed_item_deleted")
+        return True, ""
+
+
 def pick_up(character, item, container=None):
     """Atomically claim a visible item, stacking when the direct carry matches."""
 
     try:
-        with _atomic_inventory_state(item):
+        with atomic_evennia_state(item):
             characters = _lock_characters(character)
             locked_character = characters[character.id]
             if container:
@@ -444,7 +432,7 @@ def move_owned_items_to_world_container(character, items, destination):
     items = list(items)
     if not items:
         return 0
-    with _atomic_inventory_state(*items, destination):
+    with atomic_evennia_state(*items, destination):
         _lock_characters(character)
         objects = _lock_objects(*(item.id for item in items), destination.id)
         locked_destination = objects.get(destination.id)
@@ -506,7 +494,7 @@ def drop_item(character, item, quantity=None):
         return False, "Drop quantity must be a positive whole number."
 
     try:
-        with _atomic_inventory_state(item) as tracker:
+        with atomic_evennia_state(item) as tracker:
             tracker.track(item, attributes=("quantity",))
             characters = _lock_characters(character)
             locked_character = characters[character.id]
@@ -552,7 +540,7 @@ def drop_item(character, item, quantity=None):
 def put_in_container(character, item, container):
     """Atomically assign a directly carried item to an owned container."""
 
-    with _atomic_inventory_state(item, container):
+    with atomic_evennia_state(item, container):
         _lock_characters(character)
         objects = _lock_objects(item.id, container.id)
         locked_item = objects.get(item.id)
@@ -605,7 +593,7 @@ def put_in_container(character, item, container):
 def take_from_container(character, item, container=None):
     """Atomically return a contained item to direct carry."""
 
-    with _atomic_inventory_state(item):
+    with atomic_evennia_state(item):
         _lock_characters(character)
         locked_item = _locked_item(item)
         if not locked_item:
@@ -627,7 +615,7 @@ def take_from_container(character, item, container=None):
 def equip_item(character, item):
     """Atomically claim one valid equipment slot."""
 
-    with _atomic_inventory_state(item):
+    with atomic_evennia_state(item):
         _lock_characters(character)
         locked_item = _locked_item(item)
         if not locked_item:
@@ -662,7 +650,7 @@ def equip_item(character, item):
 def unequip_item(character, item):
     """Atomically release an occupied equipment slot."""
 
-    with _atomic_inventory_state(item):
+    with atomic_evennia_state(item):
         _lock_characters(character)
         locked_item = _locked_item(item)
         if not locked_item:
@@ -695,7 +683,7 @@ def transfer_item(giver, receiver, item):
         return False, "They are not here."
 
     try:
-        with _atomic_inventory_state(item):
+        with atomic_evennia_state(item):
             characters = _lock_characters(giver, receiver)
             locked_giver = characters[giver.id]
             locked_receiver = characters[receiver.id]

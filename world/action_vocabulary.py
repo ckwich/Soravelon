@@ -100,7 +100,10 @@ def _handle_give_item(action_dict, context, _depth):
         from world.item_spawner import create_item_from_template
         item = create_item_from_template(item_def, location=room)
         from world.inventory_engine import pick_up
-        return pick_up(character, item)
+        result = pick_up(character, item)
+        if result[0]:
+            context.setdefault("_created_items", []).append(item)
+        return result
 
     # Existing object by dbref (original behavior)
     item_id = action_dict.get("item_id")
@@ -112,7 +115,10 @@ def _handle_give_item(action_dict, context, _depth):
         return False, f"give_item: item not found (id={item_id})"
     item = results[0]
     from world.inventory_engine import pick_up
-    return pick_up(character, item)
+    result = pick_up(character, item)
+    if result[0]:
+        context.setdefault("_created_items", []).append(item)
+    return result
 
 
 def _handle_take_item(action_dict, context, _depth):

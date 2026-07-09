@@ -77,6 +77,9 @@ class _BaseCraftCmd(Command):
         # Track crafting state to cancel on move
         character.ndb.crafting_in_progress = True
         start_room = character.location
+        from world.economy_ids import new_operation_id
+
+        operation_id = new_operation_id()
 
         from evennia.utils import delay
 
@@ -89,7 +92,11 @@ class _BaseCraftCmd(Command):
                 return
 
             character.ndb.crafting_in_progress = False
-            success, msg = craft_item(character, matched_id)
+            success, msg = craft_item(
+                character,
+                matched_id,
+                operation_id=operation_id,
+            )
             character.msg(msg)
 
         delay(craft_time, _finish_craft)

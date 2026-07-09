@@ -346,7 +346,7 @@ class TestStationCheck(EvenniaTest):
         self.assertFalse(ok)
 
 
-class TestCraftItemIntegration(unittest.TestCase):
+class TestCraftItemIntegration(EvenniaTest):
     """craft_item should honor station and processing quality rules."""
 
     def test_create_crafted_item_spawns_the_complete_catalog_template(self):
@@ -377,9 +377,8 @@ class TestCraftItemIntegration(unittest.TestCase):
     def test_standard_craft_uses_station_bonus_in_quality_roll(self):
         from world.crafting_engine import craft_item
 
-        character = MagicMock()
-        character.contents = []
-        character.location = MagicMock()
+        character = self.char1
+        character.location = self.room1
 
         recipe = {
             "name": "Test Tonic",
@@ -398,9 +397,12 @@ class TestCraftItemIntegration(unittest.TestCase):
             with patch("world.crafting_engine.check_station", return_value=(True, "")):
                 with patch("world.crafting_engine._check_ingredients", return_value=(True, "", [])):
                     with patch("world.crafting_engine.calculate_craft_quality", return_value="fine") as mock_quality:
-                        with patch("world.crafting_engine._create_crafted_item", return_value=MagicMock(key="Test Tonic")):
+                        crafted_item = MagicMock(key="Test Tonic", id=999001)
+                        with patch("world.crafting_engine._create_crafted_item", return_value=crafted_item):
                             with patch("world.skill_engine.get_skill_value", return_value=50):
-                                with patch("world.skill_engine.accumulate_skill_use"):
+                                with patch("world.skill_engine.accumulate_skill_use"), patch(
+                                    "world.crafting_engine.record_operation"
+                                ):
                                     ok, _ = craft_item(character, "test_tonic")
 
         self.assertTrue(ok)
@@ -409,9 +411,8 @@ class TestCraftItemIntegration(unittest.TestCase):
     def test_processing_recipe_uses_processing_quality_with_input_quality(self):
         from world.crafting_engine import craft_item
 
-        character = MagicMock()
-        character.contents = []
-        character.location = MagicMock()
+        character = self.char1
+        character.location = self.room1
         high_quality_input = MagicMock()
         high_quality_input.db.quality = "superior"
 
@@ -443,11 +444,17 @@ class TestCraftItemIntegration(unittest.TestCase):
                         [{"item": high_quality_input, "quantity": 1, "record": MagicMock(quantity=1)}],
                     ),
                 ):
-                    with patch("world.crafting_engine._consume_ingredients"):
+                    with patch(
+                        "world.crafting_engine._consume_ingredients",
+                        return_value=(True, ""),
+                    ):
                         with patch("world.crafting_engine.calculate_processing_quality", return_value="masterwork") as mock_processing:
-                            with patch("world.item_spawner.create_item_from_template", return_value=MagicMock(key="Iron Ingot")):
+                            crafted_item = MagicMock(key="Iron Ingot", id=999002)
+                            with patch("world.item_spawner.create_item_from_template", return_value=crafted_item):
                                 with patch("world.skill_engine.get_skill_value", return_value=55):
-                                    with patch("world.skill_engine.accumulate_skill_use"):
+                                    with patch("world.skill_engine.accumulate_skill_use"), patch(
+                                        "world.crafting_engine.record_operation"
+                                    ):
                                         ok, _ = craft_item(character, "iron_ingot_test")
 
         self.assertTrue(ok)
@@ -482,15 +489,17 @@ class TestCraftingIngredientStacks(unittest.TestCase):
     def test_consume_ingredients_reduces_stack_without_deleting_item(self):
         from world.crafting_engine import _consume_ingredients
 
+        character = MagicMock()
         item = MagicMock()
-        item.db = MagicMock()
         record = MagicMock()
         record.quantity = 4
+        specs = [{"item": item, "quantity": 2, "record": record}]
 
-        _consume_ingredients(
-            [{"item": item, "quantity": 2, "record": record}]
-        )
+        with patch(
+            "world.inventory_engine.consume_owned_quantities",
+            return_value=(True, ""),
+        ) as consume:
+            result = _consume_ingredients(character, specs)
 
-        self.assertEqual(record.quantity, 2)
-        record.save.assert_called_once()
-        item.delete.assert_not_called()
+        self.assertEqual(result, (True, ""))
+        consume.assert_called_once_with(character, specs)

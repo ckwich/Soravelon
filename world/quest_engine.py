@@ -649,13 +649,93 @@ def _check_quest_completion(character, cq, quest_spec):
         pass  # OOB not yet wired or character is mock — safe to skip
 
 
-def _pay_rewards(character, quest_spec):
+class _RewardBatchRejected(RuntimeError):
+    def __init__(self, failure):
+        super().__init__(failure["message"])
+        self.failure = failure
+
+
+def _reward_after_write(checkpoint):
+    """Failure-injection seam for exactly-once reward batches."""
+
+
+def _pay_rewards_exactly_once(character, quest_spec, operation_id):
+    from evennia.objects.models import ObjectDB
+    from world.action_vocabulary import execute_action
+    from world.atomic_state import atomic_evennia_state
+    from world.game_operations import (
+        get_operation_replay,
+        normalize_operation_id,
+        record_operation,
+    )
+
+    operation_id = normalize_operation_id(operation_id)
+    quest_id = quest_spec.get("quest_id") or quest_spec.get("name") or "anonymous"
+    related_id = f"quest-rewards:{quest_id}"
+    context = {
+        "character": character,
+        "room": character.location,
+        "_created_items": [],
+    }
+    try:
+        with atomic_evennia_state(character) as tracker:
+            locked_character = ObjectDB.objects.select_for_update().get(
+                pk=character.id
+            )
+            tracker.track(locked_character, attributes=("carried_scales",))
+            context["character"] = locked_character
+            context["room"] = locked_character.location
+            replay = get_operation_replay(
+                character=locked_character,
+                operation_id=operation_id,
+                operation_type="quest_rewards",
+                related_id=related_id,
+            )
+            if replay:
+                return []
+
+            for index, reward in enumerate(quest_spec.get("rewards") or []):
+                success, message = execute_action(reward, context)
+                for item in context["_created_items"]:
+                    tracker.track(item)
+                if not success:
+                    raise _RewardBatchRejected(
+                        {
+                            "index": index,
+                            "action_type": reward.get("action_type"),
+                            "message": message,
+                        }
+                    )
+                _reward_after_write(f"reward_executed:{index}")
+
+            record_operation(
+                character=locked_character,
+                operation_id=operation_id,
+                operation_type="quest_rewards",
+                related_id=related_id,
+                result={"reward_count": len(quest_spec.get("rewards") or [])},
+            )
+            _reward_after_write("operation_recorded")
+        return []
+    except _RewardBatchRejected as error:
+        character.msg(
+            "|r[Reward Error]|n "
+            f"{error.failure['action_type'] or 'unknown'} failed: "
+            f"{error.failure['message']}"
+        )
+        return [error.failure]
+
+
+def _pay_rewards(character, quest_spec, operation_id=None):
     """
     Execute all reward actions for a completed quest (D-20).
 
     Each reward is an action dict processed by execute_action().
     Returns a list of failed reward details.
     """
+    if operation_id is not None:
+        return _pay_rewards_exactly_once(character, quest_spec, operation_id)
+
     from world.action_vocabulary import execute_action
 
     context = {"character": character, "room": character.location}

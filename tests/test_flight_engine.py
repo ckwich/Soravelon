@@ -190,7 +190,11 @@ class TestBookFlight(EvenniaTest):
         mock_bal.return_value = 100
         mock_wd.return_value = (True, "ok")
         char = self._make_char(discovered={"point_b"})
-        ok, msg = book_flight(char, "point_a", "point_b")
+        with patch(
+            "world.flight_engine._commit_flight_booking",
+            return_value=(True, ""),
+        ):
+            ok, msg = book_flight(char, "point_a", "point_b")
         self.assertTrue(ok)
 
     @patch("world.banking.deduct_from_bank")
@@ -202,8 +206,13 @@ class TestBookFlight(EvenniaTest):
         mock_bal.return_value = 100
         mock_wd.return_value = (True, "ok")
         char = self._make_char(discovered={"point_b"})
-        book_flight(char, "point_a", "point_b")
-        mock_wd.assert_called_once()
+        with patch(
+            "world.flight_engine._commit_flight_booking",
+            return_value=(True, ""),
+        ) as commit:
+            book_flight(char, "point_a", "point_b")
+        commit.assert_called_once()
+        mock_wd.assert_not_called()
 
     @patch("world.banking.deduct_from_bank")
     @patch("world.banking.get_balance")
@@ -214,7 +223,11 @@ class TestBookFlight(EvenniaTest):
         mock_bal.return_value = 100
         mock_wd.return_value = (False, "Insufficient funds.")
         char = self._make_char(discovered={"point_b"})
-        ok, msg = book_flight(char, "point_a", "point_b")
+        with patch(
+            "world.flight_engine._commit_flight_booking",
+            return_value=(False, "Payment failed: Insufficient funds."),
+        ):
+            ok, msg = book_flight(char, "point_a", "point_b")
         self.assertFalse(ok)
         self.assertIn("Payment failed", msg)
 

@@ -11,12 +11,18 @@ calculate_craft_quality is pure computation (no DB).
 
 import random
 
+from world.atomic_state import atomic_evennia_state
 from world.crafting_definitions import (
     QUALITY_DISPLAY,
     QUALITY_MULTIPLIERS,
     QUALITY_TIERS,
     RECIPE_REGISTRY,
     STATION_REQUIREMENTS,
+)
+from world.game_operations import (
+    get_operation_replay,
+    normalize_operation_id,
+    record_operation,
 )
 
 
@@ -290,23 +296,12 @@ def _check_ingredients(character, recipe):
     return (True, "", items_to_consume)
 
 
-def _consume_ingredients(items_to_consume):
-    """
-    Delete matched inventory item objects, removing them from the game world.
-    """
-    for spec in items_to_consume:
-        obj = spec["item"]
-        quantity = spec.get("quantity", 1)
-        record = spec.get("record")
+def _consume_ingredients(character, items_to_consume):
+    """Consume all ingredient quantities through the inventory authority."""
 
-        if record and getattr(record, "quantity", 1) > quantity:
-            record.quantity -= quantity
-            record.save()
-            if hasattr(obj, "db"):
-                obj.db.quantity = record.quantity
-            continue
+    from world.inventory_engine import consume_owned_quantities
 
-        obj.delete()
+    return consume_owned_quantities(character, items_to_consume)
 
 
 def _best_input_quality(items_to_consume):
@@ -364,7 +359,15 @@ def _create_crafted_item(character, recipe, quality):
 
 # --- Main Craft Entry Point ---
 
-def craft_item(character, recipe_id):
+class _CraftRejected(RuntimeError):
+    pass
+
+
+def _after_write(checkpoint):
+    """Failure-injection seam for composite crafting rollback tests."""
+
+
+def craft_item(character, recipe_id, *, operation_id=None):
     """
     Main crafting entry point. Validates recipe, station, ingredients, skill,
     then produces an item with quality based on skill vs difficulty.
@@ -375,93 +378,133 @@ def craft_item(character, recipe_id):
     Returns (bool, str). On success, the string includes quality and item name
     with color codes.
     """
+    from evennia.objects.models import ObjectDB
     from world.skill_engine import accumulate_skill_use, get_skill_value
 
-    # 1. Recipe exists?
-    if recipe_id not in RECIPE_REGISTRY:
-        return (False, f"|rUnknown recipe: {recipe_id}.|n")
+    operation_id = normalize_operation_id(operation_id)
+    related_id = f"craft:{recipe_id}"
 
-    recipe = RECIPE_REGISTRY[recipe_id]
+    try:
+        with atomic_evennia_state(character) as tracker:
+            locked_character = ObjectDB.objects.select_for_update().get(
+                pk=character.id
+            )
+            replay = get_operation_replay(
+                character=locked_character,
+                operation_id=operation_id,
+                operation_type="craft",
+                related_id=related_id,
+            )
+            if replay:
+                return True, replay.result["message"]
 
-    # 2. Character knows the recipe?
-    if not recipe.get("default_known"):
-        from world.models import CharacterRecipe
+            if recipe_id not in RECIPE_REGISTRY:
+                return False, f"|rUnknown recipe: {recipe_id}.|n"
+            recipe = RECIPE_REGISTRY[recipe_id]
 
-        _ensure_default_recipes(character)
-        if not CharacterRecipe.objects.filter(
-            character=character, recipe_id=recipe_id
-        ).exists():
-            return (
-                False,
-                f"|rYou don't know the recipe for {recipe['name']}.|n",
+            if not recipe.get("default_known"):
+                from world.models import CharacterRecipe
+
+                _ensure_default_recipes(locked_character)
+                if not CharacterRecipe.objects.filter(
+                    character=locked_character,
+                    recipe_id=recipe_id,
+                ).exists():
+                    return (
+                        False,
+                        f"|rYou don't know the recipe for {recipe['name']}.|n",
+                    )
+
+            station = recipe.get("station")
+            if station:
+                valid_station, station_message = check_station(
+                    locked_character,
+                    station,
+                )
+                if not valid_station:
+                    return False, station_message
+
+            has_ingredients, ingredient_message, items_to_consume = (
+                _check_ingredients(locked_character, recipe)
+            )
+            if not has_ingredients:
+                return False, ingredient_message
+            for spec in items_to_consume:
+                tracker.track(spec["item"])
+
+            skill_id = recipe.get("skill", "cooking")
+            skill_value = get_skill_value(locked_character, skill_id)
+            difficulty = recipe.get("difficulty", 10)
+            has_station_bonus = bool(station)
+            processing = (
+                recipe.get("recipe_type") == "processing"
+                and recipe.get("output", {}).get("item_id")
             )
 
-    # 3. Correct station?
-    station = recipe.get("station")
-    if station:
-        ok, msg = check_station(character, station)
-        if not ok:
-            return (False, msg)
+            if processing:
+                from world.item_spawner import create_item_from_template
 
-    # 4. Has ingredients?
-    ok, msg, items_to_consume = _check_ingredients(character, recipe)
-    if not ok:
-        return (False, msg)
+                quality = calculate_processing_quality(
+                    skill_value,
+                    difficulty,
+                    raw_quality=_best_input_quality(items_to_consume),
+                    has_station=has_station_bonus,
+                )
+                output_def = dict(recipe["output"])
+                output_def["quality"] = quality
+                item = create_item_from_template(
+                    output_def,
+                    location=locked_character,
+                )
+                if not item:
+                    return False, "|rSomething went wrong creating the item.|n"
+                tracker.track(item)
+                item.tags.add(output_def["item_id"], category="item_tag")
+                if quality != "standard":
+                    quality_display = QUALITY_DISPLAY.get(quality, quality)
+                    item.key = f"{quality_display} {item.key}"
+                success_message = (
+                    f"|gYou produce: {QUALITY_DISPLAY.get(quality, quality)} "
+                    f"|w{recipe['name']}|n"
+                )
+            else:
+                quality = calculate_craft_quality(
+                    skill_value,
+                    difficulty,
+                    has_station_bonus=has_station_bonus,
+                )
+                item = _create_crafted_item(locked_character, recipe, quality)
+                if not item:
+                    return False, "|rSomething went wrong creating the item.|n"
+                tracker.track(item)
+                success_message = (
+                    f"|gYou crafted: {QUALITY_DISPLAY.get(quality, quality)} "
+                    f"|w{item.key}|n"
+                )
+            _after_write("craft_output_created")
 
-    # 5. Calculate quality from skill vs difficulty
-    skill_id = recipe.get("skill", "cooking")
-    skill_value = get_skill_value(character, skill_id)
-    difficulty = recipe.get("difficulty", 10)
-    has_station_bonus = bool(station)
+            consumed, consume_message = _consume_ingredients(
+                locked_character,
+                items_to_consume,
+            )
+            if not consumed:
+                raise _CraftRejected(consume_message)
+            _after_write("craft_ingredients_consumed")
 
-    # 6. Create item FIRST — only consume ingredients on success
-    # Processing recipes use inline output dict (Phase 13)
-    if recipe.get("recipe_type") == "processing" and recipe.get("output", {}).get("item_id"):
-        from world.item_spawner import create_item_from_template
+            record_operation(
+                character=locked_character,
+                operation_id=operation_id,
+                operation_type="craft",
+                related_id=related_id,
+                result={
+                    "message": success_message,
+                    "item_object_id": item.id,
+                    "quality": quality,
+                },
+            )
+            _after_write("operation_recorded")
 
-        raw_quality = _best_input_quality(items_to_consume)
-        quality = calculate_processing_quality(
-            skill_value,
-            difficulty,
-            raw_quality=raw_quality,
-            has_station=has_station_bonus,
-        )
-        output_def = dict(recipe["output"])  # copy to avoid mutation
-        output_def["quality"] = quality
-        item = create_item_from_template(output_def, location=character)
-        if not item:
-            return (False, "|rSomething went wrong creating the item.|n")
-        _consume_ingredients(items_to_consume)
-        item.tags.add(output_def["item_id"], category="item_tag")
-        if quality != "standard":
-            quality_display = QUALITY_DISPLAY.get(quality, quality)
-            item.key = f"{quality_display} {item.key}"
         accumulate_skill_use(character, skill_id, count=1)
-        return (
-            True,
-            f"|gYou produce: {QUALITY_DISPLAY.get(quality, quality)} |w{recipe['name']}|n",
-        )
-
-    # Standard crafting item creation
-    quality = calculate_craft_quality(
-        skill_value,
-        difficulty,
-        has_station_bonus=has_station_bonus,
-    )
-    item = _create_crafted_item(character, recipe, quality)
-    if not item:
-        return (
-            False,
-            "|rSomething went wrong creating the item.|n",
-        )
-    _consume_ingredients(items_to_consume)
-
-    # 8. Accumulate skill use for passive gain
-    accumulate_skill_use(character, skill_id, count=1)
-
-    # 9. Success message
-    quality_display = QUALITY_DISPLAY.get(quality, quality)
-    return (
-        True,
-        f"|gYou crafted: {quality_display} |w{item.key}|n",
-    )
+        return True, success_message
+    except _CraftRejected as error:
+        return False, str(error)

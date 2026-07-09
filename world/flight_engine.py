@@ -6,6 +6,19 @@ Exports:
     book_flight(character, origin_point_id, destination_point_id) -> (bool, str)
 """
 
+import logging
+
+from django.db import transaction
+
+from world.game_operations import (
+    get_operation_replay,
+    normalize_operation_id,
+    record_operation,
+)
+
+
+logger = logging.getLogger("evennia")
+
 # Consortium Standing discount tiers (D-09).
 # Checked in descending threshold order — first match wins.
 STANDING_DISCOUNT_TIERS = [
@@ -52,7 +65,115 @@ def fare_for_route(character, legs):
     return max(0, discounted)
 
 
-def book_flight(character, origin_point_id, destination_point_id):
+def _after_write(checkpoint):
+    """Failure-injection seam for composite flight rollback tests."""
+
+
+def _clean_failed_script(character, script):
+    """Clear volatile/script cache state after transactional setup failure."""
+
+    if script is not None:
+        try:
+            script.delete()
+        except Exception:
+            script.flush_from_cache(force=True)
+    character.ndb.in_flight = False
+
+
+def _commit_flight_booking(
+    character,
+    *,
+    origin_point_id,
+    destination_point_id,
+    leg_data,
+    fare,
+    operation_id,
+):
+    """Commit fare, persistent script, receipt, and initial journey together."""
+
+    from evennia.objects.models import ObjectDB
+    from world.banking import deduct_from_bank
+
+    related_id = f"flight:{origin_point_id}:{destination_point_id}"
+    script = None
+    try:
+        with transaction.atomic():
+            locked_character = ObjectDB.objects.select_for_update().get(
+                pk=character.id
+            )
+            replay = get_operation_replay(
+                character=locked_character,
+                operation_id=operation_id,
+                operation_type="flight_booking",
+                related_id=related_id,
+            )
+            if replay:
+                if replay.result.get("status") == "booked":
+                    return True, replay.result.get("message", "")
+                return False, replay.result.get(
+                    "message",
+                    "That booking did not complete.",
+                )
+
+            paid, payment_message = deduct_from_bank(
+                locked_character,
+                fare,
+                "flight_fare",
+                description=(
+                    f"Flight: {origin_point_id} -> {destination_point_id}"
+                ),
+                related_id=related_id,
+                operation_id=operation_id,
+            )
+            if not paid:
+                return False, f"Payment failed: {payment_message}"
+            _after_write("flight_fare_deducted")
+
+            from world.scripts.flight_script import FlightScript
+
+            script = locked_character.scripts.add(
+                FlightScript,
+                key="flight_script",
+            )
+            script.db.legs = leg_data
+            script.db.current_leg = 0
+            script.db.in_transit = True
+            script.db.fare_paid = True
+            script.db.booking_operation_id = operation_id
+            _after_write("flight_script_configured")
+
+            record_operation(
+                character=locked_character,
+                operation_id=operation_id,
+                operation_type="flight_booking",
+                related_id=related_id,
+                result={
+                    "status": "booked",
+                    "message": "",
+                    "fare": fare,
+                    "script_id": script.id,
+                },
+            )
+            _after_write("operation_recorded")
+            script.start_journey()
+            _after_write("journey_started")
+        return True, ""
+    except Exception:
+        logger.exception(
+            "flight_engine: booking operation %s failed",
+            operation_id,
+        )
+        _clean_failed_script(character, script)
+        return False, "Flight setup failed; no fare was charged."
+
+
+def book_flight(
+    character,
+    origin_point_id,
+    destination_point_id,
+    *,
+    operation_id=None,
+):
     """
     Validate and start a Dragon Courier flight from origin to destination.
 
@@ -76,7 +197,7 @@ def book_flight(character, origin_point_id, destination_point_id):
         (bool, str) — (True, "") on success; (False, reason) on failure
     """
     from world.flight_registry import FlightRegistry
-    from world.banking import deduct_from_bank, get_balance
+    from world.banking import get_balance
 
     # 1. Validate both points exist
     origin = FlightRegistry.get_point(origin_point_id)
@@ -106,11 +227,6 @@ def book_flight(character, origin_point_id, destination_point_id):
     if balance < fare:
         return False, f"Insufficient funds: need {fare} scales, have {balance}."
 
-    # 5. Deduct fare atomically (before script creation — Pitfall 6)
-    ok, msg = deduct_from_bank(character, fare, "flight_fare", f"Flight: {origin_point_id} → {destination_point_id}")
-    if not ok:
-        return False, f"Payment failed: {msg}"
-
     # Build leg data for FlightScript persistence
     leg_data = []
     for from_id, to_id in legs:
@@ -124,12 +240,11 @@ def book_flight(character, origin_point_id, destination_point_id):
             "echoes": route.get("echoes", []),
         })
 
-    # 6. Create FlightScript and start journey
-    from world.scripts.flight_script import FlightScript
-    script = character.scripts.add(FlightScript, key="flight_script", persistent=True)
-    script.db.legs = leg_data
-    script.db.current_leg = 0
-    script.db.in_transit = True
-    script.db.fare_paid = True   # Pitfall 6: fare already deducted — no double-deduct on reload
-    script.start_journey()
-    return True, ""
+    return _commit_flight_booking(
+        character,
+        origin_point_id=origin_point_id,
+        destination_point_id=destination_point_id,
+        leg_data=leg_data,
+        fare=fare,
+        operation_id=normalize_operation_id(operation_id),
+    )

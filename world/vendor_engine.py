@@ -8,8 +8,15 @@ All functions return (bool, str) tuples per project convention.
 
 import copy
 import math
+
+from world.atomic_state import atomic_evennia_state
+from world.game_operations import (
+    get_operation_replay,
+    normalize_operation_id,
+    record_operation,
+)
 from world.item_catalog import CATALOG
-from world.inventory_engine import unregister_item_ownership
+from world.inventory_engine import destroy_owned_item
 from world.item_spawner import create_item_from_template
 
 SELL_RATIO = 0.33  # Players get 33% of item value when selling
@@ -37,14 +44,9 @@ def _normalize_player_stock_quantity(entry):
     return quantity
 
 
-def _is_mock_value(value):
-    """Ignore MagicMock placeholders from unit-test items."""
-    return type(value).__module__.startswith("unittest.mock")
-
-
 def _safe_copy_db_value(value):
-    """Copy item db values while ignoring empty or mock placeholders."""
-    if value is None or _is_mock_value(value):
+    """Copy a non-empty durable item attribute into vendor stock."""
+    if value is None:
         return None
     if value in ({}, []):
         return None
@@ -158,7 +160,21 @@ def get_vendor_price(vendor_npc, item_def, character):
     return base_price
 
 
-def buy_item(character, vendor_npc, item_id):
+def _after_write(checkpoint):
+    """Failure-injection seam for composite rollback tests."""
+
+
+def _lock_object_rows(*objects):
+    from evennia.objects.models import ObjectDB
+
+    ids = sorted({obj.id for obj in objects})
+    locked = ObjectDB.objects.select_for_update().in_bulk(ids)
+    if len(locked) != len(ids):
+        raise RuntimeError("A vendor transaction actor no longer exists.")
+    return locked
+
+
+def buy_item(character, vendor_npc, item_id, *, operation_id=None):
     """
     Buy item from vendor. Deducts carried_scales and creates item.
 
@@ -170,35 +186,73 @@ def buy_item(character, vendor_npc, item_id):
     Returns:
         (bool, str): Success flag and message.
     """
-    stock = get_vendor_stock(vendor_npc)
-    item_def = stock.get(item_id)
-    if not item_def:
-        return False, "That item is not available here."
+    operation_id = normalize_operation_id(operation_id)
+    related_id = f"vendor:{vendor_npc.id}:buy:{item_id}"
 
-    price = get_vendor_price(vendor_npc, item_def, character)
-    carried = character.db.carried_scales or 0
-    if carried < price:
-        return False, f"You need {price} Scales but only have {carried}."
+    with atomic_evennia_state(character, vendor_npc) as tracker:
+        locked = _lock_object_rows(character, vendor_npc)
+        locked_character = locked[character.id]
+        locked_vendor = locked[vendor_npc.id]
+        tracker.track(locked_character, attributes=("carried_scales",))
+        tracker.track(locked_vendor, attributes=("player_stock",))
 
-    character.db.carried_scales = carried - price
+        replay = get_operation_replay(
+            character=locked_character,
+            operation_id=operation_id,
+            operation_type="vendor_buy",
+            related_id=related_id,
+        )
+        if replay:
+            return True, replay.result["message"]
 
-    # Remove from player_stock if it was player-sold (one copy)
-    player_stock = dict(vendor_npc.db.player_stock or {})
-    if item_id in player_stock and item_id not in CATALOG:
-        quantity = _normalize_player_stock_quantity(player_stock[item_id])
-        if quantity > 1:
-            player_stock[item_id]["stock_quantity"] = quantity - 1
-        else:
-            del player_stock[item_id]
-        vendor_npc.db.player_stock = player_stock
+        stock = get_vendor_stock(locked_vendor)
+        item_def = stock.get(item_id)
+        if not item_def:
+            return False, "That item is not available here."
 
-    spawned_item_def = copy.deepcopy(item_def)
-    spawned_item_def.pop("stock_quantity", None)
-    item = create_item_from_template(spawned_item_def, location=character)
-    return True, f"You purchase {item.key} for {price} Scales."
+        price = get_vendor_price(locked_vendor, item_def, locked_character)
+        carried = locked_character.db.carried_scales or 0
+        if carried < price:
+            return False, f"You need {price} Scales but only have {carried}."
+
+        locked_character.db.carried_scales = carried - price
+        _after_write("scales_debited")
+
+        player_stock = copy.deepcopy(locked_vendor.db.player_stock or {})
+        if item_id in player_stock and item_id not in CATALOG:
+            quantity = _normalize_player_stock_quantity(player_stock[item_id])
+            if quantity > 1:
+                player_stock[item_id]["stock_quantity"] = quantity - 1
+            else:
+                del player_stock[item_id]
+            locked_vendor.db.player_stock = player_stock
+            _after_write("vendor_stock_decremented")
+
+        spawned_item_def = copy.deepcopy(item_def)
+        spawned_item_def.pop("stock_quantity", None)
+        item = create_item_from_template(
+            spawned_item_def,
+            location=locked_character,
+        )
+        tracker.track(item)
+        _after_write("purchase_item_spawned")
+        message = f"You purchase {item.key} for {price} Scales."
+        record_operation(
+            character=locked_character,
+            operation_id=operation_id,
+            operation_type="vendor_buy",
+            related_id=related_id,
+            result={
+                "message": message,
+                "price": price,
+                "item_object_id": item.id,
+            },
+        )
+        _after_write("operation_recorded")
+        return True, message
 
 
-def sell_item(character, vendor_npc, item):
+def sell_item(character, vendor_npc, item, *, operation_id=None):
     """
     Sell item to vendor. Character gains 33% of item value.
     Item is deleted and added to vendor's player_stock.
@@ -211,46 +265,90 @@ def sell_item(character, vendor_npc, item):
     Returns:
         (bool, str): Success flag and message.
     """
-    accepts = vendor_npc.db.vendor_accepts or []
-    item_type = item.db.item_type or "item"
-    if item_type not in accepts:
-        return False, f"This vendor doesn't deal in {item_type} items."
+    operation_id = normalize_operation_id(operation_id)
+    item_object_id = getattr(item, "id", None)
+    related_id = f"vendor:{vendor_npc.id}:sell:{item_object_id}"
 
-    ok, msg = item.can_be_sold(character)
-    if not ok:
-        return False, msg
+    with atomic_evennia_state(character, vendor_npc) as tracker:
+        locked = _lock_object_rows(character, vendor_npc)
+        locked_character = locked[character.id]
+        locked_vendor = locked[vendor_npc.id]
+        tracker.track(locked_character, attributes=("carried_scales",))
+        tracker.track(locked_vendor, attributes=("player_stock",))
 
-    value = item.db.value_scales or 0
-    sell_price = max(1, math.floor(value * SELL_RATIO))
+        replay = get_operation_replay(
+            character=locked_character,
+            operation_id=operation_id,
+            operation_type="vendor_sell",
+            related_id=related_id,
+        )
+        if replay:
+            return True, replay.result["message"]
 
-    # Capture item name before deletion
-    item_key = item.key
+        from evennia.objects.models import ObjectDB
 
-    # Transfer Scales to character
-    character.db.carried_scales = (character.db.carried_scales or 0) + sell_price
+        locked_item = ObjectDB.objects.select_for_update().filter(
+            pk=item_object_id,
+        ).first()
+        if not locked_item or locked_item.db_location_id != locked_character.id:
+            return False, "You don't have that."
+        tracker.track(locked_item)
 
-    # Add to vendor player_stock at full price
-    player_stock = dict(vendor_npc.db.player_stock or {})
-    base_item_id = item.db.item_id or item_key.lower().replace(" ", "_")
-    stock_item_id = _next_player_stock_id(base_item_id, player_stock)
-    stock_entry = _build_player_stock_entry(item, stock_item_id)
-    stock_signature = _player_stock_signature(stock_entry)
+        accepts = locked_vendor.db.vendor_accepts or []
+        item_type = locked_item.db.item_type or "item"
+        if item_type not in accepts:
+            return False, f"This vendor doesn't deal in {item_type} items."
+        allowed, message = locked_item.can_be_sold(locked_character)
+        if not allowed:
+            return False, message
 
-    for existing_id, existing_entry in player_stock.items():
-        if _player_stock_signature(existing_entry) == stock_signature:
-            player_stock[existing_id]["stock_quantity"] = (
-                _normalize_player_stock_quantity(existing_entry) + 1
-            )
-            break
-    else:
-        player_stock[stock_item_id] = stock_entry
-    vendor_npc.db.player_stock = player_stock
+        value = locked_item.db.value_scales or 0
+        sell_price = max(1, math.floor(value * SELL_RATIO))
+        item_key = locked_item.key
 
-    # Remove item from character
-    unregister_item_ownership(character, item)
-    item.delete()
+        locked_character.db.carried_scales = (
+            locked_character.db.carried_scales or 0
+        ) + sell_price
+        _after_write("scales_credited")
 
-    return True, f"You sell {item_key} for {sell_price} Scales."
+        player_stock = copy.deepcopy(locked_vendor.db.player_stock or {})
+        base_item_id = (
+            locked_item.tags.get(category="item_tag")
+            or item_key.lower().replace(" ", "_")
+        )
+        stock_item_id = _next_player_stock_id(base_item_id, player_stock)
+        stock_entry = _build_player_stock_entry(locked_item, stock_item_id)
+        stock_signature = _player_stock_signature(stock_entry)
+
+        for existing_id, existing_entry in player_stock.items():
+            if _player_stock_signature(existing_entry) == stock_signature:
+                player_stock[existing_id]["stock_quantity"] = (
+                    _normalize_player_stock_quantity(existing_entry) + 1
+                )
+                break
+        else:
+            player_stock[stock_item_id] = stock_entry
+        locked_vendor.db.player_stock = player_stock
+        _after_write("vendor_stock_credited")
+
+        destroyed, destroy_message = destroy_owned_item(
+            locked_character,
+            locked_item,
+        )
+        if not destroyed:
+            raise RuntimeError(destroy_message)
+        _after_write("sale_item_destroyed")
+
+        result_message = f"You sell {item_key} for {sell_price} Scales."
+        record_operation(
+            character=locked_character,
+            operation_id=operation_id,
+            operation_type="vendor_sell",
+            related_id=related_id,
+            result={"message": result_message, "price": sell_price},
+        )
+        _after_write("operation_recorded")
+        return True, result_message
 
 
 def appraise_item(character, vendor_npc, item):
