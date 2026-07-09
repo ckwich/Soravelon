@@ -233,7 +233,9 @@ Create `scripts/verify_release.py` and make CI use PostgreSQL 16. The gate runs:
 
 - replace daemonizing `evennia start` under `Type=simple` with a verified
   foreground topology;
-- add pre-start configuration, migration, and content-revision checks;
+- add pre-start configuration and migration checks now; extend the same gate
+  with the real applied-content revision check in Phase 2.10, once that source
+  of truth exists (do not ship a placeholder revision check);
 - send output to journald and define restart/stop behavior;
 - add deployment-asset tests and Linux staging verification instructions.
 

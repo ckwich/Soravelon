@@ -14,17 +14,39 @@ Use this checklist before cutting a public v1 production release.
 
 ## Pre-boot validation
 
-- `python scripts/audit_repo_hygiene.py` passes, or tracked `.claude/worktrees` entries were intentionally repaired
-- `python scripts/smoke_start.py` passes
-- `python scripts/run_tests.py` passes on the release candidate branch
+- CI release preflight passes on PostgreSQL 16 for the exact release commit
+- all four canonical-test shards pass for the exact release commit
+- database backup exists and a restore has been rehearsed on disposable PostgreSQL
+- `python scripts/verify_release.py preflight` passes against staging after the backup
+- release output confirms economy and inventory reconciliation passed
+
+`preflight` owns hygiene, both diff checks, migration drift, migration
+application, production deploy checks, smoke imports, and reconciliation. Do not
+run it against an unbacked production database.
 
 ## Database and boot
 
-- `evennia migrate` completed without errors
+- the release gate's fresh PostgreSQL migration completed without errors
+- staging migrations completed through `verify_release.py preflight`
 - admin account created or confirmed
 - systemd unit installed from `deploy/systemd/soravelon.service`
+- `scripts/verify_service_prestart.py` passes under the service environment
 - service starts cleanly
-- no startup tracebacks in `server/logs/server.log` or `server/logs/portal.log`
+- `journalctl -u soravelon` contains no startup traceback
+
+## External host proof
+
+These checks are intentionally not claimed by the executable release gate:
+
+- production DNS resolves to the intended host
+- the real TLS certificate chain and expiry are valid
+- the reverse proxy forwards HTTPS and the expected forwarded-protocol header
+- HTTP redirects to HTTPS without a loop
+- `systemctl start` leaves the foreground Portal and Server healthy
+- killing the staging service control group triggers one clean automatic restart
+- `systemctl reload` preserves the expected live runtime state
+- `systemctl stop` leaves no Soravelon listener or PID behind
+- host reboot returns the enabled service and player reconnection path
 
 ## Gameplay smoke
 
@@ -40,7 +62,7 @@ Use this checklist before cutting a public v1 production release.
 
 ## Restart and persistence
 
-- `evennia reload` preserves expected runtime state
+- `systemctl reload soravelon` preserves expected runtime state
 - service restart succeeds
 - player can reconnect after restart
 - spawned zones and cross-zone exits still load

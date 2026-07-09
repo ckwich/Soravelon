@@ -8,7 +8,7 @@ Soravelon public v1 is designed for a single Linux host running Evennia with Pos
 - Python 3.12
 - PostgreSQL 16
 - One system user, for example `soravelon`
-- Reverse proxy optional for the web client, but recommended if exposing HTTP publicly
+- HTTPS reverse proxy required for the authenticated public web client
 
 ## First-time setup
 
@@ -32,41 +32,109 @@ Soravelon public v1 is designed for a single Linux host running Evennia with Pos
    evennia createsuperuser
    ```
 
+## Automated release verification
+
+`scripts/verify_release.py` is the single owner for checks that can be proven
+from the repository and configured database.
+
+Against a disposable fresh PostgreSQL database, run the complete unsharded
+gate:
+
+```bash
+python scripts/verify_release.py full
+```
+
+`full` runs repository hygiene, working and staged diff checks, migration drift,
+`migrate --noinput`, Django's production deploy check, smoke imports,
+economy/inventory reconciliation, and the canonical test command. It therefore
+mutates the configured database by applying migrations; never point this mode at
+an unbacked production database.
+
+CI uses the same executable in two parts so the measured 21-minute canonical
+suite can run in parallel:
+
+```bash
+python scripts/verify_release.py preflight
+python scripts/verify_release.py tests --shard 1/4
+```
+
+All four deterministic test shards must pass. `preflight` is also the staging
+database gate after backup and restore rehearsal.
+
+This executable does not prove TLS certificates, DNS, reverse-proxy behavior,
+or systemd lifecycle behavior. Those checks require the real Linux host and
+remain explicit staging gates.
+
 ## Systemd units
 
-Use one service for the Evennia launcher process. A ready-to-edit template
-is included at `deploy/systemd/soravelon.service`. Example:
+Install the tracked `deploy/systemd/soravelon.service` unit. It runs
+`evennia ipstart`, which keeps the Portal in the foreground while the Portal
+owns the Server process. Do not replace it with `evennia start`: that command
+daemonizes and leaves `Type=simple` supervising a launcher that has already
+exited.
+
+The pre-start executable rejects non-production settings, security warnings,
+pending migrations, or broken runtime imports before it collects static
+assets. It checks migrations; it never applies them implicitly.
+
+The relevant unit contract is:
 
 ```ini
 [Unit]
-Description=Soravelon Evennia
-After=network.target postgresql.service
+Description=Soravelon Evennia Service
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service
 
 [Service]
 Type=simple
 User=soravelon
+Group=soravelon
 WorkingDirectory=/srv/soravelon
 EnvironmentFile=/etc/soravelon/soravelon.env
-ExecStart=/srv/soravelon/.venv/bin/evennia start
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=/srv/soravelon/.venv/bin/python scripts/verify_service_prestart.py
+ExecStart=/srv/soravelon/.venv/bin/evennia ipstart
 ExecStop=/srv/soravelon/.venv/bin/evennia stop
 ExecReload=/srv/soravelon/.venv/bin/evennia reload
-Restart=on-failure
+Restart=always
 RestartSec=5
+KillMode=control-group
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
 ```
 
+After copying the unit to `/etc/systemd/system/soravelon.service`, run:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now soravelon
+sudo systemctl status soravelon
+sudo journalctl -u soravelon -f
+```
+
+On staging, prove the actual lifecycle rather than inferring it from the unit
+text: start; kill the service control group and observe automatic restart;
+reload; stop and confirm all listeners/PIDs are gone; start again; reboot the
+host; and confirm the service and player reconnection recover. Record the
+commands, timestamps, exit states, and journal excerpts in the release record.
+
 ## Release procedure
 
 1. Deploy from a clean tagged commit.
-2. Activate the virtualenv.
-3. Pull code.
-4. Run `python scripts/smoke_start.py`.
-5. Run `python scripts/run_tests.py`.
-6. Run `evennia migrate`.
+2. Confirm the PostgreSQL preflight job and all four canonical-test shards are
+   green for that exact commit.
+3. Back up the target database and confirm a restore on disposable PostgreSQL.
+4. Activate the virtualenv and pull the tagged commit on staging.
+5. Run `python scripts/verify_release.py preflight` against staging. This applies
+   pending migrations and reconciles economy/inventory persistence.
+6. Verify TLS, DNS, reverse proxy, and the full systemd lifecycle on the real
+   host.
 7. Restart the service.
-8. Verify player login, movement, combat, loot, vendor, bank, and crafting on staging before production cutover.
+8. Verify player login, movement, combat, loot, vendor, bank, and crafting on
+   staging before production cutover.
 
 Use [docs/STAGING_CHECKLIST.md](STAGING_CHECKLIST.md) as the release gate.
 
