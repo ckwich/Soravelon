@@ -674,6 +674,7 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
                     "visibility": knowledge.fact.visibility,
                     "confidence": knowledge.confidence,
                     "channel": knowledge.channel,
+                    "trace": _trace_payloads_for_knowledge(knowledge),
                 }
             )
 

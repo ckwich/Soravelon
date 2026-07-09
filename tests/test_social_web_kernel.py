@@ -1231,6 +1231,21 @@ class TestSocialContextPack(EvenniaTest):
         self.assertEqual(context["claims"][0]["speaker"]["node_key"], calloway.node_key)
         self.assertEqual(context["claims"][0]["trace"][0]["edge_type"], "warden_report")
 
+    def test_query_social_context_returns_known_facts_with_traces(self):
+        from world.social_engine import query_social_context
+
+        player, _calloway, commander, fact, _claim = self._seed_context_graph()
+
+        context = query_social_context(
+            viewer_node_key=commander.node_key,
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+        )
+
+        self.assertEqual(context["facts"][0]["fact_key"], fact.fact_key)
+        self.assertEqual(context["facts"][0]["trace"][0]["edge_type"], "warden_report")
+        self.assertIn("propagated", context["facts"][0]["trace"][0]["summary"])
+
     def test_context_excludes_future_knowledge_and_bounds_facts_and_claims(self):
         from datetime import timedelta
 

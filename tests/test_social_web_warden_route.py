@@ -337,3 +337,137 @@ class TestVaelWardenSocialRoute(EvenniaTest):
             self.assertIn("nothing I can fairly speak to", whistle_text)
             self.assertNotIn("Warden report", whistle_text)
             self.assertNotIn("sealed field report", whistle_text)
+
+    @patch("world.quest_engine.get_active_quests", return_value=[])
+    @patch("world.dialogue_engine.get_standing_tier", return_value="neutral")
+    @patch("world.world_state.get_character_context_packet")
+    def test_inn_traveler_route_lets_whistle_explain_local_rumor_safely(
+        self,
+        mock_context_packet,
+        _mock_standing_tier,
+        _mock_active_quests,
+    ):
+        from commands.cmd_dialogue import CmdAsk
+        from world.social_engine import (
+            assert_social_claim,
+            connect_social_nodes,
+            ensure_social_node,
+            mark_known,
+            propagate_social_knowledge,
+            query_social_context,
+        )
+
+        (
+            player,
+            _calloway_node,
+            _harven_node,
+            innkeeper_node,
+            _fact,
+            _claim,
+        ) = self._pay_warden_report_rewards()
+        traveler_node = ensure_social_node(
+            "gathering",
+            f"vc_inn_travelers_{self.char1.id}",
+            display_name="Dustwalker's Rest travelers",
+            zone_id="vaels_crossing",
+            settlement_id="vaels_crossing",
+        )
+        ok, message, rumor_claim = assert_social_claim(
+            claim_key=(
+                f"claim:vc_inn_travelers:{self.char1.id}:"
+                "warden_packet_rumor"
+            ),
+            speaker_node_key=traveler_node.node_key,
+            subject_node_key=player.node_key,
+            claim_type="rumor",
+            summary=(
+                "A road traveler says you carried Calloway's packet without "
+                "selling the story at the bar."
+            ),
+            status="rumor",
+            intent="tavern_recall",
+            bias_tags=["tavern", "report", "road_rumor"],
+            confidence=0.6,
+        )
+        self.assertTrue(ok, message)
+        ok, message, _source_knowledge = mark_known(
+            node_key=traveler_node.node_key,
+            claim_key=rumor_claim.claim_key,
+            channel="tavern_rumor",
+            confidence=0.6,
+            spreading=True,
+        )
+        self.assertTrue(ok, message)
+
+        before_route = query_social_context(
+            viewer_node_key=innkeeper_node.node_key,
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+        )
+        self.assertEqual(before_route["claims"], [])
+
+        ok, message, _edge = connect_social_nodes(
+            traveler_node.node_key,
+            innkeeper_node.node_key,
+            edge_type="inn_traveler",
+            directionality="one_way",
+            trust=0.55,
+            scope_tags=["tavern", "road_rumor", "report"],
+        )
+        self.assertTrue(ok, message)
+        propagated = propagate_social_knowledge(
+            source_node_key=traveler_node.node_key,
+            claim_key=rumor_claim.claim_key,
+        )
+        self.assertEqual([item.node.node_key for item in propagated], [innkeeper_node.node_key])
+
+        whistle_context = query_social_context(
+            viewer_node_key=innkeeper_node.node_key,
+            subject_node_key=player.node_key,
+            purpose="dialogue",
+        )
+        self.assertEqual(whistle_context["claims"][0]["claim_key"], rumor_claim.claim_key)
+        self.assertEqual(whistle_context["claims"][0]["trace"][0]["edge_type"], "inn_traveler")
+        self.assertEqual(whistle_context["claims"][0]["channel"], "tavern_rumor")
+
+        mock_context_packet.return_value = {
+            "reputation": 0,
+            "network": 0,
+            "betrayal_flag": False,
+        }
+        whistle = self._make_room_npc(
+            key="Whistle",
+            npc_name="Whistle",
+            npc_id="npc_innkeeper_whistle",
+            faction=None,
+        )
+
+        with patch.object(self.char1, "msg") as mock_msg:
+            ask_whistle = CmdAsk()
+            ask_whistle.caller = self.char1
+            ask_whistle.args = "Whistle why"
+            ask_whistle.func()
+
+        self.assertIs(whistle.location, self.char1.location)
+        whistle_text = mock_msg.call_args[0][0]
+        self.assertIn("tavern rumor", whistle_text)
+        self.assertIn("carried Calloway's packet", whistle_text)
+        self.assertIn("selling the story at the bar", whistle_text)
+        for forbidden in (
+            "fact:",
+            "claim:",
+            "npc:",
+            "player:",
+            "edge:",
+            "edge_key",
+            "node_key",
+            "claim_key",
+            "confidence",
+            "warden_report",
+            "official report",
+            "sealed field report",
+            "Harven",
+            "raw_prompt",
+            "provider",
+        ):
+            self.assertNotIn(forbidden, whistle_text)
