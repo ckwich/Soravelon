@@ -105,6 +105,124 @@ class TestSocialClaimRepairService(EvenniaTest):
         self.assertIn("answered_claim_key", npc_knowledge.evidence)
         self.assertNotIn(rumor.claim_key, result.message)
 
+    def test_denial_rolls_back_every_social_write_when_trace_recording_fails(self):
+        from world.models import CharacterAccessGrant, SocialClaim, SocialKnowledge, SocialTrace
+        from world.social_claim_repair import _denial_claim_key, deny_social_claim
+
+        player, innkeeper, _witness, _fact, rumor = self._seed_known_rumor()
+        denial_key = _denial_claim_key(
+            player.node_key,
+            innkeeper.node_key,
+            rumor.claim_key,
+        )
+        grant_key = f"social:claim_repair:{self.char1.id}:trace_failure"
+
+        with patch(
+            "world.social_engine.record_trace",
+            side_effect=RuntimeError("injected trace failure"),
+        ):
+            result = deny_social_claim(
+                self.char1,
+                self._npc(),
+                topic_text="me",
+                grant_key=grant_key,
+            )
+
+        self.assertFalse(result.ok)
+        self.assertNotIn("injected", result.message)
+        self.assertTrue(SocialClaim.objects.filter(claim_key=rumor.claim_key).exists())
+        self.assertFalse(SocialClaim.objects.filter(claim_key=denial_key).exists())
+        self.assertFalse(SocialKnowledge.objects.filter(claim__claim_key=denial_key).exists())
+        self.assertFalse(SocialTrace.objects.filter(knowledge__claim__claim_key=denial_key).exists())
+        self.assertFalse(
+            CharacterAccessGrant.objects.filter(
+                character=self.char1,
+                grant_key=grant_key,
+            ).exists()
+        )
+
+    def test_denial_rolls_back_social_writes_when_access_consequence_fails(self):
+        from world.models import CharacterAccessGrant, SocialClaim, SocialKnowledge, SocialTrace
+        from world.social_claim_repair import _denial_claim_key, deny_social_claim
+
+        player, innkeeper, _witness, _fact, rumor = self._seed_known_rumor()
+        denial_key = _denial_claim_key(
+            player.node_key,
+            innkeeper.node_key,
+            rumor.claim_key,
+        )
+        grant_key = f"social:claim_repair:{self.char1.id}:grant_failure"
+
+        with patch(
+            "world.access_grants.grant_access",
+            side_effect=ValueError("injected grant failure"),
+        ):
+            result = deny_social_claim(
+                self.char1,
+                self._npc(),
+                topic_text="me",
+                grant_key=grant_key,
+            )
+
+        self.assertFalse(result.ok)
+        self.assertNotIn("injected", result.message)
+        self.assertTrue(SocialClaim.objects.filter(claim_key=rumor.claim_key).exists())
+        self.assertFalse(SocialClaim.objects.filter(claim_key=denial_key).exists())
+        self.assertFalse(SocialKnowledge.objects.filter(claim__claim_key=denial_key).exists())
+        self.assertFalse(SocialTrace.objects.filter(knowledge__claim__claim_key=denial_key).exists())
+        self.assertFalse(
+            CharacterAccessGrant.objects.filter(
+                character=self.char1,
+                grant_key=grant_key,
+            ).exists()
+        )
+
+    def test_denial_retry_is_idempotent_with_access_consequence(self):
+        from world.models import CharacterAccessGrant, SocialClaim, SocialKnowledge, SocialTrace
+        from world.social_claim_repair import _denial_claim_key, deny_social_claim
+
+        player, innkeeper, _witness, _fact, rumor = self._seed_known_rumor()
+        denial_key = _denial_claim_key(
+            player.node_key,
+            innkeeper.node_key,
+            rumor.claim_key,
+        )
+        grant_key = f"social:claim_repair:{self.char1.id}:idempotent"
+
+        first = deny_social_claim(
+            self.char1,
+            self._npc(),
+            topic_text="me",
+            grant_key=grant_key,
+        )
+        second = deny_social_claim(
+            self.char1,
+            self._npc(),
+            topic_text="me",
+            grant_key=grant_key,
+        )
+
+        self.assertTrue(first.ok, first.message)
+        self.assertTrue(second.ok, second.message)
+        self.assertEqual(first.claim.claim_key, denial_key)
+        self.assertEqual(second.claim.claim_key, denial_key)
+        self.assertEqual(SocialClaim.objects.filter(claim_key=denial_key).count(), 1)
+        self.assertEqual(
+            SocialKnowledge.objects.filter(claim__claim_key=denial_key).count(),
+            1,
+        )
+        self.assertEqual(
+            SocialTrace.objects.filter(knowledge__claim__claim_key=denial_key).count(),
+            1,
+        )
+        self.assertEqual(
+            CharacterAccessGrant.objects.filter(
+                character=self.char1,
+                grant_key=grant_key,
+            ).count(),
+            1,
+        )
+
     def test_denial_fails_closed_when_target_knows_no_repairable_claim(self):
         from world.social_claim_repair import deny_social_claim
         from world.social_engine import ensure_social_node
