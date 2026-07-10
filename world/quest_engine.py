@@ -914,21 +914,13 @@ def _pay_rewards(
 # Query functions
 # ---------------------------------------------------------------------------
 
-def get_available_quest_for_npc(npc, character):
-    """
-    Find a quest this NPC can offer to this character (D-18).
-
-    Searches all quest_definitions for quest_giver matching npc's npc_id.
-    Filters out: already active, already complete (if one_chance),
-    one_chance + failed.
-
-    Returns the first available quest spec dict, or None.
-    """
+def get_available_quest_offers_for_npc(npc, character):
+    """Return every currently valid authored and Social Web offer for an NPC."""
     _ensure_model()
 
     npc_id = getattr(npc.db, "npc_id", None) or ""
     if not npc_id:
-        return None
+        return ()
 
     all_specs = _get_all_quest_specs()
 
@@ -938,6 +930,8 @@ def get_available_quest_for_npc(npc, character):
     complete_ids = set(existing.filter(status="complete").values_list("quest_id", flat=True))
     failed_ids = set(existing.filter(status="failed").values_list("quest_id", flat=True))
 
+    offers = []
+    offered_quest_ids = set()
     for spec in all_specs:
         if spec.get("quest_giver") != npc_id:
             continue
@@ -960,17 +954,30 @@ def get_available_quest_for_npc(npc, character):
         if any(prerequisite not in complete_ids for prerequisite in prerequisites):
             continue
 
-        return spec
+        offers.append(spec)
+        offered_quest_ids.add(qid)
 
-    from world.social_quest_offers import get_social_quest_offer_for_npc
+    from world.social_quest_offers import get_social_quest_offers_for_npc
 
-    return get_social_quest_offer_for_npc(
+    social_offers = get_social_quest_offers_for_npc(
         npc,
         character,
         active_ids=active_ids,
         complete_ids=complete_ids,
         failed_ids=failed_ids,
     )
+    offers.extend(
+        offer
+        for offer in social_offers
+        if offer.get("quest_id") not in offered_quest_ids
+    )
+    return tuple(offers)
+
+
+def get_available_quest_for_npc(npc, character):
+    """Compatibility adapter returning the first eligible NPC offer, if any."""
+    offers = get_available_quest_offers_for_npc(npc, character)
+    return offers[0] if offers else None
 
 
 def get_active_quests(character):

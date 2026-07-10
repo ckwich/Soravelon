@@ -70,6 +70,15 @@ def get_new_player_guidance(character):
 
     pending_offer = getattr(character.ndb, "pending_quest_offer", None)
     if pending_offer:
+        pending_quests = pending_offer.get("quests") or []
+        if len(pending_quests) > 1:
+            lead = pending_quests[0] or {}
+            lead_name = lead.get("name") or lead.get("quest_id") or "A lead"
+            return (
+                f"|y[{lead_name} and {len(pending_quests) - 1} other lead(s) "
+                "are waiting on your answer. Type |waccept <number>|n to "
+                "choose one or |wdecline|n to pass for now.]|n"
+            )
         quest = pending_offer.get("quest") or {}
         quest_name = quest.get("name") or quest.get("quest_id")
         if quest_name:

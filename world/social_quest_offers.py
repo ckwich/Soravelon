@@ -13,8 +13,8 @@ from django.db import OperationalError, ProgrammingError
 
 from world.social_quest_grammar import compile_quest_spec
 from world.social_quest_offer_registry import (
-    get_social_quest_offer_rule_by_npc,
     get_social_quest_offer_rule_by_quest_id,
+    get_social_quest_offer_rules_by_npc,
 )
 
 
@@ -163,6 +163,97 @@ def get_social_quest_spec_by_id(quest_id):
     return _compile_offer_from_rule(rule, require_social_grounding=False)
 
 
+def _offer_is_available_for_lifecycle(rule, *, active_ids, complete_ids, failed_ids):
+    quest_id = rule["quest_id"]
+    if quest_id in active_ids:
+        return False
+    if rule.get("one_chance", True) and (
+        quest_id in complete_ids or quest_id in failed_ids
+    ):
+        return False
+    return True
+
+
+def _context_for_qualifying_evidence(context, evidence):
+    """Give each compiled offer only the fact(s) that made it eligible."""
+    return {
+        "viewer": copy.deepcopy((context or {}).get("viewer") or {}),
+        "subject": copy.deepcopy((context or {}).get("subject") or {}),
+        "purpose": str((context or {}).get("purpose") or "quest_offer"),
+        "facts": copy.deepcopy(evidence or []),
+        "claims": [],
+    }
+
+
+def get_social_quest_offers_for_npc(
+    npc,
+    character,
+    *,
+    active_ids=None,
+    complete_ids=None,
+    failed_ids=None,
+):
+    """Return every eligible Social Web offer for an NPC in registry order."""
+    npc_id = _npc_id(npc)
+    rules = get_social_quest_offer_rules_by_npc(npc_id)
+    if not rules:
+        return ()
+
+    active_ids = set(active_ids or [])
+    complete_ids = set(complete_ids or [])
+    failed_ids = set(failed_ids or [])
+
+    viewer_node_key = _npc_social_node_key(npc)
+    subject_node_key = _character_social_node_key(character)
+    if not viewer_node_key or not subject_node_key:
+        return ()
+
+    try:
+        from world.social_engine import find_social_evidence, query_social_context
+
+        presentation_context = None
+        offers = []
+        for rule in sorted(
+            rules,
+            key=lambda rule: (-rule.get("priority", 0), rule["quest_id"]),
+        ):
+            if not _offer_is_available_for_lifecycle(
+                rule,
+                active_ids=active_ids,
+                complete_ids=complete_ids,
+                failed_ids=failed_ids,
+            ):
+                continue
+            evidence = find_social_evidence(
+                viewer_node_key=viewer_node_key,
+                subject_node_key=subject_node_key,
+                purpose="quest_offer",
+                required_fact_tags=rule.get("required_fact_tags") or [],
+                fact_key_fragment=rule.get("required_fact_key_fragment"),
+            )
+            if not evidence:
+                continue
+            if presentation_context is None:
+                presentation_context = query_social_context(
+                    viewer_node_key=viewer_node_key,
+                    subject_node_key=subject_node_key,
+                    purpose="quest_offer",
+                )
+            offers.append(
+                _compile_offer_from_rule(
+                    rule,
+                    social_context=_context_for_qualifying_evidence(
+                        presentation_context,
+                        evidence,
+                    ),
+                )
+            )
+    except (OperationalError, ProgrammingError):
+        return ()
+
+    return tuple(offers)
+
+
 def get_social_quest_offer_for_npc(
     npc,
     character,
@@ -171,45 +262,12 @@ def get_social_quest_offer_for_npc(
     complete_ids=None,
     failed_ids=None,
 ):
-    """Return a Social Web-gated quest offer for an NPC, or None."""
-    npc_id = _npc_id(npc)
-    rule = get_social_quest_offer_rule_by_npc(npc_id)
-    if not rule:
-        return None
-
-    quest_id = rule["quest_id"]
-    active_ids = set(active_ids or [])
-    complete_ids = set(complete_ids or [])
-    failed_ids = set(failed_ids or [])
-    if quest_id in active_ids:
-        return None
-    if rule.get("one_chance", True) and (quest_id in complete_ids or quest_id in failed_ids):
-        return None
-
-    viewer_node_key = _npc_social_node_key(npc)
-    subject_node_key = _character_social_node_key(character)
-    if not viewer_node_key or not subject_node_key:
-        return None
-
-    try:
-        from world.social_engine import find_social_evidence, query_social_context
-
-        evidence = find_social_evidence(
-            viewer_node_key=viewer_node_key,
-            subject_node_key=subject_node_key,
-            purpose="quest_offer",
-            required_fact_tags=rule.get("required_fact_tags") or [],
-            fact_key_fragment=rule.get("required_fact_key_fragment"),
-        )
-        if not evidence:
-            return None
-
-        social_context = query_social_context(
-            viewer_node_key=viewer_node_key,
-            subject_node_key=subject_node_key,
-            purpose="quest_offer",
-        )
-    except (OperationalError, ProgrammingError):
-        return None
-
-    return _compile_offer_from_rule(rule, social_context=social_context)
+    """Compatibility adapter returning the first eligible Social Web offer."""
+    offers = get_social_quest_offers_for_npc(
+        npc,
+        character,
+        active_ids=active_ids,
+        complete_ids=complete_ids,
+        failed_ids=failed_ids,
+    )
+    return offers[0] if offers else None

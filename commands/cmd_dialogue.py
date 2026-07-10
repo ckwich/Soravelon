@@ -181,7 +181,7 @@ class CmdTalk(Command):
     def func(self):
         from world.dialogue_engine import (
             get_npc_hints,
-            get_quest_offer,
+            get_quest_offers,
             resolve_greeting,
         )
 
@@ -215,17 +215,37 @@ class CmdTalk(Command):
         check_deliver_objectives(character, npc)
 
         # Quest offer
-        quest_data = get_quest_offer(npc, character)
-        if quest_data:
+        quest_offers = tuple(get_quest_offers(npc, character) or ())
+        if quest_offers:
+            quest_data = quest_offers[0]
+            pending_offer = {
+                "npc": npc,
+                "quest": quest_data,
+            }
+            if len(quest_offers) > 1:
+                pending_offer["quests"] = quest_offers
+                offer_lines = []
+                for index, offer in enumerate(quest_offers, start=1):
+                    offer_lines.append(
+                        f"|y[{index}] {offer.get('name', 'A task')}|n — "
+                        f"{offer.get('description', 'A mysterious request.')}"
+                    )
+                character.msg(
+                    f"\n|y{npc_display} has several leads for you:|n\n"
+                    + "\n".join(offer_lines)
+                )
+                character.msg(
+                    "|x[Type |waccept <number>|x to choose a lead or "
+                    "|wdecline|x to pass for now]|n"
+                )
+                character.ndb.pending_quest_offer = pending_offer
+                return
             character.msg(
                 f"\n|y{npc_display} has a task for you:|n "
                 f"{quest_data.get('description', 'A mysterious request.')}"
             )
             character.msg("|x[Type |waccept|x or |wdecline|x]|n")
-            character.ndb.pending_quest_offer = {
-                "npc": npc,
-                "quest": quest_data,
-            }
+            character.ndb.pending_quest_offer = pending_offer
 
 
 # ---------------------------------------------------------------------------
@@ -526,7 +546,7 @@ class CmdAccept(Command):
     Accept a pending quest offer from an NPC.
 
     Usage:
-      accept
+      accept [number]
     """
 
     key = "accept"
@@ -543,6 +563,26 @@ class CmdAccept(Command):
 
         npc = offer.get("npc")
         quest_data = offer.get("quest")
+        quest_options = offer.get("quests")
+        if isinstance(quest_options, (list, tuple)) and quest_options:
+            if len(quest_options) == 1:
+                quest_data = quest_options[0]
+            else:
+                choice_text = self.args.strip()
+                if not choice_text:
+                    character.msg(
+                        "|yChoose a lead with |waccept <number>|y, or "
+                        "|wdecline|y to pass for now.|n"
+                    )
+                    return
+                try:
+                    choice = int(choice_text)
+                except ValueError:
+                    choice = 0
+                if choice < 1 or choice > len(quest_options):
+                    character.msg("|yThat is not one of the available leads.|n")
+                    return
+                quest_data = quest_options[choice - 1]
 
         # Validate NPC still in same room (Pitfall 4)
         # Chain offers from quest completion may have npc=None — skip room check

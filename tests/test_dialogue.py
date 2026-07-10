@@ -107,8 +107,7 @@ class TestQuestOfferAcceptance(unittest.TestCase):
 
     @patch("world.quest_engine.check_deliver_objectives")
     @patch("world.quest_engine.check_talk_to_objectives")
-    @patch("world.dialogue_engine.get_quest_offer")
-    @patch("world.dialogue_engine.has_available_quest")
+    @patch("world.dialogue_engine.get_quest_offers")
     @patch("world.dialogue_engine.get_npc_hints", return_value=[])
     @patch("world.dialogue_engine.resolve_greeting", return_value=("Good road.", "neutral"))
     @patch("commands.cmd_dialogue._find_npc_in_room")
@@ -117,8 +116,7 @@ class TestQuestOfferAcceptance(unittest.TestCase):
         mock_find_npc,
         _mock_greeting,
         _mock_hints,
-        mock_has_available,
-        mock_get_offer,
+        mock_get_offers,
         _mock_talk_objectives,
         _mock_deliver_objectives,
     ):
@@ -135,23 +133,108 @@ class TestQuestOfferAcceptance(unittest.TestCase):
         character.location = room
         character.ndb = SimpleNamespace(pending_quest_offer=None)
         mock_find_npc.return_value = npc
-        mock_get_offer.return_value = {
-            "quest_id": "vc_sq_under_seal_dustwalkers_rest",
-            "name": "Under Seal at the Dustwalker's Rest",
-            "description": "Whistle needs Warden help.",
-        }
+        mock_get_offers.return_value = [
+            {
+                "quest_id": "vc_sq_under_seal_dustwalkers_rest",
+                "name": "Under Seal at the Dustwalker's Rest",
+                "description": "Whistle needs Warden help.",
+            }
+        ]
 
         cmd = CmdTalk()
         cmd.caller = character
         cmd.args = "calloway"
         cmd.func()
 
-        mock_has_available.assert_not_called()
-        mock_get_offer.assert_called_once_with(npc, character)
+        mock_get_offers.assert_called_once_with(npc, character)
         self.assertEqual(
             character.ndb.pending_quest_offer["quest"]["quest_id"],
             "vc_sq_under_seal_dustwalkers_rest",
         )
+
+    @patch("world.quest_engine.check_deliver_objectives")
+    @patch("world.quest_engine.check_talk_to_objectives")
+    @patch("world.dialogue_engine.get_quest_offers")
+    @patch("world.dialogue_engine.get_npc_hints", return_value=[])
+    @patch("world.dialogue_engine.resolve_greeting", return_value=("Good road.", "neutral"))
+    @patch("commands.cmd_dialogue._find_npc_in_room")
+    def test_talk_presents_multiple_offers_for_numbered_acceptance(
+        self,
+        mock_find_npc,
+        _mock_greeting,
+        _mock_hints,
+        mock_get_offers,
+        _mock_talk_objectives,
+        _mock_deliver_objectives,
+    ):
+        from commands.cmd_dialogue import CmdTalk
+
+        room = SimpleNamespace()
+        npc = SimpleNamespace(
+            db=SimpleNamespace(npc_name="Agent Calloway"),
+            key="Agent Calloway",
+            location=room,
+        )
+        character = MagicMock()
+        character.location = room
+        character.ndb = SimpleNamespace(pending_quest_offer=None)
+        mock_find_npc.return_value = npc
+        mock_get_offers.return_value = [
+            {"quest_id": "priority", "name": "First Lead", "description": "First."},
+            {"quest_id": "second", "name": "Second Lead", "description": "Second."},
+        ]
+
+        cmd = CmdTalk()
+        cmd.caller = character
+        cmd.args = "calloway"
+        cmd.func()
+
+        pending = character.ndb.pending_quest_offer
+        self.assertEqual([quest["quest_id"] for quest in pending["quests"]], ["priority", "second"])
+        self.assertEqual(pending["quest"]["quest_id"], "priority")
+        messages = "\n".join(call.args[0] for call in character.msg.call_args_list)
+        self.assertIn("[1] First Lead", messages)
+        self.assertIn("[2] Second Lead", messages)
+        self.assertIn("accept <number>", messages)
+
+    @patch("world.oob_publisher.push_quest_update")
+    @patch("world.quest_engine.accept_quest")
+    def test_accept_selects_the_requested_numbered_offer(
+        self,
+        mock_accept,
+        _mock_push,
+    ):
+        from commands.cmd_dialogue import CmdAccept
+
+        room = SimpleNamespace()
+        npc = SimpleNamespace(
+            key="Agent Calloway",
+            location=room,
+            db=SimpleNamespace(
+                npc_name="Agent Calloway",
+                npc_id="npc_warden_agent_calloway",
+            ),
+        )
+        first = {"quest_id": "priority", "name": "First Lead"}
+        second = {"quest_id": "second", "name": "Second Lead"}
+        character = MagicMock()
+        character.location = room
+        character.ndb = SimpleNamespace(
+            pending_quest_offer={
+                "npc": npc,
+                "quest": first,
+                "quests": (first, second),
+            }
+        )
+        mock_accept.return_value = (True, "Quest accepted: Second Lead")
+
+        cmd = CmdAccept()
+        cmd.caller = character
+        cmd.args = "2"
+        cmd.func()
+
+        mock_accept.assert_called_once_with(character, "second", second)
+        self.assertIsNone(character.ndb.pending_quest_offer)
 
 
 # ---------------------------------------------------------------------------
@@ -780,7 +863,6 @@ class TestDynamicHints(EvenniaTest):
     @patch("world.dialogue_engine._build_dialogue_context")
     def test_known_topics_excluded(self, mock_ctx, mock_tier):
         from world.dialogue_engine import get_npc_hints, record_topic_learned
-        from world.dialogue_engine import _compute_context_hash
 
         ctx = {
             "standing_tier": "friendly",

@@ -789,14 +789,20 @@ def extract_topic(text, available_topics):
 
 def has_available_quest(npc, character):
     """Check if NPC has a quest available for this character (D-18)."""
-    from world.quest_engine import get_available_quest_for_npc
-    return get_available_quest_for_npc(npc, character) is not None
+    return bool(get_quest_offers(npc, character))
+
+
+def get_quest_offers(npc, character):
+    """Return every currently offerable lead in the order dialogue should show."""
+    from world.quest_engine import get_available_quest_offers_for_npc
+
+    return get_available_quest_offers_for_npc(npc, character)
 
 
 def get_quest_offer(npc, character):
-    """Get the quest offer data for display."""
-    from world.quest_engine import get_available_quest_for_npc
-    return get_available_quest_for_npc(npc, character)
+    """Compatibility adapter returning the first available dialogue offer."""
+    offers = get_quest_offers(npc, character)
+    return offers[0] if offers else None
 
 
 # ---------------------------------------------------------------------------

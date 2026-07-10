@@ -1,6 +1,7 @@
 """Tests for live Social Web-gated quest offers."""
 
 import ast
+import copy
 import json
 import pathlib
 from types import SimpleNamespace
@@ -59,9 +60,96 @@ class TestSocialQuestOffers(EvenniaTest):
         )
         self.assertEqual(failures, [])
 
+    def test_multiple_offers_are_ordered_and_carry_only_their_qualifying_facts(self):
+        from world.social_quest_offer_registry import SOCIAL_QUEST_OFFER_RULES
+        from world.social_quest_offers import get_social_quest_offers_for_npc
+
+        high = copy.deepcopy(SOCIAL_QUEST_OFFER_RULES[0])
+        high.update(
+            quest_id="test_social_offer_high",
+            priority=20,
+            required_fact_key_fragment="high",
+        )
+        low = copy.deepcopy(SOCIAL_QUEST_OFFER_RULES[0])
+        low.update(
+            quest_id="test_social_offer_low",
+            priority=10,
+            required_fact_key_fragment="low",
+        )
+        npc = _npc("npc_warden_agent_calloway")
+        evidence_by_fragment = {
+            "high": [{"fact_key": "fact:high", "summary": "High evidence."}],
+            "low": [{"fact_key": "fact:low", "summary": "Low evidence."}],
+        }
+        presentation_context = {
+            "viewer": {"node_key": "npc:npc_warden_agent_calloway"},
+            "subject": {"node_key": f"player:{self.char1.id}"},
+            "purpose": "quest_offer",
+            "facts": [{"fact_key": "fact:distractor", "summary": "Ignore me."}],
+            "claims": [{"claim_key": "claim:distractor", "summary": "Ignore me."}],
+        }
+
+        with patch(
+            "world.social_quest_offers.get_social_quest_offer_rules_by_npc",
+            return_value=(low, high),
+        ), patch(
+            "world.social_engine.find_social_evidence",
+            side_effect=lambda **kwargs: evidence_by_fragment[
+                kwargs["fact_key_fragment"]
+            ],
+        ), patch(
+            "world.social_engine.query_social_context",
+            return_value=presentation_context,
+        ) as mock_context, patch(
+            "world.social_quest_offers._compile_offer_from_rule",
+            side_effect=lambda rule, **kwargs: {
+                "quest_id": rule["quest_id"],
+                "context": kwargs["social_context"],
+            },
+        ):
+            offers = get_social_quest_offers_for_npc(npc, self.char1)
+
+        self.assertEqual(
+            [offer["quest_id"] for offer in offers],
+            ["test_social_offer_high", "test_social_offer_low"],
+        )
+        self.assertEqual(mock_context.call_count, 1)
+        self.assertEqual(
+            [offer["context"]["facts"] for offer in offers],
+            [evidence_by_fragment["high"], evidence_by_fragment["low"]],
+        )
+        self.assertEqual([offer["context"]["claims"] for offer in offers], [[], []])
+
+        with patch(
+            "world.social_quest_offers.get_social_quest_offer_rules_by_npc",
+            return_value=(low, high),
+        ), patch(
+            "world.social_engine.find_social_evidence",
+            side_effect=lambda **kwargs: evidence_by_fragment[
+                kwargs["fact_key_fragment"]
+            ],
+        ), patch(
+            "world.social_engine.query_social_context",
+            return_value=presentation_context,
+        ), patch(
+            "world.social_quest_offers._compile_offer_from_rule",
+            side_effect=lambda rule, **kwargs: {"quest_id": rule["quest_id"]},
+        ):
+            remaining_offers = get_social_quest_offers_for_npc(
+                npc,
+                self.char1,
+                active_ids={"test_social_offer_high"},
+            )
+
+        self.assertEqual(
+            [offer["quest_id"] for offer in remaining_offers],
+            ["test_social_offer_low"],
+        )
+
     def test_offer_rule_registry_returns_isolated_rule_copies(self):
         from world.social_quest_offer_registry import (
             get_social_quest_offer_rule_by_npc,
+            get_social_quest_offer_rules_by_npc,
             get_social_quest_offer_rule_by_quest_id,
             iter_social_quest_offer_rules,
         )
@@ -76,6 +164,7 @@ class TestSocialQuestOffers(EvenniaTest):
         self.assertEqual(npc_rule["description"]["memory_summary_field"], "summary")
         self.assertIn("explainability", npc_rule)
         self.assertIn("contest_repair_hooks", npc_rule)
+        self.assertEqual(npc_rule["priority"], 100)
         self.assertEqual(
             [rule["quest_id"] for rule in iter_social_quest_offer_rules()],
             ["vc_sq_under_seal_dustwalkers_rest"],
@@ -84,6 +173,17 @@ class TestSocialQuestOffers(EvenniaTest):
         npc_rule["actors"]["witness"]["display_name"] = "Changed"
         fresh_rule = get_social_quest_offer_rule_by_npc("npc_warden_agent_calloway")
         self.assertEqual(fresh_rule["actors"]["witness"]["display_name"], "Whistle")
+        npc_rules = get_social_quest_offer_rules_by_npc(
+            "npc_warden_agent_calloway"
+        )
+        self.assertEqual([rule["quest_id"] for rule in npc_rules], [npc_rule["quest_id"]])
+        npc_rules[0]["priority"] = -1
+        self.assertEqual(
+            get_social_quest_offer_rules_by_npc(
+                "npc_warden_agent_calloway"
+            )[0]["priority"],
+            100,
+        )
         self.assertIsInstance(json.dumps(iter_social_quest_offer_rules()), str)
 
     @patch("world.quest_engine._get_all_quest_specs", return_value=[])

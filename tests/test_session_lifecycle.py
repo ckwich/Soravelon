@@ -214,6 +214,22 @@ class TestSessionLifecycle(unittest.TestCase):
         self.assertIn("talk", guidance.lower())
         self.assertIn("quest", guidance.lower())
 
+    def test_guidance_explains_how_to_choose_among_multiple_pending_offers(self):
+        from world.session_lifecycle import get_new_player_guidance
+
+        char = _make_character(guild_id="circle")
+        char.ndb.pending_quest_offer = {
+            "quests": (
+                {"quest_id": "first", "name": "First Lead"},
+                {"quest_id": "second", "name": "Second Lead"},
+            )
+        }
+
+        guidance = get_new_player_guidance(char)
+
+        self.assertIn("first lead", guidance.lower())
+        self.assertIn("accept <number>", guidance.lower())
+
     @patch("world.quest_engine.get_active_quests", return_value=[])
     def test_guidance_is_suppressed_for_established_characters(
         self,
