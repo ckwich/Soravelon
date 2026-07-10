@@ -324,6 +324,7 @@ def build():
     # Thematic zone exit stubs (will be cross-zone exits when zones load)
     area.exit(hg_south_road, hg_arrival, "north")
     area.exit(hg_arrival, hg_south_road, "south")
+    area.exit(hg_south_road, "ashreach_plains:ash_road_01", "south")
     area.exit(hg_east_road, hg_plaza_north, "west")
     area.exit(hg_plaza_north, hg_east_road, "east")
     area.exit(hg_west_road, hg_plaza_north, "west")

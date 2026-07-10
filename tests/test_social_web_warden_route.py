@@ -93,6 +93,60 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         zone.db.quest_definitions = list(quest_definitions or [])
         return zone
 
+    def test_vael_south_road_reaches_harven_through_real_exit_objects(self):
+        import evennia
+
+        from world.areas import ashreach_plains, vaels_crossing
+
+        # Build the destination first so Vael's authored cross-zone exit must
+        # resolve to the real Ashway room rather than a local stand-in.
+        ashreach_plains.build()
+        vaels_crossing.build()
+
+        source = next(
+            room
+            for room in evennia.search_tag("hg_south_road", category="room_id")
+            if room.db.zone_id == "vaels_crossing"
+        )
+        harven = next(
+            npc
+            for npc in evennia.search_tag(
+                "npc_warden_outpost_commander",
+                category="npc_id",
+            )
+            if npc.db.zone_id == "ashreach_plains"
+        )
+
+        predecessor = {source.id: None}
+        frontier = [source]
+        while frontier and harven.location.id not in predecessor:
+            room = frontier.pop(0)
+            for exit_obj in room.exits:
+                destination = exit_obj.destination
+                if not destination or destination.id in predecessor:
+                    continue
+                predecessor[destination.id] = (room, exit_obj)
+                frontier.append(destination)
+
+        self.assertIn(harven.location.id, predecessor)
+        route = []
+        room = harven.location
+        while predecessor[room.id] is not None:
+            previous_room, exit_obj = predecessor[room.id]
+            route.append(exit_obj)
+            room = previous_room
+        route.reverse()
+
+        self.char1.location = source
+        self.assertEqual(route[0].key, "south")
+        self.assertEqual(route[0].destination.db.zone_id, "ashreach_plains")
+        for exit_obj in route:
+            destination = exit_obj.destination
+            exit_obj.at_traverse(self.char1, destination)
+            self.assertIs(self.char1.location, destination, exit_obj.key)
+
+        self.assertIs(self.char1.location, harven.location)
+
     def test_warden_report_reaches_outpost_contact_but_not_innkeeper(self):
         from world.social_engine import query_social_context
 
