@@ -1,136 +1,48 @@
-# Social Web Vael's Crossing Playtest
+# Social Web Vael's Crossing Runtime Verification
 
-Use this route to test the full Social Web NPC-interaction vertical without
-watching numeric reputation meters. Replace `player:<id>` in admin commands
-with the active character's Social Web player node key.
+This is an acceptance gate for the live Social Web route, not a printed
+checklist or a set of admin shortcuts. It proves that the Warden report can be
+played through the materialized world without exposing player-facing numeric
+reputation meters.
 
-## 1. Complete The Warden Report
+## Preconditions
 
-Commands:
+Run this against the database used by a normally started Soravelon server.
+Area loading must already have completed: the verifier checks live state and
+does not create routes, inject rumors, or repair missing topology for you.
 
-```text
-talk Agent Calloway
-accept
-talk Commander Harven
-```
-
-Expected observation:
-
-Calloway records the Warden report as supported institutional knowledge, and
-Harven receives only what the Warden-report route can carry. The completion
-should pay the authored quest rewards and create Social Web fact/claim state.
-
-Optional inspection:
+## Runtime Gate
 
 ```text
-socialmemory npc:npc_warden_agent_calloway player:<id>
-socialmemory npc:npc_warden_outpost_commander player:<id>
+python scripts/playtest_social_web_vertical.py --verify
 ```
 
-## 2. Ask Calloway Why
+Success prints five `PASS` lines:
 
-Commands:
+- `applied migrations` — every current `world` migration leaf is applied.
+- `materialized topology` — the six authored Vael's Crossing/Ashreach Social
+  nodes are bound to their owning zones.
+- `reciprocal exits` — the real Ashway route connects `hg_south_road` south to
+  `ash_road_01`, with the northbound return exit present.
+- `edge policy` — the active `warden_report` and `inn_traveler` edges retain
+  their authored direction, trust, latency, and scope tags.
+- `route state` — the actual room graph contains a cross-zone route from Agent
+  Calloway to Commander Harven.
 
-```text
-talk Agent Calloway
-ask Agent Calloway why
-ask Agent Calloway about me
-```
+Any `FAIL` line is a release-blocking runtime contradiction. Fix the authored
+area, migration, Social topology, or exit state that the message names; do not
+work around it with an admin command or a manual Social Web write.
 
-Expected observation:
+## Player-Path Proof
 
-Calloway can explain the supported Warden route from what he plausibly knows.
-He should not expose raw fact keys, claim keys, confidence values, hidden trace
-internals, or private admin identifiers.
+The automated acceptance suite also keeps a database-backed command and movement test for the authored delivery:
 
-## 3. Check Harven Cross-Zone Knowledge
+1. The player uses `talk Calloway` and `accept` at the real Warden office.
+2. The player traverses the materialized exits across the Ashway into Ashreach.
+3. The player uses `talk Harven` in the real outpost room.
+4. The quest completes, consumes the field report, and writes the fact, claim,
+   and Warden knowledge records through the normal reward path.
 
-Commands:
-
-```text
-travel to Ashreach Outpost
-talk Commander Harven
-ask Commander Harven about me
-```
-
-Expected observation:
-
-Harven cross-zone knowledge should feel institutional and field-practical, not
-omniscient. He knows the player through the Warden-report contact route, not
-because every NPC globally shares memory.
-
-## 4. Check Whistle Before And After Rumor Propagation
-
-Commands:
-
-```text
-talk Whistle
-ask Whistle about me
-trigger the inn-traveler rumor route
-talk Whistle
-ask Whistle about me
-socialmemory npc:npc_innkeeper_whistle player:<id>
-```
-
-Expected observation:
-
-Whistle should not know the sealed Warden details before a real inn/traveler
-route carries a rumor or claim. After propagation, Whistle should talk like an
-innkeeper with local road talk, not like a Warden clerk.
-
-## 5. Run The Dynamic Social Quest Lifecycle
-
-Commands:
-
-```text
-talk Agent Calloway
-accept
-talk Whistle
-look
-talk Raith
-talk Agent Calloway
-```
-
-Expected observation:
-
-The social follow-up offer should be grounded in the previous Warden report,
-not a generic trust gate. It should accept, progress through Whistle, the inn
-room, Raith, and Calloway, and then record deterministic Social Web
-consequences on completion.
-
-the offer uses deterministic renderer fallback unless a provider is explicitly
-enabled for testing.
-
-## 6. Contest A Rumor
-
-Commands:
-
-```text
-deny Whistle about me
-ask Whistle about me
-socialmemory npc:npc_innkeeper_whistle player:<id>
-```
-
-Expected observation:
-
-The denial/repair verb should create a new player-spoken contested claim that
-Whistle knows through direct witness. It must not erase the old rumor, directly
-edit hidden standing numbers, or pretend the player can rewrite world truth.
-the original rumor remains intact.
-
-## 7. Renderer And Admin Harness
-
-Commands:
-
-```text
-python scripts/playtest_social_web_vertical.py
-socialmemory npc:npc_warden_agent_calloway player:<id>
-socialmemory npc:npc_warden_outpost_commander player:<id>
-socialmemory npc:npc_innkeeper_whistle player:<id>
-```
-
-Expected observation:
-
-The route script should print every required beat, including renderer fallback
-status and socialmemory inspection. Admin inspection should show who knows the
-claim, which channel carried it, and which trace explains the route.
+That test is the authority proof for acceptance through consequence. The
+runtime gate is the deployment-oriented proof that the same authored route and
+Social policy exist in the live database.
