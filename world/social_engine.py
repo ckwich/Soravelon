@@ -397,6 +397,8 @@ def mark_known(
                     knowledge.available_after = merged_available_after
                     update_fields.append("available_after")
                 if update_fields:
+                    knowledge.last_dispatched_at = None
+                    update_fields.append("last_dispatched_at")
                     knowledge.save(update_fields=update_fields)
     except IntegrityError:
         knowledge = SocialKnowledge.objects.get(knowledge_key=knowledge_key)
@@ -436,14 +438,14 @@ def record_trace(knowledge, *, from_node=None, to_node=None, edge=None, summary=
     return trace
 
 
-def available_now_filter(queryset):
-    now = timezone.now()
+def available_now_filter(queryset, *, now=None):
+    now = now or timezone.now()
     return queryset.filter(Q(available_after__isnull=True) | Q(available_after__lte=now))
 
 
-def active_social_payload_filter(queryset):
+def active_social_payload_filter(queryset, *, now=None):
     """Exclude expired or private facts/claims before they can influence play."""
-    now = timezone.now()
+    now = now or timezone.now()
     return queryset.filter(
         Q(fact__isnull=True)
         | (
@@ -509,7 +511,7 @@ def _channel_for_edge_type(edge_type):
     }.get(edge_type, "tavern_rumor")
 
 
-def _source_knowledge_for(source, *, fact_key="", claim_key=""):
+def _source_knowledge_for(source, *, fact_key="", claim_key="", now=None):
     from django.db.models import Case, IntegerField, Value, When
     from world.models import SocialKnowledge
 
@@ -523,7 +525,10 @@ def _source_knowledge_for(source, *, fact_key="", claim_key=""):
         queryset = queryset.filter(claim__claim_key=claim_key, fact__isnull=True)
 
     return (
-        active_social_payload_filter(available_now_filter(queryset))
+        active_social_payload_filter(
+            available_now_filter(queryset, now=now),
+            now=now,
+        )
         .annotate(
             claim_rank=Case(
                 When(claim__isnull=False, then=Value(0)),
@@ -638,54 +643,72 @@ def _distorted_claim_for_edge(edge, target, source_knowledge):
     return claim if ok else None
 
 
-def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", budget=10):
-    """Copy spreadable knowledge across allowed outgoing contact edges."""
+def _carried_payload_key_for_edge(edge, target, source_knowledge):
+    if edge.distortion == "rumor":
+        return _distorted_claim_key(edge, target, source_knowledge)
+    return _knowledge_payload_key(source_knowledge)
+
+
+def _propagate_known_knowledge(
+    source_knowledge,
+    *,
+    budget,
+    now,
+    edge_capacities,
+    report=None,
+):
+    """Carry one known payload through eligible edges using a shared batch budget."""
     from datetime import timedelta
 
-    from world.models import SocialKnowledge
+    from world.models import SocialKnowledge, SocialTrace
 
-    source = _get_node(source_node_key)
-    if not source:
-        return []
-
-    payload_key = claim_key or fact_key
-    if not payload_key:
-        return []
-
-    ok, _message, budget = _coerce_non_negative_int("budget", budget)
-    if not ok or budget == 0:
-        return []
-
-    source_knowledge = _source_knowledge_for(
-        source,
-        fact_key=fact_key,
-        claim_key=claim_key,
-    )
-    if not source_knowledge:
-        return []
-
+    source = source_knowledge.node
     propagated = []
     for path in _propagation_paths_for(source)[:budget]:
         edge = path["edge"]
         if not _edge_allows_knowledge(edge, source_knowledge):
+            if report is not None:
+                report["skipped_policy"] += 1
             continue
 
-        available_after = None
-        if edge.latency_seconds > 0:
-            available_after = timezone.now() + timedelta(seconds=edge.latency_seconds)
-
         target = path["target"]
-        carried_claim = _distorted_claim_for_edge(edge, target, source_knowledge)
-        carried_fact = None if carried_claim else source_knowledge.fact
-        carried_payload_key = carried_claim.claim_key if carried_claim else (
-            carried_fact.fact_key if carried_fact else ""
+        carried_payload_key = _carried_payload_key_for_edge(
+            edge,
+            target,
+            source_knowledge,
         )
         if not carried_payload_key:
             continue
         existing_target = SocialKnowledge.objects.filter(
             knowledge_key=f"knowledge:{target.node_key}:{carried_payload_key}"
         ).only("available_after").first()
+        route_replayed = bool(
+            existing_target
+            and SocialTrace.objects.filter(
+                route_key=_social_route_key(
+                    existing_target,
+                    source,
+                    target,
+                    edge,
+                )
+            ).exists()
+        )
+        if not route_replayed:
+            remaining = edge_capacities.setdefault(edge.id, edge.bandwidth)
+            if remaining <= 0:
+                if report is not None:
+                    report["skipped_bandwidth"] += 1
+                continue
+
+        available_after = None
+        if edge.latency_seconds > 0:
+            available_after = now + timedelta(seconds=edge.latency_seconds)
         available_after = _merged_available_after(existing_target, available_after)
+
+        carried_claim = _distorted_claim_for_edge(edge, target, source_knowledge)
+        carried_fact = None if carried_claim else source_knowledge.fact
+        if not carried_claim and not carried_fact:
+            continue
         confidence = min(source_knowledge.confidence, edge.trust)
         if edge.distortion:
             confidence *= 0.75
@@ -723,8 +746,161 @@ def propagate_social_knowledge(*, source_node_key, fact_key="", claim_key="", bu
                 f"through {edge.edge_type}."
             ),
         )
+        if route_replayed:
+            if report is not None:
+                report["replayed_routes"] += 1
+        else:
+            edge_capacities[edge.id] -= 1
+            if report is not None:
+                report["created_routes"] += 1
         propagated.append(knowledge)
     return propagated
+
+
+def propagate_social_knowledge(
+    *,
+    source_node_key,
+    fact_key="",
+    claim_key="",
+    budget=10,
+    now=None,
+):
+    """Explicitly carry one quest/event payload through the batch policy path."""
+    source = _get_node(source_node_key)
+    if not source or not (fact_key or claim_key):
+        return []
+
+    ok, _message, budget = _coerce_non_negative_int("budget", budget)
+    if not ok or budget == 0:
+        return []
+
+    now = now or timezone.now()
+    source_knowledge = _source_knowledge_for(
+        source,
+        fact_key=fact_key,
+        claim_key=claim_key,
+        now=now,
+    )
+    if not source_knowledge:
+        return []
+
+    return _propagate_known_knowledge(
+        source_knowledge,
+        budget=budget,
+        now=now,
+        edge_capacities={},
+    )
+
+
+def _due_spreading_knowledge_queryset(*, now):
+    from django.db.models import Case, IntegerField, Value, When
+    from world.models import SocialKnowledge
+
+    queryset = (
+        SocialKnowledge.objects.filter(spreading=True)
+        .filter(
+            Q(node__outgoing_social_edges__active=True)
+            | Q(
+                node__incoming_social_edges__active=True,
+                node__incoming_social_edges__directionality="two_way",
+            )
+        )
+        .select_related("node", "fact", "claim")
+        .distinct()
+    )
+    return (
+        active_social_payload_filter(
+            available_now_filter(queryset, now=now),
+            now=now,
+        )
+        .annotate(
+            dispatch_rank=Case(
+                When(last_dispatched_at__isnull=True, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("dispatch_rank", "last_dispatched_at", "id")
+    )
+
+
+def social_propagation_status(*, now=None):
+    """Return bounded operational facts for an admin/status surface."""
+    from world.models import SocialEdge
+
+    now = now or timezone.now()
+    active_edges = SocialEdge.objects.filter(active=True)
+    return {
+        "now": now,
+        "due_knowledge": _due_spreading_knowledge_queryset(now=now).count(),
+        "active_edges": active_edges.count(),
+        "zero_bandwidth_edges": active_edges.filter(bandwidth=0).count(),
+    }
+
+
+def dispatch_due_social_knowledge(*, limit=100, propagation_budget=10, now=None):
+    """Process one bounded, fair batch without recursively flooding the graph.
+
+    Each active edge may carry up to its declared bandwidth of *new* routes in
+    this batch. Replaying an already-audited route is idempotent and consumes no
+    capacity. Newly created knowledge is intentionally not part of this query
+    snapshot, so it cannot traverse multiple hops in one ticker beat.
+    """
+    ok, message, limit = _coerce_non_negative_int("limit", limit)
+    if not ok:
+        raise ValueError(message)
+    ok, message, propagation_budget = _coerce_non_negative_int(
+        "propagation_budget",
+        propagation_budget,
+    )
+    if not ok:
+        raise ValueError(message)
+
+    now = now or timezone.now()
+    report = {
+        "processed_knowledge": 0,
+        "propagated_knowledge": 0,
+        "created_routes": 0,
+        "replayed_routes": 0,
+        "skipped_bandwidth": 0,
+        "skipped_policy": 0,
+        "batch_limit": limit,
+        "propagation_budget": propagation_budget,
+    }
+    if limit == 0 or propagation_budget == 0:
+        return report
+
+    due_knowledge = list(_due_spreading_knowledge_queryset(now=now)[:limit])
+    edge_capacities = {}
+    for knowledge in due_knowledge:
+        propagated = _propagate_known_knowledge(
+            knowledge,
+            budget=propagation_budget,
+            now=now,
+            edge_capacities=edge_capacities,
+            report=report,
+        )
+        report["processed_knowledge"] += 1
+        report["propagated_knowledge"] += len(propagated)
+        knowledge.last_dispatched_at = now
+        knowledge.save(update_fields=["last_dispatched_at"])
+    return report
+
+
+def social_propagation_tick(*_args, **_kwargs):
+    """Evennia ticker callback for scheduled, inspectable Social Web delivery."""
+    from evennia.utils import logger
+
+    report = dispatch_due_social_knowledge()
+    if report["created_routes"] or report["skipped_bandwidth"]:
+        logger.log_info(
+            "[social] propagation batch "
+            f"processed={report['processed_knowledge']} "
+            f"created_routes={report['created_routes']} "
+            f"replayed_routes={report['replayed_routes']} "
+            f"skipped_bandwidth={report['skipped_bandwidth']}"
+        )
+    return report
 
 
 def trace_social_route(*, source_node_key, target_node_key, fact_key="", claim_key=""):

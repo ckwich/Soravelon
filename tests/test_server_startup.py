@@ -24,7 +24,7 @@ class TestServerStartup(unittest.TestCase):
             call.kwargs["callback"]
             for call in ticker.add.call_args_list
         ]
-        self.assertEqual(len(callbacks), 7)
+        self.assertEqual(len(callbacks), 8)
         self.assertTrue(all(callable(callback) for callback in callbacks))
         self.assertFalse(any(isinstance(callback, str) for callback in callbacks))
 

@@ -646,6 +646,8 @@ class TestRecordSocialEventHandler(EvenniaTest):
         )
 
         action = self._warden_report_social_action()
+        action["edges"][0]["required_tags"] = ["warden", "report"]
+        action["edges"][0]["blocked_tags"] = ["sealed"]
 
         for _repeat in range(2):
             success, msg = execute_action(action, {"character": self.char1})
@@ -671,14 +673,14 @@ class TestRecordSocialEventHandler(EvenniaTest):
             ).count(),
             4,
         )
-        self.assertEqual(
-            SocialEdge.objects.filter(
-                source_node=calloway,
-                target_node=harven,
-                edge_type="warden_report",
-            ).count(),
-            1,
+        edge = SocialEdge.objects.get(
+            source_node=calloway,
+            target_node=harven,
+            edge_type="warden_report",
         )
+        self.assertEqual(SocialEdge.objects.filter(pk=edge.pk).count(), 1)
+        self.assertEqual(edge.required_tags, ["warden", "report"])
+        self.assertEqual(edge.blocked_tags, ["sealed"])
         self.assertEqual(SocialFact.objects.filter(fact_key=fact_key).count(), 1)
         self.assertEqual(SocialClaim.objects.filter(claim_key=claim_key).count(), 1)
         self.assertTrue(

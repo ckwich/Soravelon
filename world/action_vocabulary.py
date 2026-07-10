@@ -532,6 +532,8 @@ def _record_social_event_rendered(rendered):
             distortion=edge_def.get("distortion", ""),
             scope_tags=edge_def.get("scope_tags") or [],
             blockers=edge_def.get("blockers") or [],
+            required_tags=edge_def.get("required_tags"),
+            blocked_tags=edge_def.get("blocked_tags"),
         )
         if not ok:
             return False, f"record_social_event: {message}"

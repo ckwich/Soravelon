@@ -34,6 +34,7 @@ def at_server_start():
     from world.banking import banking_payment_tick
     from world.dialogue_engine import ambient_npc_tick
     from world.mob_spawner import spawn_tick
+    from world.social_engine import social_propagation_tick
     from world.node_helpers import node_failure_tick
     from world.wander_system import wander_tick
     from world.world_state import (
@@ -94,6 +95,14 @@ def at_server_start():
         interval=15,
         callback=ambient_npc_tick,
         idstring="npc_ambient_tick",
+        persistent=True,
+    )
+
+    # Social Web propagation — moves one bounded graph batch per minute.
+    TICKER_HANDLER.add(
+        interval=60,
+        callback=social_propagation_tick,
+        idstring="social_propagation_tick",
         persistent=True,
     )
 

@@ -965,6 +965,7 @@ class SocialKnowledge(models.Model):
     spreading = models.BooleanField(default=False, db_index=True)
     learned_at = models.DateTimeField(auto_now_add=True, db_index=True)
     available_after = models.DateTimeField(null=True, blank=True, db_index=True)
+    last_dispatched_at = models.DateTimeField(null=True, blank=True, db_index=True)
     evidence = models.JSONField(default=dict)
 
     class Meta:
