@@ -161,6 +161,32 @@ class TestTurnManagement(unittest.TestCase):
         # heal at 1 should be 0 or removed
         self.assertLessEqual(cds.get("heal", 0), 0)
 
+    def test_round_end_awards_allied_command_before_resetting_counter(self):
+        """Recorded allied actions build Command before the new round starts."""
+        from world.combat_script import CombatScript
+
+        script = _make_script()
+        character = _make_combatant(1, "Tactician", is_player=True)
+        character.ndb.domain_resource = {"type": "command", "current": 0, "max": 100}
+        script.db.combatant_ids = [character.id]
+        script.ndb.ally_action_count = {str(character.id): 2}
+        script._resolve_combatants.return_value = [character]
+
+        with (
+            patch("world.status_effects.tick_effects"),
+            patch("world.status_effects.get_effect_modifiers", return_value={}),
+            patch("world.ability_engine.decrement_cooldowns"),
+            patch("world.combat_engine.check_death", return_value=False),
+            patch("world.combat_ai.resolve_pending_casts", return_value=[]),
+        ):
+            CombatScript.end_round(script)
+
+        self.assertEqual(character.ndb.domain_resource["current"], 20)
+        self.assertEqual(script.ndb.ally_action_count, {})
+        character.msg.assert_any_call(
+            "|cAllied actions build Command: +20 (20/100).|n"
+        )
+
     @patch("world.combat_script._send_turn_prompt")
     @patch("world.combat_script._resolve_by_id")
     @patch("world.oob_publisher.push_combat_update")
@@ -303,3 +329,51 @@ class TestCommandActionRecording(unittest.TestCase):
         )
 
         script.record_allied_action.assert_called_once_with(character)
+
+
+class TestCommandFeedback(unittest.TestCase):
+    """Tactical coordination is visible where the player chooses an action."""
+
+    def test_turn_prompt_previews_allied_command_gain(self):
+        from world.combat_script import _send_turn_prompt
+
+        script = _make_script()
+        character = _make_combatant(1, "Tactician")
+        character.ndb.combat_target_id = None
+        character.ndb.hp_max = 100
+        character.ndb.domain_resource = {"type": "command", "current": 30, "max": 100}
+        script.get_mob_combatants.return_value = []
+        script.ndb.ally_action_count = {str(character.id): 2}
+
+        _send_turn_prompt(character, script)
+
+        prompt = character.msg.call_args.args[0]
+        self.assertIn(
+            "Command: 30/100 | Allied actions: 2 (+20 Command at round end)",
+            prompt,
+        )
+
+    def test_combat_oob_exposes_command_and_ally_preview(self):
+        from world.combat_script import _build_combat_oob
+
+        script = _make_script()
+        character = _make_combatant(1, "Tactician")
+        character.ndb.combat_target_id = None
+        character.ndb.domain_resource = {"type": "command", "current": 85, "max": 100}
+        script.get_mob_combatants.return_value = []
+        script.ndb.ally_action_count = {str(character.id): 2}
+        script._resolve_combatants.return_value = [character]
+
+        payload = _build_combat_oob(character, script)
+
+        self.assertEqual(payload["domain_resource"], character.ndb.domain_resource)
+        self.assertEqual(
+            payload["command_preview"],
+            {
+                "current": 85,
+                "max": 100,
+                "ally_actions": 2,
+                "gain": 15,
+                "source": "allies",
+            },
+        )

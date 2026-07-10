@@ -908,6 +908,29 @@ class TestCommandResource(unittest.TestCase):
         _build_command_from_allies(char, combat_handler)
         self.assertEqual(char.ndb.domain_resource["current"], 5)
 
+    def test_command_preview_reports_capped_allied_gain(self):
+        """The player-facing preview uses the same capped gain as the build."""
+        from world.ability_engine import get_command_round_preview
+
+        char = _mock_character(
+            domain_resource={"type": "command", "current": 85, "max": 100},
+        )
+        combat_handler = MagicMock()
+        combat_handler.ndb = SimpleNamespace(
+            ally_action_count={str(char.id): 2},
+        )
+
+        self.assertEqual(
+            get_command_round_preview(char, combat_handler),
+            {
+                "current": 85,
+                "max": 100,
+                "ally_actions": 2,
+                "gain": 15,
+                "source": "allies",
+            },
+        )
+
 
 class TestEchoesResource(unittest.TestCase):
     """Echoes: builds from ability use, investigation bonus persistence."""

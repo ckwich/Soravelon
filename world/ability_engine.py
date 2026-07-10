@@ -16,7 +16,8 @@ Exports:
     build_domain_resource, spend_domain_resource, get_domain_resource,
     initialize_domain_resource, EFFECT_HANDLERS, RESOURCE_HANDLERS,
     decay_resonance, on_round_end_resources, on_encounter_end_resources,
-    handle_focus_miss, get_balance_modifier, build_momentum_on_damage
+    handle_focus_miss, get_balance_modifier, build_momentum_on_damage,
+    get_command_round_preview
 """
 
 import random
@@ -1102,6 +1103,7 @@ def on_round_end_resources(combatant, combat_handler):
     res = combatant.ndb.domain_resource
     if not res:
         return
+    command_preview = None
     rtype = res["type"]
     if rtype == "resonance":
         decay_resonance(combatant)
@@ -1113,27 +1115,43 @@ def on_round_end_resources(combatant, combat_handler):
             combatant.ndb.domain_resource = res
     elif rtype == "command":
         # Build Command from ally actions (group combat)
-        _build_command_from_allies(combatant, combat_handler)
+        command_preview = _build_command_from_allies(combatant, combat_handler)
     regen = get_effect_modifiers(combatant).get("resource_regen_per_round", 0)
     if regen > 0:
         build_domain_resource(combatant, regen)
+    return command_preview
+
+
+def get_command_round_preview(combatant, combat_handler):
+    """Return the current round's Command gain, capped by the resource maximum."""
+    res = combatant.ndb.domain_resource
+    if not res or res["type"] != "command":
+        return None
+
+    ally_action_count = getattr(combat_handler.ndb, "ally_action_count", None) or {}
+    ally_actions = ally_action_count.get(str(combatant.id), 0)
+    uncapped_gain = ally_actions * 10 if ally_actions > 0 else 5
+    current = res["current"]
+    maximum = res["max"]
+    return {
+        "current": current,
+        "max": maximum,
+        "ally_actions": ally_actions,
+        "gain": min(maximum - current, uncapped_gain),
+        "source": "allies" if ally_actions > 0 else "solo",
+    }
 
 
 def _build_command_from_allies(combatant, combat_handler):
     """Build Command resource based on ally actions this round."""
-    res = combatant.ndb.domain_resource
-    if not res or res["type"] != "command":
-        return
-    # Count allies who acted this round
-    ally_action_count = getattr(combat_handler.ndb, "ally_action_count", None) or {}
-    my_allies = ally_action_count.get(str(combatant.id), 0)
-    if my_allies > 0:
-        amount = my_allies * 10  # 10 Command per ally action
-    else:
-        amount = 5  # Solo rate: 50% of 10
-    res = dict(res)
-    res["current"] = min(res["max"], res["current"] + amount)
+    preview = get_command_round_preview(combatant, combat_handler)
+    if not preview:
+        return None
+
+    res = dict(combatant.ndb.domain_resource)
+    res["current"] += preview["gain"]
     combatant.ndb.domain_resource = res
+    return preview
 
 
 def on_encounter_end_resources(combatant):

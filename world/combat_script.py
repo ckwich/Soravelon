@@ -712,9 +712,6 @@ class CombatScript:
         from world.ability_engine import decrement_cooldowns, on_round_end_resources
         from world.combat_engine import check_death, handle_mob_death, handle_player_death
 
-        # Reset ally action counter for Command resource tracking
-        self.ndb.ally_action_count = {}
-
         # Reset took_damage_this_round at round end before tick processing.
         # The flag was set during the round's damage resolution and is consumed
         # by tick_effects (petrify break-on-damage check).  After ticking, reset
@@ -730,10 +727,25 @@ class CombatScript:
             # Decrement cooldowns
             decrement_cooldowns(combatant)
             # Per-round resource hooks (Resonance decay, Focus skip reset, Command ally build)
-            on_round_end_resources(combatant, self)
+            command_preview = on_round_end_resources(combatant, self)
+            if (
+                command_preview
+                and command_preview["source"] == "allies"
+                and command_preview["gain"] > 0
+            ):
+                total = command_preview["current"] + command_preview["gain"]
+                combatant.msg(
+                    "|cAllied actions build Command: "
+                    f"+{command_preview['gain']} "
+                    f"({total}/{command_preview['max']}).|n"
+                )
             # Check for DoT kills
             if check_death(combatant):
                 dead.append(combatant)
+
+        # Command consumes this round's allied actions before the next round
+        # begins with a fresh counter.
+        self.ndb.ally_action_count = {}
 
         # Periodic autonomous attacks can kill combatants other than the owner
         # of the ticking effect, so rescan once before resolving round-end deaths.
@@ -1123,18 +1135,41 @@ def _send_turn_prompt(character, combat_handler):
         )
 
     rnd = combat_handler.db.round_number or 1
+    command_status = _format_command_turn_status(character, combat_handler)
     prompt = (
         f"|c--- Your Turn (Round {rnd}) ---|n\n"
         f"|wTarget: {target_name}{target_hp}{char_hp}{charged_msg}|n\n"
         f"|wActions remaining: {actions}|n\n"
+        f"{command_status}"
         f"|yCommands: attack, use <ability>, charge <ability>, flee, pass|n"
     )
     character.msg(prompt)
 
 
+def _format_command_turn_status(character, combat_handler):
+    """Return actionable Command progress for a Tactician's turn prompt."""
+    from world.ability_engine import get_command_round_preview
+
+    preview = get_command_round_preview(character, combat_handler)
+    if not preview:
+        return ""
+
+    if preview["ally_actions"]:
+        progress = (
+            f"Allied actions: {preview['ally_actions']} "
+            f"(+{preview['gain']} Command at round end)"
+        )
+    else:
+        progress = f"Solo reserve: +{preview['gain']} Command at round end"
+    return f"|cCommand: {preview['current']}/{preview['max']} | {progress}|n\n"
+
+
 def _build_combat_oob(character, combat_handler):
     """Build OOB data dict for combat_update push."""
+    from world.ability_engine import get_command_round_preview, get_domain_resource
+
     target = _get_default_target(character, combat_handler)
+    resource = get_domain_resource(character)
     return {
         "round": combat_handler.db.round_number or 1,
         "actions_remaining": character.ndb.actions_remaining or 0,
@@ -1146,6 +1181,8 @@ def _build_combat_oob(character, combat_handler):
         ) if target else None,
         "hp": character.ndb.hp,
         "hp_max": getattr(character.ndb, "hp_max", None),
+        "domain_resource": dict(resource) if resource else None,
+        "command_preview": get_command_round_preview(character, combat_handler),
         "combatants": [
             {"id": c.id, "name": c.key, "is_player": _is_player(c)}
             for c in combat_handler._resolve_combatants() if c
