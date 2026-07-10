@@ -2825,6 +2825,60 @@ def build():
                     "required": True,
                 },
             },
+            {
+                "action_type": "record_social_event",
+                "nodes": [
+                    {
+                        "ref": "player",
+                        "node_type": "player",
+                        "identifier_template": "{character_id}",
+                        "display_name_template": "{character_key}",
+                        "zone_id": "vaels_crossing",
+                        "settlement_id": "vaels_crossing",
+                    },
+                    {
+                        "ref": "travelers",
+                        "node_type": "gathering",
+                        "identifier": "vc_inn_travelers",
+                        "display_name": "Dustwalker's Rest travelers",
+                        "zone_id": "vaels_crossing",
+                        "settlement_id": "vaels_crossing",
+                    },
+                ],
+                "fact": {
+                    "fact_key_template": "fact:{character_id}:vc_q_warden_report:road_conduct",
+                    "subject": "player",
+                    "actor": "player",
+                    "scope": "travelers",
+                    "event_type": "road_conduct",
+                    "summary": "The player carried road business cleanly.",
+                    "tags": ["public", "road_conduct", "traveler", "quest"],
+                    "visibility": "route",
+                    "evidence": {
+                        "quest_id": "vc_q_warden_report",
+                        "source": "quest_reward",
+                    },
+                },
+                "claim": {
+                    "claim_key_template": "claim:gathering:vc_inn_travelers:{character_id}:vc_q_warden_report:road_conduct",
+                    "speaker": "travelers",
+                    "subject": "player",
+                    "claim_type": "rumor",
+                    "summary": "Travelers say the player carried road business cleanly.",
+                    "status": "supported",
+                    "confidence": 0.75,
+                    "bias_tags": ["public", "road_conduct", "traveler", "quest"],
+                },
+                "knowledge": [
+                    {
+                        "node": "travelers",
+                        "claim_key_template": "claim:gathering:vc_inn_travelers:{character_id}:vc_q_warden_report:road_conduct",
+                        "channel": "tavern_rumor",
+                        "confidence": 0.75,
+                        "spreading": True,
+                    },
+                ],
+            },
             {"action_type": "echo", "message": "|gCalloway checks the returned seal and gives a rare approving nod. \"Good. That road stays alive because someone walks it on purpose. The Wardens remember that.\"|n"},
         ],
         next_quest_id="ashreach_wolf_overpopulation",
@@ -3150,6 +3204,11 @@ def build():
         settlement_id="vaels_crossing",
     )
     area.social_node(
+        "gathering", "vc_inn_travelers",
+        display_name="Dustwalker's Rest travelers",
+        settlement_id="vaels_crossing",
+    )
+    area.social_node(
         "npc", "npc_debt_collector_raith", display_name="Raith",
         settlement_id="vaels_crossing",
     )
@@ -3161,6 +3220,15 @@ def build():
         trust=0.95,
         latency_seconds=0,
         scope_tags=["warden", "report", "quest"],
+    )
+    area.social_edge(
+        "gathering:vc_inn_travelers",
+        "npc:npc_innkeeper_whistle",
+        edge_type="inn_traveler",
+        directionality="one_way",
+        trust=0.75,
+        latency_seconds=60,
+        scope_tags=["public", "road_conduct", "traveler", "quest"],
     )
 
     # ==================================================================

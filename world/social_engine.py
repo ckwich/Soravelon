@@ -895,7 +895,7 @@ def social_propagation_tick(*_args, **_kwargs):
     """Evennia ticker callback for scheduled, inspectable Social Web delivery."""
     from evennia.utils import logger
 
-    report = dispatch_due_social_knowledge()
+    report = dispatch_due_social_knowledge(now=_kwargs.get("now"))
     if report["created_routes"] or report["skipped_bandwidth"]:
         logger.log_info(
             "[social] propagation batch "
@@ -1127,7 +1127,14 @@ def find_social_evidence(
     return evidence
 
 
-def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_items=5):
+def query_social_context(
+    *,
+    viewer_node_key,
+    subject_node_key,
+    purpose,
+    max_items=5,
+    now=None,
+):
     """Build a capped presentation packet from independently limited payloads."""
     viewer = _get_node(viewer_node_key)
     subject = _get_node(subject_node_key)
@@ -1142,7 +1149,7 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
         }
 
     max_items = _clamp_social_context_items(max_items)
-    now = timezone.now()
+    now = now or timezone.now()
     knowledge_qs = _context_knowledge_queryset(
         viewer=viewer,
         subject=subject,

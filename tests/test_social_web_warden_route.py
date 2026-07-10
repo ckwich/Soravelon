@@ -1,11 +1,13 @@
 import ast
 import pathlib
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from evennia import create_object
 from evennia.utils.test_resources import EvenniaTest
 
+from django.utils import timezone
 from tests.quest_helpers import create_completed_quest_fixture
 from django.db.models import Q
 
@@ -191,9 +193,35 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         _mock_push_quest_update,
     ):
         from commands.cmd_dialogue import CmdAccept, CmdTalk
-        from world.models import CharacterQuest, SocialClaim, SocialFact, SocialKnowledge
+        from world.areas import vaels_crossing
+        from world.models import (
+            CharacterQuest,
+            SocialClaim,
+            SocialEdge,
+            SocialFact,
+            SocialKnowledge,
+            SocialNode,
+        )
+        from world.social_engine import (
+            query_social_context,
+            social_propagation_tick,
+        )
 
         self.char1.location.db.zone_id = "vaels_crossing"
+        # The player-facing rumor uses topology authored in the real Vael area,
+        # never a test-created contact edge.
+        vaels_crossing.build()
+        traveler_edge = SocialEdge.objects.get(
+            edge_key=(
+                "edge:gathering:vc_inn_travelers:"
+                "npc:npc_innkeeper_whistle:inn_traveler"
+            )
+        )
+        self.assertEqual(traveler_edge.latency_seconds, 60)
+        self.assertEqual(
+            traveler_edge.scope_tags,
+            ["public", "road_conduct", "traveler", "quest"],
+        )
         quest = {
             "quest_id": "vc_q_warden_report",
             **_authored_quest_kwargs("vc_q_warden_report"),
@@ -286,6 +314,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         ]
         self.assertTrue(executed_social_actions)
         self.assertEqual(len(executed_social_actions[0].get("nodes") or []), 3)
+        self.assertEqual(len(executed_social_actions), 2)
 
         cq.refresh_from_db()
         self.assertEqual(cq.status, "complete")
@@ -302,6 +331,11 @@ class TestVaelWardenSocialRoute(EvenniaTest):
 
         fact_key = f"fact:{self.char1.id}:vc_q_warden_report:delivered"
         claim_key = f"claim:calloway:{self.char1.id}:vc_q_warden_report:delivered"
+        road_fact_key = f"fact:{self.char1.id}:vc_q_warden_report:road_conduct"
+        road_claim_key = (
+            f"claim:gathering:vc_inn_travelers:{self.char1.id}:"
+            "vc_q_warden_report:road_conduct"
+        )
         self.assertTrue(
             SocialFact.objects.filter(fact_key=fact_key).exists(),
             talk_output,
@@ -329,6 +363,54 @@ class TestVaelWardenSocialRoute(EvenniaTest):
                 ).values_list("node__node_key", flat=True)
             ),
             {"npc:npc_warden_agent_calloway"},
+        )
+        road_fact = SocialFact.objects.get(fact_key=road_fact_key)
+        road_claim = SocialClaim.objects.get(claim_key=road_claim_key)
+        traveler_gathering = SocialNode.objects.get(
+            node_key="gathering:vc_inn_travelers",
+        )
+        self.assertEqual(road_fact.visibility, "route")
+        self.assertEqual(road_claim.visibility, "route")
+        self.assertEqual(road_claim.claim_type, "rumor")
+        self.assertEqual(road_claim.status, "supported")
+        self.assertEqual(road_claim.speaker_node, traveler_gathering)
+        self.assertTrue(
+            SocialKnowledge.objects.filter(
+                node=traveler_gathering,
+                claim=road_claim,
+                spreading=True,
+            ).exists()
+        )
+
+        tick_started_at = timezone.now()
+        tick_report = social_propagation_tick(now=tick_started_at)
+        self.assertGreaterEqual(tick_report["created_routes"], 1)
+        before_arrival = query_social_context(
+            viewer_node_key="npc:npc_innkeeper_whistle",
+            subject_node_key=f"player:{self.char1.id}",
+            purpose="dialogue",
+            now=tick_started_at + timedelta(seconds=59),
+        )
+        self.assertEqual(before_arrival["facts"], [])
+        self.assertEqual(before_arrival["claims"], [])
+        whistle_context = query_social_context(
+            viewer_node_key="npc:npc_innkeeper_whistle",
+            subject_node_key=f"player:{self.char1.id}",
+            purpose="dialogue",
+            now=tick_started_at + timedelta(seconds=60),
+        )
+        self.assertEqual(whistle_context["facts"], [])
+        self.assertEqual(
+            [claim["claim_key"] for claim in whistle_context["claims"]],
+            [road_claim_key],
+        )
+        self.assertEqual(
+            whistle_context["claims"][0]["trace"][0]["edge_type"],
+            "inn_traveler",
+        )
+        self.assertNotEqual(
+            whistle_context["claims"][0]["claim_key"],
+            claim_key,
         )
         self.assertIs(harven.location, self.char1.location)
 
