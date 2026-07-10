@@ -116,6 +116,7 @@ class TestSocialWebModels(EvenniaTest):
         )
         trace = SocialTrace.objects.create(
             trace_key="trace:commander:claim:calloway:warden_report_delivered",
+            route_key="route:test:commander:warden_report_delivered",
             knowledge=knowledge,
             from_node=calloway,
             to_node=commander,
@@ -1641,6 +1642,7 @@ class TestSocialContextPack(EvenniaTest):
         )
         SocialTrace.objects.create(
             trace_key=f"trace:{future_knowledge.knowledge_key}:future",
+            route_key=f"route:test:{future_knowledge.pk}:future",
             knowledge=future_knowledge,
             from_node=calloway,
             to_node=commander,

@@ -294,6 +294,7 @@ def mark_known(
     available_after=None,
     evidence=None,
 ):
+    from django.db import IntegrityError, transaction
     from world.models import SocialEdge, SocialKnowledge
 
     if channel not in KNOWLEDGE_CHANNELS:
@@ -327,32 +328,75 @@ def mark_known(
         return False, f"unknown source_node: {source_node_key}", None
     payload_key = claim_key or fact_key
     knowledge_key = f"knowledge:{node_key}:{payload_key}"
-    knowledge, _created = SocialKnowledge.objects.update_or_create(
-        knowledge_key=knowledge_key,
-        defaults={
-            "node": node,
-            "fact": fact,
-            "claim": claim,
-            "source_node": source,
-            "edge": edge,
-            "channel": channel,
-            "confidence": confidence,
-            "spreading": bool(spreading),
-            "available_after": available_after,
-            "evidence": evidence or {},
-        },
-    )
+    defaults = {
+        "node": node,
+        "fact": fact,
+        "claim": claim,
+        "source_node": source,
+        "edge": edge,
+        "channel": channel,
+        "confidence": confidence,
+        "spreading": bool(spreading),
+        "available_after": available_after,
+        "evidence": evidence or {},
+    }
+    try:
+        with transaction.atomic():
+            knowledge = (
+                SocialKnowledge.objects.select_for_update()
+                .filter(knowledge_key=knowledge_key)
+                .first()
+            )
+            if knowledge is None:
+                knowledge = SocialKnowledge.objects.create(
+                    knowledge_key=knowledge_key,
+                    **defaults,
+                )
+            else:
+                merged_available_after = _merged_available_after(
+                    knowledge,
+                    available_after,
+                )
+                update_fields = []
+                if confidence > knowledge.confidence:
+                    knowledge.confidence = confidence
+                    update_fields.append("confidence")
+                if bool(spreading) and not knowledge.spreading:
+                    knowledge.spreading = True
+                    update_fields.append("spreading")
+                if merged_available_after != knowledge.available_after:
+                    knowledge.available_after = merged_available_after
+                    update_fields.append("available_after")
+                if update_fields:
+                    knowledge.save(update_fields=update_fields)
+    except IntegrityError:
+        knowledge = SocialKnowledge.objects.get(knowledge_key=knowledge_key)
     return True, "marked known", knowledge
+
+
+def _social_route_key(knowledge, from_node, to_node, edge):
+    payload = "|".join(
+        str(value or 0)
+        for value in (
+            knowledge.id,
+            getattr(from_node, "id", None),
+            getattr(to_node, "id", None),
+            getattr(edge, "id", None),
+        )
+    )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return f"route:{digest}"
 
 
 def record_trace(knowledge, *, from_node=None, to_node=None, edge=None, summary=""):
     from world.models import SocialTrace
 
     to_node = to_node or knowledge.node
-    trace_key = f"trace:{knowledge.knowledge_key}:{edge.edge_key if edge else 'direct'}"
+    route_key = _social_route_key(knowledge, from_node, to_node, edge)
     trace, _created = SocialTrace.objects.update_or_create(
-        trace_key=trace_key,
+        route_key=route_key,
         defaults={
+            "trace_key": f"trace:{route_key}",
             "knowledge": knowledge,
             "from_node": from_node,
             "to_node": to_node,

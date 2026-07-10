@@ -985,6 +985,7 @@ class SocialTrace(models.Model):
     """Audit trail explaining how social knowledge reached a node."""
 
     trace_key = models.CharField(max_length=280, unique=True)
+    route_key = models.CharField(max_length=72, unique=True)
     knowledge = models.ForeignKey(
         SocialKnowledge,
         on_delete=models.CASCADE,
@@ -1013,6 +1014,12 @@ class SocialTrace(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(route_key__gt=""),
+                name="social_trace_route_key_nonempty",
+            ),
+        ]
         indexes = [
             models.Index(fields=["to_node", "created_at"]),
         ]

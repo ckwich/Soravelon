@@ -885,3 +885,152 @@ class TestCharacterAccessGrantMigration(TransactionTestCase):
                 character_id=self.character_id,
                 grant_key="social:migration:access:authority_notice",
             )
+
+
+class TestSocialTraceRouteKeyMigration(TransactionTestCase):
+    """Every persisted SocialTrace gains a stable route identity."""
+
+    migrate_from = [("world", "0017_character_access_grant")]
+    migrate_to = [("world", "0018_social_trace_route_key")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        SocialNode = old_apps.get_model("world", "SocialNode")
+        SocialFact = old_apps.get_model("world", "SocialFact")
+        SocialKnowledge = old_apps.get_model("world", "SocialKnowledge")
+        SocialTrace = old_apps.get_model("world", "SocialTrace")
+
+        character = ObjectDB.objects.create(
+            db_key="Social Trace Route Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        player = SocialNode.objects.create(
+            node_key=f"player:{character.pk}",
+            node_type="player",
+        )
+        source = SocialNode.objects.create(
+            node_key="npc:migration_trace_source",
+            node_type="npc",
+        )
+        target = SocialNode.objects.create(
+            node_key="npc:migration_trace_target",
+            node_type="npc",
+        )
+        fact = SocialFact.objects.create(
+            fact_key="fact:migration_trace",
+            subject_node=player,
+            event_type="migration_trace",
+            summary="A trace migration sentinel.",
+        )
+        knowledge = SocialKnowledge.objects.create(
+            knowledge_key="knowledge:migration_trace",
+            node=target,
+            fact=fact,
+            channel="direct_witness",
+        )
+        self.trace_id = SocialTrace.objects.create(
+            trace_key="trace:migration_trace",
+            knowledge=knowledge,
+            from_node=source,
+            to_node=target,
+            summary="Source gave the target direct testimony.",
+        ).pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_backfills_nonempty_unique_route_key(self):
+        SocialTrace = self.apps.get_model("world", "SocialTrace")
+        trace = SocialTrace.objects.get(pk=self.trace_id)
+        self.assertTrue(trace.route_key.startswith("route:"))
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            SocialTrace.objects.create(
+                trace_key="trace:invalid_empty_route",
+                route_key="",
+                knowledge_id=trace.knowledge_id,
+                to_node_id=trace.to_node_id,
+                summary="Invalid empty route key.",
+            )
+
+
+class TestSocialTraceRouteKeyPreConstraintAudit(TransactionTestCase):
+    """Duplicate legacy routes require review rather than silent deletion."""
+
+    migrate_from = [("world", "0017_character_access_grant")]
+    migrate_to = [("world", "0018_social_trace_route_key")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        SocialNode = old_apps.get_model("world", "SocialNode")
+        SocialFact = old_apps.get_model("world", "SocialFact")
+        SocialKnowledge = old_apps.get_model("world", "SocialKnowledge")
+        SocialTrace = old_apps.get_model("world", "SocialTrace")
+
+        character = ObjectDB.objects.create(
+            db_key="Duplicate Social Trace Route Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        player = SocialNode.objects.create(
+            node_key=f"player:duplicate:{character.pk}",
+            node_type="player",
+        )
+        source = SocialNode.objects.create(
+            node_key="npc:duplicate_trace_source",
+            node_type="npc",
+        )
+        target = SocialNode.objects.create(
+            node_key="npc:duplicate_trace_target",
+            node_type="npc",
+        )
+        fact = SocialFact.objects.create(
+            fact_key="fact:duplicate_trace",
+            subject_node=player,
+            event_type="migration_trace",
+            summary="A duplicate trace migration sentinel.",
+        )
+        knowledge = SocialKnowledge.objects.create(
+            knowledge_key="knowledge:duplicate_trace",
+            node=target,
+            fact=fact,
+            channel="direct_witness",
+        )
+        for index in range(2):
+            SocialTrace.objects.create(
+                trace_key=f"trace:duplicate_trace:{index}",
+                knowledge=knowledge,
+                from_node=source,
+                to_node=target,
+                summary="Duplicate legacy route.",
+            )
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        old_apps.get_model("world", "SocialTrace").objects.all().delete()
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_duplicate_routes_abort_before_unique_constraint(self):
+        executor = MigrationExecutor(connection)
+
+        with self.assertRaisesRegex(RuntimeError, "social_trace_duplicate_route"):
+            executor.migrate(self.migrate_to)
