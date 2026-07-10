@@ -1038,7 +1038,12 @@ ABILITIES = {
         "room_flag_written": None,
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {'buff_type': 'haste', 'duration': 2, 'magnitude': 1.0},
+        "effect_params": {
+            'group_buff': True,
+            'buff_type': 'group_damage_bonus',
+            'duration': 1,
+            'magnitude': 0.15,
+        },
     },
     "direct_strike": {
         "id": "direct_strike",
@@ -1156,7 +1161,11 @@ ABILITIES = {
         "room_flag_written": "scouted",
         "attuned_variants": {},
         "subclass_id": None,
-        "effect_params": {'tactical_action': 'mark_target', 'duration': 2},
+        "effect_params": {
+            'tactical_action': 'mark_target',
+            'duration': 2,
+            'ally_next_attack_bonus': 0.20,
+        },
     },
     "suppressive_command": {
         "id": "suppressive_command",

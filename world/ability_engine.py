@@ -717,8 +717,29 @@ def _handle_tactical(character, ability, target):
             data=_build_effect_data(params, effect_type="weaken"),
         )
         applied = sum(1 for _, ok, _ in results if ok)
+        coordinated_results = _apply_effects_to_targets(
+            character,
+            ally_targets,
+            "coordinated_strike",
+            1,
+            params.get("ally_next_attack_bonus", 0.20),
+            data={
+                "target_id": target.id,
+                "damage_bonus": params.get("ally_next_attack_bonus", 0.20),
+            },
+        )
+        coordinated = sum(1 for _, ok, _ in coordinated_results if ok)
+        for ally, ok, _ in coordinated_results:
+            if ok and ally is not character:
+                ally.msg(
+                    f"|c{ability['name']}: your next strike against "
+                    f"{target.key} deals bonus damage.|n"
+                )
         record_stat_use(character, "social_ability")
-        return (applied > 0), f"{character.key} marks {target.key} with {ability['name']}."
+        return (applied > 0), (
+            f"{character.key} marks {target.key} with {ability['name']} "
+            f"for {coordinated} allies' next strikes."
+        )
 
     if tactical_action == "group_disengage":
         data = {"action_budget_bonus": 1}

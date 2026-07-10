@@ -66,6 +66,7 @@ NON_STACKABLE_EFFECTS = {
     "all_stats": {"all_stats": 0.10},
     "stat_boost": {"stat_multipliers": {}},
     "sustained_attack": {"damage_bonus": 0.20},
+    "coordinated_strike": {},
     "companion_mode_change": {},
     "regeneration": {"heal_per_round": 15},
     "venom_coat": {},
@@ -902,11 +903,12 @@ def cleanse_one_negative_effect(target):
     return None
 
 
-def consume_attack_effects(attacker, consume=True):
+def consume_attack_effects(attacker, target=None, consume=True):
     """Return one-shot attack enhancers and optionally remove them from the attacker."""
     effects = _get_effects(attacker)
     payload = {
         "bonus_damage": 0,
+        "damage_multiplier": 0.0,
         "guaranteed_crit": False,
         "status_effects": [],
     }
@@ -934,6 +936,14 @@ def consume_attack_effects(attacker, consume=True):
             if not consume:
                 surviving.append(entry)
             continue
+        if etype == "coordinated_strike":
+            if target and data.get("target_id") == target.id:
+                payload["damage_multiplier"] += _numeric(
+                    data.get("damage_bonus", entry.get("magnitude", 0.0))
+                )
+                if not consume:
+                    surviving.append(entry)
+                continue
         surviving.append(entry)
 
     if consume:

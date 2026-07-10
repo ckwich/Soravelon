@@ -270,7 +270,7 @@ def resolve_basic_attack(attacker, target, weapon=None):
     # Check miss from blind effect
     target_mods = get_effect_modifiers(target)
     attacker_mods = get_effect_modifiers(attacker)
-    next_attack = consume_attack_effects(attacker, consume=False)
+    next_attack = consume_attack_effects(attacker, target=target, consume=False)
     miss_chance = max(
         0.0,
         attacker_mods.get("miss_chance_increase", 0.0) - attacker_mods.get("accuracy_bonus", 0.0),
@@ -304,7 +304,17 @@ def resolve_basic_attack(attacker, target, weapon=None):
         )
     raw = int(raw * crit_mult)
     raw += int(next_attack.get("bonus_damage", 0))
-    raw = max(1, int(raw * (1 + attacker_mods.get("damage_bonus", 0.0))))
+    raw = max(
+        1,
+        int(
+            raw
+            * (
+                1
+                + attacker_mods.get("damage_bonus", 0.0)
+                + next_attack.get("damage_multiplier", 0.0)
+            )
+        ),
+    )
 
     # Zone scaling
     target_stats = target.db.base_stats
@@ -344,7 +354,11 @@ def resolve_basic_attack(attacker, target, weapon=None):
     # Flag for petrify break-on-damage check
     if final > 0:
         target.ndb.took_damage_this_round = True
-        _apply_attack_followups(attacker, target, consume_attack_effects(attacker, consume=True))
+        _apply_attack_followups(
+            attacker,
+            target,
+            consume_attack_effects(attacker, target=target, consume=True),
+        )
 
     # Record stat use
     if attacker_stats:
@@ -402,7 +416,7 @@ def resolve_ability_damage(character, ability, target):
     next_attack = (
         {"bonus_damage": 0, "guaranteed_crit": False, "status_effects": []}
         if params.get("ignore_attack_buffs")
-        else consume_attack_effects(character, consume=False)
+        else consume_attack_effects(character, target=target, consume=False)
     )
     miss_chance = max(
         0.0,
@@ -471,7 +485,17 @@ def resolve_ability_damage(character, ability, target):
         )
     raw = int(raw * crit_mult)
     raw += int(next_attack.get("bonus_damage", 0))
-    raw = max(1, int(raw * (1 + attacker_mods.get("damage_bonus", 0.0))))
+    raw = max(
+        1,
+        int(
+            raw
+            * (
+                1
+                + attacker_mods.get("damage_bonus", 0.0)
+                + next_attack.get("damage_multiplier", 0.0)
+            )
+        ),
+    )
 
     # Zone scaling (player attacking mob)
     target_stats = target.db.base_stats
@@ -507,7 +531,11 @@ def resolve_ability_damage(character, ability, target):
     if final > 0:
         target.ndb.took_damage_this_round = True
         if not params.get("ignore_attack_buffs"):
-            _apply_attack_followups(character, target, consume_attack_effects(character, consume=True))
+            _apply_attack_followups(
+                character,
+                target,
+                consume_attack_effects(character, target=target, consume=True),
+            )
 
     # Record stat use
     from world.base_attributes import record_stat_use

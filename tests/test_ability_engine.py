@@ -1171,6 +1171,81 @@ class TestAbilityRuntimeAlignment(unittest.TestCase):
         self.assertEqual(mock_apply_effect.call_count, 2)
 
 
+class TestTacticalCoordination(unittest.TestCase):
+    """Authored tactical promises alter allies' next combat decision."""
+
+    def test_rally_the_line_is_a_group_damage_bonus_not_haste(self):
+        params = ABILITIES["rally_the_line"]["effect_params"]
+
+        self.assertTrue(params["group_buff"])
+        self.assertEqual(params["buff_type"], "group_damage_bonus")
+        self.assertGreater(params["magnitude"], 0)
+
+    @patch("world.status_effects.apply_effect", return_value=(True, "Applied"))
+    @patch("world.base_attributes.record_stat_use")
+    @patch("world.group_engine._get_group_members")
+    @patch("world.group_engine._get_leader")
+    def test_coordinated_assault_marks_every_allys_next_strike(
+        self,
+        get_leader,
+        get_members,
+        _record_stat_use,
+        apply_effect,
+    ):
+        from world.ability_engine import _handle_tactical
+        commander = _mock_character(group_leader_id=1)
+        ally = _mock_character(char_id=2, key="Ally", group_leader_id=1)
+        ally.location = commander.location
+        target = _mock_character(char_id=10, key="Target")
+        target.db.base_stats = None
+        get_leader.return_value = commander
+        get_members.return_value = [commander, ally]
+
+        ok, _ = _handle_tactical(
+            commander,
+            ABILITIES["coordinated_assault"],
+            target,
+        )
+
+        self.assertTrue(ok)
+        coordinated_calls = [
+            record for record in apply_effect.call_args_list
+            if record.args[1] == "coordinated_strike"
+        ]
+        self.assertEqual(len(coordinated_calls), 2)
+        self.assertTrue(
+            all(record.args[0] in (commander, ally) for record in coordinated_calls)
+        )
+        ally.msg.assert_called_once_with(
+            "|cCoordinated Assault: your next strike against Target deals bonus damage.|n"
+        )
+
+    def test_coordinated_strike_applies_only_to_its_marked_target(self):
+        from world.status_effects import consume_attack_effects
+
+        attacker = _mock_character()
+        attacker.ndb.active_effects = [
+            {
+                "type": "coordinated_strike",
+                "duration": 1,
+                "magnitude": 0.2,
+                "source_id": 7,
+                "data": {"target_id": 42, "damage_bonus": 0.2},
+            }
+        ]
+        marked = _mock_character(char_id=42)
+        marked.db.base_stats = None
+        other = _mock_character(char_id=43)
+        other.db.base_stats = None
+
+        wrong_target = consume_attack_effects(attacker, target=other, consume=False)
+        marked_target = consume_attack_effects(attacker, target=marked, consume=True)
+
+        self.assertEqual(wrong_target["damage_multiplier"], 0.0)
+        self.assertEqual(marked_target["damage_multiplier"], 0.2)
+        self.assertEqual(attacker.ndb.active_effects, [])
+
+
 class TestAbilityTruthfulnessSweep(unittest.TestCase):
     @patch("world.ability_engine.random.random", return_value=0.0)
     @patch("world.models.CharacterAbility")
