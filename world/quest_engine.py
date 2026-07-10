@@ -12,8 +12,6 @@ manages quest state via the CharacterQuest Django model.
 Lazy imports throughout to avoid circular dependencies (project convention).
 """
 
-import datetime
-
 # ---------------------------------------------------------------------------
 # Lazy model accessor — avoids import-time Django resolution
 # ---------------------------------------------------------------------------
@@ -205,17 +203,10 @@ def _grant_delivery_items_on_accept(character, quest_spec):
 
 
 def _consume_delivery_item(character, item):
-    """Remove a delivered quest item from the player's inventory."""
-    try:
-        from world.inventory_engine import unregister_item_ownership
-        unregister_item_ownership(character, item)
-    except Exception:
-        pass
+    """Remove an owned delivery item or expose the exact failing gate."""
+    from world.inventory_engine import destroy_owned_item
 
-    try:
-        item.delete()
-    except Exception:
-        pass
+    return destroy_owned_item(character, item)
 
 
 # ---------------------------------------------------------------------------
@@ -322,6 +313,25 @@ def abandon_quest(character, quest_id):
 # Objective check functions
 # ---------------------------------------------------------------------------
 
+def _matching_objective_updates(quest_spec, objective_type, identifiers):
+    """Return one capped increment for each matching authored objective."""
+    updates = []
+    for objective in quest_spec.get("objectives") or []:
+        if objective.get("type") != objective_type:
+            continue
+        target = objective.get("target", "")
+        if target not in identifiers:
+            continue
+        updates.append(
+            {
+                "key": _make_obj_key(objective_type, target),
+                "amount": 1,
+                "cap": objective.get("count", 1),
+            }
+        )
+    return updates
+
+
 def check_kill_objectives(character, mob):
     """
     Check active quests for kill objectives matching this mob (D-07/D-19).
@@ -338,32 +348,13 @@ def check_kill_objectives(character, mob):
     if not identifiers:
         return
 
-    active_quests = CharacterQuest.objects.filter(
-        character=character, status="active"
-    )
-    for cq in active_quests:
+    for cq in CharacterQuest.objects.filter(character=character, status="active"):
         quest_spec = _get_quest_spec(cq.quest_id)
         if not quest_spec:
             continue
-
-        updated = False
-        for obj in (quest_spec.get("objectives") or []):
-            if obj.get("type") != "kill":
-                continue
-            target = obj.get("target", "")
-            if target not in identifiers:
-                continue
-
-            key = _make_obj_key("kill", target)
-            cq.refresh_from_db()
-            progress = dict(cq.progress or {})
-            progress[key] = progress.get(key, 0) + 1
-            cq.progress = progress
-            cq.save(update_fields=["progress"])
-            updated = True
-
-        if updated:
-            _check_quest_completion(character, cq, quest_spec)
+        updates = _matching_objective_updates(quest_spec, "kill", identifiers)
+        if updates:
+            _advance_quest_objectives(character, cq.pk, quest_spec, updates)
 
 
 def check_collect_objectives(character, item):
@@ -383,32 +374,13 @@ def check_collect_objectives(character, item):
     if not identifiers:
         return
 
-    active_quests = CharacterQuest.objects.filter(
-        character=character, status="active"
-    )
-    for cq in active_quests:
+    for cq in CharacterQuest.objects.filter(character=character, status="active"):
         quest_spec = _get_quest_spec(cq.quest_id)
         if not quest_spec:
             continue
-
-        updated = False
-        for obj in (quest_spec.get("objectives") or []):
-            if obj.get("type") != "collect":
-                continue
-            target = obj.get("target", "")
-            if target not in identifiers:
-                continue
-
-            key = _make_obj_key("collect", target)
-            cq.refresh_from_db()
-            progress = dict(cq.progress or {})
-            progress[key] = progress.get(key, 0) + 1
-            cq.progress = progress
-            cq.save(update_fields=["progress"])
-            updated = True
-
-        if updated:
-            _check_quest_completion(character, cq, quest_spec)
+        updates = _matching_objective_updates(quest_spec, "collect", identifiers)
+        if updates:
+            _advance_quest_objectives(character, cq.pk, quest_spec, updates)
 
 
 def check_investigate_objectives(character, room):
@@ -424,35 +396,17 @@ def check_investigate_objectives(character, room):
     if not room_id:
         return
 
-    active_quests = CharacterQuest.objects.filter(
-        character=character, status="active"
-    )
-    for cq in active_quests:
+    for cq in CharacterQuest.objects.filter(character=character, status="active"):
         quest_spec = _get_quest_spec(cq.quest_id)
         if not quest_spec:
             continue
-
-        updated = False
-        for obj in (quest_spec.get("objectives") or []):
-            if obj.get("type") != "investigate":
-                continue
-            target = obj.get("target", "")
-            if target != room_id:
-                continue
-
-            key = _make_obj_key("investigate", target)
-            required = obj.get("count", 1)
-            cq.refresh_from_db()
-            progress = dict(cq.progress or {})
-            current = progress.get(key, 0)
-            if current < required:
-                progress[key] = current + 1
-                cq.progress = progress
-                cq.save(update_fields=["progress"])
-                updated = True
-
-        if updated:
-            _check_quest_completion(character, cq, quest_spec)
+        updates = _matching_objective_updates(
+            quest_spec,
+            "investigate",
+            {room_id},
+        )
+        if updates:
+            _advance_quest_objectives(character, cq.pk, quest_spec, updates)
 
 
 def check_practice_objectives(character, opportunity_id):
@@ -464,32 +418,17 @@ def check_practice_objectives(character, opportunity_id):
     """
     _ensure_model()
 
-    active = CharacterQuest.objects.filter(character=character, status="active")
-    for cq in active:
+    for cq in CharacterQuest.objects.filter(character=character, status="active"):
         quest_spec = _get_quest_spec(cq.quest_id)
         if not quest_spec:
             continue
-
-        progress = dict(cq.progress or {})
-        updated = False
-        for obj in (quest_spec.get("objectives") or []):
-            if obj.get("type") != "practice":
-                continue
-            target = obj.get("target", "")
-            if target != opportunity_id:
-                continue
-            key = _make_obj_key("practice", target)
-            required = obj.get("count", 1)
-            current = progress.get(key, 0)
-            if current >= required:
-                continue
-            progress[key] = min(required, current + 1)
-            updated = True
-
-        if updated:
-            cq.progress = progress
-            cq.save(update_fields=["progress"])
-            _check_quest_completion(character, cq, quest_spec)
+        updates = _matching_objective_updates(
+            quest_spec,
+            "practice",
+            {opportunity_id},
+        )
+        if updates:
+            _advance_quest_objectives(character, cq.pk, quest_spec, updates)
 
 
 def check_deliver_objectives(character, npc):
@@ -506,45 +445,42 @@ def check_deliver_objectives(character, npc):
     if not npc_id:
         return
 
-    active_quests = CharacterQuest.objects.filter(
-        character=character, status="active"
-    )
-    for cq in active_quests:
+    for cq in CharacterQuest.objects.filter(character=character, status="active"):
         quest_spec = _get_quest_spec(cq.quest_id)
         if not quest_spec:
             continue
-
-        updated = False
-        for obj in (quest_spec.get("objectives") or []):
-            if obj.get("type") != "deliver":
+        updates = []
+        delivery_items = []
+        claimed_item_ids = set()
+        for objective in quest_spec.get("objectives") or []:
+            if (
+                objective.get("type") != "deliver"
+                or objective.get("target", "") != npc_id
+            ):
                 continue
-            target = obj.get("target", "")
-            if target != npc_id:
-                continue
-
-            # Check if character has the delivery item
-            item_tag = obj.get("item_tag", "")
+            item_tag = objective.get("item_tag", "")
             if not item_tag:
                 continue
-
             delivery_item = _find_carried_item_by_tag(character, item_tag)
-            if not delivery_item:
+            if not delivery_item or delivery_item.id in claimed_item_ids:
                 continue
-
-            key = _make_obj_key("deliver", target)
-            required = obj.get("count", 1)
-            cq.refresh_from_db()
-            progress = dict(cq.progress or {})
-            current = progress.get(key, 0)
-            if current < required:
-                progress[key] = current + 1
-                cq.progress = progress
-                cq.save(update_fields=["progress"])
-                _consume_delivery_item(character, delivery_item)
-                updated = True
-
-        if updated:
-            _check_quest_completion(character, cq, quest_spec)
+            claimed_item_ids.add(delivery_item.id)
+            updates.append(
+                {
+                    "key": _make_obj_key("deliver", npc_id),
+                    "amount": 1,
+                    "cap": objective.get("count", 1),
+                }
+            )
+            delivery_items.append(delivery_item)
+        if updates:
+            _advance_quest_objectives(
+                character,
+                cq.pk,
+                quest_spec,
+                updates,
+                delivery_items=delivery_items,
+            )
 
 
 def check_talk_to_objectives(character, npc):
@@ -560,93 +496,271 @@ def check_talk_to_objectives(character, npc):
     if not npc_id:
         return
 
-    active_quests = CharacterQuest.objects.filter(
-        character=character, status="active"
-    )
-    for cq in active_quests:
+    for cq in CharacterQuest.objects.filter(character=character, status="active"):
         quest_spec = _get_quest_spec(cq.quest_id)
         if not quest_spec:
             continue
-
-        updated = False
-        for obj in (quest_spec.get("objectives") or []):
-            if obj.get("type") != "talk_to":
-                continue
-            target = obj.get("target", "")
-            if target != npc_id:
-                continue
-
-            key = _make_obj_key("talk_to", target)
-            cq.refresh_from_db()
-            progress = dict(cq.progress or {})
-            if progress.get(key, 0) < 1:
-                progress[key] = 1
-                cq.progress = progress
-                cq.save(update_fields=["progress"])
-                updated = True
-
-        if updated:
-            _check_quest_completion(character, cq, quest_spec)
+        updates = _matching_objective_updates(quest_spec, "talk_to", {npc_id})
+        if updates:
+            _advance_quest_objectives(character, cq.pk, quest_spec, updates)
 
 
 # ---------------------------------------------------------------------------
 # Completion and rewards
 # ---------------------------------------------------------------------------
 
-def _check_quest_completion(character, cq, quest_spec):
-    """
-    Check if all objectives are met and complete the quest if so.
+class _QuestMutationRejected(RuntimeError):
+    """An expected objective mutation gate failed."""
 
-    On completion: sets status='complete', completed_at=now, pays rewards
-    via execute_action (D-20), and if next_quest_id exists, sets
-    character.ndb.pending_quest_offer for chain auto-offer (D-05).
-    """
-    objectives = quest_spec.get("objectives") or []
-    progress = dict(cq.progress or {})
 
-    for obj in objectives:
-        key = _make_obj_key(obj["type"], obj["target"])
-        required = obj.get("count", 1)
-        current = progress.get(key, 0)
-        if current < required:
-            return  # Not all objectives met
+class _QuestOutcomeRejected(RuntimeError):
+    """A completion reward or consequence failed before commit."""
 
-    # All objectives met — complete the quest
-    cq.status = "complete"
-    try:
-        from django.utils import timezone as _tz
-        cq.completed_at = _tz.now()
-    except Exception:
-        cq.completed_at = datetime.datetime.now(datetime.timezone.utc)
-    cq.save(update_fields=["status", "completed_at"])
+    def __init__(self, failure):
+        super().__init__(failure["message"])
+        self.failure = failure
 
-    # Notify player
-    name = quest_spec.get("name") or cq.quest_id
+
+def _quest_after_write(checkpoint):
+    """Failure-injection seam for the atomic quest outcome."""
+
+
+def _run_rollback_callbacks(callbacks):
+    """Undo session-only mutations in reverse action order."""
+    while callbacks:
+        callbacks.pop()()
+
+
+def _objectives_complete(progress, quest_spec):
+    for objective in quest_spec.get("objectives") or []:
+        key = _make_obj_key(objective["type"], objective["target"])
+        if progress.get(key, 0) < objective.get("count", 1):
+            return False
+    return True
+
+
+def _publish_quest_completion(character, quest_id, name, next_id, messages):
+    """Expose completion only after every durable outcome write commits."""
     character.msg(f"|g[Quest Complete]|n {name}")
+    for message in messages:
+        character.msg(message)
 
-    # Pay rewards (D-20)
-    _pay_rewards(character, quest_spec)
-
-    # Chain auto-offer (D-05)
-    next_id = quest_spec.get("next_quest_id")
     if next_id:
         next_spec = _get_quest_spec(next_id)
         if next_spec:
             character.ndb.pending_quest_offer = {
-                "npc": None,  # NPC not in scope at completion — CmdAccept handles gracefully
+                "npc": None,
                 "quest": next_spec,
             }
 
-    # Push OOB update if available
     try:
         from world.oob_publisher import push_quest_update
-        push_quest_update(character, {
-            "quest_id": cq.quest_id,
-            "status": "complete",
-            "name": name,
-        })
+
+        push_quest_update(
+            character,
+            {
+                "quest_id": quest_id,
+                "status": "complete",
+                "name": name,
+            },
+        )
     except Exception:
-        pass  # OOB not yet wired or character is mock — safe to skip
+        import evennia
+
+        evennia.logger.log_trace("Quest completion OOB publish failed")
+
+
+def _validate_completed_quest_receipt(character, cq):
+    from world.game_operations import get_operation_replay
+
+    receipt = get_operation_replay(
+        character=character,
+        operation_id=cq.outcome_operation_id,
+        operation_type="quest_completion",
+        related_id=f"quest:{cq.quest_id}:{cq.pk}",
+    )
+    if not receipt:
+        raise RuntimeError(
+            f"Completed quest {cq.pk} has no durable completion receipt."
+        )
+
+
+def _complete_locked_quest(
+    character,
+    cq,
+    quest_spec,
+    deferred_messages,
+    rollback_callbacks,
+):
+    """Complete one already-locked active quest inside its owning transaction."""
+    progress = dict(cq.progress or {})
+    if not _objectives_complete(progress, quest_spec):
+        return False
+
+    failures = _pay_rewards(
+        character,
+        quest_spec,
+        operation_id=f"quest-reward:{cq.pk}",
+        deferred_messages=deferred_messages,
+        rollback_callbacks=rollback_callbacks,
+    )
+    if failures:
+        raise _QuestOutcomeRejected(failures[0])
+
+    from django.utils import timezone
+    from world.game_operations import get_operation_replay, record_operation
+
+    outcome_operation_id = f"quest-outcome:{cq.pk}"
+    related_id = f"quest:{cq.quest_id}:{cq.pk}"
+    if get_operation_replay(
+        character=character,
+        operation_id=outcome_operation_id,
+        operation_type="quest_completion",
+        related_id=related_id,
+    ):
+        raise RuntimeError(
+            f"Active quest {cq.pk} already has a completion receipt."
+        )
+
+    result = {
+        "status": "complete",
+        "quest_id": cq.quest_id,
+        "reward_count": len(quest_spec.get("rewards") or []),
+    }
+    cq.status = "complete"
+    cq.completed_at = timezone.now()
+    cq.outcome_operation_id = outcome_operation_id
+    cq.outcome_result = result
+    cq.save(
+        update_fields=[
+            "status",
+            "completed_at",
+            "outcome_operation_id",
+            "outcome_result",
+        ]
+    )
+    record_operation(
+        character=character,
+        operation_id=outcome_operation_id,
+        operation_type="quest_completion",
+        related_id=related_id,
+        result=result,
+    )
+    _quest_after_write("completion_recorded")
+    return True
+
+
+def _advance_quest_objectives(
+    character,
+    quest_pk,
+    quest_spec,
+    updates,
+    *,
+    delivery_items=(),
+):
+    """Lock, advance, consume, reward, and complete as one transaction."""
+    from django.db import transaction
+    from evennia.objects.models import ObjectDB
+    from world.atomic_state import atomic_evennia_state
+
+    deferred_messages = []
+    rollback_callbacks = []
+    delivery_items = list(delivery_items)
+    completed = False
+    try:
+        with atomic_evennia_state(character, *delivery_items) as tracker:
+            locked_character = ObjectDB.objects.select_for_update().get(
+                pk=character.id
+            )
+            tracker.track(locked_character, attributes=("carried_scales",))
+            cq = CharacterQuest.objects.select_for_update().get(
+                pk=quest_pk,
+                character_id=locked_character.id,
+            )
+            if cq.status == "complete":
+                _validate_completed_quest_receipt(locked_character, cq)
+                return True
+            if cq.status != "active":
+                return False
+
+            progress = dict(cq.progress or {})
+            changed_update_indexes = []
+            for index, update in enumerate(updates):
+                key = update["key"]
+                current = progress.get(key, 0)
+                cap = update.get("cap")
+                new_value = current + update.get("amount", 1)
+                if cap is not None:
+                    new_value = min(cap, new_value)
+                if new_value <= current:
+                    continue
+                progress[key] = new_value
+                changed_update_indexes.append(index)
+
+            for index in changed_update_indexes:
+                if index >= len(delivery_items):
+                    continue
+                delivery_item = delivery_items[index]
+                tracker.track(delivery_item)
+                consumed, message = _consume_delivery_item(
+                    locked_character,
+                    delivery_item,
+                )
+                if not consumed:
+                    raise _QuestMutationRejected(message)
+
+            if changed_update_indexes:
+                cq.progress = progress
+                cq.save(update_fields=["progress"])
+
+            completed = _complete_locked_quest(
+                locked_character,
+                cq,
+                quest_spec,
+                deferred_messages,
+                rollback_callbacks,
+            )
+            if completed:
+                name = quest_spec.get("name") or cq.quest_id
+                transaction.on_commit(
+                    lambda: _publish_quest_completion(
+                        character,
+                        cq.quest_id,
+                        name,
+                        quest_spec.get("next_quest_id"),
+                        tuple(deferred_messages),
+                    )
+                )
+        return completed
+    except _QuestOutcomeRejected as error:
+        _run_rollback_callbacks(rollback_callbacks)
+        character.msg(
+            "|r[Reward Error]|n "
+            f"{error.failure['action_type'] or 'unknown'} failed: "
+            f"{error.failure['message']}"
+        )
+        return False
+    except _QuestMutationRejected as error:
+        _run_rollback_callbacks(rollback_callbacks)
+        character.msg(f"|r[Quest Update Error]|n {error}")
+        return False
+    except Exception:
+        _run_rollback_callbacks(rollback_callbacks)
+        raise
+
+
+def _check_quest_completion(character, cq, quest_spec):
+    """Atomically complete a quest whose authored objectives are all met."""
+    _ensure_model()
+    completed = _advance_quest_objectives(
+        character,
+        cq.pk,
+        quest_spec,
+        [],
+    )
+    if getattr(cq, "pk", None):
+        cq.refresh_from_db()
+    return completed
 
 
 class _RewardBatchRejected(RuntimeError):
@@ -659,7 +773,14 @@ def _reward_after_write(checkpoint):
     """Failure-injection seam for exactly-once reward batches."""
 
 
-def _pay_rewards_exactly_once(character, quest_spec, operation_id):
+def _pay_rewards_exactly_once(
+    character,
+    quest_spec,
+    operation_id,
+    *,
+    deferred_messages=None,
+    rollback_callbacks=None,
+):
     from evennia.objects.models import ObjectDB
     from world.action_vocabulary import execute_action
     from world.atomic_state import atomic_evennia_state
@@ -672,10 +793,15 @@ def _pay_rewards_exactly_once(character, quest_spec, operation_id):
     operation_id = normalize_operation_id(operation_id)
     quest_id = quest_spec.get("quest_id") or quest_spec.get("name") or "anonymous"
     related_id = f"quest-rewards:{quest_id}"
+    owns_messages = deferred_messages is None
+    deferred_messages = [] if deferred_messages is None else deferred_messages
+    rollback_callbacks = [] if rollback_callbacks is None else rollback_callbacks
     context = {
         "character": character,
         "room": character.location,
         "_created_items": [],
+        "_deferred_messages": deferred_messages,
+        "_rollback_callbacks": rollback_callbacks,
     }
     try:
         with atomic_evennia_state(character) as tracker:
@@ -716,17 +842,35 @@ def _pay_rewards_exactly_once(character, quest_spec, operation_id):
                 result={"reward_count": len(quest_spec.get("rewards") or [])},
             )
             _reward_after_write("operation_recorded")
+        if owns_messages:
+            from django.db import transaction
+
+            transaction.on_commit(
+                lambda: [character.msg(message) for message in deferred_messages]
+            )
         return []
     except _RewardBatchRejected as error:
-        character.msg(
-            "|r[Reward Error]|n "
-            f"{error.failure['action_type'] or 'unknown'} failed: "
-            f"{error.failure['message']}"
-        )
+        _run_rollback_callbacks(rollback_callbacks)
+        if owns_messages:
+            character.msg(
+                "|r[Reward Error]|n "
+                f"{error.failure['action_type'] or 'unknown'} failed: "
+                f"{error.failure['message']}"
+            )
         return [error.failure]
+    except Exception:
+        _run_rollback_callbacks(rollback_callbacks)
+        raise
 
 
-def _pay_rewards(character, quest_spec, operation_id=None):
+def _pay_rewards(
+    character,
+    quest_spec,
+    operation_id=None,
+    *,
+    deferred_messages=None,
+    rollback_callbacks=None,
+):
     """
     Execute all reward actions for a completed quest (D-20).
 
@@ -734,7 +878,13 @@ def _pay_rewards(character, quest_spec, operation_id=None):
     Returns a list of failed reward details.
     """
     if operation_id is not None:
-        return _pay_rewards_exactly_once(character, quest_spec, operation_id)
+        return _pay_rewards_exactly_once(
+            character,
+            quest_spec,
+            operation_id,
+            deferred_messages=deferred_messages,
+            rollback_callbacks=rollback_callbacks,
+        )
 
     from world.action_vocabulary import execute_action
 

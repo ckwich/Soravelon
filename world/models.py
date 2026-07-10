@@ -589,6 +589,14 @@ class CharacterQuest(models.Model):
     progress = models.JSONField(default=dict)
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    outcome_operation_id = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
+    outcome_result = models.JSONField(default=dict)
 
     class Meta:
         indexes = [
@@ -599,6 +607,23 @@ class CharacterQuest(models.Model):
             models.Index(
                 fields=["character", "quest_id"],
                 name="world_cq_char_quest_idx",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        status="complete",
+                        completed_at__isnull=False,
+                        outcome_operation_id__isnull=False,
+                    )
+                    | models.Q(
+                        ~models.Q(status="complete"),
+                        completed_at__isnull=True,
+                        outcome_operation_id__isnull=True,
+                    )
+                ),
+                name="character_quest_completion_consistent",
             ),
         ]
 

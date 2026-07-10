@@ -27,13 +27,29 @@ TRIGGER_CHAIN_DEPTH_LIMIT = 3
 # Handlers
 # ---------------------------------------------------------------------------
 
+def _emit_action_message(context, message):
+    """Send now, or defer until the transaction owning this action commits."""
+    deferred = context.get("_deferred_messages")
+    if deferred is not None:
+        deferred.append(message)
+        return
+    context["character"].msg(message)
+
+
+def _register_rollback(context, callback):
+    """Register a repair for a non-database mutation in an atomic action batch."""
+    callbacks = context.get("_rollback_callbacks")
+    if callbacks is not None:
+        callbacks.append(callback)
+
+
 def _handle_echo(action_dict, context, _depth):
     """Send a message to the character in context."""
     character = context.get("character")
     if not character:
         return False, "No character in context"
     msg = action_dict.get("message", "")
-    character.msg(msg)
+    _emit_action_message(context, msg)
     return True, ""
 
 
@@ -261,7 +277,7 @@ def _handle_give_scales(action_dict, context, _depth):
         return False, "give_scales: invalid amount"
     current = character.db.carried_scales or 0
     character.db.carried_scales = current + amount
-    character.msg(f"|y[+{amount} Scales]|n")
+    _emit_action_message(context, f"|y[+{amount} Scales]|n")
     return True, ""
 
 
@@ -278,8 +294,17 @@ def _handle_give_skill_xp(action_dict, context, _depth):
     if skill_id not in SKILL_DEFINITIONS:
         return False, f"give_skill_xp: unknown skill_id '{skill_id}'"
     from world.skill_engine import accumulate_skill_use
+    accumulator_key = f"skill_use_{skill_id}"
+    old_accumulator = getattr(character.ndb, accumulator_key, 0) or 0
+    _register_rollback(
+        context,
+        lambda: setattr(character.ndb, accumulator_key, old_accumulator),
+    )
     accumulate_skill_use(character, skill_id, count)
-    character.msg(f"|g[+{count} {skill_id.replace('_', ' ').title()} XP]|n")
+    _emit_action_message(
+        context,
+        f"|g[+{count} {skill_id.replace('_', ' ').title()} XP]|n",
+    )
     return True, ""
 
 
@@ -859,11 +884,11 @@ def _handle_open_dialogue(action_dict, context, _depth):
         quest_id = quest_spec.get("quest_id")
         success, msg = accept_quest(character, quest_id, quest_spec)
         if not success:
-            character.msg(f"|y{msg}|n")
+            _emit_action_message(context, f"|y{msg}|n")
 
     # Send NPC greeting
     greeting_text, _tier = resolve_greeting(npc, character)
-    character.msg(greeting_text)
+    _emit_action_message(context, greeting_text)
 
     return True, "Dialogue opened."
 
@@ -895,10 +920,13 @@ def _handle_learn_recipe(action_dict, context, _depth):
 
     if created:
         msg = action_dict.get("message") or f"|gYou learned the recipe: {recipe_id}.|n"
-        character.msg(msg)
+        _emit_action_message(context, msg)
         return True, f"Learned recipe {recipe_id}"
     else:
-        character.msg(f"|yYou already know the recipe: {recipe_id}.|n")
+        _emit_action_message(
+            context,
+            f"|yYou already know the recipe: {recipe_id}.|n",
+        )
         return True, f"Already knew recipe {recipe_id}"
 
 

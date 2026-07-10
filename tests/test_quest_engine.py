@@ -12,7 +12,7 @@ are mocked -- no Evennia DB setup needed.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch, PropertyMock, call
+from unittest.mock import MagicMock, patch
 
 
 # ---------------------------------------------------------------------------
@@ -26,6 +26,7 @@ def _make_cq(quest_id, status="active", progress=None):
     cq.status = status
     cq.progress = dict(progress or {})
     cq.completed_at = None
+    cq.pk = 101
     cq.save = MagicMock()
     cq.refresh_from_db = MagicMock()
     cq.delete = MagicMock()
@@ -551,7 +552,7 @@ class TestNormalizeQuestSpec(unittest.TestCase):
 class TestCheckKillObjectives(unittest.TestCase):
     """Tests for check_kill_objectives."""
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_kill_increments_progress(self, MockCQ, mock_get_spec, mock_check):
@@ -573,11 +574,14 @@ class TestCheckKillObjectives(unittest.TestCase):
 
         check_kill_objectives(char, mob)
 
-        # Progress should have been incremented
-        self.assertEqual(cq.progress.get("kill_sewer_rat", 0), 1)
-        cq.save.assert_called()
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [{"key": "kill_sewer_rat", "amount": 1, "cap": 10}],
+        )
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_kill_matches_mob_instance_id(self, MockCQ, mock_get_spec, mock_check):
@@ -599,9 +603,14 @@ class TestCheckKillObjectives(unittest.TestCase):
 
         check_kill_objectives(char, mob)
 
-        self.assertEqual(cq.progress.get("kill_alpha_wolf_boss", 0), 1)
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [{"key": "kill_alpha_wolf_boss", "amount": 1, "cap": 1}],
+        )
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_kill_no_match_no_increment(self, MockCQ, mock_get_spec, mock_check):
@@ -623,9 +632,9 @@ class TestCheckKillObjectives(unittest.TestCase):
 
         check_kill_objectives(char, mob)
 
-        self.assertEqual(cq.progress.get("kill_sewer_rat", 0), 0)
+        mock_check.assert_not_called()
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_kill_triggers_completion_check(self, MockCQ, mock_get_spec, mock_check):
@@ -676,7 +685,7 @@ class TestCheckKillObjectives(unittest.TestCase):
 class TestCheckCollectObjectives(unittest.TestCase):
     """Tests for check_collect_objectives."""
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_collect_increments_progress(self, MockCQ, mock_get_spec, mock_check):
@@ -699,10 +708,15 @@ class TestCheckCollectObjectives(unittest.TestCase):
 
         check_collect_objectives(char, item)
 
-        self.assertEqual(cq.progress.get("collect_fang", 0), 1)
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [{"key": "collect_fang", "amount": 1, "cap": 5}],
+        )
 
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_collect_no_match_no_increment(self, MockCQ, mock_get_spec, mock_check):
@@ -736,7 +750,7 @@ class TestCheckCollectObjectives(unittest.TestCase):
 class TestCheckInvestigateObjectives(unittest.TestCase):
     """Tests for check_investigate_objectives."""
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_investigate_completes_on_room_visit(self, MockCQ, mock_get_spec, mock_check):
@@ -757,9 +771,14 @@ class TestCheckInvestigateObjectives(unittest.TestCase):
 
         check_investigate_objectives(char, room)
 
-        self.assertEqual(cq.progress.get("investigate_hidden_chamber", 0), 1)
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [{"key": "investigate_hidden_chamber", "amount": 1, "cap": 1}],
+        )
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_investigate_idempotent(self, MockCQ, mock_get_spec, mock_check):
@@ -780,10 +799,14 @@ class TestCheckInvestigateObjectives(unittest.TestCase):
 
         check_investigate_objectives(char, room)
 
-        # Progress stays at 1, no save call for idempotent check
-        self.assertEqual(cq.progress.get("investigate_hidden_chamber"), 1)
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [{"key": "investigate_hidden_chamber", "amount": 1, "cap": 1}],
+        )
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_investigate_wrong_room_no_effect(self, MockCQ, mock_get_spec, mock_check):
@@ -815,7 +838,7 @@ class TestCheckInvestigateObjectives(unittest.TestCase):
 class TestCheckPracticeObjectives(unittest.TestCase):
     """Tests for check_practice_objectives."""
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_practice_opportunity_increments_matching_objective(self, MockCQ, mock_get_spec, mock_check):
@@ -832,10 +855,20 @@ class TestCheckPracticeObjectives(unittest.TestCase):
 
         check_practice_objectives(char, "vp_canal_winch_repair")
 
-        self.assertEqual(cq.progress.get("practice_vp_canal_winch_repair", 0), 1)
-        mock_check.assert_called_once_with(char, cq, mock_get_spec.return_value)
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [
+                {
+                    "key": "practice_vp_canal_winch_repair",
+                    "amount": 1,
+                    "cap": 2,
+                }
+            ],
+        )
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_practice_opportunity_is_capped_at_required_count(self, MockCQ, mock_get_spec, mock_check):
@@ -852,10 +885,9 @@ class TestCheckPracticeObjectives(unittest.TestCase):
 
         check_practice_objectives(char, "vp_canal_winch_repair")
 
-        self.assertEqual(cq.progress.get("practice_vp_canal_winch_repair", 0), 2)
-        mock_check.assert_not_called()
+        mock_check.assert_called_once()
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_nonmatching_practice_opportunity_does_not_increment(self, MockCQ, mock_get_spec, mock_check):
@@ -883,12 +915,11 @@ class TestCheckPracticeObjectives(unittest.TestCase):
 class TestCheckDeliverObjectives(unittest.TestCase):
     """Tests for check_deliver_objectives."""
 
-    @patch("world.quest_engine._consume_delivery_item")
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_deliver_completes_with_item_and_npc(
-        self, MockCQ, mock_get_spec, mock_check, mock_consume
+        self, MockCQ, mock_get_spec, mock_check
     ):
         """Talking to target NPC while carrying target item completes delivery."""
         from world.quest_engine import check_deliver_objectives
@@ -917,10 +948,15 @@ class TestCheckDeliverObjectives(unittest.TestCase):
 
         check_deliver_objectives(char, npc)
 
-        self.assertEqual(cq.progress.get("deliver_npc_warden", 0), 1)
-        mock_consume.assert_called_once_with(char, item)
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [{"key": "deliver_npc_warden", "amount": 1, "cap": 1}],
+            delivery_items=[item],
+        )
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_deliver_fails_without_item(self, MockCQ, mock_get_spec, mock_check):
@@ -957,7 +993,7 @@ class TestCheckDeliverObjectives(unittest.TestCase):
 class TestCheckTalkToObjectives(unittest.TestCase):
     """Tests for check_talk_to_objectives."""
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_talk_to_completes_on_npc_match(self, MockCQ, mock_get_spec, mock_check):
@@ -978,9 +1014,14 @@ class TestCheckTalkToObjectives(unittest.TestCase):
 
         check_talk_to_objectives(char, npc)
 
-        self.assertEqual(cq.progress.get("talk_to_npc_elder", 0), 1)
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [{"key": "talk_to_npc_elder", "amount": 1, "cap": 1}],
+        )
 
-    @patch("world.quest_engine._check_quest_completion")
+    @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")
     @patch("world.quest_engine.CharacterQuest")
     def test_talk_to_wrong_npc_no_effect(self, MockCQ, mock_get_spec, mock_check):
@@ -1009,183 +1050,31 @@ class TestCheckTalkToObjectives(unittest.TestCase):
 # Test: _check_quest_completion
 # ---------------------------------------------------------------------------
 
-class TestCheckQuestCompletion(unittest.TestCase):
-    """Tests for _check_quest_completion."""
+class TestQuestObjectiveCompletionPredicate(unittest.TestCase):
+    """Pure objective evaluation remains separate from transactional writes."""
 
-    @patch("world.quest_engine._pay_rewards")
-    def test_completes_when_all_objectives_met(self, mock_pay):
-        """Quest completes when all objectives are met."""
-        from world.quest_engine import _check_quest_completion
-
-        char = MagicMock()
-        cq = _make_cq("q1", progress={"kill_wolf": 5})
+    def test_requires_every_authored_objective(self):
+        from world.quest_engine import _objectives_complete
 
         spec = {
-            "quest_id": "q1",
-            "name": "Wolf Hunt",
-            "objectives": [{"type": "kill", "target": "wolf", "count": 5}],
-            "rewards": [{"action_type": "echo", "message": "Quest complete!"}],
-        }
-
-        _check_quest_completion(char, cq, spec)
-
-        self.assertEqual(cq.status, "complete")
-        self.assertIsNotNone(cq.completed_at)
-        mock_pay.assert_called_once()
-
-    @patch("world.quest_engine._pay_rewards")
-    def test_no_complete_when_progress_incomplete(self, mock_pay):
-        """Quest does not complete when objectives are not met."""
-        from world.quest_engine import _check_quest_completion
-
-        char = MagicMock()
-        cq = _make_cq("q1", progress={"kill_wolf": 3})
-
-        spec = {
-            "quest_id": "q1",
-            "objectives": [{"type": "kill", "target": "wolf", "count": 5}],
-        }
-
-        _check_quest_completion(char, cq, spec)
-
-        self.assertEqual(cq.status, "active")  # Not changed
-        mock_pay.assert_not_called()
-
-    @patch("world.quest_engine._get_quest_spec")
-    @patch("world.quest_engine._pay_rewards")
-    def test_chain_sets_pending_quest(self, mock_pay, mock_get_spec):
-        """On completion, next_quest_id sets ndb.pending_quest_offer (D-05)."""
-        from world.quest_engine import _check_quest_completion
-
-        char = MagicMock()
-        char.ndb = MagicMock()
-        cq = _make_cq("q1", progress={"kill_wolf": 5})
-        mock_get_spec.return_value = {"quest_id": "q2_sequel", "name": "Second Hunt"}
-
-        spec = {
-            "quest_id": "q1",
-            "name": "Wolf Hunt",
-            "objectives": [{"type": "kill", "target": "wolf", "count": 5}],
-            "rewards": [],
-            "next_quest_id": "q2_sequel",
-        }
-
-        _check_quest_completion(char, cq, spec)
-
-        self.assertEqual(cq.status, "complete")
-        offer = char.ndb.pending_quest_offer
-        self.assertIsInstance(offer, dict)
-        self.assertEqual(offer["quest"]["quest_id"], "q2_sequel")
-        self.assertEqual(offer["quest"]["name"], "Second Hunt")
-
-    @patch("world.quest_engine._get_quest_spec", return_value=None)
-    @patch("world.quest_engine._pay_rewards")
-    def test_chain_skips_pending_offer_when_next_spec_missing(self, mock_pay, mock_get_spec):
-        """Completion does not create a thin pending offer for missing quest specs."""
-        from world.quest_engine import _check_quest_completion
-
-        char = MagicMock()
-        char.ndb = MagicMock(spec=[])
-        cq = _make_cq("q1", progress={"kill_wolf": 5})
-
-        spec = {
-            "quest_id": "q1",
-            "name": "Wolf Hunt",
-            "objectives": [{"type": "kill", "target": "wolf", "count": 5}],
-            "rewards": [],
-            "next_quest_id": "missing_sequel",
-        }
-
-        _check_quest_completion(char, cq, spec)
-
-        self.assertEqual(cq.status, "complete")
-        with self.assertRaises(AttributeError):
-            char.ndb.pending_quest_offer
-
-    @patch("world.quest_engine._pay_rewards")
-    def test_multi_objective_requires_all_met(self, mock_pay):
-        """Quest with 2 objectives does NOT complete when only 1 is met."""
-        from world.quest_engine import _check_quest_completion
-
-        char = MagicMock()
-        cq = _make_cq("q_multi", progress={"kill_wolf": 5, "collect_fang": 1})
-
-        spec = {
-            "quest_id": "q_multi",
             "objectives": [
                 {"type": "kill", "target": "wolf", "count": 5},
                 {"type": "collect", "target": "fang", "count": 3},
             ],
         }
 
-        _check_quest_completion(char, cq, spec)
-
-        self.assertEqual(cq.status, "active")
-        mock_pay.assert_not_called()
-
-    @patch("world.quest_engine._pay_rewards")
-    def test_multi_objective_completes_when_all_met(self, mock_pay):
-        """Quest with 2 objectives completes when both are met."""
-        from world.quest_engine import _check_quest_completion
-
-        char = MagicMock()
-        cq = _make_cq("q_multi", progress={"kill_wolf": 5, "collect_fang": 3})
-
-        spec = {
-            "quest_id": "q_multi",
-            "name": "Wolf and Fang",
-            "objectives": [
-                {"type": "kill", "target": "wolf", "count": 5},
-                {"type": "collect", "target": "fang", "count": 3},
-            ],
-            "rewards": [],
-        }
-
-        _check_quest_completion(char, cq, spec)
-
-        self.assertEqual(cq.status, "complete")
-        self.assertIsNotNone(cq.completed_at)
-        mock_pay.assert_called_once()
-
-    @patch("world.quest_engine._pay_rewards")
-    def test_completion_sets_completed_at(self, mock_pay):
-        """Completed quest has completed_at set to a timestamp."""
-        from world.quest_engine import _check_quest_completion
-
-        char = MagicMock()
-        cq = _make_cq("q_done", progress={"talk_to_elder": 1})
-
-        spec = {
-            "quest_id": "q_done",
-            "name": "Talk to Elder",
-            "objectives": [{"type": "talk_to", "target": "elder", "count": 1}],
-            "rewards": [],
-        }
-
-        _check_quest_completion(char, cq, spec)
-
-        self.assertEqual(cq.status, "complete")
-        self.assertIsNotNone(cq.completed_at)
-
-    @patch("world.quest_engine._pay_rewards")
-    def test_no_chain_when_next_quest_id_missing(self, mock_pay):
-        """Completion without next_quest_id does NOT set pending_quest_offer."""
-        from world.quest_engine import _check_quest_completion
-
-        char = MagicMock()
-        char.ndb = MagicMock(spec=[])  # ndb has no pending_quest_offer
-        cq = _make_cq("q1", progress={"kill_wolf": 5})
-
-        spec = {
-            "quest_id": "q1",
-            "name": "Solo Hunt",
-            "objectives": [{"type": "kill", "target": "wolf", "count": 5}],
-            "rewards": [],
-        }
-
-        _check_quest_completion(char, cq, spec)
-
-        self.assertEqual(cq.status, "complete")
+        self.assertFalse(
+            _objectives_complete(
+                {"kill_wolf": 5, "collect_fang": 2},
+                spec,
+            )
+        )
+        self.assertTrue(
+            _objectives_complete(
+                {"kill_wolf": 5, "collect_fang": 3},
+                spec,
+            )
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1618,7 +1507,7 @@ class TestQuestQueries(unittest.TestCase):
         from world.quest_engine import get_active_quests
 
         char = MagicMock()
-        result = get_active_quests(char)
+        get_active_quests(char)
 
         MockCQ.objects.filter.assert_called_with(
             character=char, status="active"

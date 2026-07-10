@@ -704,3 +704,138 @@ class TestUniqueEquippedSlotPreConstraintAudit(TransactionTestCase):
 
         with self.assertRaisesRegex(RuntimeError, "duplicate_equipped_slot"):
             executor.migrate(self.migrate_to)
+
+
+class TestAtomicQuestOutcomeMigration(TransactionTestCase):
+    """Legacy completions gain receipts without replaying their rewards."""
+
+    migrate_from = [("world", "0015_game_operation")]
+    migrate_to = [("world", "0016_atomic_quest_outcomes")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        CharacterQuest = old_apps.get_model("world", "CharacterQuest")
+        character = ObjectDB.objects.create(
+            db_key="Quest Outcome Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        self.character_id = character.pk
+        self.complete_id = CharacterQuest.objects.create(
+            character_id=character.pk,
+            quest_id="legacy_complete_quest",
+            status="complete",
+            progress={"talk_to_witness": 1},
+        ).pk
+        self.active_id = CharacterQuest.objects.create(
+            character_id=character.pk,
+            quest_id="active_quest",
+            status="active",
+            progress={},
+        ).pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_backfills_completion_identity_and_receipt(self):
+        CharacterQuest = self.apps.get_model("world", "CharacterQuest")
+        GameOperation = self.apps.get_model("world", "GameOperation")
+
+        complete = CharacterQuest.objects.get(pk=self.complete_id)
+        self.assertIsNotNone(complete.completed_at)
+        self.assertEqual(
+            complete.outcome_operation_id,
+            f"quest-outcome:{self.complete_id}",
+        )
+        self.assertEqual(
+            complete.outcome_result["status"],
+            "migrated_complete",
+        )
+        self.assertFalse(complete.outcome_result["rewards_replayed"])
+        receipt = GameOperation.objects.get(
+            operation_id=f"quest-outcome:{self.complete_id}",
+        )
+        self.assertEqual(receipt.operation_type, "quest_completion")
+        self.assertEqual(receipt.character_ref, self.character_id)
+
+        active = CharacterQuest.objects.get(pk=self.active_id)
+        self.assertIsNone(active.completed_at)
+        self.assertIsNone(active.outcome_operation_id)
+
+    def test_enforces_complete_and_noncomplete_state_shapes(self):
+        CharacterQuest = self.apps.get_model("world", "CharacterQuest")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            CharacterQuest.objects.create(
+                character_id=self.character_id,
+                quest_id="invalid_complete",
+                status="complete",
+                progress={},
+            )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            CharacterQuest.objects.create(
+                character_id=self.character_id,
+                quest_id="invalid_active",
+                status="active",
+                progress={},
+                completed_at=timezone.now(),
+                outcome_operation_id="quest-outcome:invalid-active",
+            )
+
+
+class TestAtomicQuestOutcomePreConstraintAudit(TransactionTestCase):
+    """Contradictory non-complete timestamps stop migration for review."""
+
+    migrate_from = [("world", "0015_game_operation")]
+    migrate_to = [("world", "0016_atomic_quest_outcomes")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        CharacterQuest = old_apps.get_model("world", "CharacterQuest")
+        character = ObjectDB.objects.create(
+            db_key="Invalid Quest Outcome Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        self.invalid_id = CharacterQuest.objects.create(
+            character_id=character.pk,
+            quest_id="invalid_active_timestamp",
+            status="active",
+            progress={},
+            completed_at=timezone.now(),
+        ).pk
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        old_apps.get_model("world", "CharacterQuest").objects.filter(
+            pk=self.invalid_id,
+        ).delete()
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_aborts_before_constraint(self):
+        executor = MigrationExecutor(connection)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "character_quest_noncomplete_has_completed_at",
+        ):
+            executor.migrate(self.migrate_to)

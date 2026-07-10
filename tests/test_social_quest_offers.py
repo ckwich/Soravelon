@@ -8,6 +8,11 @@ from unittest.mock import patch
 
 from evennia.utils.test_resources import EvenniaTest
 
+from tests.quest_helpers import (
+    complete_quest_fixture,
+    create_completed_quest_fixture,
+)
+
 
 VAELS_CROSSING_PATH = pathlib.Path("world/areas/vaels_crossing.py")
 
@@ -100,14 +105,11 @@ class TestSocialQuestOffers(EvenniaTest):
 
     @patch("world.quest_engine._get_all_quest_specs", return_value=[])
     def test_no_social_offer_without_warden_report_social_context(self, _mock_all_specs):
-        from world.models import CharacterQuest
         from world.quest_engine import get_available_quest_for_npc
 
-        CharacterQuest.objects.create(
-            character=self.char1,
-            quest_id="vc_q_warden_report",
-            status="complete",
-            progress={},
+        create_completed_quest_fixture(
+            self.char1,
+            "vc_q_warden_report",
         )
 
         offer = get_available_quest_for_npc(
@@ -209,10 +211,11 @@ class TestSocialQuestOffers(EvenniaTest):
         )
         self.assertIsNone(active_offer)
 
-        CharacterQuest.objects.filter(
+        quest = CharacterQuest.objects.get(
             character=self.char1,
             quest_id="vc_sq_under_seal_dustwalkers_rest",
-        ).update(status="complete")
+        )
+        complete_quest_fixture(quest)
 
         completed_offer = get_available_quest_for_npc(
             _npc("npc_warden_agent_calloway"),
@@ -234,15 +237,12 @@ class TestSocialQuestOffers(EvenniaTest):
         self,
         _mock_all_specs,
     ):
-        from world.models import CharacterQuest
         from world.quest_engine import get_available_quest_for_npc
 
         self._pay_warden_report_rewards()
-        CharacterQuest.objects.create(
-            character=self.char1,
-            quest_id="vc_q_warden_report",
-            status="complete",
-            progress={},
+        create_completed_quest_fixture(
+            self.char1,
+            "vc_q_warden_report",
         )
 
         offer = get_available_quest_for_npc(

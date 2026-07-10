@@ -5,6 +5,8 @@ from unittest.mock import patch
 
 from evennia import create_object
 from evennia.utils.test_resources import EvenniaTest
+
+from tests.quest_helpers import create_completed_quest_fixture
 from django.db.models import Q
 
 
@@ -378,7 +380,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         _mock_active_quests,
     ):
         from commands.cmd_dialogue import CmdAsk, CmdTalk
-        from world.models import CharacterQuest, SocialEdge, SocialKnowledge
+        from world.models import SocialEdge, SocialKnowledge
         from world.social_engine import query_social_context
 
         (
@@ -422,11 +424,9 @@ class TestVaelWardenSocialRoute(EvenniaTest):
             [claim.claim_key],
         )
 
-        CharacterQuest.objects.create(
-            character=self.char1,
-            quest_id="vc_q_warden_report",
-            status="complete",
-            progress={},
+        create_completed_quest_fixture(
+            self.char1,
+            "vc_q_warden_report",
         )
         mock_context_packet.return_value = {
             "reputation": 0,
