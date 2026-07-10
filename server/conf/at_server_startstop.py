@@ -137,12 +137,17 @@ def _load_all_zones():
     from world import zone_registry
     from world.area_builder import clear_unresolved_exits, get_unresolved_exits
     from world.flight_registry import FlightRegistry
+    from world.social_topology import (
+        clear_registered_social_topology,
+        materialize_registered_social_topology,
+    )
     import evennia as _evennia
 
     # Clear registries before rebuild
     zone_registry.clear()
     FlightRegistry.clear()
     clear_unresolved_exits()
+    clear_registered_social_topology()
 
     areas_dir = os.path.join(settings.GAME_DIR, "world", "areas")
     if not os.path.exists(areas_dir):
@@ -211,6 +216,15 @@ def _load_all_zones():
                 import traceback
                 print(f"Error loading zone {filename}: {e}")
                 traceback.print_exc()
+
+    # --- Pass 2: resolve cross-zone Social Web topology after every area ---
+    social_report = materialize_registered_social_topology(finalize=True)
+    for edge in social_report["unresolved_edges"]:
+        print(
+            "Social topology edge unresolved after second pass: "
+            f"{edge['source_node_key']} -> {edge['target_node_key']} "
+            f"({edge['message']})"
+        )
 
     # --- Pass 2: retry all unresolved cross-zone exits (BLD-06) ---
     all_unresolved = get_unresolved_exits()

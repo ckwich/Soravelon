@@ -12,6 +12,8 @@ Used by:
 
 from dataclasses import dataclass
 
+from world.social_taxonomy import EDGE_TYPES, NODE_TYPES
+
 
 class AreaBuilderValidationError(Exception):
     """Raised when an area spec contains invalid values."""
@@ -149,6 +151,38 @@ def _validate_loot_table_overrides(errors: list, loot_table_overrides: list):
                     )
 
 
+def _validate_social_topology(errors, social_nodes, social_edges):
+    if not isinstance(social_nodes, list):
+        _append_error(errors, "social_nodes", "social_nodes must be a list")
+        social_nodes = []
+    if not isinstance(social_edges, list):
+        _append_error(errors, "social_edges", "social_edges must be a list")
+        social_edges = []
+
+    for index, node in enumerate(social_nodes):
+        path = f"social_nodes[{index}]"
+        if not isinstance(node, dict):
+            _append_error(errors, path, "social node must be an object")
+            continue
+        if node.get("node_type") not in NODE_TYPES:
+            _append_error(errors, f"{path}.node_type", "unsupported social node_type")
+        identifier = node.get("identifier")
+        if not isinstance(identifier, str) or not identifier or ":" in identifier:
+            _append_error(errors, f"{path}.identifier", "identifier must be a non-empty untyped key")
+
+    for index, edge in enumerate(social_edges):
+        path = f"social_edges[{index}]"
+        if not isinstance(edge, dict):
+            _append_error(errors, path, "social edge must be an object")
+            continue
+        for field_name in ("source_node_key", "target_node_key"):
+            value = edge.get(field_name)
+            if not isinstance(value, str) or ":" not in value:
+                _append_error(errors, f"{path}.{field_name}", "must be a typed social node key")
+        if edge.get("edge_type") not in EDGE_TYPES:
+            _append_error(errors, f"{path}.edge_type", "unsupported social edge_type")
+
+
 # ---------------------------------------------------------------------------
 # validate_zone
 # ---------------------------------------------------------------------------
@@ -169,6 +203,8 @@ def validate_zone(zone_data: dict) -> list:
     rooms = zone_data.get("rooms") or []
     exits = zone_data.get("exits") or []
     loot_table_overrides = zone_data.get("loot_table_overrides") or []
+    social_nodes = zone_data.get("social_nodes") or []
+    social_edges = zone_data.get("social_edges") or []
 
     # zone.name — required and non-empty
     name = zone.get("name")
@@ -245,6 +281,7 @@ def validate_zone(zone_data: dict) -> list:
             ))
 
     _validate_loot_table_overrides(errors, loot_table_overrides)
+    _validate_social_topology(errors, social_nodes, social_edges)
 
     return errors
 

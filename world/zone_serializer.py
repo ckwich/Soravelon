@@ -32,7 +32,7 @@ def load_zone_from_json(zone_data: dict) -> dict:
             custom_commands (list), practice_opportunities (list),
             flight_points (list), flight_routes (list), node (dict or None),
             quests (list), materials (list), loot_table_overrides (list),
-            lore_fragments (list)
+            lore_fragments (list), social_nodes (list), social_edges (list)
 
     Returns:
         build() report dict: {zone_id, rooms_created, exits_created, warnings, unresolved_exits}
@@ -57,6 +57,26 @@ def load_zone_from_json(zone_data: dict) -> dict:
     # 2. zone() — pass all zone_meta kwargs except zone_id (AreaBuilder takes zone_id in __init__)
     zone_kwargs = {k: v for k, v in zone_meta.items() if k != "zone_id"}
     area.zone(**zone_kwargs)
+
+    # 2.5 Social Web topology — literal definitions materialize at build().
+    for node_def in zone_data.get("social_nodes", []):
+        node_type = node_def["node_type"]
+        identifier = node_def["identifier"]
+        node_kwargs = {
+            key: value
+            for key, value in node_def.items()
+            if key not in ("node_type", "identifier")
+        }
+        area.social_node(node_type, identifier, **node_kwargs)
+    for edge_def in zone_data.get("social_edges", []):
+        source_node_key = edge_def["source_node_key"]
+        target_node_key = edge_def["target_node_key"]
+        edge_kwargs = {
+            key: value
+            for key, value in edge_def.items()
+            if key not in ("source_node_key", "target_node_key")
+        }
+        area.social_edge(source_node_key, target_node_key, **edge_kwargs)
 
     # 3. loot_table_overrides — zone-owned drop tables keyed by mob/loot table id
     for override_def in zone_data.get("loot_table_overrides", []):

@@ -154,6 +154,8 @@ class AreaBuilder:
         self._build_warnings = []       # non-fatal issues
         self._exits_created = 0
         self._node_config = None        # stored by node(), applied in build()
+        self._social_nodes = {}         # node_key -> literal authored definition
+        self._social_edges = {}         # edge_key -> literal authored definition
 
     # ------------------------------------------------------------------
     # zone()
@@ -588,6 +590,72 @@ class AreaBuilder:
         npc_obj.db.ambient_reactive_echoes = ambient.get("reactive_echoes", {})
 
         return npc_obj
+
+    # ------------------------------------------------------------------
+    # social_node() / social_edge()
+    # ------------------------------------------------------------------
+
+    def social_node(self, node_type, identifier, **kwargs):
+        """Author one persistent Social Web node owned by this zone."""
+        from world.social_topology import validate_social_node_definition
+
+        try:
+            validate_social_node_definition(node_type, identifier, **kwargs)
+        except ValueError as exc:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — {exc}"
+            ) from exc
+
+        node_key = f"{node_type}:{identifier}"
+        self._social_nodes[node_key] = {
+            "node_type": node_type,
+            "identifier": identifier,
+            "display_name": kwargs.get("display_name", ""),
+            "zone_id": kwargs.get("zone_id") or self._zone_id,
+            "settlement_id": kwargs.get("settlement_id", ""),
+            "faction_id": kwargs.get("faction_id", ""),
+            "metadata": copy.deepcopy(kwargs.get("metadata") or {}),
+        }
+        return self
+
+    def social_edge(self, source_node_key, target_node_key, **kwargs):
+        """Author one persistent Social Web edge owned by this zone."""
+        from world.social_topology import (
+            social_edge_key,
+            validate_social_edge_definition,
+        )
+
+        edge_type = kwargs.get("edge_type")
+        edge_kwargs = {key: value for key, value in kwargs.items() if key != "edge_type"}
+        try:
+            validate_social_edge_definition(
+                source_node_key,
+                target_node_key,
+                edge_type=edge_type,
+                **edge_kwargs,
+            )
+        except ValueError as exc:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — {exc}"
+            ) from exc
+
+        edge_key = social_edge_key(source_node_key, target_node_key, edge_type)
+        self._social_edges[edge_key] = {
+            "source_node_key": source_node_key,
+            "target_node_key": target_node_key,
+            "edge_type": edge_type,
+            "directionality": kwargs.get("directionality", "one_way"),
+            "trust": kwargs.get("trust", 0.5),
+            "latency_seconds": kwargs.get("latency_seconds", 0),
+            "bandwidth": kwargs.get("bandwidth", 3),
+            "secrecy": kwargs.get("secrecy", ""),
+            "distortion": kwargs.get("distortion", ""),
+            "scope_tags": copy.deepcopy(kwargs.get("scope_tags") or []),
+            "blockers": copy.deepcopy(kwargs.get("blockers") or []),
+            "required_tags": copy.deepcopy(kwargs.get("required_tags")),
+            "blocked_tags": copy.deepcopy(kwargs.get("blocked_tags")),
+        }
+        return self
 
     # ------------------------------------------------------------------
     # item()
@@ -1171,6 +1239,15 @@ class AreaBuilder:
         # 3.5: Assign grid coordinates to rooms without explicit coords (CLI-07)
         auto_layout_zone(self._rooms)
 
+        # 3.55: Register literal Social Web topology. Cross-zone edges resolve
+        # after every area file has registered its nodes during server startup.
+        from world.social_topology import register_zone_social_topology
+        social_topology_report = register_zone_social_topology(
+            self._zone_id,
+            nodes=self._social_nodes.values(),
+            edges=self._social_edges.values(),
+        )
+
         # 3.6: Reconcile stale objects (D-01 through D-04)
         reconcile_report = self._reconcile_stale_objects()
 
@@ -1193,6 +1270,7 @@ class AreaBuilder:
                 {"to": e["to"], "direction": e["direction"]}
                 for e in self._unresolved_exits
             ],
+            "social_topology": social_topology_report,
             "reconciled": reconcile_report,
         }
 

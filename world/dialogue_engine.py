@@ -200,7 +200,7 @@ def _build_dialogue_context(npc, character):
         from world.social_interpretation import build_social_interpretation
 
         context["social_interpretation"] = build_social_interpretation(
-            _npc_identifier(npc),
+            npc,
             context["social_context"],
         )
     except Exception:

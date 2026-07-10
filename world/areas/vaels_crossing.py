@@ -1684,7 +1684,26 @@ def build():
     _medic.db.is_medic = True
 
     # 35. Courier agent
-    area.npc(iq_courier_platform, "npc_courier_agent_renn", faction="consortium")
+    area.npc(
+        iq_courier_platform,
+        "npc_courier_agent_renn",
+        faction="consortium",
+        social_profile={
+            "social_role": "broker",
+            "public_trait": "route-minded courier agent",
+            "memory_style": "remembers which names make routes arrive intact",
+            "worldview": {
+                "admires": ["route", "trade", "reliable", "report"],
+                "skeptical_of": ["delay", "reckless", "rumor"],
+                "uses": ["market_gossip", "official_report", "guild_record"],
+            },
+            "templates": {
+                "supported": "Renn reads this as route reliability. A name attached to a clean delivery changes who he trusts with a satchel.",
+                "rumor": "Renn hears the rumor as route weather: useful to watch, too thin to schedule around.",
+                "empty": "Renn has no route note about you yet.",
+            },
+        },
+    )
 
     # 36. Garrison commander
     area.npc(iq_command_office, "npc_commander_vareth", faction="empire")
@@ -1697,6 +1716,21 @@ def build():
         iq_warden_office,
         "npc_warden_agent_calloway",
         faction="wardens",
+        social_profile={
+            "social_role": "gatekeeper",
+            "public_trait": "careful Warden contact",
+            "memory_style": "files supported reports before rumor",
+            "worldview": {
+                "admires": ["reliable", "warden", "report", "supported"],
+                "skeptical_of": ["rumor", "boast", "reckless"],
+                "uses": ["official_report", "warden_report"],
+            },
+            "templates": {
+                "supported": "Calloway treats this as a supported report, not tavern color. He weighs the official report first and lets it decide how much road business to put in your hands.",
+                "rumor": "Calloway notes the rumor but does not file it as confirmed. He will ask for a report before he changes Warden posture.",
+                "empty": "Calloway has nothing specific enough to file about you.",
+            },
+        },
         dialogue={
             "greeting_tiers": {
                 "neutral": (
@@ -2062,7 +2096,26 @@ def build():
     )
 
     # 42. Innkeeper
-    area.npc(rd_inn, "npc_innkeeper_whistle", faction=None)
+    area.npc(
+        rd_inn,
+        "npc_innkeeper_whistle",
+        faction=None,
+        social_profile={
+            "social_role": "gossip",
+            "public_trait": "innkeeper with a long ear",
+            "memory_style": "remembers who makes trouble expensive in the taproom",
+            "worldview": {
+                "admires": ["tavern", "road_rumor", "discreet", "reliable"],
+                "skeptical_of": ["official_report", "warden", "sealed"],
+                "uses": ["tavern_rumor", "inn_traveler"],
+            },
+            "templates": {
+                "supported": "Whistle heard it as road talk, not a sworn ledger. He keeps sealed details at arm's length, but he remembers that your name travels cleanly through the inn.",
+                "rumor": "Whistle heard it as road talk and keeps sealed details at arm's length. He remembers the shape of the story, not the Warden business inside it.",
+                "empty": "Whistle has no fair story about you yet.",
+            },
+        },
+    )
 
     # 43. Herbalist
     area.npc(rd_herbalist, "npc_herbalist_old_ystra", faction=None, trainer_id="npc_herbalist_old_ystra")
@@ -2344,7 +2397,26 @@ def build():
     area.npc(wn_den_of_knives, "npc_barkeep_broken_nose", faction=None)
 
     # 49. Debt collector
-    area.npc(wn_debt_collector, "npc_debt_collector_raith", faction=None)
+    area.npc(
+        wn_debt_collector,
+        "npc_debt_collector_raith",
+        faction=None,
+        social_profile={
+            "social_role": "creditor",
+            "public_trait": "obligation broker",
+            "memory_style": "remembers leverage, debt, and who follows through",
+            "worldview": {
+                "admires": ["obligation", "leverage", "useful", "reliable"],
+                "skeptical_of": ["charity", "official_report"],
+                "uses": ["criminal_whisper", "tavern_rumor", "direct_witness"],
+            },
+            "templates": {
+                "supported": "Raith reads the report as leverage: a useful person who finishes sealed work may also finish uncomfortable work.",
+                "rumor": "Raith treats the rumor as possible leverage, useful enough to watch but not clean enough to spend yet.",
+                "empty": "Raith has not found a useful angle on you yet.",
+            },
+        },
+    )
 
     # 50. Smuggler boss
     area.npc(wn_smuggler_dock, "npc_smuggler_kessa", faction=None)
@@ -3061,6 +3133,33 @@ def build():
         rooms=["cq_import_dock", "wn_smuggler_dock"],
         materials=["river_trout"],
         max_active=2, respawn_minutes=12, respawn_variance=4,
+    )
+
+    # Social Web topology — literal graph data, not quest reward side effects.
+    area.social_node(
+        "npc", "npc_courier_agent_renn", display_name="Renn",
+        settlement_id="vaels_crossing", faction_id="consortium",
+    )
+    area.social_node(
+        "npc", "npc_warden_agent_calloway", display_name="Agent Calloway",
+        settlement_id="vaels_crossing", faction_id="wardens",
+    )
+    area.social_node(
+        "npc", "npc_innkeeper_whistle", display_name="Whistle",
+        settlement_id="vaels_crossing",
+    )
+    area.social_node(
+        "npc", "npc_debt_collector_raith", display_name="Raith",
+        settlement_id="vaels_crossing",
+    )
+    area.social_edge(
+        "npc:npc_warden_agent_calloway",
+        "npc:npc_warden_outpost_commander",
+        edge_type="warden_report",
+        directionality="one_way",
+        trust=0.95,
+        latency_seconds=0,
+        scope_tags=["warden", "report", "quest"],
     )
 
     # ==================================================================

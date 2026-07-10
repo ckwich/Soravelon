@@ -2044,6 +2044,21 @@ def build():
             "manages the outpost with quiet, methodical authority."
         ),
         faction="wardens",
+        social_profile={
+            "social_role": "field_commander",
+            "public_trait": "road-worn field commander",
+            "memory_style": "remembers what keeps patrol lines alive",
+            "worldview": {
+                "admires": ["reliable", "warden", "route", "report"],
+                "skeptical_of": ["rumor", "delay"],
+                "uses": ["warden_report", "official_report"],
+            },
+            "templates": {
+                "supported": "Harven reads this as field reliability. If the Warden line carried it, he treats the report as something that may keep the next patrol alive.",
+                "rumor": "Harven hears the road noise but keeps it below confirmed field intelligence until a Warden line carries it.",
+                "empty": "Harven has no field report that changes how he reads you.",
+            },
+        },
         dialogue={
             "greeting": (
                 "Harven looks up from a stack of reports. 'If you are here "
@@ -2465,6 +2480,11 @@ def build():
         rooms=["outpost_03", "ridge_14"],
         materials=["river_trout"],
         max_active=2, respawn_minutes=12, respawn_variance=4,
+    )
+
+    area.social_node(
+        "npc", "npc_warden_outpost_commander", display_name="Commander Harven",
+        settlement_id="ashreach_outpost", faction_id="wardens",
     )
 
     # ==================================================================

@@ -1038,6 +1038,42 @@ class SocialTrace(models.Model):
         return self.trace_key
 
 
+class SocialTopologyBinding(models.Model):
+    """Records which AreaBuilder zone owns an authored Social Web object."""
+
+    KIND_CHOICES = [
+        ("node", "Node"),
+        ("edge", "Edge"),
+    ]
+
+    zone_id = models.CharField(max_length=64, db_index=True)
+    kind = models.CharField(max_length=8, choices=KIND_CHOICES)
+    object_key = models.CharField(max_length=280)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["zone_id", "kind", "object_key"],
+                name="social_topology_binding_unique_owner",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["zone_id", "kind"],
+                name="world_soc_zone_id_5d8f0e_idx",
+            ),
+            models.Index(
+                fields=["kind", "object_key"],
+                name="world_soc_kind_2bcf89_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.zone_id}:{self.kind}:{self.object_key}"
+
+
 class SpawnRecord(models.Model):
     """
     Tracks active and respawning mobs per room spawn slot.

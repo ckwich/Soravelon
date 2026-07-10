@@ -1,3 +1,5 @@
+import ast
+from pathlib import Path
 from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, patch
@@ -5,6 +7,42 @@ from unittest.mock import MagicMock, patch
 
 class TestSocialInterpretationProfiles(unittest.TestCase):
     """Anchor NPCs interpret Social Web memory through authored profiles."""
+
+    @staticmethod
+    def _authored_profile(npc_id):
+        root = Path(__file__).resolve().parents[1]
+        for area_path in (
+            root / "world" / "areas" / "vaels_crossing.py",
+            root / "world" / "areas" / "ashreach_plains.py",
+        ):
+            tree = ast.parse(area_path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if not (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "npc"
+                    and len(node.args) >= 2
+                ):
+                    continue
+                try:
+                    authored_id = ast.literal_eval(node.args[1])
+                except (SyntaxError, ValueError):
+                    continue
+                if authored_id != npc_id:
+                    continue
+                for keyword in node.keywords:
+                    if keyword.arg == "social_profile":
+                        return ast.literal_eval(keyword.value)
+        raise AssertionError(f"Missing authored social profile for {npc_id}")
+
+    def _npc(self, npc_id):
+        return SimpleNamespace(
+            key=npc_id,
+            db=SimpleNamespace(
+                npc_id=npc_id,
+                social_profile=self._authored_profile(npc_id),
+            ),
+        )
 
     def _context(self):
         return {
@@ -49,7 +87,7 @@ class TestSocialInterpretationProfiles(unittest.TestCase):
 
         for npc_id, public_trait in expected.items():
             with self.subTest(npc_id=npc_id):
-                profile = get_social_profile(npc_id)
+                profile = get_social_profile(self._npc(npc_id))
 
                 self.assertEqual(profile["public_trait"], public_trait)
                 self.assertIn("social_role", profile)
@@ -62,15 +100,15 @@ class TestSocialInterpretationProfiles(unittest.TestCase):
         context = self._context()
 
         calloway = build_social_interpretation(
-            "npc_warden_agent_calloway",
+            self._npc("npc_warden_agent_calloway"),
             context,
         )
         whistle = build_social_interpretation(
-            "npc_innkeeper_whistle",
+            self._npc("npc_innkeeper_whistle"),
             context,
         )
         raith = build_social_interpretation(
-            "npc_debt_collector_raith",
+            self._npc("npc_debt_collector_raith"),
             context,
         )
 
@@ -93,7 +131,10 @@ class TestSocialInterpretationProfiles(unittest.TestCase):
         from world.social_interpretation import build_social_interpretation
 
         interpretation = build_social_interpretation(
-            "npc_unknown_listener",
+            SimpleNamespace(
+                key="npc_unknown_listener",
+                db=SimpleNamespace(npc_id="npc_unknown_listener", social_profile={}),
+            ),
             self._context(),
         )
 
@@ -150,6 +191,9 @@ class TestDialogueInterpretationIntegration(unittest.TestCase):
                 npc_id="npc_warden_agent_calloway",
                 zone_id="vaels_crossing",
                 faction="wardens",
+                social_profile=TestSocialInterpretationProfiles._authored_profile(
+                    "npc_warden_agent_calloway"
+                ),
             ),
             key="Agent Calloway",
         )
