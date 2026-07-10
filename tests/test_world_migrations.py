@@ -1034,3 +1034,74 @@ class TestSocialTraceRouteKeyPreConstraintAudit(TransactionTestCase):
 
         with self.assertRaisesRegex(RuntimeError, "social_trace_duplicate_route"):
             executor.migrate(self.migrate_to)
+
+
+class TestSocialVisibilityAndEdgePolicyMigration(TransactionTestCase):
+    """Claim privacy and explicit edge tags preserve the old required-tag gate."""
+
+    migrate_from = [("world", "0018_social_trace_route_key")]
+    migrate_to = [("world", "0019_social_visibility_and_edge_policy")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        SocialNode = old_apps.get_model("world", "SocialNode")
+        SocialFact = old_apps.get_model("world", "SocialFact")
+        SocialClaim = old_apps.get_model("world", "SocialClaim")
+        SocialEdge = old_apps.get_model("world", "SocialEdge")
+
+        player = SocialNode.objects.create(
+            node_key="player:policy_migration",
+            node_type="player",
+        )
+        source = SocialNode.objects.create(
+            node_key="npc:policy_migration_source",
+            node_type="npc",
+        )
+        target = SocialNode.objects.create(
+            node_key="npc:policy_migration_target",
+            node_type="npc",
+        )
+        fact = SocialFact.objects.create(
+            fact_key="fact:policy_migration",
+            subject_node=player,
+            event_type="policy_migration",
+            summary="A policy migration sentinel.",
+        )
+        self.claim_id = SocialClaim.objects.create(
+            claim_key="claim:policy_migration",
+            fact=fact,
+            speaker_node=source,
+            subject_node=player,
+            claim_type="report",
+            summary="A policy migration claim.",
+        ).pk
+        self.edge_id = SocialEdge.objects.create(
+            edge_key="edge:policy_migration",
+            source_node=source,
+            target_node=target,
+            edge_type="official_report",
+            blockers=["field clearance", "warden"],
+        ).pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_backfills_claim_policy_and_explicit_required_tags(self):
+        SocialClaim = self.apps.get_model("world", "SocialClaim")
+        SocialEdge = self.apps.get_model("world", "SocialEdge")
+
+        claim = SocialClaim.objects.get(pk=self.claim_id)
+        self.assertEqual(claim.visibility, "local")
+        self.assertIsNone(claim.expires_at)
+        edge = SocialEdge.objects.get(pk=self.edge_id)
+        self.assertEqual(edge.required_tags, ["field_clearance", "warden"])
+        self.assertEqual(edge.blocked_tags, [])

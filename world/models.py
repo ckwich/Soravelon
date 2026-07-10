@@ -776,6 +776,8 @@ class SocialEdge(models.Model):
     distortion = models.CharField(max_length=32, blank=True, default="")
     scope_tags = models.JSONField(default=list)
     blockers = models.JSONField(default=list)
+    required_tags = models.JSONField(default=list)
+    blocked_tags = models.JSONField(default=list)
     active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -896,7 +898,14 @@ class SocialClaim(models.Model):
     intent = models.CharField(max_length=64, blank=True, default="")
     bias_tags = models.JSONField(default=list)
     confidence = models.FloatField(default=0.5)
+    visibility = models.CharField(
+        max_length=16,
+        choices=SocialFact.VISIBILITY_CHOICES,
+        default="local",
+        db_index=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         constraints = [

@@ -127,6 +127,8 @@ def connect_social_nodes(
     distortion="",
     scope_tags=None,
     blockers=None,
+    required_tags=None,
+    blocked_tags=None,
 ):
     from world.models import SocialEdge
 
@@ -151,6 +153,12 @@ def connect_social_nodes(
     if not ok:
         return False, message, None
 
+    normalized_required_tags = normalize_tags(
+        required_tags if required_tags is not None else blockers or []
+    )
+    if directionality == "gatekept" and not normalized_required_tags:
+        return False, "gatekept edges require explicit required_tags", None
+
     source = _get_node(source_node_key)
     target = _get_node(target_node_key)
     if not source or not target:
@@ -170,7 +178,9 @@ def connect_social_nodes(
             "secrecy": secrecy,
             "distortion": distortion,
             "scope_tags": normalize_tags(scope_tags or []),
-            "blockers": blockers or [],
+            "blockers": normalize_tags(blockers or []),
+            "required_tags": normalized_required_tags,
+            "blocked_tags": normalize_tags(blocked_tags or []),
             "active": True,
         },
     )
@@ -246,11 +256,15 @@ def assert_social_claim(
     intent="",
     bias_tags=None,
     confidence=0.5,
+    visibility="local",
+    expires_at=None,
 ):
     from world.models import SocialClaim
 
     if claim_type not in CLAIM_TYPES:
         return False, f"unsupported claim_type: {claim_type}", None
+    if visibility not in VISIBILITIES:
+        return False, f"unsupported visibility: {visibility}", None
 
     ok, message, confidence = _coerce_probability("confidence", confidence)
     if not ok:
@@ -276,9 +290,24 @@ def assert_social_claim(
             "intent": intent,
             "bias_tags": normalize_tags(bias_tags or []),
             "confidence": confidence,
+            "visibility": visibility,
+            "expires_at": expires_at,
         },
     )
     return True, "asserted", claim
+
+
+def release_social_claim(claim_key, *, visibility="local", expires_at=None):
+    """Explicitly release a claim from private handling into a named scope."""
+    if visibility not in VISIBILITIES or visibility == "private":
+        return False, "release visibility must be a non-private Social visibility", None
+    claim = _get_claim(claim_key)
+    if not claim:
+        return False, f"unknown claim: {claim_key}", None
+    claim.visibility = visibility
+    claim.expires_at = expires_at
+    claim.save(update_fields=["visibility", "expires_at"])
+    return True, "released", claim
 
 
 def mark_known(
@@ -412,6 +441,37 @@ def available_now_filter(queryset):
     return queryset.filter(Q(available_after__isnull=True) | Q(available_after__lte=now))
 
 
+def active_social_payload_filter(queryset):
+    """Exclude expired or private facts/claims before they can influence play."""
+    now = timezone.now()
+    return queryset.filter(
+        Q(fact__isnull=True)
+        | (
+            ~Q(fact__visibility="private")
+            & (Q(fact__expires_at__isnull=True) | Q(fact__expires_at__gt=now))
+        ),
+        Q(claim__isnull=True)
+        | (
+            ~Q(claim__visibility="private")
+            & (Q(claim__expires_at__isnull=True) | Q(claim__expires_at__gt=now))
+        ),
+    )
+
+
+def _visible_for_purpose_filter(queryset, purpose):
+    purpose = str(purpose)
+    if purpose.startswith("admin"):
+        return queryset
+    if purpose == "quest_offer":
+        allowed = {"institutional", "route", "global"}
+    else:
+        allowed = {"witnessed", "local", "institutional", "route", "global"}
+    return queryset.filter(
+        Q(fact__isnull=True) | Q(fact__visibility__in=allowed),
+        Q(claim__isnull=True) | Q(claim__visibility__in=allowed),
+    )
+
+
 def _knowledge_payload_tags(knowledge):
     tags = set()
     fact = knowledge.fact
@@ -463,7 +523,7 @@ def _source_knowledge_for(source, *, fact_key="", claim_key=""):
         queryset = queryset.filter(claim__claim_key=claim_key, fact__isnull=True)
 
     return (
-        available_now_filter(queryset)
+        active_social_payload_filter(available_now_filter(queryset))
         .annotate(
             claim_rank=Case(
                 When(claim__isnull=False, then=Value(0)),
@@ -498,8 +558,13 @@ def _edge_allows_knowledge(edge, knowledge):
     if edge.bandwidth <= 0:
         return False
     payload_tags = _knowledge_payload_tags(knowledge)
-    blockers = set(normalize_tags(edge.blockers or []))
-    if blockers and not blockers.intersection(payload_tags):
+    required_tags = set(
+        normalize_tags(edge.required_tags or edge.blockers or [])
+    )
+    if required_tags and not required_tags.issubset(payload_tags):
+        return False
+    blocked_tags = set(normalize_tags(edge.blocked_tags or []))
+    if blocked_tags.intersection(payload_tags):
         return False
     scope_tags = set(normalize_tags(edge.scope_tags or []))
     if not scope_tags:
@@ -767,7 +832,10 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
             Prefetch("traces", queryset=trace_qs, to_attr="_context_traces")
         )
     )
-    knowledge_qs = available_now_filter(knowledge_qs).order_by(
+    knowledge_qs = _visible_for_purpose_filter(
+        active_social_payload_filter(available_now_filter(knowledge_qs)),
+        purpose,
+    ).order_by(
         "-confidence",
         "-learned_at",
         "id",

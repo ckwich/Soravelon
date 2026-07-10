@@ -4,12 +4,13 @@ Action Vocabulary for Soravelon.
 Shared dispatch module for all trigger-driven and command-driven game events.
 Every action type in the game routes through execute_action().
 
-20 action types (D-07, D-24):
+21 action types (D-07, D-24):
   Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
                modify_standing, modify_attunement, log_world_event, despawn_self,
                spawn_mob, add_room_flag, give_scales, give_skill_xp,
                grant_practice, modify_node_failure, set_quest_flag,
-               open_dialogue, learn_recipe, record_social_event, grant_access
+               open_dialogue, learn_recipe, record_social_event, grant_access,
+               release_social_claim
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
 execute_action() enforces a trigger chain depth limit of 3 (D-19).
@@ -331,6 +332,24 @@ def _handle_grant_access(action_dict, context, _depth):
     except ValueError as error:
         return False, f"grant_access: {error}"
     return True, "Access grant recorded."
+
+
+def _handle_release_social_claim(action_dict, context, _depth):
+    """Release a named Social claim through the deterministic policy owner."""
+    if not context.get("character"):
+        return False, "release_social_claim: no character in context"
+    claim_key = action_dict.get("claim_key")
+    try:
+        from world.social_engine import release_social_claim
+
+        released, message, _claim = release_social_claim(
+            claim_key,
+            visibility=action_dict.get("visibility", "local"),
+            expires_at=action_dict.get("expires_at"),
+        )
+    except (TypeError, ValueError) as error:
+        return False, f"release_social_claim: {error}"
+    return released, message
 
 
 def _template_action_value(value, template_context):
@@ -656,6 +675,8 @@ def _record_social_event_rendered(rendered):
             intent=claim_def.get("intent", ""),
             bias_tags=claim_def.get("bias_tags") or [],
             confidence=claim_def.get("confidence", 0.5),
+            visibility=claim_def.get("visibility", fact.visibility),
+            expires_at=claim_def.get("expires_at"),
         )
         if not ok:
             return False, f"record_social_event: {message}"
@@ -971,6 +992,7 @@ ACTION_HANDLERS = {
     "give_skill_xp": _handle_give_skill_xp,
     "grant_practice": _handle_grant_practice,
     "grant_access": _handle_grant_access,
+    "release_social_claim": _handle_release_social_claim,
     "modify_node_failure": _handle_modify_node_failure,
     "learn_recipe": _handle_learn_recipe,
     "record_social_event": _handle_record_social_event,
