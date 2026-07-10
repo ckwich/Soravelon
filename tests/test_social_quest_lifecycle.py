@@ -75,7 +75,13 @@ class TestSocialQuestLifecycle(EvenniaTest):
         _mock_push_quest_update,
     ):
         from commands.cmd_dialogue import CmdAccept, CmdTalk
-        from world.models import CharacterQuest, SocialClaim, SocialFact, SocialKnowledge
+        from world.models import (
+            CharacterAccessGrant,
+            CharacterQuest,
+            SocialClaim,
+            SocialFact,
+            SocialKnowledge,
+        )
         from world.quest_engine import check_investigate_objectives, get_available_quest_for_npc
 
         mock_context_packet.return_value = {
@@ -187,6 +193,36 @@ class TestSocialQuestLifecycle(EvenniaTest):
                 claim__claim_key=claim_key,
                 channel="direct_witness",
             ).exists()
+        )
+        protected_witness = SocialFact.objects.get(
+            event_type="protected_witness",
+        )
+        self.assertEqual(
+            protected_witness.subject_node.node_key,
+            "npc:npc_innkeeper_whistle",
+        )
+        testimony = SocialClaim.objects.get(claim_type="testimony")
+        self.assertEqual(
+            testimony.subject_node.node_key,
+            "npc:npc_innkeeper_whistle",
+        )
+        self.assertTrue(
+            SocialKnowledge.objects.filter(
+                node__node_key="npc:npc_warden_agent_calloway",
+                claim=testimony,
+                channel="official_report",
+            ).exists()
+        )
+        self.assertEqual(
+            set(
+                CharacterAccessGrant.objects.filter(
+                    character=self.char1,
+                ).values_list("grant_key", flat=True)
+            ),
+            {
+                "social:vc_sq_under_seal_dustwalkers_rest:access:authority_notice",
+                "social:vc_sq_under_seal_dustwalkers_rest:access:witness_trust",
+            },
         )
 
         self.assertIs(whistle.location, self.char1.location)

@@ -376,6 +376,14 @@ QUEST_ARCHETYPES = {
                 "type": "social_fact",
                 "event_type": "protected_witness",
                 "tags": ["protection", "testimony", "coercion"],
+                "subject_role": "witness",
+            },
+            {
+                "type": "social_claim",
+                "claim_type": "testimony",
+                "tags": ["protection", "testimony", "coercion"],
+                "speaker_role": "authority",
+                "subject_role": "witness",
             },
             {
                 "type": "access_change",
@@ -1179,6 +1187,21 @@ def compile_quest_spec(
 
     objectives = _compile_live_objectives(archetype, objective_targets or {})
     rewards = [_default_social_reward(context, quest_id=quest_id, quest_giver=quest_giver)]
+    from world.social_effects import (
+        SocialEffectCompilationError,
+        compile_social_effect_actions,
+    )
+
+    try:
+        rewards.extend(
+            compile_social_effect_actions(
+                context,
+                quest_id=quest_id,
+                quest_giver=quest_giver,
+            )
+        )
+    except SocialEffectCompilationError as error:
+        raise SocialQuestGrammarError(str(error)) from error
     rewards.extend(copy.deepcopy(extra_rewards or []))
 
     return {

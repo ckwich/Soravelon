@@ -839,3 +839,49 @@ class TestAtomicQuestOutcomePreConstraintAudit(TransactionTestCase):
             "character_quest_noncomplete_has_completed_at",
         ):
             executor.migrate(self.migrate_to)
+
+
+class TestCharacterAccessGrantMigration(TransactionTestCase):
+    """Named access grants have one durable owner per character and key."""
+
+    migrate_from = [("world", "0016_atomic_quest_outcomes")]
+    migrate_to = [("world", "0017_character_access_grant")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        character = ObjectDB.objects.create(
+            db_key="Access Grant Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        self.character_id = character.pk
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_creates_grant_and_enforces_one_owner_key_pair(self):
+        CharacterAccessGrant = self.apps.get_model("world", "CharacterAccessGrant")
+        grant = CharacterAccessGrant.objects.create(
+            character_id=self.character_id,
+            grant_key="social:migration:access:authority_notice",
+            source_quest_id="migration",
+            metadata={"source": "test"},
+        )
+        self.assertEqual(grant.character_id, self.character_id)
+        self.assertEqual(grant.metadata["source"], "test")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            CharacterAccessGrant.objects.create(
+                character_id=self.character_id,
+                grant_key="social:migration:access:authority_notice",
+            )

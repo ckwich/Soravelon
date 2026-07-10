@@ -631,6 +631,37 @@ class CharacterQuest(models.Model):
         return f"{self.character.db_key}:{self.quest_id}={self.status}"
 
 
+class CharacterAccessGrant(models.Model):
+    """A durable, named permission earned through an authored game outcome."""
+
+    character = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.CASCADE,
+        related_name="access_grants",
+    )
+    grant_key = models.CharField(max_length=128)
+    source_quest_id = models.CharField(max_length=128, blank=True, default="")
+    metadata = models.JSONField(default=dict)
+    granted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["character", "grant_key"],
+                name="character_access_grant_unique",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["grant_key"],
+                name="world_access_grant_key_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.character.db_key}:{self.grant_key}"
+
+
 class KnownTopicRecord(models.Model):
     """
     Tracks which dialogue topics a character has learned from each NPC.

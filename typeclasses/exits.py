@@ -48,6 +48,16 @@ class SoravelonExit(DefaultExit):
                 )
                 return False
 
+        req_access_grant = self.db.requires_access_grant
+        if req_access_grant:
+            from world.access_grants import has_access_grant
+
+            if not has_access_grant(traversing_object, req_access_grant):
+                traversing_object.msg(
+                    "|rYou have not yet earned passage here.|n"
+                )
+                return False
+
         if target_location and (target_location.db.action_budget_penalty or 0):
             traversing_object.ndb.gravity_penalty = (
                 target_location.db.action_budget_penalty

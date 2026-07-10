@@ -77,13 +77,13 @@ class TestActionHandlersRegistry(EvenniaTest):
     """ACTION_HANDLERS dict contains all registered action types."""
 
     def test_handler_count(self):
-        """ACTION_HANDLERS has exactly 19 keys."""
+        """ACTION_HANDLERS has exactly 20 keys."""
         from world.action_vocabulary import ACTION_HANDLERS
 
-        self.assertEqual(len(ACTION_HANDLERS), 19)
+        self.assertEqual(len(ACTION_HANDLERS), 20)
 
     def test_all_expected_action_types_present(self):
-        """All 19 required action types are registered."""
+        """All 20 required action types are registered."""
         from world.action_vocabulary import ACTION_HANDLERS
 
         expected = {
@@ -103,6 +103,7 @@ class TestActionHandlersRegistry(EvenniaTest):
             "give_scales",
             "give_skill_xp",
             "grant_practice",
+            "grant_access",
             "modify_node_failure",
             "learn_recipe",
             "record_social_event",
