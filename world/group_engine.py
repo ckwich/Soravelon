@@ -129,6 +129,25 @@ def get_group_member_ids(character):
     return [member.id for member in _get_group_members(leader)]
 
 
+def are_allies(character, other):
+    """Return whether two distinct characters share one live group.
+
+    Group state lives only on the leader, while every member carries the
+    leader ID. Checking both sides prevents stale member references or an
+    arbitrary combatant from being treated as an ally.
+    """
+    if not character or not other or character.id == other.id:
+        return False
+    if not is_in_group(character) or not is_in_group(other):
+        return False
+
+    leader = _get_leader(character)
+    if not leader or getattr(other.ndb, "group_leader_id", None) != leader.id:
+        return False
+
+    return any(member.id == other.id for member in _get_group_members(leader))
+
+
 # ---------------------------------------------------------------------------
 # Group formation
 # ---------------------------------------------------------------------------

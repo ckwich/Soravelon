@@ -3,6 +3,8 @@ Tests for group engine (Build Order Step 11).
 Tests written FIRST per TDD.
 """
 
+from unittest.mock import MagicMock
+
 from evennia.utils.test_resources import EvenniaTest
 from evennia import create_object
 
@@ -64,6 +66,45 @@ class TestAcceptCreatesGroup(GroupTestBase):
         state = self.char1.ndb.group_state
         self.assertIn(self.char1.id, state["members"])
         self.assertIn(self.char2.id, state["members"])
+
+
+class TestGroupAllies(GroupTestBase):
+    """Combat-facing ally relationship queries use live group membership."""
+
+    def test_allies_are_reciprocal_for_leader_and_member_only(self):
+        from world.group_engine import are_allies, accept_group_invite, send_group_invite
+
+        outsider = self._make_char("Outsider")
+        send_group_invite(self.char1, self.char2)
+        accept_group_invite(self.char2)
+
+        self.assertTrue(are_allies(self.char1, self.char2))
+        self.assertTrue(are_allies(self.char2, self.char1))
+        self.assertFalse(are_allies(self.char1, outsider))
+        outsider.ndb.group_leader_id = self.char1.id
+        self.assertFalse(are_allies(self.char1, outsider))
+        self.assertFalse(are_allies(self.char1, self.char1))
+
+    def test_combat_recording_credits_only_live_group_allies(self):
+        from world.combat_script import CombatScript
+        from world.group_engine import accept_group_invite, send_group_invite
+
+        outsider = self._make_char("Outsider")
+        send_group_invite(self.char1, self.char2)
+        accept_group_invite(self.char2)
+        outsider.ndb.group_leader_id = self.char1.id
+
+        script = MagicMock()
+        script.ndb.ally_action_count = {}
+        script._resolve_combatants.return_value = [self.char1, self.char2, outsider]
+
+        CombatScript.record_allied_action(script, self.char1)
+        CombatScript.record_allied_action(script, self.char2)
+
+        self.assertEqual(
+            script.ndb.ally_action_count,
+            {str(self.char2.id): 1, str(self.char1.id): 1},
+        )
 
 
 class TestAcceptAddsToExisting(GroupTestBase):

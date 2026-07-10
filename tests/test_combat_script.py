@@ -252,3 +252,54 @@ class TestGroupCombat(unittest.TestCase):
         script.db.is_group_combat = False
         self.assertFalse(script.db.is_group_combat)
         self.assertIsNone(script.ndb.turn_timer_id)
+
+
+class TestCommandActionRecording(unittest.TestCase):
+    """Basic attacks and abilities use the same ally-action recorder."""
+
+    @patch("world.combat_engine.check_death", return_value=False)
+    @patch("world.base_attributes.record_stat_use")
+    @patch("world.inventory_engine.get_equipped_items", return_value=[])
+    @patch("world.combat_engine.resolve_basic_attack", return_value=(True, "hit", 10))
+    def test_basic_attack_uses_shared_ally_recorder(
+        self,
+        _resolve_attack,
+        _equipped_items,
+        _record_stat_use,
+        _check_death,
+    ):
+        from world.combat_script import CombatScript
+
+        script = _make_script()
+        character = _make_combatant(1, "Player")
+        target = _make_combatant(2, "Target", is_player=False)
+        character.ndb.actions_remaining = 1
+        script.get_current_combatant.return_value = character
+        script.record_allied_action = MagicMock()
+        script.advance_turn = MagicMock()
+
+        CombatScript.process_player_action(script, character, "basic_attack", target=target)
+
+        script.record_allied_action.assert_called_once_with(character)
+
+    @patch("world.ability_engine.use_ability", return_value=(True, "Ability lands."))
+    def test_ability_uses_shared_ally_recorder(self, _use_ability):
+        from world.combat_script import CombatScript
+
+        script = _make_script()
+        character = _make_combatant(1, "Player")
+        target = _make_combatant(2, "Target", is_player=False)
+        script.get_current_combatant.return_value = character
+        script.record_allied_action = MagicMock()
+        script._resolve_post_ability_deaths = MagicMock(return_value=False)
+        script.advance_turn = MagicMock()
+
+        CombatScript.process_player_action(
+            script,
+            character,
+            "ability",
+            target=target,
+            ability_id="crushing_advance",
+        )
+
+        script.record_allied_action.assert_called_once_with(character)
