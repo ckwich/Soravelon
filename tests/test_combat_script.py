@@ -280,6 +280,101 @@ class TestGroupCombat(unittest.TestCase):
         self.assertIsNone(script.ndb.turn_timer_id)
 
 
+class TestGroupCombatEntry(unittest.TestCase):
+    """Same-room groups enter one encounter without pulling remote members."""
+
+    @patch("world.node_helpers.break_stabilization_on_combat")
+    @patch("world.group_engine.are_allies")
+    @patch("world.group_engine.get_group_members")
+    @patch("world.combat_script._get_script_class")
+    @patch("world.combat_script._get_room_combat", return_value=None)
+    def test_start_enrolls_same_room_group_allies_and_tells_them(
+        self,
+        _get_room_combat,
+        mock_script_class,
+        mock_members,
+        mock_are_allies,
+        _break_stabilization,
+    ):
+        """A local group ally joins; a remote ally stays out of the encounter."""
+        from world.combat_script import start_combat
+
+        room = MagicMock()
+        other_room = MagicMock()
+        leader = _make_combatant(1, "Leader")
+        ally = _make_combatant(2, "Ally")
+        remote_ally = _make_combatant(3, "Remote Ally")
+        mob = _make_combatant(4, "Raider", is_player=False)
+        leader.location = room
+        ally.location = room
+        remote_ally.location = other_room
+        mock_members.return_value = [leader, ally, remote_ally]
+        mock_are_allies.side_effect = (
+            lambda left, right: {left.id, right.id} == {leader.id, ally.id}
+        )
+
+        script = _make_script()
+        mock_script_class.return_value.create.return_value = script
+
+        start_combat(room, leader, [mob])
+
+        self.assertEqual(
+            [record.args[0] for record in script.add_combatant.call_args_list],
+            [leader, mob, ally],
+        )
+        self.assertTrue(script.db.is_group_combat)
+        ally.msg.assert_called_once_with("|yYou join your group's fight!|n")
+        remote_ally.msg.assert_not_called()
+
+    @patch("world.group_engine.are_allies", return_value=True)
+    def test_late_join_marks_group_combat_from_live_allies(self, _are_allies):
+        """Joining an ally's ongoing combat enables the cooperative turn timer."""
+        from world.combat_script import join_combat
+
+        leader = _make_combatant(1, "Leader")
+        ally = _make_combatant(2, "Ally")
+        script = _make_script()
+        script.is_combatant.return_value = False
+        script.get_player_combatants.return_value = [leader, ally]
+
+        success, _ = join_combat(script, ally)
+
+        self.assertTrue(success)
+        self.assertTrue(script.db.is_group_combat)
+
+    @patch("world.combat_script.join_combat", return_value=(True, "joined"))
+    @patch("world.group_engine.get_group_members")
+    @patch("world.combat_script._get_room_combat")
+    def test_existing_combat_enrolls_same_room_group_allies(
+        self,
+        mock_existing,
+        mock_members,
+        mock_join,
+    ):
+        """Joining an existing fight uses the same local-group roster rule."""
+        from world.combat_script import start_combat
+
+        room = MagicMock()
+        leader = _make_combatant(1, "Leader")
+        ally = _make_combatant(2, "Ally")
+        mob = _make_combatant(3, "Raider", is_player=False)
+        leader.location = room
+        ally.location = room
+        mock_members.return_value = [leader, ally]
+        existing = MagicMock()
+        existing.is_combatant.return_value = False
+        mock_existing.return_value = existing
+
+        result = start_combat(room, leader, [mob])
+
+        self.assertIs(result, existing)
+        self.assertEqual(
+            [record.args[1] for record in mock_join.call_args_list],
+            [leader, mob, ally],
+        )
+        ally.msg.assert_called_once_with("|yYou join your group's fight!|n")
+
+
 class TestCommandActionRecording(unittest.TestCase):
     """Basic attacks and abilities use the same ally-action recorder."""
 

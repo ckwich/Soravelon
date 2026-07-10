@@ -121,12 +121,22 @@ def is_group_leader(character):
 
 def get_group_member_ids(character):
     """Return the live member IDs for character's current group."""
+    return [member.id for member in get_group_members(character)]
+
+
+def get_group_members(character):
+    """Return the live members of character's current group.
+
+    The leader owns durable group state, but gameplay systems must be able to
+    ask from any member's perspective. `_get_group_members` also prunes stale
+    entries, so callers never receive a cached or merely claimed relationship.
+    """
     if not is_in_group(character):
         return []
     leader = _get_leader(character)
     if not leader:
         return []
-    return [member.id for member in _get_group_members(leader)]
+    return _get_group_members(leader)
 
 
 def are_allies(character, other):

@@ -71,6 +71,26 @@ class TestAcceptCreatesGroup(GroupTestBase):
 class TestGroupAllies(GroupTestBase):
     """Combat-facing ally relationship queries use live group membership."""
 
+    def test_group_members_are_available_from_leader_or_member(self):
+        """Combat can enumerate the same live group from either participant."""
+        from world.group_engine import (
+            accept_group_invite,
+            get_group_members,
+            send_group_invite,
+        )
+
+        send_group_invite(self.char1, self.char2)
+        accept_group_invite(self.char2)
+
+        self.assertEqual(
+            {member.id for member in get_group_members(self.char1)},
+            {self.char1.id, self.char2.id},
+        )
+        self.assertEqual(
+            {member.id for member in get_group_members(self.char2)},
+            {self.char1.id, self.char2.id},
+        )
+
     def test_allies_are_reciprocal_for_leader_and_member_only(self):
         from world.group_engine import are_allies, accept_group_invite, send_group_invite
 

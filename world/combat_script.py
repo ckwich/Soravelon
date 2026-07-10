@@ -909,15 +909,20 @@ def start_combat(room, initiator, targets):
     Returns:
         CombatScript: The active combat script.
     """
+    all_combatants, automatic_group_joiners = _expand_same_room_group_combatants(
+        room,
+        [initiator] + list(targets),
+    )
+
     # Check for existing combat
     existing = _get_room_combat(room)
     if existing:
         # Join existing combat
-        if not existing.is_combatant(initiator):
-            join_combat(existing, initiator)
-        for target in targets:
-            if not existing.is_combatant(target):
-                join_combat(existing, target)
+        for combatant in all_combatants:
+            if not existing.is_combatant(combatant):
+                joined, _ = join_combat(existing, combatant)
+                if joined and combatant in automatic_group_joiners:
+                    combatant.msg("|yYou join your group's fight!|n")
         return existing
 
     # Create new CombatScript on room
@@ -931,17 +936,17 @@ def start_combat(room, initiator, targets):
     # Break node stabilization on combat entry (D-10)
     from world.node_helpers import break_stabilization_on_combat
 
-    # Add all combatants
-    all_combatants = [initiator] + list(targets)
+    # Add all combatants, including only group allies already in this room.
     for combatant in all_combatants:
         break_stabilization_on_combat(combatant)
         script.add_combatant(combatant)
 
-    # Check group combat
-    script.db.is_group_combat = any(
-        _is_player(c) and getattr(c.ndb, "group_state", None)
-        for c in all_combatants
-    )
+    # A group encounter requires at least two live allied players, regardless
+    # of which member owns the group's durable state.
+    script.db.is_group_combat = _is_group_combat(all_combatants)
+
+    for combatant in automatic_group_joiners:
+        combatant.msg("|yYou join your group's fight!|n")
 
     # Notify room
     names = ", ".join(c.key for c in all_combatants)
@@ -983,11 +988,9 @@ def join_combat(combat_script, newcomer):
             f"|y{newcomer.key} joins the battle!|n"
         )
 
-    # Recalculate group combat flag
+    # Recalculate group combat from actual, live ally relationships.
     players = combat_script.get_player_combatants()
-    combat_script.db.is_group_combat = any(
-        getattr(p.ndb, "group_state", None) for p in players
-    )
+    combat_script.db.is_group_combat = _is_group_combat(players)
 
     return True, f"{newcomer.key} has joined combat."
 
@@ -995,6 +998,52 @@ def join_combat(combat_script, newcomer):
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+def _expand_same_room_group_combatants(room, combatants):
+    """Add live group allies who are already present to a combat roster.
+
+    The encounter only owns the current room. Pulling a group member from a
+    neighboring room would erase tactical position and player choice, while
+    omitting a companion already beside the participant produces a confusing
+    split between the group UI and the combat UI.
+    """
+    from world.group_engine import get_group_members
+
+    expanded = []
+    automatic_group_joiners = []
+    seen_ids = set()
+
+    for combatant in combatants:
+        if combatant and combatant.id not in seen_ids:
+            expanded.append(combatant)
+            seen_ids.add(combatant.id)
+
+    for combatant in list(expanded):
+        if not _is_player(combatant):
+            continue
+        for ally in get_group_members(combatant):
+            if (
+                ally
+                and ally.id not in seen_ids
+                and getattr(ally, "location", None) == room
+            ):
+                expanded.append(ally)
+                automatic_group_joiners.append(ally)
+                seen_ids.add(ally.id)
+
+    return expanded, automatic_group_joiners
+
+
+def _is_group_combat(combatants):
+    """Return whether this roster contains at least one live allied pair."""
+    from world.group_engine import are_allies
+
+    players = [combatant for combatant in combatants if _is_player(combatant)]
+    return any(
+        are_allies(player, other)
+        for index, player in enumerate(players)
+        for other in players[index + 1 :]
+    )
 
 def _get_room_combat(room):
     """Return existing CombatScript on room, or None."""
