@@ -193,6 +193,68 @@ class TestSocialQuestOffers(EvenniaTest):
         self.assertEqual(offer["rewards"][0]["action_type"], "record_social_event")
 
     @patch("world.quest_engine._get_all_quest_specs", return_value=[])
+    def test_social_offer_uses_exact_evidence_outside_the_context_packet(
+        self,
+        _mock_all_specs,
+    ):
+        from world.models import SocialKnowledge
+        from world.quest_engine import get_available_quest_for_npc
+        from world.social_engine import (
+            mark_known,
+            query_social_context,
+            record_social_fact,
+        )
+
+        self._pay_warden_report_rewards()
+        player_node_key = f"player:{self.char1.id}"
+        calloway_node_key = "npc:npc_warden_agent_calloway"
+        qualifying_fact_key = (
+            f"fact:{self.char1.id}:vc_q_warden_report:delivered"
+        )
+        qualifying_knowledge = SocialKnowledge.objects.get(
+            node__node_key=calloway_node_key,
+            fact__fact_key=qualifying_fact_key,
+        )
+        qualifying_knowledge.confidence = 0.01
+        qualifying_knowledge.save(update_fields=["confidence"])
+
+        for index in range(6):
+            ok, message, fact = record_social_fact(
+                fact_key=f"fact:{self.char1.id}:offer_distractor:{index}",
+                subject_node_key=player_node_key,
+                event_type="offer_distractor",
+                summary=f"A more recent but irrelevant fact {index}.",
+                tags=["distractor"],
+                visibility="institutional",
+            )
+            self.assertTrue(ok, message)
+            ok, message, _knowledge = mark_known(
+                node_key=calloway_node_key,
+                fact_key=fact.fact_key,
+                channel="direct_witness",
+                confidence=1.0,
+            )
+            self.assertTrue(ok, message)
+
+        packet = query_social_context(
+            viewer_node_key=calloway_node_key,
+            subject_node_key=player_node_key,
+            purpose="quest_offer",
+        )
+        self.assertNotIn(
+            qualifying_fact_key,
+            [fact["fact_key"] for fact in packet["facts"]],
+        )
+
+        offer = get_available_quest_for_npc(
+            _npc("npc_warden_agent_calloway"),
+            self.char1,
+        )
+
+        self.assertIsNotNone(offer)
+        self.assertEqual(offer["quest_id"], "vc_sq_under_seal_dustwalkers_rest")
+
+    @patch("world.quest_engine._get_all_quest_specs", return_value=[])
     def test_social_offer_respects_active_and_completed_quest_state(self, _mock_all_specs):
         from world.models import CharacterQuest
         from world.quest_engine import get_available_quest_for_npc

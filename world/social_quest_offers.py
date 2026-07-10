@@ -11,7 +11,6 @@ import copy
 
 from django.db import OperationalError, ProgrammingError
 
-from world.social_taxonomy import normalize_tags
 from world.social_quest_grammar import compile_quest_spec
 from world.social_quest_offer_registry import (
     get_social_quest_offer_rule_by_npc,
@@ -44,27 +43,6 @@ def _npc_social_node_key(npc):
 def _character_social_node_key(character):
     character_id = _dialogue_node_identifier(getattr(character, "id", None))
     return f"player:{character_id}" if character_id else ""
-
-
-def _context_has_required_fact_tags(context, required_tags):
-    required = set(normalize_tags(required_tags or []))
-    if not required:
-        return True
-    for fact in (context.get("facts") or []):
-        fact_tags = set(normalize_tags(fact.get("tags") or []))
-        if required.issubset(fact_tags):
-            return True
-    return False
-
-
-def _context_has_required_fact_key_fragment(context, fragment):
-    fragment = str(fragment or "").strip()
-    if not fragment:
-        return True
-    return any(
-        fragment in str(fact.get("fact_key") or "")
-        for fact in (context.get("facts") or [])
-    )
 
 
 def _prior_interactions_from_context(context):
@@ -214,7 +192,17 @@ def get_social_quest_offer_for_npc(
         return None
 
     try:
-        from world.social_engine import query_social_context
+        from world.social_engine import find_social_evidence, query_social_context
+
+        evidence = find_social_evidence(
+            viewer_node_key=viewer_node_key,
+            subject_node_key=subject_node_key,
+            purpose="quest_offer",
+            required_fact_tags=rule.get("required_fact_tags") or [],
+            fact_key_fragment=rule.get("required_fact_key_fragment"),
+        )
+        if not evidence:
+            return None
 
         social_context = query_social_context(
             viewer_node_key=viewer_node_key,
@@ -222,17 +210,6 @@ def get_social_quest_offer_for_npc(
             purpose="quest_offer",
         )
     except (OperationalError, ProgrammingError):
-        return None
-
-    if not _context_has_required_fact_tags(
-        social_context,
-        rule.get("required_fact_tags") or [],
-    ):
-        return None
-    if not _context_has_required_fact_key_fragment(
-        social_context,
-        rule.get("required_fact_key_fragment"),
-    ):
         return None
 
     return _compile_offer_from_rule(rule, social_context=social_context)

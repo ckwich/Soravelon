@@ -3,7 +3,7 @@
 import hashlib
 import math
 
-from django.db.models import Prefetch, Q
+from django.db.models import Q
 from django.utils import timezone
 
 from world.social_taxonomy import (
@@ -14,6 +14,10 @@ from world.social_taxonomy import (
     VISIBILITIES,
     normalize_tags,
 )
+
+
+MAX_SOCIAL_CONTEXT_ITEMS = 5
+MAX_SOCIAL_CONTEXT_TRACES = 5
 
 
 def make_node_key(node_type, identifier):
@@ -972,10 +976,159 @@ def _trace_payloads_for_knowledge(knowledge):
     ]
 
 
-def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_items=5):
-    """Build a bounded context packet for deterministic NPC systems."""
-    from world.models import SocialKnowledge, SocialTrace
+def _clamp_social_context_items(max_items):
+    try:
+        max_items = int(max_items)
+    except (TypeError, ValueError):
+        return 0
+    return min(MAX_SOCIAL_CONTEXT_ITEMS, max(0, max_items))
 
+
+def _context_knowledge_queryset(*, viewer, subject, purpose, now):
+    from world.models import SocialKnowledge
+
+    queryset = SocialKnowledge.objects.filter(node=viewer).filter(
+        Q(fact__subject_node=subject) | Q(claim__subject_node=subject)
+    )
+    return _visible_for_purpose_filter(
+        active_social_payload_filter(
+            available_now_filter(queryset, now=now),
+            now=now,
+        ),
+        purpose,
+    )
+
+
+def _limited_unique_payload_knowledge(queryset, *, payload_field, limit):
+    """Return the strongest known row for each payload, with a SQL limit."""
+    from django.db.models import OuterRef, Subquery
+
+    if limit <= 0:
+        return []
+    ordered = queryset.order_by("-confidence", "-learned_at", "id")
+    preferred_row = ordered.filter(
+        **{payload_field: OuterRef(payload_field)}
+    ).values("pk")[:1]
+    return list(ordered.filter(pk=Subquery(preferred_row))[:limit])
+
+
+def _attach_context_traces(knowledge_items):
+    """Fetch routes only after the fact/claim packet selection is complete."""
+    from django.db.models import F, Window
+    from django.db.models.functions import RowNumber
+    from world.models import SocialTrace
+
+    selected_ids = [knowledge.id for knowledge in knowledge_items]
+    traces_by_knowledge_id = {knowledge_id: [] for knowledge_id in selected_ids}
+    if selected_ids:
+        traces = (
+            SocialTrace.objects.filter(knowledge_id__in=selected_ids)
+            .annotate(
+                context_trace_rank=Window(
+                    expression=RowNumber(),
+                    partition_by=[F("knowledge_id")],
+                    order_by=("created_at", "id"),
+                )
+            )
+            .filter(context_trace_rank__lte=MAX_SOCIAL_CONTEXT_TRACES)
+            .select_related(
+                "from_node",
+                "to_node",
+                "edge",
+            )
+            .order_by("knowledge_id", "created_at", "id")
+        )
+        for trace in traces:
+            traces_by_knowledge_id[trace.knowledge_id].append(trace)
+    for knowledge in knowledge_items:
+        knowledge._context_traces = traces_by_knowledge_id[knowledge.id]
+
+
+def _fact_context_payload(knowledge, *, include_trace=True):
+    payload = {
+        "fact_key": knowledge.fact.fact_key,
+        "event_type": knowledge.fact.event_type,
+        "summary": knowledge.fact.summary,
+        "tags": list(knowledge.fact.tags or []),
+        "visibility": knowledge.fact.visibility,
+        "confidence": knowledge.confidence,
+        "channel": knowledge.channel,
+    }
+    if include_trace:
+        payload["trace"] = _trace_payloads_for_knowledge(knowledge)
+    return payload
+
+
+def _claim_context_payload(knowledge):
+    return {
+        "claim_key": knowledge.claim.claim_key,
+        "claim_type": knowledge.claim.claim_type,
+        "summary": knowledge.claim.summary,
+        "status": knowledge.claim.status,
+        "speaker": _node_payload(knowledge.claim.speaker_node),
+        "confidence": knowledge.confidence,
+        "channel": knowledge.channel,
+        "trace": _trace_payloads_for_knowledge(knowledge),
+    }
+
+
+def find_social_evidence(
+    *,
+    viewer_node_key,
+    subject_node_key,
+    purpose,
+    required_fact_tags=None,
+    fact_key_fragment="",
+    max_results=1,
+    now=None,
+):
+    """Find exact visible fact evidence without depending on a context packet.
+
+    All requested predicates must match the same fact. This is deliberately a
+    separate path from presentation: an older qualifying fact remains valid
+    even when a shorter dialogue packet omits it.
+    """
+    try:
+        max_results = max(0, int(max_results))
+    except (TypeError, ValueError):
+        return []
+    if max_results == 0:
+        return []
+
+    viewer = _get_node(viewer_node_key)
+    subject = _get_node(subject_node_key)
+    if not viewer or not subject:
+        return []
+
+    now = now or timezone.now()
+    required_tags = set(normalize_tags(required_fact_tags or []))
+    fact_key_fragment = str(fact_key_fragment or "").strip()
+    queryset = _context_knowledge_queryset(
+        viewer=viewer,
+        subject=subject,
+        purpose=str(purpose),
+        now=now,
+    ).filter(fact__isnull=False).select_related("fact")
+    if fact_key_fragment:
+        queryset = queryset.filter(fact__fact_key__contains=fact_key_fragment)
+
+    evidence = []
+    seen_fact_keys = set()
+    for knowledge in queryset.order_by("-confidence", "-learned_at", "id").iterator():
+        if knowledge.fact.fact_key in seen_fact_keys:
+            continue
+        fact_tags = set(normalize_tags(knowledge.fact.tags or []))
+        if not required_tags.issubset(fact_tags):
+            continue
+        seen_fact_keys.add(knowledge.fact.fact_key)
+        evidence.append(_fact_context_payload(knowledge, include_trace=False))
+        if len(evidence) >= max_results:
+            break
+    return evidence
+
+
+def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_items=5):
+    """Build a capped presentation packet from independently limited payloads."""
     viewer = _get_node(viewer_node_key)
     subject = _get_node(subject_node_key)
     purpose = str(purpose)
@@ -988,87 +1141,33 @@ def query_social_context(*, viewer_node_key, subject_node_key, purpose, max_item
             "claims": [],
         }
 
-    max_items = max(0, int(max_items))
-    trace_qs = SocialTrace.objects.select_related(
-        "from_node",
-        "to_node",
-        "edge",
-    ).order_by("created_at", "id")
-    knowledge_qs = (
-        SocialKnowledge.objects.filter(node=viewer)
-        .filter(Q(fact__subject_node=subject) | Q(claim__subject_node=subject))
-        .select_related(
-            "fact",
+    max_items = _clamp_social_context_items(max_items)
+    now = timezone.now()
+    knowledge_qs = _context_knowledge_queryset(
+        viewer=viewer,
+        subject=subject,
+        purpose=purpose,
+        now=now,
+    )
+    facts = _limited_unique_payload_knowledge(
+        knowledge_qs.filter(fact__isnull=False).select_related("fact"),
+        payload_field="fact_id",
+        limit=max_items,
+    )
+    claims = _limited_unique_payload_knowledge(
+        knowledge_qs.filter(claim__isnull=False).select_related(
             "claim",
             "claim__speaker_node",
-            "source_node",
-            "edge",
-        )
-        .prefetch_related(
-            Prefetch("traces", queryset=trace_qs, to_attr="_context_traces")
-        )
+        ),
+        payload_field="claim_id",
+        limit=max_items,
     )
-    knowledge_qs = _visible_for_purpose_filter(
-        active_social_payload_filter(available_now_filter(knowledge_qs)),
-        purpose,
-    ).order_by(
-        "-confidence",
-        "-learned_at",
-        "id",
-    )
-
-    facts = []
-    claims = []
-    seen_fact_keys = set()
-    seen_claim_keys = set()
-    for knowledge in knowledge_qs:
-        if len(facts) >= max_items and len(claims) >= max_items:
-            break
-
-        if (
-            knowledge.fact
-            and knowledge.fact.subject_node_id == subject.id
-            and knowledge.fact.fact_key not in seen_fact_keys
-            and len(facts) < max_items
-        ):
-            seen_fact_keys.add(knowledge.fact.fact_key)
-            facts.append(
-                {
-                    "fact_key": knowledge.fact.fact_key,
-                    "event_type": knowledge.fact.event_type,
-                    "summary": knowledge.fact.summary,
-                    "tags": list(knowledge.fact.tags or []),
-                    "visibility": knowledge.fact.visibility,
-                    "confidence": knowledge.confidence,
-                    "channel": knowledge.channel,
-                    "trace": _trace_payloads_for_knowledge(knowledge),
-                }
-            )
-
-        if (
-            knowledge.claim
-            and knowledge.claim.subject_node_id == subject.id
-            and knowledge.claim.claim_key not in seen_claim_keys
-            and len(claims) < max_items
-        ):
-            seen_claim_keys.add(knowledge.claim.claim_key)
-            claims.append(
-                {
-                    "claim_key": knowledge.claim.claim_key,
-                    "claim_type": knowledge.claim.claim_type,
-                    "summary": knowledge.claim.summary,
-                    "status": knowledge.claim.status,
-                    "speaker": _node_payload(knowledge.claim.speaker_node),
-                    "confidence": knowledge.confidence,
-                    "channel": knowledge.channel,
-                    "trace": _trace_payloads_for_knowledge(knowledge),
-                }
-            )
+    _attach_context_traces([*facts, *claims])
 
     return {
         "viewer": _node_payload(viewer),
         "subject": _node_payload(subject),
         "purpose": purpose,
-        "facts": facts,
-        "claims": claims,
+        "facts": [_fact_context_payload(knowledge) for knowledge in facts],
+        "claims": [_claim_context_payload(knowledge) for knowledge in claims],
     }
