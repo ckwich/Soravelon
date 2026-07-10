@@ -28,6 +28,19 @@ put secret game- or server-specific settings in secret_settings.py.
 from evennia.settings_default import *
 import os
 
+
+_social_renderer_enabled = os.environ.get("SOCIAL_RENDERER_ENABLED", "false")
+if _social_renderer_enabled.strip().lower() not in {"0", "false", "no", "off", "1", "true", "yes", "on"}:
+    raise RuntimeError(
+        "SOCIAL_RENDERER_ENABLED must be a boolean value when configured."
+    )
+SOCIAL_RENDERER_ENABLED = _social_renderer_enabled.strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
 ######################################################################
 # Evennia base server config
 ######################################################################

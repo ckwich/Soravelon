@@ -154,9 +154,12 @@ do not degrade into disguised generic templates.
 
 ## LLM Boundary
 
-The LLM context is a renderer-only packet. It may use prior interactions,
-Social Web facts, Social Web claims, and selected objectives to make an offer
-sound personal.
+The compiler may use prior interactions, Social Web facts, Social Web claims,
+and selected objectives to ground an offer. The renderer receives only its
+allowlisted semantic packet: bounded authored briefs, approved evidence
+summaries with explicit safe visibility, selected objective summaries, and
+display names of allowed entities. Claims stay server-side unless a later
+contract gives them an explicit safe-visibility projection.
 
 It must not:
 
@@ -171,9 +174,16 @@ Provider integration should add a renderer beside this grammar, not replace the
 grammar.
 
 The first live seam is `world.social_llm_renderer`. It builds a
-DeepSeek-compatible chat payload only from redacted `llm_context.prompt_inputs`
-and returns deterministic fallback speech by default. A provider call is allowed
-only when the caller explicitly passes `allow_provider_call=True` and the quest
-context itself has `provider_call_allowed=True`. Offer compilation attaches the
-fallback render packet for playtest visibility, but it never reads API keys,
-calls a model, mutates quests, or writes Social Web state.
+DeepSeek-compatible chat payload from an allowlisted semantic packet, not from
+the raw `llm_context.prompt_inputs`. The packet may contain bounded authored
+briefs, approved public evidence summaries, objective summaries, and display
+names of allowed entities. It must omit raw IDs, traces, confidence, private
+evidence, secrets, and withheld implications. The renderer validates model
+speech and tags for length, raw IDs, unapproved entities, and hidden lore before
+using it; otherwise it returns deterministic fallback speech.
+
+A provider call is allowed only when runtime renderer configuration is enabled,
+the caller explicitly passes `allow_provider_call=True`, and the quest context
+itself has `provider_call_allowed=True`. Offer compilation attaches the fallback
+render packet for playtest visibility, but it never reads API keys, calls a
+model, mutates quests, or writes Social Web state.

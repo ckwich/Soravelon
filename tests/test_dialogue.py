@@ -158,6 +158,57 @@ class TestQuestOfferAcceptance(unittest.TestCase):
     @patch("world.dialogue_engine.get_npc_hints", return_value=[])
     @patch("world.dialogue_engine.resolve_greeting", return_value=("Good road.", "neutral"))
     @patch("commands.cmd_dialogue._find_npc_in_room")
+    def test_talk_uses_the_social_renderer_result_for_offer_text(
+        self,
+        mock_find_npc,
+        _mock_greeting,
+        _mock_hints,
+        mock_get_offers,
+        _mock_talk_objectives,
+        _mock_deliver_objectives,
+    ):
+        from commands.cmd_dialogue import CmdTalk
+
+        room = SimpleNamespace()
+        npc = SimpleNamespace(
+            db=SimpleNamespace(npc_name="Agent Calloway"),
+            key="Agent Calloway",
+            location=room,
+        )
+        character = MagicMock()
+        character.location = room
+        character.ndb = SimpleNamespace(pending_quest_offer=None)
+        mock_find_npc.return_value = npc
+        mock_get_offers.return_value = [
+            {
+                "quest_id": "vc_sq_under_seal_dustwalkers_rest",
+                "name": "Under Seal at the Dustwalker's Rest",
+                "description": "Deterministic description should not be displayed.",
+                "social_quest_context": {
+                    "rendered_offer": {
+                        "speech": "Whistle needs quiet help before the story bends.",
+                        "provider_used": False,
+                        "fallback_used": True,
+                    }
+                },
+            }
+        ]
+
+        cmd = CmdTalk()
+        cmd.caller = character
+        cmd.args = "calloway"
+        cmd.func()
+
+        messages = "\n".join(call.args[0] for call in character.msg.call_args_list)
+        self.assertIn("Whistle needs quiet help", messages)
+        self.assertNotIn("Deterministic description should not be displayed.", messages)
+
+    @patch("world.quest_engine.check_deliver_objectives")
+    @patch("world.quest_engine.check_talk_to_objectives")
+    @patch("world.dialogue_engine.get_quest_offers")
+    @patch("world.dialogue_engine.get_npc_hints", return_value=[])
+    @patch("world.dialogue_engine.resolve_greeting", return_value=("Good road.", "neutral"))
+    @patch("commands.cmd_dialogue._find_npc_in_room")
     def test_talk_presents_multiple_offers_for_numbered_acceptance(
         self,
         mock_find_npc,

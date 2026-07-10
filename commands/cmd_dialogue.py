@@ -162,6 +162,16 @@ def _build_quest_oob_payload(npc, quest_data):
 # CmdTalk / greet
 # ---------------------------------------------------------------------------
 
+
+def _quest_offer_display_text(quest_data):
+    """Use the bounded renderer result, retaining authored prose as fallback."""
+    social_context = (quest_data or {}).get("social_quest_context") or {}
+    rendered_offer = social_context.get("rendered_offer") or {}
+    speech = rendered_offer.get("speech") if isinstance(rendered_offer, dict) else ""
+    if isinstance(speech, str) and speech.strip():
+        return speech.strip()
+    return (quest_data or {}).get("description", "A mysterious request.")
+
 class CmdTalk(Command):
     """
     Greet an NPC and hear what they have to say.
@@ -228,7 +238,7 @@ class CmdTalk(Command):
                 for index, offer in enumerate(quest_offers, start=1):
                     offer_lines.append(
                         f"|y[{index}] {offer.get('name', 'A task')}|n — "
-                        f"{offer.get('description', 'A mysterious request.')}"
+                        f"{_quest_offer_display_text(offer)}"
                     )
                 character.msg(
                     f"\n|y{npc_display} has several leads for you:|n\n"
@@ -242,7 +252,7 @@ class CmdTalk(Command):
                 return
             character.msg(
                 f"\n|y{npc_display} has a task for you:|n "
-                f"{quest_data.get('description', 'A mysterious request.')}"
+                f"{_quest_offer_display_text(quest_data)}"
             )
             character.msg("|x[Type |waccept|x or |wdecline|x]|n")
             character.ndb.pending_quest_offer = pending_offer
