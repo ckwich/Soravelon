@@ -138,8 +138,16 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdWhisper())
         from commands.cmd_socialmemory import CmdSocialMemory
         self.add(CmdSocialMemory())
-        from commands.cmd_social_verbs import CmdDeny
+        from commands.cmd_social_verbs import (
+            CmdConfront,
+            CmdDeny,
+            CmdProtect,
+            CmdReport,
+        )
         self.add(CmdDeny())
+        self.add(CmdProtect())
+        self.add(CmdConfront())
+        self.add(CmdReport())
         # Inspection commands (Phase 15)
         from commands.cmd_inspect import CmdInspect, CmdCompare
         self.add(CmdInspect())

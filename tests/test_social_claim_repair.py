@@ -306,4 +306,8 @@ class TestSocialVerbCmdsetRegistration(unittest.TestCase):
             cmdset.add = added_commands.append
             cmdset.at_cmdset_creation()
 
-        self.assertIn("deny", {cmd.key for cmd in added_commands})
+        self.assertTrue(
+            {"deny", "protect", "confront", "report"}.issubset(
+                {cmd.key for cmd in added_commands}
+            )
+        )

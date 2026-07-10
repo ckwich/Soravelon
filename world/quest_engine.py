@@ -33,7 +33,14 @@ def _ensure_model():
 
 MAX_ACTIVE_QUESTS = 5  # D-02
 
-OBJECTIVE_TYPES = {"kill", "collect", "investigate", "deliver", "talk_to"}
+OBJECTIVE_TYPES = {
+    "kill",
+    "collect",
+    "investigate",
+    "deliver",
+    "talk_to",
+    "social_interaction",
+}
 
 # Map non-MVP objective types to their MVP equivalents
 _OBJECTIVE_TYPE_ALIASES = {
@@ -153,6 +160,15 @@ def _make_obj_key(obj_type, target):
     return f"{obj_type}_{target}"
 
 
+def _objective_progress_key(objective):
+    """Use an authored step id when a social quest revisits one target."""
+    if objective.get("type") == "social_interaction":
+        step_id = str(objective.get("id") or "").strip()
+        if step_id:
+            return f"social_interaction_{step_id}"
+    return _make_obj_key(objective["type"], objective["target"])
+
+
 def _find_carried_item_by_tag(character, item_tag):
     """Return the first carried item matching an item_tag."""
     if not item_tag:
@@ -266,7 +282,7 @@ def accept_quest(character, quest_id, quest_spec):
     spec = _normalize_quest_spec(quest_spec)
     progress = {}
     for obj in (spec.get("objectives") or []):
-        key = _make_obj_key(obj["type"], obj["target"])
+        key = _objective_progress_key(obj)
         progress[key] = 0
 
     cq = CharacterQuest.objects.create(
@@ -505,6 +521,86 @@ def check_talk_to_objectives(character, npc):
             _advance_quest_objectives(character, cq.pk, quest_spec, updates)
 
 
+def _normalized_social_interaction_value(value):
+    return " ".join(str(value or "").strip().lower().split())
+
+
+def _social_interaction_prerequisite_keys(objective):
+    return [
+        f"social_interaction_{step_id}"
+        for step_id in (objective.get("prerequisites") or [])
+        if isinstance(step_id, str) and step_id.strip()
+    ]
+
+
+def check_social_interaction_objectives(
+    character,
+    npc,
+    *,
+    verb,
+    topic="",
+    evidence="",
+):
+    """Advance only the authored social interaction the player performed.
+
+    A social interaction needs the exact verb, NPC, and authored topic or
+    evidence. Its prerequisites are rechecked under the quest-row lock before
+    it can advance, so a plain talk or a reordered command cannot proxy it.
+    """
+    _ensure_model()
+
+    npc_id = npc.tags.get(category="npc_id") if hasattr(npc, "tags") else ""
+    npc_id = npc_id or ""
+    if not npc_id:
+        return False
+
+    verb = _normalized_social_interaction_value(verb)
+    topic = _normalized_social_interaction_value(topic)
+    evidence = _normalized_social_interaction_value(evidence)
+    if not verb:
+        return False
+
+    matched = False
+    for cq in CharacterQuest.objects.filter(character=character, status="active"):
+        quest_spec = _get_quest_spec(cq.quest_id)
+        if not quest_spec:
+            continue
+        progress = dict(cq.progress or {})
+        updates = []
+        for objective in quest_spec.get("objectives") or []:
+            if objective.get("type") != "social_interaction":
+                continue
+            if objective.get("target", "") != npc_id:
+                continue
+            if _normalized_social_interaction_value(objective.get("verb")) != verb:
+                continue
+            authored_topic = _normalized_social_interaction_value(
+                objective.get("topic")
+            )
+            authored_evidence = _normalized_social_interaction_value(
+                objective.get("evidence")
+            )
+            if authored_topic and authored_topic != topic:
+                continue
+            if authored_evidence and evidence and authored_evidence != evidence:
+                continue
+            prerequisite_keys = _social_interaction_prerequisite_keys(objective)
+            if any(progress.get(key, 0) < 1 for key in prerequisite_keys):
+                continue
+            updates.append(
+                {
+                    "key": _objective_progress_key(objective),
+                    "amount": 1,
+                    "cap": objective.get("count", 1),
+                    "prerequisite_keys": prerequisite_keys,
+                }
+            )
+        if updates:
+            matched = True
+            _advance_quest_objectives(character, cq.pk, quest_spec, updates)
+    return matched
+
+
 # ---------------------------------------------------------------------------
 # Completion and rewards
 # ---------------------------------------------------------------------------
@@ -533,7 +629,7 @@ def _run_rollback_callbacks(callbacks):
 
 def _objectives_complete(progress, quest_spec):
     for objective in quest_spec.get("objectives") or []:
-        key = _make_obj_key(objective["type"], objective["target"])
+        key = _objective_progress_key(objective)
         if progress.get(key, 0) < objective.get("count", 1):
             return False
     return True
@@ -687,6 +783,11 @@ def _advance_quest_objectives(
             changed_update_indexes = []
             for index, update in enumerate(updates):
                 key = update["key"]
+                if any(
+                    progress.get(prerequisite_key, 0) < 1
+                    for prerequisite_key in update.get("prerequisite_keys", ())
+                ):
+                    continue
                 current = progress.get(key, 0)
                 cap = update.get("cap")
                 new_value = current + update.get("amount", 1)
@@ -1012,7 +1113,7 @@ def get_quest_detail(character, quest_id):
     progress = dict(cq.progress or {})
     objectives = []
     for obj in (quest_spec.get("objectives") or []):
-        key = _make_obj_key(obj["type"], obj["target"])
+        key = _objective_progress_key(obj)
         objectives.append({
             "type": obj["type"],
             "target": obj["target"],

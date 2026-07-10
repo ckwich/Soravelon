@@ -92,10 +92,11 @@ SOCIAL_QUEST_OFFER_RULES = (
             },
         },
         "objective_targets": {
-            "interview_witness": "npc_innkeeper_whistle",
-            "secure_witness_route": "rd_inn",
+            "pressure_inquiry": "npc_innkeeper_whistle",
+            "protect_witness": "npc_innkeeper_whistle",
             "confront_coercer": "npc_debt_collector_raith",
-            "record_testimony": "npc_warden_agent_calloway",
+            "record_testimony": "npc_innkeeper_whistle",
+            "report_authority": "npc_warden_agent_calloway",
         },
     },
 )

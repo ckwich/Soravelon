@@ -1781,6 +1781,12 @@ def build():
                         "cleaner than it was.'"
                     ),
                 },
+                "testimony": {
+                    "default": (
+                        "'Put Whistle's testimony in the record. I will keep "
+                        "the source and the seal together.'"
+                    ),
+                },
             },
             "base_hints": ["work", "wardens", "rumors"],
         },
@@ -2116,6 +2122,23 @@ def build():
                 "empty": "Whistle has no fair story about you yet.",
             },
         },
+        dialogue={
+            "topics": {
+                "pressure": {
+                    "default": (
+                        "'Someone pressed me about Warden packet seals. I gave "
+                        "them no sealed detail, but I remember the pressure.'"
+                    ),
+                },
+                "testimony": {
+                    "default": (
+                        "'If the pressure is answered, I can put what I saw into "
+                        "a statement for the Wardens.'"
+                    ),
+                },
+            },
+            "base_hints": ["pressure", "testimony"],
+        },
     )
 
     # 43. Herbalist
@@ -2416,6 +2439,17 @@ def build():
                 "rumor": "Raith treats the rumor as possible leverage, useful enough to watch but not clean enough to spend yet.",
                 "empty": "Raith has not found a useful angle on you yet.",
             },
+        },
+        dialogue={
+            "topics": {
+                "pressure": {
+                    "default": (
+                        "'You came a long way to say pressure. Make the "
+                        "accusation you mean, or leave the word alone.'"
+                    ),
+                },
+            },
+            "base_hints": ["pressure"],
         },
     )
 

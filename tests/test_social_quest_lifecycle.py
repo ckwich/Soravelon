@@ -74,7 +74,8 @@ class TestSocialQuestLifecycle(EvenniaTest):
         _mock_hints,
         _mock_push_quest_update,
     ):
-        from commands.cmd_dialogue import CmdAccept, CmdTalk
+        from commands.cmd_dialogue import CmdAccept, CmdAsk, CmdTalk
+        from commands.cmd_social_verbs import CmdConfront, CmdProtect, CmdReport
         from world.models import (
             CharacterAccessGrant,
             CharacterQuest,
@@ -82,7 +83,7 @@ class TestSocialQuestLifecycle(EvenniaTest):
             SocialFact,
             SocialKnowledge,
         )
-        from world.quest_engine import check_investigate_objectives, get_available_quest_for_npc
+        from world.quest_engine import get_available_quest_for_npc
 
         mock_context_packet.return_value = {
             "reputation": 0,
@@ -116,11 +117,26 @@ class TestSocialQuestLifecycle(EvenniaTest):
         self.assertIsNotNone(offer)
         self.assertEqual(offer["quest_id"], "vc_sq_under_seal_dustwalkers_rest")
         self.assertEqual(
+            [objective["type"] for objective in offer["objectives"]],
+            [
+                "social_interaction",
+                "social_interaction",
+                "social_interaction",
+                "social_interaction",
+                "social_interaction",
+            ],
+        )
+        self.assertEqual(
+            [objective["verb"] for objective in offer["objectives"]],
+            ["ask", "protect", "confront", "ask", "report"],
+        )
+        self.assertEqual(
             [objective["target"] for objective in offer["objectives"]],
             [
                 "npc_innkeeper_whistle",
-                "rd_inn",
+                "npc_innkeeper_whistle",
                 "npc_debt_collector_raith",
+                "npc_innkeeper_whistle",
                 "npc_warden_agent_calloway",
             ],
         )
@@ -139,10 +155,11 @@ class TestSocialQuestLifecycle(EvenniaTest):
         self.assertEqual(
             cq.progress,
             {
-                "talk_to_npc_innkeeper_whistle": 0,
-                "investigate_rd_inn": 0,
-                "talk_to_npc_debt_collector_raith": 0,
-                "talk_to_npc_warden_agent_calloway": 0,
+                "social_interaction_pressure_inquiry": 0,
+                "social_interaction_protect_witness": 0,
+                "social_interaction_confront_coercer": 0,
+                "social_interaction_record_testimony": 0,
+                "social_interaction_report_authority": 0,
             },
         )
 
@@ -152,30 +169,73 @@ class TestSocialQuestLifecycle(EvenniaTest):
             talk_whistle.args = "Whistle"
             talk_whistle.func()
 
-        check_investigate_objectives(self.char1, self.char1.location)
+        cq.refresh_from_db()
+        self.assertEqual(cq.progress["social_interaction_pressure_inquiry"], 0)
+
+        whistle.db.dialogue_topics = {
+            "pressure": {"default": "'I saw the pressure and remember it.'"},
+            "testimony": {"default": "'I can put what I saw into a statement.'"},
+        }
+        raith.db.dialogue_topics = {
+            "pressure": {"default": "'You have said what you came to say.'"},
+        }
+        calloway.db.dialogue_topics = {
+            "testimony": {"default": "'Put the testimony in the record.'"},
+        }
 
         with patch.object(self.char1, "msg"):
-            talk_raith = CmdTalk()
-            talk_raith.caller = self.char1
-            talk_raith.args = "Raith"
-            talk_raith.func()
+            confront_too_early = CmdConfront()
+            confront_too_early.caller = self.char1
+            confront_too_early.args = "Raith about pressure"
+            confront_too_early.func()
+
+        cq.refresh_from_db()
+        self.assertEqual(cq.progress["social_interaction_confront_coercer"], 0)
+
+        with patch.object(self.char1, "msg"):
+            ask_pressure = CmdAsk()
+            ask_pressure.caller = self.char1
+            ask_pressure.args = "Whistle about pressure"
+            ask_pressure.func()
+
+        cq.refresh_from_db()
+        self.assertEqual(cq.progress["social_interaction_pressure_inquiry"], 1)
+
+        with patch.object(self.char1, "msg"):
+            protect = CmdProtect()
+            protect.caller = self.char1
+            protect.args = "Whistle"
+            protect.func()
+
+        with patch.object(self.char1, "msg"):
+            confront = CmdConfront()
+            confront.caller = self.char1
+            confront.args = "Raith about pressure"
+            confront.func()
+
+        with patch.object(self.char1, "msg"):
+            ask_testimony = CmdAsk()
+            ask_testimony.caller = self.char1
+            ask_testimony.args = "Whistle about testimony"
+            ask_testimony.func()
 
         cq.refresh_from_db()
         self.assertEqual(cq.status, "active")
-        self.assertEqual(cq.progress["talk_to_npc_innkeeper_whistle"], 1)
-        self.assertEqual(cq.progress["investigate_rd_inn"], 1)
-        self.assertEqual(cq.progress["talk_to_npc_debt_collector_raith"], 1)
-        self.assertEqual(cq.progress["talk_to_npc_warden_agent_calloway"], 0)
+        self.assertEqual(cq.progress["social_interaction_pressure_inquiry"], 1)
+        self.assertEqual(cq.progress["social_interaction_protect_witness"], 1)
+        self.assertEqual(cq.progress["social_interaction_confront_coercer"], 1)
+        self.assertEqual(cq.progress["social_interaction_record_testimony"], 1)
+        self.assertEqual(cq.progress["social_interaction_report_authority"], 0)
 
         with patch.object(self.char1, "msg"):
-            talk_calloway = CmdTalk()
-            talk_calloway.caller = self.char1
-            talk_calloway.args = "Calloway"
-            talk_calloway.func()
+            report = CmdReport()
+            report.caller = self.char1
+            report.args = "Calloway about testimony"
+            report.func()
 
         cq.refresh_from_db()
         self.assertEqual(cq.status, "complete")
-        self.assertEqual(cq.progress["talk_to_npc_warden_agent_calloway"], 1)
+        self.assertEqual(cq.progress["social_interaction_report_authority"], 1)
 
         fact_key = (
             f"fact:{self.char1.id}:"

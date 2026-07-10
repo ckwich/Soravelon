@@ -285,11 +285,20 @@ class TestSocialQuestOffers(EvenniaTest):
         )
         self.assertEqual(
             [objective["type"] for objective in offer["objectives"]],
-            ["talk_to", "investigate", "talk_to", "talk_to"],
+            ["social_interaction"] * 5,
         )
-        self.assertEqual(offer["objectives"][0]["target"], "npc_innkeeper_whistle")
-        self.assertEqual(offer["objectives"][1]["target"], "rd_inn")
-        self.assertEqual(offer["objectives"][2]["target"], "npc_debt_collector_raith")
+        self.assertEqual(
+            [objective["verb"] for objective in offer["objectives"]],
+            ["ask", "protect", "confront", "ask", "report"],
+        )
+        self.assertEqual(
+            offer["objectives"][1]["evidence"],
+            "safe_route",
+        )
+        self.assertEqual(
+            offer["objectives"][4]["prerequisites"],
+            ["record_testimony"],
+        )
         self.assertEqual(offer["rewards"][0]["action_type"], "record_social_event")
 
     @patch("world.quest_engine._get_all_quest_specs", return_value=[])
@@ -434,8 +443,9 @@ class TestSocialQuestOffers(EvenniaTest):
             [objective["target"] for objective in spec["objectives"]],
             [
                 "npc_innkeeper_whistle",
-                "rd_inn",
+                "npc_innkeeper_whistle",
                 "npc_debt_collector_raith",
+                "npc_innkeeper_whistle",
                 "npc_warden_agent_calloway",
             ],
         )

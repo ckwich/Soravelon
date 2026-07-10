@@ -14,7 +14,15 @@ from world.social_taxonomy import normalize_tags
 
 MAX_CONTEXT_ITEMS = 5
 MAX_CONTEXT_TEXT_CHARS = 320
-LIVE_QUEST_OBJECTIVE_TYPES = {"kill", "collect", "investigate", "deliver", "talk_to"}
+LIVE_QUEST_OBJECTIVE_TYPES = {
+    "kill",
+    "collect",
+    "investigate",
+    "deliver",
+    "talk_to",
+    "social_interaction",
+}
+SOCIAL_INTERACTION_VERBS = {"ask", "protect", "confront", "report"}
 
 
 class SocialQuestGrammarError(ValueError):
@@ -343,31 +351,52 @@ QUEST_ARCHETYPES = {
         "optional_roles": ["target", "speaker"],
         "objective_steps": [
             {
-                "id": "interview_witness",
+                "id": "pressure_inquiry",
                 "type": "interview_actor",
-                "engine_type": "talk_to",
+                "engine_type": "social_interaction",
                 "role": "witness",
+                "verb": "ask",
+                "topic": "pressure",
                 "summary": "Learn what the witness knows and what they fear.",
             },
             {
-                "id": "secure_witness_route",
+                "id": "protect_witness",
                 "type": "protect_target",
-                "engine_type": "investigate",
+                "engine_type": "social_interaction",
                 "role": "witness",
+                "verb": "protect",
+                "evidence": "safe_route",
+                "prerequisites": ["pressure_inquiry"],
                 "summary": "Create a safe route for testimony or escape.",
             },
             {
                 "id": "confront_coercer",
                 "type": "confront_actor",
-                "engine_type": "talk_to",
+                "engine_type": "social_interaction",
                 "role": "coercer",
+                "verb": "confront",
+                "topic": "pressure",
+                "prerequisites": ["protect_witness"],
                 "summary": "Stop or expose the pressure source.",
             },
             {
                 "id": "record_testimony",
+                "type": "interview_actor",
+                "engine_type": "social_interaction",
+                "role": "witness",
+                "verb": "ask",
+                "topic": "testimony",
+                "prerequisites": ["confront_coercer"],
+                "summary": "Take the witness's testimony after the pressure breaks.",
+            },
+            {
+                "id": "report_authority",
                 "type": "report_to_authority",
-                "engine_type": "talk_to",
+                "engine_type": "social_interaction",
                 "role": "authority",
+                "verb": "report",
+                "evidence": "testimony",
+                "prerequisites": ["record_testimony"],
                 "summary": "Record the testimony where it can travel credibly.",
             },
         ],
@@ -560,6 +589,7 @@ def _validate_objective_steps(archetype_id, archetype):
     known_roles.update(archetype.get("optional_roles") or [])
     errors = []
     seen_step_ids = set()
+    prerequisite_refs = []
     for index, step in enumerate(steps):
         if not isinstance(step, dict):
             errors.append(f"{archetype_id}.objective_steps[{index}] must be a dict")
@@ -582,6 +612,32 @@ def _validate_objective_steps(archetype_id, archetype):
                 f"{archetype_id}.objective_steps[{index}].engine_type unsupported "
                 f"value: {engine_type}"
             )
+        if engine_type == "social_interaction":
+            verb = step.get("verb")
+            if verb not in SOCIAL_INTERACTION_VERBS:
+                errors.append(
+                    f"{archetype_id}.objective_steps[{index}].verb unsupported "
+                    f"value: {verb}"
+                )
+            if not _safe_text(step.get("topic")) and not _safe_text(
+                step.get("evidence")
+            ):
+                errors.append(
+                    f"{archetype_id}.objective_steps[{index}] requires topic or evidence"
+                )
+            prerequisites = step.get("prerequisites", [])
+            if not isinstance(prerequisites, list) or any(
+                not isinstance(value, str) or not value.strip()
+                for value in prerequisites
+            ):
+                errors.append(
+                    f"{archetype_id}.objective_steps[{index}].prerequisites must be strings"
+                )
+            else:
+                prerequisite_refs.extend(
+                    (index, prerequisite)
+                    for prerequisite in prerequisites
+                )
         role = step.get("role")
         if role and role not in known_roles:
             errors.append(
@@ -589,6 +645,12 @@ def _validate_objective_steps(archetype_id, archetype):
             )
         if not isinstance(step.get("summary"), str) or not step["summary"].strip():
             errors.append(f"{archetype_id}.objective_steps[{index}].summary is required")
+    for index, prerequisite in prerequisite_refs:
+        if prerequisite not in seen_step_ids:
+            errors.append(
+                f"{archetype_id}.objective_steps[{index}].prerequisites unknown "
+                f"step: {prerequisite}"
+            )
     return errors
 
 
@@ -1031,6 +1093,16 @@ def _compile_live_objectives(archetype, objective_targets):
             "social_objective_type": step.get("type"),
             "social_role": step.get("role", ""),
         }
+        if engine_type == "social_interaction":
+            objective.update(
+                {
+                    "id": _safe_text(step.get("id")),
+                    "verb": _safe_text(step.get("verb")),
+                    "topic": _safe_text(step.get("topic")),
+                    "evidence": _safe_text(step.get("evidence")),
+                    "prerequisites": _copy_list(step.get("prerequisites")),
+                }
+            )
         if engine_type == "deliver":
             item_tag = _safe_text(
                 objective_targets.get(f"{step.get('id')}.item_tag")

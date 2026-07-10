@@ -327,6 +327,14 @@ class CmdAsk(Command):
                 # Record learned topic
                 npc_id = npc.db.npc_id or npc.key or ""
                 record_topic_learned(character, npc_id, topic_key, context)
+                from world.quest_engine import check_social_interaction_objectives
+
+                check_social_interaction_objectives(
+                    character,
+                    npc,
+                    verb="ask",
+                    topic=topic_text,
+                )
                 return
 
         # No topic match — show fallback with available topics
