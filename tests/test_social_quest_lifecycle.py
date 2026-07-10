@@ -1,5 +1,6 @@
 import ast
 import pathlib
+from unittest import TestCase
 from unittest.mock import patch
 
 from evennia import create_object
@@ -55,6 +56,21 @@ def _authored_social_profile(npc_id):
             if keyword.arg == "social_profile":
                 return ast.literal_eval(keyword.value)
     return {}
+
+
+class TestSocialInteractionObjectiveInputGuard(TestCase):
+    def test_nonpersistent_caller_does_not_query_quest_rows(self):
+        from world import quest_engine
+
+        with patch.object(quest_engine, "_ensure_model") as ensure_model:
+            matched = quest_engine.check_social_interaction_objectives(
+                object(),
+                object(),
+                verb="ask",
+            )
+
+        self.assertFalse(matched)
+        ensure_model.assert_not_called()
 
 
 class TestSocialQuestLifecycle(EvenniaTest):

@@ -1,2 +1,5 @@
 evennia==6.0.0
+# inflect 7.x pulls runtime AST instrumentation through typeguard, making
+# Evennia startup and the database-backed Social Web harness impractically slow.
+inflect==6.2.0
 psycopg[binary]>=3.2,<4.0

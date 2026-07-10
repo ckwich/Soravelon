@@ -547,6 +547,12 @@ def check_social_interaction_objectives(
     evidence. Its prerequisites are rechecked under the quest-row lock before
     it can advance, so a plain talk or a reordered command cannot proxy it.
     """
+    # Command/unit-test surfaces can supply a lightweight caller double. Social
+    # objectives are durable character state, so only a persisted Evennia
+    # character may query or advance quest rows.
+    if type(getattr(character, "pk", None)) is not int:
+        return False
+
     _ensure_model()
 
     npc_id = npc.tags.get(category="npc_id") if hasattr(npc, "tags") else ""

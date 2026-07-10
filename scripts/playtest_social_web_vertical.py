@@ -20,6 +20,12 @@ def _verify_live_runtime():
     import django
 
     django.setup()
+    # This script runs as a standalone process, outside the server's normal
+    # startup sequence. Initialize Evennia's public search helpers before the
+    # verifier inspects materialized rooms and NPCs.
+    import evennia
+
+    evennia._init()
     from world.social_playtest_verification import verify_social_web_runtime
 
     return verify_social_web_runtime()

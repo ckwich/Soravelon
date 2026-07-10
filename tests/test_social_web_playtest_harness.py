@@ -12,6 +12,58 @@ from scripts import playtest_social_web_vertical
 class TestSocialWebPlaytestHarness(unittest.TestCase):
     """The playtest route is explicit enough for a human to run."""
 
+    def test_live_runtime_verifier_initializes_evennia_before_querying_objects(self):
+        expected_checks = {"route state": "Calloway to Harven traversable"}
+
+        with patch("django.setup"), patch("evennia._init") as initialize_evennia, patch(
+            "world.social_playtest_verification.verify_social_web_runtime",
+            return_value=expected_checks,
+        ):
+            checks = playtest_social_web_vertical._verify_live_runtime()
+
+        self.assertEqual(checks, expected_checks)
+        initialize_evennia.assert_called_once_with()
+
+    def test_migration_verifier_reports_the_full_pending_world_plan(self):
+        from world import social_playtest_verification
+        from world.social_playtest_verification import SocialWebRuntimeVerificationError
+
+        class FakeMigration:
+            def __init__(self, name):
+                self.app_label = "world"
+                self.name = name
+
+        class FakeGraph:
+            @staticmethod
+            def leaf_nodes(app_label):
+                self.assertEqual(app_label, "world")
+                return [("world", "0022_encounter_reward")]
+
+        class FakeLoader:
+            graph = FakeGraph()
+            applied_migrations = set()
+
+        class FakeExecutor:
+            loader = FakeLoader()
+
+            def __init__(self, connection):
+                del connection
+
+            @staticmethod
+            def migration_plan(targets):
+                self.assertEqual(targets, [("world", "0022_encounter_reward")])
+                return [
+                    (FakeMigration("0003_worldeventlog"), False),
+                    (FakeMigration("0022_encounter_reward"), False),
+                ]
+
+        with patch("django.db.migrations.executor.MigrationExecutor", FakeExecutor):
+            with self.assertRaisesRegex(
+                SocialWebRuntimeVerificationError,
+                "0003_worldeventlog.*0022_encounter_reward",
+            ):
+                social_playtest_verification._verify_applied_migrations()
+
     def test_verify_mode_runs_the_runtime_gate_and_reports_each_check(self):
         expected_checks = {
             "applied migrations": "all current",
@@ -81,22 +133,25 @@ class TestSocialWebPlaytestHarness(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, guide)
 
-class TestSocialWebLiveRuntimeVerification(EvenniaTest):
-    """The verification gate inspects the materialized game, not a checklist."""
+class TestSocialWebCommandMovementAcceptance(EvenniaTest):
+    """One database-heavy build proves the live verifier and player route."""
 
-    def test_verifier_proves_the_materialized_vaels_to_harven_route(self):
+    def test_verifier_and_warden_player_path_write_live_social_consequences(self):
+        import evennia
+
+        from commands.cmd_dialogue import CmdAccept, CmdTalk
         from world.areas import ashreach_plains, vaels_crossing
-        from world.social_playtest_verification import verify_social_web_runtime
+        from world.models import CharacterQuest, SocialClaim, SocialFact, SocialKnowledge
+        from world.social_playtest_verification import (
+            _shortest_route,
+            verify_social_web_runtime,
+        )
 
         ashreach_plains.build()
         vaels_crossing.build()
-        # The server's second pass revisits an area after its cross-zone target
-        # exists. Rebuilding Ashreach here materializes its authored northbound
-        # return exit without widening this focused test to every area module.
         ashreach_plains.build()
 
         checks = verify_social_web_runtime()
-
         self.assertIn("world migrations current", checks["applied migrations"])
         self.assertIn("6 nodes", checks["materialized topology"])
         self.assertIn("hg_south_road south", checks["reciprocal exits"])
@@ -104,36 +159,12 @@ class TestSocialWebLiveRuntimeVerification(EvenniaTest):
         self.assertIn("Agent Calloway", checks["route state"])
         self.assertIn("Commander Harven", checks["route state"])
 
-    def test_verify_command_uses_the_real_runtime_verifier(self):
-        from world.areas import ashreach_plains, vaels_crossing
-
-        ashreach_plains.build()
-        vaels_crossing.build()
-        ashreach_plains.build()
-
         output = StringIO()
         with redirect_stdout(output):
             result = playtest_social_web_vertical.main(["--verify"])
-
         self.assertEqual(result, 0)
         self.assertIn("PASS applied migrations:", output.getvalue())
         self.assertIn("PASS route state:", output.getvalue())
-
-
-class TestSocialWebCommandMovementAcceptance(EvenniaTest):
-    """The Warden route is playable through real command and exit seams."""
-
-    def test_accept_move_and_delivery_write_live_social_consequences(self):
-        import evennia
-
-        from commands.cmd_dialogue import CmdAccept, CmdTalk
-        from world.areas import ashreach_plains, vaels_crossing
-        from world.models import CharacterQuest, SocialClaim, SocialFact, SocialKnowledge
-        from world.social_playtest_verification import _shortest_route
-
-        ashreach_plains.build()
-        vaels_crossing.build()
-        ashreach_plains.build()
 
         calloway = next(
             npc

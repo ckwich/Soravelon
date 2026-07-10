@@ -93,8 +93,11 @@ def _verify_applied_migrations():
 
     executor = MigrationExecutor(connection)
     world_leaves = executor.loader.graph.leaf_nodes("world")
-    applied = executor.loader.applied_migrations
-    pending = sorted(node for node in world_leaves if node not in applied)
+    pending = sorted(
+        (migration.app_label, migration.name)
+        for migration, backwards in executor.migration_plan(world_leaves)
+        if not backwards and migration.app_label == "world"
+    )
     _require(not pending, f"world migrations pending: {pending}")
     return f"world migrations current ({len(world_leaves)} leaf migration(s))"
 
