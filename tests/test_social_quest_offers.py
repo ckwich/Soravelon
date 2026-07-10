@@ -20,9 +20,34 @@ VAELS_CROSSING_PATH = pathlib.Path("world/areas/vaels_crossing.py")
 
 def _npc(npc_id):
     return SimpleNamespace(
-        db=SimpleNamespace(npc_id=npc_id),
+        db=SimpleNamespace(
+            npc_id=npc_id,
+            social_profile=_authored_social_profile(npc_id),
+        ),
         key=npc_id,
     )
+
+
+def _authored_social_profile(npc_id):
+    tree = ast.parse(VAELS_CROSSING_PATH.read_text())
+    for node in ast.walk(tree):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "npc"
+            and len(node.args) >= 2
+        ):
+            continue
+        try:
+            authored_npc_id = ast.literal_eval(node.args[1])
+        except (SyntaxError, ValueError):
+            continue
+        if authored_npc_id != npc_id:
+            continue
+        for keyword in node.keywords:
+            if keyword.arg == "social_profile":
+                return ast.literal_eval(keyword.value)
+    return {}
 
 
 def _authored_quest_kwargs(quest_id):
@@ -69,12 +94,14 @@ class TestSocialQuestOffers(EvenniaTest):
             quest_id="test_social_offer_high",
             priority=20,
             required_fact_key_fragment="high",
+            required_interpretation_stances=[],
         )
         low = copy.deepcopy(SOCIAL_QUEST_OFFER_RULES[0])
         low.update(
             quest_id="test_social_offer_low",
             priority=10,
             required_fact_key_fragment="low",
+            required_interpretation_stances=[],
         )
         npc = _npc("npc_warden_agent_calloway")
         evidence_by_fragment = {
@@ -300,6 +327,26 @@ class TestSocialQuestOffers(EvenniaTest):
             ["record_testimony"],
         )
         self.assertEqual(offer["rewards"][0]["action_type"], "record_social_event")
+
+    @patch("world.quest_engine._get_all_quest_specs", return_value=[])
+    def test_warden_social_offer_requires_favorable_authored_interpretation(
+        self,
+        _mock_all_specs,
+    ):
+        from world.quest_engine import get_available_quest_for_npc
+
+        self._pay_warden_report_rewards()
+        npc = _npc("npc_warden_agent_calloway")
+
+        self.assertIsNotNone(get_available_quest_for_npc(npc, self.char1))
+
+        cautious_profile = copy.deepcopy(npc.db.social_profile)
+        cautious_profile["worldview"]["admires"] = []
+        cautious_profile["worldview"]["uses"] = []
+        cautious_profile["worldview"]["skeptical_of"] = ["warden"]
+        npc.db.social_profile = cautious_profile
+
+        self.assertIsNone(get_available_quest_for_npc(npc, self.char1))
 
     @patch("world.quest_engine._get_all_quest_specs", return_value=[])
     def test_social_offer_uses_exact_evidence_outside_the_context_packet(

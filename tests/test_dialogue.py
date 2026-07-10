@@ -903,6 +903,41 @@ class TestDynamicHints(EvenniaTest):
         hints = get_npc_hints(npc, self.char1)
         self.assertLessEqual(len(hints), MAX_HINTS_DISPLAYED)
 
+    @patch("world.dialogue_engine.get_standing_tier", return_value="friendly")
+    @patch("world.dialogue_engine._build_dialogue_context")
+    def test_safe_social_change_resurfaces_known_hint(self, mock_ctx, _mock_tier):
+        from world.dialogue_engine import get_npc_hints, record_topic_learned
+
+        base_context = {
+            "standing_tier": "friendly",
+            "network": 0,
+            "reputation": 0,
+            "primary_domain": None,
+            "subclass": None,
+            "guild": None,
+            "completed_quests": [],
+            "social_context": {"facts": [], "claims": []},
+        }
+        changed_context = dict(
+            base_context,
+            social_context={
+                "facts": [
+                    {
+                        "fact_key": "fact:private-route-key",
+                        "summary": "A courier vouches for your clean delivery.",
+                        "channel": "official_report",
+                        "confidence": 0.95,
+                    }
+                ],
+                "claims": [],
+            },
+        )
+        npc = self._make_npc(base_hints=["work"])
+        record_topic_learned(self.char1, "test_npc", "work", base_context)
+        mock_ctx.return_value = changed_context
+
+        self.assertIn("work", get_npc_hints(npc, self.char1))
+
 
 # ---------------------------------------------------------------------------
 # NPC-03: Context packet interface stability
@@ -1158,8 +1193,8 @@ class TestContextPacketInterface(unittest.TestCase):
         self.assertIn("completed_quests", context)
         self.assertIn("failed_quests", context)
 
-    def test_context_hash_ignores_social_context(self):
-        """Adding Social Web context must not churn KnownTopicRecord hashes yet."""
+    def test_context_hash_tracks_safe_social_context_without_raw_identifiers(self):
+        """Hints refresh for newly safe social information, never raw metadata."""
         from world.dialogue_engine import _compute_context_hash
 
         context = {
@@ -1175,14 +1210,58 @@ class TestContextPacketInterface(unittest.TestCase):
                 "viewer": {"node_key": "npc:npc_greeter_maren"},
                 "subject": {"node_key": "player:42"},
                 "purpose": "dialogue",
-                "facts": [{"fact_key": "fact:test"}],
+                "facts": [
+                    {
+                        "fact_key": "fact:test:one",
+                        "summary": "A courier vouches for the delivery.",
+                        "channel": "official_report",
+                        "confidence": 0.95,
+                    }
+                ],
                 "claims": [],
+            },
+        )
+        same_safe_context = dict(
+            context,
+            social_context={
+                "viewer": {"node_key": "npc:other"},
+                "subject": {"node_key": "player:999"},
+                "purpose": "dialogue",
+                "facts": [
+                    {
+                        "fact_key": "fact:test:other",
+                        "summary": "A courier vouches for the delivery.",
+                        "channel": "official_report",
+                        "confidence": 0.1,
+                    }
+                ],
+                "claims": [],
+            },
+        )
+        changed_safe_context = dict(
+            with_social_context,
+            social_context={
+                **with_social_context["social_context"],
+                "facts": [
+                    {
+                        **with_social_context["social_context"]["facts"][0],
+                        "summary": "A courier reports a disputed delivery.",
+                    }
+                ],
             },
         )
 
         self.assertEqual(
+            _compute_context_hash(with_social_context),
+            _compute_context_hash(same_safe_context),
+        )
+        self.assertNotEqual(
             _compute_context_hash(context),
             _compute_context_hash(with_social_context),
+        )
+        self.assertNotEqual(
+            _compute_context_hash(with_social_context),
+            _compute_context_hash(changed_safe_context),
         )
 
 

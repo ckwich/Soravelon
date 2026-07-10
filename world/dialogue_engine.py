@@ -22,6 +22,7 @@ NPC dialogue data is stored on db attributes set by AreaBuilder:
 """
 
 import hashlib
+import json
 import logging
 import re
 import time
@@ -359,6 +360,21 @@ UNSAFE_SOCIAL_TEXT_PATTERNS = (
 )
 
 UNSAFE_SOCIAL_VISIBILITIES = {"private", "admin", "hidden", "secret"}
+SAFE_SOCIAL_CLAIM_STATUSES = {
+    "supported",
+    "rumor",
+    "contested",
+    "false",
+    "unknown",
+}
+SAFE_SOCIAL_INTERPRETATION_STANCES = {
+    "neutral",
+    "favorable",
+    "useful",
+    "uncertain",
+    "skeptical",
+    "guarded",
+}
 
 
 def _normalize_social_explanation_text(text):
@@ -505,8 +521,11 @@ def resolve_social_explanation(npc, character, *, context=None, pending_offer=No
         )
 
     social_context = (context or {}).get("social_context") or {}
+    interpretation = (context or {}).get("social_interpretation") or {}
+    evidence = _evidence_from_social_context(social_context)
     return _format_social_explanation(
-        evidence=_evidence_from_social_context(social_context),
+        summary=interpretation.get("summary", "") if evidence else "",
+        evidence=evidence,
     )
 
 
@@ -696,9 +715,9 @@ def _compute_context_hash(context):
     """
     Compute a short hash from context fields relevant to hint re-surfacing.
 
-    When a character's standing tier, quest state, or dimension scores
-    change significantly, the hash changes and previously-known topics
-    re-appear as hints.
+    When a character's standing tier, quest state, dimension scores, or
+    player-safe Social Web context changes, previously-known topics re-appear
+    as hints. Raw Social Web identifiers and confidence never enter this hash.
     """
     parts = [
         str(context.get("standing_tier", "")),
@@ -706,9 +725,39 @@ def _compute_context_hash(context):
         str(int(context.get("network") or 0)),
         str(context.get("guild") or ""),
         str(len(context.get("completed_quests") or [])),
+        _social_hint_digest(context),
     ]
     raw = "|".join(parts)
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+def _social_hint_digest(context):
+    """Return a stable, player-safe Social Web digest for hint re-surfacing."""
+    social_context = (context or {}).get("social_context") or {}
+    interpretation = (context or {}).get("social_interpretation") or {}
+    stance = _normalize_social_condition_value(interpretation.get("stance"))
+    if stance not in SAFE_SOCIAL_INTERPRETATION_STANCES:
+        stance = "neutral"
+
+    evidence = []
+    for item in _evidence_from_social_context(social_context):
+        status = _normalize_social_condition_value(item.get("status"))
+        evidence.append(
+            (
+                item.get("summary", ""),
+                item.get("channel", ""),
+                status if status in SAFE_SOCIAL_CLAIM_STATUSES else "",
+            )
+        )
+
+    payload = {
+        "interpretation": {
+            "stance": stance,
+            "summary": _safe_social_text(interpretation.get("summary")),
+        },
+        "evidence": sorted(evidence),
+    }
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 import ast
+from collections import UserDict
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
@@ -127,6 +128,61 @@ class TestSocialInterpretationProfiles(unittest.TestCase):
         self.assertNotEqual(calloway["summary"], whistle["summary"])
         self.assertNotEqual(whistle["summary"], raith["summary"])
 
+    def test_same_rumor_produces_distinct_safe_dialogue_explanations(self):
+        """Authored interpretation must affect what each NPC safely says."""
+        from world.dialogue_engine import resolve_social_explanation
+        from world.social_interpretation import build_social_interpretation
+
+        character = SimpleNamespace(id=42)
+        social_context = {
+            "viewer": {"node_key": "npc:npc_warden_agent_calloway"},
+            "subject": {"node_key": "player:42"},
+            "purpose": "dialogue",
+            "facts": [],
+            "claims": [
+                {
+                    "claim_key": "claim:private:road-rumor",
+                    "claim_type": "rumor",
+                    "summary": "A traveler says the player kept a hard road clean.",
+                    "status": "rumor",
+                    "channel": "tavern_rumor",
+                }
+            ],
+        }
+        calloway = self._npc("npc_warden_agent_calloway")
+        whistle = self._npc("npc_innkeeper_whistle")
+
+        calloway_text = resolve_social_explanation(
+            calloway,
+            character,
+            context={
+                "social_context": social_context,
+                "social_interpretation": build_social_interpretation(
+                    calloway,
+                    social_context,
+                ),
+            },
+        )
+        whistle_text = resolve_social_explanation(
+            whistle,
+            character,
+            context={
+                "social_context": social_context,
+                "social_interpretation": build_social_interpretation(
+                    whistle,
+                    social_context,
+                ),
+            },
+        )
+
+        self.assertIn("notes the rumor", calloway_text)
+        self.assertIn("heard it as road talk", whistle_text)
+        self.assertNotEqual(calloway_text, whistle_text)
+        for text in (calloway_text, whistle_text):
+            self.assertNotIn("fact:", text)
+            self.assertNotIn("claim:", text)
+            self.assertNotIn("0.95", text)
+
     def test_unknown_npc_gets_safe_neutral_interpretation(self):
         from world.social_interpretation import build_social_interpretation
 
@@ -142,6 +198,58 @@ class TestSocialInterpretationProfiles(unittest.TestCase):
         self.assertEqual(interpretation["public_trait"], "")
         self.assertIn("nothing specific", interpretation["summary"])
         self.assertEqual(interpretation["matched_tags"], [])
+
+    def test_profile_reader_accepts_persisted_mapping_values(self):
+        from world.social_interpretation import get_social_profile
+
+        profile = UserDict(
+            {
+                "social_role": "gatekeeper",
+                "worldview": {"admires": ["reliable"]},
+            }
+        )
+        npc = SimpleNamespace(
+            key="npc_mapping_profile",
+            db=SimpleNamespace(npc_id="npc_mapping_profile", social_profile=profile),
+        )
+
+        result = get_social_profile(npc)
+
+        self.assertEqual(result["social_role"], "gatekeeper")
+        self.assertIsInstance(result, dict)
+        self.assertIsNot(result, profile)
+
+    def test_profile_preferences_produce_a_guarded_interpretation(self):
+        from world.social_interpretation import build_social_interpretation
+
+        npc = SimpleNamespace(
+            key="npc_test_listener",
+            db=SimpleNamespace(
+                npc_id="npc_test_listener",
+                social_profile={
+                    "social_role": "listener",
+                    "worldview": {
+                        "admires": ["reliable"],
+                        "skeptical_of": ["rumor"],
+                        "fears": ["coercion"],
+                        "uses": ["official_report"],
+                    },
+                    "templates": {
+                        "supported": "They take supported business seriously.",
+                    },
+                },
+            ),
+        )
+        context = self._context()
+        context["facts"][0]["tags"].append("coercion")
+
+        interpretation = build_social_interpretation(npc, context)
+
+        self.assertEqual(interpretation["stance"], "guarded")
+        self.assertEqual(interpretation["admired_tags"], ["reliable"])
+        self.assertEqual(interpretation["skeptical_tags"], [])
+        self.assertEqual(interpretation["feared_tags"], ["coercion"])
+        self.assertEqual(interpretation["preferred_channels"], ["official_report"])
 
 
 class TestDialogueInterpretationIntegration(unittest.TestCase):

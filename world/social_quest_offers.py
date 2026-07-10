@@ -185,6 +185,18 @@ def _context_for_qualifying_evidence(context, evidence):
     }
 
 
+def _rule_allows_interpretation(rule, npc, social_context):
+    """Keep an authored offer behind the NPC posture its evidence supports."""
+    required_stances = set(rule.get("required_interpretation_stances") or [])
+    if not required_stances:
+        return True
+
+    from world.social_interpretation import build_social_interpretation
+
+    interpretation = build_social_interpretation(npc, social_context)
+    return interpretation.get("stance") in required_stances
+
+
 def get_social_quest_offers_for_npc(
     npc,
     character,
@@ -239,13 +251,16 @@ def get_social_quest_offers_for_npc(
                     subject_node_key=subject_node_key,
                     purpose="quest_offer",
                 )
+            offer_context = _context_for_qualifying_evidence(
+                presentation_context,
+                evidence,
+            )
+            if not _rule_allows_interpretation(rule, npc, offer_context):
+                continue
             offers.append(
                 _compile_offer_from_rule(
                     rule,
-                    social_context=_context_for_qualifying_evidence(
-                        presentation_context,
-                        evidence,
-                    ),
+                    social_context=offer_context,
                 )
             )
     except (OperationalError, ProgrammingError):

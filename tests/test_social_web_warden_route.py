@@ -36,6 +36,29 @@ def _authored_quest_kwargs(quest_id):
     raise AssertionError(f"Could not find authored quest {quest_id!r}")
 
 
+def _authored_social_profile(npc_id):
+    path = pathlib.Path("world/areas/vaels_crossing.py")
+    tree = ast.parse(path.read_text())
+    for node in ast.walk(tree):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "npc"
+            and len(node.args) >= 2
+        ):
+            continue
+        try:
+            authored_npc_id = ast.literal_eval(node.args[1])
+        except (SyntaxError, ValueError):
+            continue
+        if authored_npc_id != npc_id:
+            continue
+        for keyword in node.keywords:
+            if keyword.arg == "social_profile":
+                return ast.literal_eval(keyword.value)
+    return {}
+
+
 class TestVaelWardenSocialRoute(EvenniaTest):
     """Vael's Warden report can travel by contact edge without omniscience."""
 
@@ -81,6 +104,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         npc.db.faction = faction
         npc.db.zone_id = "vaels_crossing"
         npc.db.dialogue_topics = {}
+        npc.db.social_profile = _authored_social_profile(npc_id)
         npc.tags.add(npc_id, category="npc_id")
         return npc
 

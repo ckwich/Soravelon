@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import copy
 
+from world.social_interpretation import VALID_INTERPRETATION_STANCES
+
 
 class SocialQuestOfferRegistryError(ValueError):
     """An authored Social Web offer rule cannot be selected safely."""
@@ -20,6 +22,7 @@ SOCIAL_QUEST_OFFER_RULES = (
         "one_chance": True,
         "required_fact_tags": ["warden", "report", "quest"],
         "required_fact_key_fragment": "vc_q_warden_report:delivered",
+        "required_interpretation_stances": ["favorable"],
         "description": {
             "memory_summary_field": "summary",
             "with_memory": (
@@ -150,6 +153,18 @@ def validate_social_quest_offer_rules(rules):
             fragment = ""
         if not tags and not fragment.strip():
             errors.append(f"{label} requires at least one fact predicate")
+
+        required_stances = rule.get("required_interpretation_stances", [])
+        if not isinstance(required_stances, list) or any(
+            not _nonempty_text(stance) for stance in required_stances
+        ):
+            errors.append(
+                f"{label} required_interpretation_stances must be strings"
+            )
+        elif set(required_stances) - VALID_INTERPRETATION_STANCES:
+            errors.append(
+                f"{label} requires known interpretation stances"
+            )
 
         if not isinstance(rule.get("actors"), dict):
             errors.append(f"{label} actors must be a dictionary")
