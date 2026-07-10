@@ -140,6 +140,16 @@ class TestHelpEntries(unittest.TestCase):
         self.assertIn("leadership passes", text)
         self.assertNotIn("dissolve if the leader disconnects", text)
 
+    def test_loot_help_explains_personal_encounter_claims(self):
+        from world.help_entries import HELP_ENTRY_DICTS
+
+        loot_entry = next(entry for entry in HELP_ENTRY_DICTS if entry["key"] == "loot")
+        text = loot_entry["text"]
+
+        self.assertIn("loot rewards", text)
+        self.assertIn("personal reward", text)
+        self.assertIn("shared drops", text)
+
     def test_domains_command_no_longer_shadows_skills(self):
         from commands.cmd_domains import CmdDomains
 

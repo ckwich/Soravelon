@@ -771,6 +771,36 @@ class TestGroupLoot(unittest.TestCase):
             designated = get_designated_looter(char2, corpse)
             self.assertEqual(designated.id, char2.id)
 
+    def test_round_robin_skips_group_members_outside_the_encounter_snapshot(self):
+        """A remote member cannot block local participants' shared loot turn."""
+        from world.group_engine import get_designated_looter
+
+        leader = _make_character("Leader")
+        remote = _make_character("Remote")
+        local = _make_character("Local")
+        leader.ndb.group_leader_id = leader.id
+        leader.ndb.group_state = {
+            "members": [leader.id, remote.id, local.id],
+            "leader_id": leader.id,
+            "loot_mode": "round_robin",
+            "round_robin_index": 1,
+        }
+        remote.ndb.group_leader_id = leader.id
+        local.ndb.group_leader_id = leader.id
+        corpse = MagicMock()
+        corpse.db.authorized_looter_ids = [leader.id, local.id]
+
+        with patch("world.group_engine.evennia") as mock_ev:
+            mock_ev.search_object.side_effect = lambda value: {
+                str(leader.id): [leader],
+                str(remote.id): [remote],
+                str(local.id): [local],
+            }.get(value.removeprefix("#"), [])
+
+            designated = get_designated_looter(leader, corpse)
+
+        self.assertEqual(designated.id, local.id)
+
     def test_distribute_group_loot_returns_designated(self):
         """get_designated_looter returns None for ffa mode (anyone can loot)."""
         from world.group_engine import get_designated_looter

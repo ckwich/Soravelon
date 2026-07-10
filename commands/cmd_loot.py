@@ -14,6 +14,7 @@ class CmdLoot(Command):
     Usage:
         loot
         loot <corpse>
+        loot rewards
 
     Respects loot phases: killer gets first access (2 min grace period),
     then open to all, then corpse decays.
@@ -27,15 +28,25 @@ class CmdLoot(Command):
     def func(self):
         character = self.caller
 
+        if (self.args or "").strip().lower() == "rewards":
+            self._claim_personal_rewards(character)
+            return
+
         # Find corpse in room
         corpse = self._find_corpse(character)
         if not corpse:
             character.msg("|yThere is nothing to loot here.|n")
             return
 
-        # Check loot phase
+        # Personal rewards are independent of the shared corpse contents and
+        # cannot be claimed by another group member.
+        personal_claim = self._claim_personal_rewards(character, corpse.id)
+
+        # Check loot phase for ordinary shared drops.
         ok, msg = corpse.can_loot(character)
         if not ok:
+            if personal_claim["claimed"]:
+                return
             character.msg(f"|r{msg}|n")
             return
 
@@ -67,9 +78,24 @@ class CmdLoot(Command):
             # Advance round robin if applicable
             if is_in_group(character):
                 from world.group_engine import advance_round_robin
-                advance_round_robin(character)
-        else:
+                advance_round_robin(character, corpse=corpse)
+        elif not personal_claim["claimed"]:
             character.msg("|yThe corpse is empty.|n")
+
+    def _claim_personal_rewards(self, character, corpse_id=None):
+        from world.encounter_rewards import claim_personal_rewards
+
+        claim = claim_personal_rewards(character, corpse_id=corpse_id)
+        if not claim["claimed"]:
+            if corpse_id is None:
+                character.msg("|yYou have no personal encounter rewards waiting.|n")
+            return claim
+
+        rewards = list(claim["items"])
+        if claim["scales"]:
+            rewards.append(f"{claim['scales']} Scales")
+        character.msg("|gYou claim your personal reward: " + ", ".join(rewards) + ".|n")
+        return claim
 
     def _find_corpse(self, character):
         """Find a CorpseContainer in character's room, optionally matching args."""

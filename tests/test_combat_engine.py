@@ -594,8 +594,41 @@ class TestDeathHandling(unittest.TestCase):
              patch("world.combat_engine._move_room_loot_to_corpse"):
             mock_spawn.return_value = MagicMock()
             msg = handle_mob_death(mob, killer)
-            mock_spawn.assert_called_once_with(mob, killer)
+            mock_spawn.assert_called_once_with(
+                mob,
+                killer,
+                authorized_looter_ids=[],
+            )
             self.assertIn("slain", msg.lower())
+
+    def test_mob_death_snapshots_participants_before_reward_generation(self):
+        """The corpse lock and death lifecycle receive the same eligible roster."""
+        from world.combat_engine import handle_mob_death
+
+        mob = _make_mob()
+        killer = _make_player()
+        ally = _make_player()
+        ally.id = 3
+        corpse = MagicMock()
+        corpse.id = 101
+
+        with (
+            patch(
+                "world.encounter_rewards.snapshot_reward_recipients",
+                return_value=[killer, ally],
+            ),
+            patch("world.combat_engine.spawn_corpse", return_value=corpse) as spawn,
+            patch("world.combat_engine._move_room_loot_to_corpse"),
+        ):
+            handle_mob_death(mob, killer)
+
+        spawn.assert_called_once_with(
+            mob,
+            killer,
+            authorized_looter_ids=[killer.id, ally.id],
+        )
+        self.assertEqual(mob.ndb.encounter_reward_recipients, [killer, ally])
+        self.assertIs(mob.ndb.encounter_reward_corpse, corpse)
 
     def test_spawn_corpse_stores_butcherable_mob_type_identity(self):
         """Corpse butcher identity should use mob_type, not the display name."""

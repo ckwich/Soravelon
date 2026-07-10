@@ -966,10 +966,12 @@ HELP_ENTRY_DICTS = [
         "text": (
             "|wUsage:|n\n"
             "  loot\n"
-            "  loot <corpse>\n\n"
-            "Loot a corpse while respecting killer grace periods and your "
-            "group's loot mode. If round-robin is active, wait for your turn; "
-            "quest drops and Scales still remain personal.\n\n"
+            "  loot <corpse>\n"
+            "  loot rewards\n\n"
+            "Each eligible fighter receives a personal reward that only they "
+            "can claim; use |wloot rewards|n if the corpse has already gone. "
+            "Ordinary shared drops still respect killer grace periods and your "
+            "group's loot mode.\n\n"
             "|wExample:|n\n"
             "  > loot raider corpse"
         ),

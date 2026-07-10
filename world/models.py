@@ -495,6 +495,43 @@ class GameOperation(models.Model):
         return f"{self.operation_type}:{self.operation_id}"
 
 
+class EncounterReward(models.Model):
+    """One durable, independently claimable personal reward per encounter."""
+
+    character = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.CASCADE,
+        related_name="encounter_rewards",
+    )
+    corpse_id = models.BigIntegerField(db_index=True)
+    source_mob_key = models.CharField(max_length=128)
+    item_definitions = models.JSONField(default=list)
+    scales = models.IntegerField(default=0)
+    granted_at = models.DateTimeField(auto_now_add=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["character", "corpse_id"],
+                name="unique_personal_encounter_reward",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(scales__gte=0),
+                name="encounter_reward_scales_nonnegative",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["character", "claimed_at"],
+                name="world_reward_claim_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"char={self.character_id}:corpse={self.corpse_id}"
+
+
 class CharacterGuild(models.Model):
     """
     Character guild membership record.

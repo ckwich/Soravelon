@@ -653,11 +653,21 @@ def handle_mob_death(mob, killer):
     room = mob.location
     pre_death_ids = set(obj.id for obj in room.contents) if room else set()
 
+    # Freeze encounter eligibility before any death hook can mutate combat
+    # state. Personal reward and quest-credit decisions share this exact roster.
+    from world.encounter_rewards import snapshot_reward_recipients
+
+    recipients = snapshot_reward_recipients(mob, killer)
+    corpse = spawn_corpse(
+        mob,
+        killer,
+        authorized_looter_ids=[recipient.id for recipient in recipients],
+    )
+    mob.ndb.encounter_reward_recipients = recipients
+    mob.ndb.encounter_reward_corpse = corpse
+
     # Call existing at_death hook (handles loot drops, triggers, respawn)
     mob.at_death(killer=killer)
-
-    # Spawn corpse container for loot access
-    corpse = spawn_corpse(mob, killer)
 
     # Move ONLY newly dropped loot (items that appeared after at_death) into corpse
     if room and corpse:
@@ -778,7 +788,7 @@ def _respawn_player(character):
 # Corpse spawning (D-27)
 # ---------------------------------------------------------------------------
 
-def spawn_corpse(mob, killer):
+def spawn_corpse(mob, killer, authorized_looter_ids=None):
     """
     Create a CorpseContainer at the mob's location.
 
@@ -813,11 +823,19 @@ def spawn_corpse(mob, killer):
     corpse.db.butchered = False
 
     # Snapshot authorized looters at corpse creation so reloads/disconnects
-    # cannot rewrite access through ephemeral ndb group state.
-    from world.group_engine import get_group_member_ids
-    authorized_ids = get_group_member_ids(killer)
-    if not authorized_ids:
-        authorized_ids = [killer.id]
+    # cannot rewrite access through ephemeral ndb group state. Encounter entry
+    # supplies the authoritative nearby participants; direct callers preserve
+    # the old group fallback.
+    if authorized_looter_ids is None:
+        from world.group_engine import get_group_member_ids
+
+        authorized_ids = get_group_member_ids(killer)
+        if not authorized_ids:
+            authorized_ids = [killer.id]
+    else:
+        authorized_ids = list(authorized_looter_ids)
+        if not authorized_ids:
+            authorized_ids = [killer.id]
     corpse.db.authorized_looter_ids = authorized_ids
     corpse.db.killer_group_leader_id = getattr(
         killer.ndb, "group_leader_id", None

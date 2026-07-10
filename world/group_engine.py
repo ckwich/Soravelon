@@ -441,12 +441,19 @@ def get_designated_looter(character, corpse):
         if not members:
             return character
         idx = state.get("round_robin_index", 0) % len(members)
-        return members[idx]
+        authorized_ids = set(corpse.db.authorized_looter_ids or [])
+        if not authorized_ids:
+            return members[idx]
+        for offset in range(len(members)):
+            candidate = members[(idx + offset) % len(members)]
+            if candidate.id in authorized_ids:
+                return candidate
+        return character
 
     return character
 
 
-def advance_round_robin(character):
+def advance_round_robin(character, corpse=None):
     """Advance round robin index after successful loot."""
     leader = _get_leader(character)
     if not leader:
@@ -457,7 +464,18 @@ def advance_round_robin(character):
     members = _get_group_members(leader)
     if not members:
         return
-    state["round_robin_index"] = (state.get("round_robin_index", 0) + 1) % len(members)
+    current = state.get("round_robin_index", 0) % len(members)
+    authorized_ids = set(corpse.db.authorized_looter_ids or []) if corpse else set()
+    if authorized_ids:
+        for offset in range(1, len(members) + 1):
+            candidate_index = (current + offset) % len(members)
+            if members[candidate_index].id in authorized_ids:
+                state["round_robin_index"] = candidate_index
+                break
+        else:
+            state["round_robin_index"] = current
+    else:
+        state["round_robin_index"] = (current + 1) % len(members)
     leader.ndb.group_state = state
 
 

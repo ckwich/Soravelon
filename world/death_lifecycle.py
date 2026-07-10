@@ -29,9 +29,31 @@ def on_mob_death(mob, killer=None):
     # Drop loot (D-35: roll_loot called from at_death)
     room = mob.location
     if room and killer:
-        from world.loot_tables import roll_loot
         from world.item_spawner import create_item_from_template
-        drops = roll_loot(mob, killer)
+
+        corpse = getattr(mob.ndb, "encounter_reward_corpse", None)
+        recipients = getattr(mob.ndb, "encounter_reward_recipients", None)
+        if corpse and recipients:
+            from world.encounter_rewards import (
+                create_personal_entitlements,
+                roll_shared_drops,
+            )
+
+            reward_recipients = create_personal_entitlements(
+                mob,
+                corpse,
+                recipients,
+            )
+            for recipient in reward_recipients:
+                recipient.msg(
+                    f"|gPersonal reward secured from {mob.key}. "
+                    "Use loot on the corpse, or loot rewards, to claim it.|n"
+                )
+            drops = roll_shared_drops(mob, killer)
+        else:
+            from world.loot_tables import roll_loot
+
+            drops = roll_loot(mob, killer)
         for item_def in drops:
             create_item_from_template(item_def, location=room)
 
@@ -80,10 +102,17 @@ def on_mob_death(mob, killer=None):
             data={"named_id": mob.db.named_id or mob.key, "mob_key": mob.key},
         )
 
-    # Quest progress: kill objectives (D-07, D-19)
-    if killer and hasattr(killer, 'account') and killer.account:
-        from world.quest_engine import check_kill_objectives
-        check_kill_objectives(killer, mob)
+    # Quest progress: eligible same-room group participants have individual
+    # progress; remote and post-death group members never enter this snapshot.
+    recipients = getattr(mob.ndb, "encounter_reward_recipients", None)
+    if recipients is None:
+        recipients = [killer]
+    from world.encounter_rewards import grant_kill_credit
+
+    grant_kill_credit(recipients, mob)
+    for recipient in recipients:
+        if recipient is not killer and getattr(recipient, "account", None):
+            recipient.msg(f"|cYou receive nearby group credit for {mob.key}.|n")
 
     # Schedule respawn via SpawnRecord (replaces callLater)
     from world.mob_spawner import schedule_respawn_from_death
