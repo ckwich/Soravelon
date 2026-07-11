@@ -1,22 +1,22 @@
-"""Regression tests for Soravelon's Telnet transport boundary."""
+"""Regression tests for Evennia's stock Telnet transport boundary."""
 
 from unittest.mock import MagicMock
 
 from django.test import SimpleTestCase
 
 
-class TestSoravelonTelnetProtocol(SimpleTestCase):
+class TestEvenniaTelnetProtocol(SimpleTestCase):
     def _protocol(self):
-        from server.telnet_protocol import SoravelonTelnetProtocol
+        from evennia.server.portal.telnet import TelnetProtocol
 
-        protocol = object.__new__(SoravelonTelnetProtocol)
+        protocol = object.__new__(TelnetProtocol)
         protocol.line_buffer = b""
         protocol.data_in = MagicMock()
         protocol.transport = MagicMock()
         return protocol
 
     def test_bytes_command_reaches_game_input(self):
-        """Twisted's bytes payload is accepted instead of crashing the portal."""
+        """Twisted's bytes payload reaches the engine without a type error."""
         protocol = self._protocol()
 
         protocol.applicationDataReceived(b"look\r\n")

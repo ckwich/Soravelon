@@ -125,7 +125,3 @@ else:
         f"Unsupported SORAVELON_ENV '{SORAVELON_ENV}'. "
         "Expected 'development' or 'production'."
     )
-
-# Evennia 6.0.0's stock Telnet protocol applies a text regex to Twisted's
-# bytes payloads. Keep the protocol override local and configurable.
-TELNET_PROTOCOL_CLASS = "server.telnet_protocol.SoravelonTelnetProtocol"

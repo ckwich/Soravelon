@@ -1,11 +1,11 @@
 # Soravelon
 
-Soravelon is an Evennia 6.0 MUD focused on a server-first public v1 launch: authored zones, combat, progression, crafting, gathering, banking, social systems, and a custom help surface.
+Soravelon is an Evennia 6.1 MUD focused on a server-first public v1 launch: authored zones, combat, progression, crafting, gathering, banking, social systems, and a custom help surface.
 
 ## Stack
 
 - Python 3.12
-- Evennia 6.0.0
+- Evennia 6.1.0
 - Django ORM
 - SQLite for local development
 - PostgreSQL for staging and production
