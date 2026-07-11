@@ -9,14 +9,16 @@ This is a **base skill** that always loads when working in this repository.
 
 ---
 
-You are working in **soravelon**, an Evennia 6.0 MUD game.
+You are working in **Soravelon**, an Evennia 6.1 MUD game.
 
 ## Tech Stack
-Evennia 6.0 | Python | Django ORM | Twisted
+Evennia 6.1.0 | Python 3.12+ | Django ORM | Twisted
 
 ## Commands
-- `evennia start` / `evennia stop` / `evennia reload` — Server lifecycle
-- `evennia test --settings settings` or `pytest` — Run tests
+- `python scripts/run_tests.py [test_label ...]` — Canonical Django/Evennia test path
+- `python scripts/smoke_start.py` — Bootstrap/import smoke gate
+- `evennia start` / `evennia stop` / `evennia reload` — Server lifecycle (after activating `.venv`)
+- `evennia test --settings settings.py <test_label>` — Focused launcher alternative; `--settings` is a filename, not `server.conf.settings`
 - `evennia makemigrations world` / `evennia migrate` — DB migrations
 
 ## Architecture (3 layers)
@@ -31,7 +33,7 @@ Evennia 6.0 | Python | Django ORM | Twisted
 - `world/scripts/` — Tick-driven scripts (node_script, patrol_script, flight_script)
 - `commands/` — Custom commands and cmdsets
 - `server/conf/` — Settings, lifecycle hooks, connection screens, parsers
-- `tests/` — unittest.TestCase test suite (35 files)
+- `tests/` — Django/Evennia test suite
 - `web/` — Django web frontend customization
 
 ## Critical Rules
@@ -48,4 +50,4 @@ Evennia 6.0 | Python | Django ORM | Twisted
 11. **OOB messages go through `oob_publisher`** — never call `character.msg()` for OOB directly from game logic
 
 ---
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-07-11

@@ -19,8 +19,8 @@ Keywords: settings, ticker, server start, server stop, lifecycle, TICKER_HANDLER
 You are working on **soravelon's server configuration layer** (`server/conf/`).
 
 ## Key Files
-- `settings.py` — Minimal overrides: SERVERNAME, INSTALLED_APPS (+world), all 6 BASE_*_TYPECLASS paths, START_LOCATION, DEFAULT_CHANNELS (with OOC), FILE_HELP_ENTRY_MODULES, imports `secret_settings`
-- `at_server_startstop.py` — Registers 4 tickers in `at_server_start()` + initializes node pool
+- `settings.py` — Minimal overrides: SERVERNAME, INSTALLED_APPS (+world), all 6 BASE_*_TYPECLASS paths, OOB/help configuration, all default channels, `SOCIAL_RENDERER_ENABLED`, and imports `secret_settings`
+- `at_server_startstop.py` — Registers persistent tickers, initializes the node pool, rebuilds authored areas, resolves cross-zone exits, materializes Social Web topology, and initializes spawn records
 - `connection_screens.py` — Dark fantasy themed login screen with Soravelon lore excerpt, ANSI colors, and connect/create instructions
 - `secret_settings.py` — Server-specific secrets (DB creds, etc.) — **never commit**
 - `mssp.py` — MUD listing metadata (still has defaults, not yet customized)
@@ -33,6 +33,10 @@ All background ticks register here via `TICKER_HANDLER.add()` with `persistent=T
 | `session_xp_flush` | 600s (10m) | `world.world_state.session_xp_safety_flush` |
 | `node_failure_tick` | 30s | `world.node_helpers.node_failure_tick` |
 | `banking_payment_tick` | 86400s (24h) | `world.banking.banking_payment_tick` |
+| `spawn_tick` | 60s | `world.mob_spawner.spawn_tick` |
+| `wander_tick` | 60s | `world.wander_system.wander_tick` |
+| `npc_ambient_tick` | 15s | `world.dialogue_engine.ambient_npc_tick` |
+| `social_propagation_tick` | 60s | `world.social_engine.social_propagation_tick` |
 
 After tickers: `initialize_node_pool()` recovers orphaned Layer 1 rooms.
 
@@ -40,9 +44,10 @@ After tickers: `initialize_node_pool()` recovers orphaned Layer 1 rooms.
 `DEFAULT_CHANNELS` defines auto-created channels:
 - **Public** — default Evennia public discussion channel
 - **MudInfo** — admin-only connection log
-- **OOC** — server-wide out-of-character chat using `typeclasses.channels.OOCChannel` typeclass
-
-Domain-specific channels (`DomainChannel`) are created on-demand, not via DEFAULT_CHANNELS.
+- **OOC** — server-wide out-of-character chat using `typeclasses.channels.OOCChannel`
+- **Combat, Subterfuge, Naturalism, Resonance, Arcana, Diplomacy, Alchemy,
+  Tactics, Engineering, Remnance** — default `DomainChannel` instances with a
+  `domain_name` attribute
 
 ## Spawn & Respawn Location Tags
 - **`START_LOCATION = "#2"`** — Evennia-level fallback only. Actual spawn uses tag-based lookup in `Character.at_object_creation()`: `search_tag("greeter_room", category="spawn_point")` sets both `home` and `location`
@@ -57,7 +62,12 @@ Domain-specific channels (`DomainChannel`) are created on-demand, not via DEFAUL
 5. **Don't copy defaults** — only override what you change in `settings.py` to avoid blocking upstream updates
 6. **Stub files are inactive** — `cmdparser.py`, `serversession.py`, `at_search.py`, `inlinefuncs.py`, `inputfuncs.py` need explicit settings to activate (e.g., `COMMAND_PARSER = "server.conf.cmdparser.cmdparser"`)
 7. **Spawn location is tag-based, not dbref-based** — `START_LOCATION` is a fallback only; the real mechanism is `greeter_room` tag lookup in character creation
-8. **OOC channel uses custom typeclass** — `typeclasses.channels.OOCChannel` with `[OOC]` prefix. Adding new default channels requires matching typeclass in `typeclasses/channels.py`
+8. **OOC and domain channels use custom typeclasses** — update
+   `SORAVELON_DOMAIN_CHANNELS` and the matching channel behavior together; all
+   listed domains are materialized through `DEFAULT_CHANNELS` at startup.
+9. **Do not recreate the retired Telnet override** — Evennia 6.1 owns the
+   bytes-safe Telnet protocol. Prefer upstream upgrades plus stock-path tests
+   over copied protocol methods.
 
 ## References
 - **Evennia Settings Defaults:** `evennia/settings_default.py` (upstream)
@@ -68,4 +78,4 @@ Domain-specific channels (`DomainChannel`) are created on-demand, not via DEFAUL
 - **Channel Typeclasses:** `typeclasses/channels.py` — OOCChannel, DomainChannel
 
 ---
-**Last Updated:** 2026-04-05
+**Last Updated:** 2026-07-11
