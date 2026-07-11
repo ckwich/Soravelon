@@ -141,6 +141,21 @@ class TestExitCreatesSoravelonExit(AreaBuilderTestBase):
         self.assertEqual(exits[0].destination, r2)
 
 
+class TestExitDirectionUniqueness(AreaBuilderTestBase):
+    def test_exit_rejects_second_destination_in_same_direction(self):
+        """An authored room can expose at most one exit per direction."""
+        ab = self._make_builder()
+        origin = self._make_room(ab, "room_001")
+        first_destination = self._make_room(ab, "room_002")
+        second_destination = self._make_room(ab, "room_003")
+        ab.exit(origin, first_destination, "north")
+
+        with self.assertRaises(AreaBuilderValidationError) as ctx:
+            ab.exit(origin, second_destination, "north")
+
+        self.assertIn("duplicate exit direction 'north'", str(ctx.exception))
+
+
 class TestExitCreatesHiddenExit(AreaBuilderTestBase):
     def test_exit_creates_hidden_exit(self):
         """hidden=True creates HiddenExit."""

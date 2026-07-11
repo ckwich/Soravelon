@@ -322,13 +322,13 @@ def build():
     area.exit(hg_alley, hg_gatehouse, "west")
 
     # Thematic zone exit stubs (will be cross-zone exits when zones load)
-    area.exit(hg_south_road, hg_arrival, "north")
-    area.exit(hg_arrival, hg_south_road, "south")
+    area.exit(hg_south_road, hg_arrival, "northwest")
+    area.exit(hg_arrival, hg_south_road, "southeast")
     area.exit(hg_south_road, "ashreach_plains:ash_road_01", "south")
     area.exit(hg_east_road, hg_plaza_north, "west")
     area.exit(hg_plaza_north, hg_east_road, "east")
-    area.exit(hg_west_road, hg_plaza_north, "west")
-    area.exit(hg_plaza_north, hg_west_road, "east")
+    area.exit(hg_west_road, hg_plaza_north, "southeast")
+    area.exit(hg_plaza_north, hg_west_road, "northwest")
     area.exit(hg_wagon_yard, hg_west_road, "west")
     area.exit(hg_west_road, hg_wagon_yard, "east")
     area.exit(hg_north_road, hg_plaza_north, "south")
@@ -712,22 +712,22 @@ def build():
     )
 
     # Market District exits
-    area.exit(mk_square, hg_plaza_north, "south")
-    area.exit(hg_plaza_north, mk_square, "north")
+    area.exit(mk_square, hg_plaza_north, "southwest")
+    area.exit(hg_plaza_north, mk_square, "northeast")
     area.exit(mk_square, mk_weapon_shop, "east")
     area.exit(mk_weapon_shop, mk_square, "west")
     area.exit(mk_square, mk_armor_shop, "northeast")
     area.exit(mk_armor_shop, mk_square, "southwest")
-    area.exit(mk_square, mk_potion_shop, "northwest")
-    area.exit(mk_potion_shop, mk_square, "southeast")
+    area.exit(mk_square, mk_potion_shop, "in")
+    area.exit(mk_potion_shop, mk_square, "out")
     area.exit(mk_square, mk_general_store, "west")
     area.exit(mk_general_store, mk_square, "east")
     area.exit(mk_square, mk_food_stalls, "north")
     area.exit(mk_food_stalls, mk_square, "south")
     area.exit(mk_food_stalls, mk_cloth_row, "east")
     area.exit(mk_cloth_row, mk_food_stalls, "west")
-    area.exit(mk_square, mk_north_lane, "north")
-    area.exit(mk_north_lane, mk_square, "south")
+    area.exit(mk_square, mk_north_lane, "northwest")
+    area.exit(mk_north_lane, mk_square, "southeast")
     area.exit(mk_square, mk_south_lane, "south")
     area.exit(mk_south_lane, mk_square, "north")
     area.exit(mk_weapon_shop, mk_forge, "east")
@@ -746,8 +746,8 @@ def build():
     area.exit(mk_chandler, mk_general_store, "south")
     area.exit(mk_scribe, mk_south_lane, "east")
     area.exit(mk_south_lane, mk_scribe, "west")
-    area.exit(mk_square, mk_well, "west")
-    area.exit(mk_well, mk_square, "east")
+    area.exit(mk_square, mk_well, "down")
+    area.exit(mk_well, mk_square, "up")
     area.exit(mk_well, mk_spice_stall, "north")
     area.exit(mk_spice_stall, mk_well, "south")
 
@@ -1059,8 +1059,8 @@ def build():
     area.exit(gq_arcana_hall, gq_courtyard, "southwest")
     area.exit(gq_courtyard, gq_diplomacy_hall, "northwest")
     area.exit(gq_diplomacy_hall, gq_courtyard, "southeast")
-    area.exit(gq_courtyard, gq_alchemy_lab, "north")
-    area.exit(gq_alchemy_lab, gq_courtyard, "south")
+    area.exit(gq_courtyard, gq_alchemy_lab, "in")
+    area.exit(gq_alchemy_lab, gq_courtyard, "out")
     area.exit(gq_combat_hall, gq_tactics_hall, "north")
     area.exit(gq_tactics_hall, gq_combat_hall, "south")
     area.exit(gq_subterfuge_den, gq_engineering_hall, "north")
@@ -1316,8 +1316,8 @@ def build():
     )
 
     # Consortium Quarter exits
-    area.exit(cq_entrance, mk_south_lane, "south")
-    area.exit(mk_south_lane, cq_entrance, "north")
+    area.exit(cq_entrance, mk_south_lane, "southwest")
+    area.exit(mk_south_lane, cq_entrance, "northeast")
     area.exit(cq_entrance, cq_bank, "north")
     area.exit(cq_bank, cq_entrance, "south")
     area.exit(cq_entrance, cq_trading_house, "east")
@@ -1358,8 +1358,8 @@ def build():
         ),
         room_type="building",
     )
-    area.exit(cq_warehouse, vc_warehouse_district, "south")
-    area.exit(vc_warehouse_district, cq_warehouse, "north")
+    area.exit(cq_warehouse, vc_warehouse_district, "southeast")
+    area.exit(vc_warehouse_district, cq_warehouse, "northwest")
 
     # Consortium Quarter NPCs
 
@@ -2023,8 +2023,8 @@ def build():
     )
 
     # Residential District exits
-    area.exit(rd_main_street, mk_square, "east")
-    area.exit(mk_square, rd_main_street, "west")
+    area.exit(rd_main_street, mk_square, "in")
+    area.exit(mk_square, rd_main_street, "out")
     area.exit(rd_main_street, rd_tavern, "north")
     area.exit(rd_tavern, rd_main_street, "south")
     area.exit(rd_tavern, rd_tavern_kitchen, "west")
@@ -2049,8 +2049,8 @@ def build():
     area.exit(rd_laundry, rd_main_street, "southeast")
     area.exit(rd_boarding_house, rd_garden_plot, "south")
     area.exit(rd_garden_plot, rd_boarding_house, "north")
-    area.exit(rd_main_street, rd_back_lane, "south")
-    area.exit(rd_back_lane, rd_main_street, "north")
+    area.exit(rd_main_street, rd_back_lane, "southwest")
+    area.exit(rd_back_lane, rd_main_street, "northeast")
 
     # Residential District NPCs
 
@@ -2381,8 +2381,8 @@ def build():
     # Warrens exits
     area.exit(wn_entrance, rd_back_lane, "up", hidden=True)
     area.exit(rd_back_lane, wn_entrance, "down", hidden=True)
-    area.exit(hg_alley, wn_entrance, "down", hidden=True)
-    area.exit(wn_entrance, hg_alley, "up")
+    area.exit(hg_alley, wn_entrance, "southwest", hidden=True)
+    area.exit(wn_entrance, hg_alley, "northeast")
     area.exit(wn_entrance, wn_black_market, "north")
     area.exit(wn_black_market, wn_entrance, "south")
     area.exit(wn_black_market, wn_den_of_knives, "east")

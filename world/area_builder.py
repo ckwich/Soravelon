@@ -147,6 +147,9 @@ class AreaBuilder:
         self._mobs = {}                 # mob_key -> Evennia mob object
         self._npc_ids = set()           # npc_ids from npc() calls (reconciliation)
         self._exit_ids = set()          # exit object IDs from exit()/cross-zone (reconciliation)
+        self._authored_exit_destinations = {}
+        # (from_room.id, direction) -> local room id or cross-zone room token.
+        # A player command can only resolve one destination per direction.
         self._deferred_exits = []       # cross-zone exits to resolve later
         self._unresolved_exits = []     # exits that failed first-pass resolution
         self._deferred_patrols = []     # patrol definitions resolved in build()
@@ -341,6 +344,24 @@ class AreaBuilder:
                 f"zone '{self._zone_id}' — invalid direction '{direction}'. "
                 f"Valid: {', '.join(sorted(VALID_DIRECTIONS))}"
             )
+
+        source_key = (from_room.id, direction)
+        destination_key = (
+            to_room
+            if isinstance(to_room, str)
+            else getattr(to_room, "id", None)
+        )
+        existing_destination = self._authored_exit_destinations.get(source_key)
+        if (
+            existing_destination is not None
+            and existing_destination != destination_key
+        ):
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — duplicate exit direction "
+                f"'{direction}' from '{from_room.key}' points to more than "
+                "one destination"
+            )
+        self._authored_exit_destinations[source_key] = destination_key
 
         # Strip deprecated requires_level
         kwargs.pop("requires_level", None)

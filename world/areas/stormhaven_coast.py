@@ -632,8 +632,8 @@ def build():
     area.exit(sv_beach_landing, sv_fish_market, "north")
 
     # Connect village to harbor road
-    area.exit(hr_fisherman_rest, sv_village_square, "east")
-    area.exit(sv_village_square, hr_fisherman_rest, "west")
+    area.exit(hr_fisherman_rest, sv_village_square, "northeast")
+    area.exit(sv_village_square, hr_fisherman_rest, "southwest")
 
     # ==================================================================
     #  SUB-AREA 4: TIDAL FLATS (~14 rooms)
@@ -881,8 +881,8 @@ def build():
     area.exit(tf_stranded_boat, tf_mudflat, "west")
 
     # Connect tidal flats to cliff path
-    area.exit(cn_descent_beach, tf_upper_beach, "south")
-    area.exit(tf_upper_beach, cn_descent_beach, "north")
+    area.exit(cn_descent_beach, tf_upper_beach, "southwest")
+    area.exit(tf_upper_beach, cn_descent_beach, "northeast")
 
     # ==================================================================
     #  SUB-AREA 5: SEA CAVES (~16 rooms)
@@ -1178,8 +1178,8 @@ def build():
     area.exit(sc_seaweed_tunnel, sc_air_pocket, "north")
     area.exit(sc_seaweed_tunnel, sc_shell_graveyard, "south")
     area.exit(sc_shell_graveyard, sc_seaweed_tunnel, "north")
-    area.exit(sc_shell_graveyard, sc_deep_pool, "east")
-    area.exit(sc_deep_pool, sc_shell_graveyard, "west")
+    area.exit(sc_shell_graveyard, sc_deep_pool, "northeast")
+    area.exit(sc_deep_pool, sc_shell_graveyard, "southwest")
 
     sc_deep_sea_cave = area.room(
         "sc_deep_sea_cave",
@@ -1876,8 +1876,8 @@ def build():
     area.exit(cs_driftwood_shelter, cs_cliff_face, "north")
     area.exit(cs_driftwood_shelter, cs_tide_race, "east")
     area.exit(cs_tide_race, cs_driftwood_shelter, "west")
-    area.exit(cs_cliff_face, cs_south_junction, "south")
-    area.exit(cs_south_junction, cs_cliff_face, "north")
+    area.exit(cs_cliff_face, cs_south_junction, "southeast")
+    area.exit(cs_south_junction, cs_cliff_face, "northwest")
 
     # Cross-zone exit: south to plains zone
     area.exit(cs_south_junction, "ashreach_plains:outpost_01", "south")

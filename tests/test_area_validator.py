@@ -319,6 +319,24 @@ class TestValidateExits(unittest.TestCase):
         exit_errors = [e for e in errors if e.field_path.startswith("exits[")]
         self.assertEqual(exit_errors, [])
 
+    def test_duplicate_direction_from_one_room_returns_error(self):
+        """A room may not route one direction to multiple destinations."""
+        errors = validate_zone({
+            "zone": {"name": "Test", "zone_type": "plains", "continent": "varath",
+                     "faction_territory": "neutral"},
+            "rooms": [],
+            "exits": [
+                {"from": "room_001", "to": "room_002", "direction": "north"},
+                {"from": "room_001", "to": "room_003", "direction": "north"},
+            ],
+        })
+        duplicate_errors = [
+            error for error in errors
+            if error.field_path == "exits[1].direction"
+            and "duplicate exit direction" in error.message
+        ]
+        self.assertEqual(len(duplicate_errors), 1)
+
     def test_exit_without_direction_no_error(self):
         """Exit missing direction key produces no error."""
         errors = validate_zone({

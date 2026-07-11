@@ -505,12 +505,58 @@ def push_inventory_update(character):
     from world.inventory_engine import get_inventory_display_data  # lazy import
     from world.inventory_helpers import get_carry_state  # lazy import
 
+    def scalar(value, default=None):
+        """Keep the WebSocket payload limited to JSON-native scalar values."""
+        if value is None:
+            return default
+        if isinstance(value, (str, int, float, bool)):
+            return value
+        return str(value)
+
+    def item_payload(item, record):
+        item_db = getattr(item, "db", None)
+        return {
+            "item_id": scalar(getattr(item, "id", None)),
+            "record_id": scalar(getattr(record, "id", None)),
+            "name": scalar(getattr(item, "key", None), ""),
+            "quantity": scalar(getattr(record, "quantity", None), 1),
+            "equipment_slot": scalar(getattr(record, "equipment_slot", None)),
+            "container_id": scalar(getattr(record, "container_id", None)),
+            "weight": scalar(getattr(item_db, "weight", None), 0.0),
+            "item_type": scalar(getattr(item_db, "item_type", None), ""),
+            "rarity": scalar(getattr(item_db, "rarity", None), ""),
+        }
+
+    def container_payload(container, contents):
+        container_db = getattr(container, "db", None)
+        return {
+            "container_id": scalar(getattr(container, "id", None)),
+            "name": scalar(getattr(container, "key", None), ""),
+            "weight_reduction": scalar(
+                getattr(container_db, "weight_reduction", None),
+                0,
+            ),
+            "items": [item_payload(item, record) for item, record in contents],
+        }
+
     inv_data = get_inventory_display_data(character)
     data = {
-        "equipped": inv_data.get("equipped", []),
-        "carried": inv_data.get("carried", []),
-        "containers": inv_data.get("containers", {}),
-        "keyring": inv_data.get("keyring", []),
+        "equipped": [
+            item_payload(item, record)
+            for item, record in inv_data.get("equipped", [])
+        ],
+        "carried": [
+            item_payload(item, record)
+            for item, record in inv_data.get("carried", [])
+        ],
+        "containers": [
+            container_payload(container, contents)
+            for container, contents in inv_data.get("containers", {}).items()
+        ],
+        "keyring": [
+            item_payload(item, record)
+            for item, record in inv_data.get("keyring", [])
+        ],
         "carried_scales": inv_data.get("carried_scales", 0),
         "encumbrance": inv_data.get("carry_state", "light"),
         "carry_weight": inv_data.get("carry_weight", 0.0),

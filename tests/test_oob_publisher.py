@@ -8,9 +8,11 @@ characters are MagicMock — no real Evennia DB objects touched).
 MagicMock character simulates a connected player with all expected db/ndb attrs.
 """
 
+import json
 import os
 import time
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 # Configure Django settings before any world.* imports.
@@ -312,6 +314,38 @@ class TestPushInventoryUpdate(unittest.TestCase):
         push_inventory_update(self.char)
         data = self.char.msg.call_args.kwargs["inventory_update"]
         self.assertEqual(data["carried"], [])
+
+    @patch("world.inventory_engine.get_inventory_display_data")
+    def test_inventory_payload_is_json_serializable(self, mock_inv):
+        """WebSocket OOB payloads never expose ORM or Evennia objects."""
+        item = SimpleNamespace(
+            id=7,
+            key="Starter pack",
+            db=SimpleNamespace(weight=1.5, item_type="container", rarity="common"),
+        )
+        record = SimpleNamespace(
+            id=11,
+            quantity=1,
+            equipment_slot=None,
+            container_id=None,
+        )
+        mock_inv.return_value = {
+            "equipped": [],
+            "carried": [(item, record)],
+            "containers": {},
+            "keyring": [],
+            "carried_scales": 0,
+            "carry_state": "light",
+            "carry_weight": 1.5,
+            "carry_capacity": 60,
+        }
+
+        from world.oob_publisher import push_inventory_update
+        push_inventory_update(self.char)
+
+        payload = self.char.msg.call_args.kwargs["inventory_update"]
+        json.dumps(payload)
+        self.assertEqual(payload["carried"][0]["name"], "Starter pack")
 
 
 # ---------------------------------------------------------------------------

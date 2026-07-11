@@ -267,7 +267,9 @@ def validate_zone(zone_data: dict) -> list:
                 ),
             ))
 
-    # exits[N].direction — optional per exit; if present must be in VALID_DIRECTIONS
+    # exits[N].direction — optional per exit; if present must be in VALID_DIRECTIONS.
+    # A player command maps one direction to one destination from a room.
+    seen_exit_directions = {}
     for idx, exit_def in enumerate(exits):
         direction = exit_def.get("direction")
         if direction and direction not in VALID_DIRECTIONS:
@@ -279,6 +281,25 @@ def validate_zone(zone_data: dict) -> list:
                     f"Valid: {sorted(VALID_DIRECTIONS)}"
                 ),
             ))
+            continue
+
+        source = exit_def.get("from")
+        if not isinstance(source, str) or not source or not direction:
+            continue
+
+        source_direction = (source, direction)
+        previous_idx = seen_exit_directions.get(source_direction)
+        if previous_idx is not None:
+            errors.append(ValidationError(
+                severity="error",
+                field_path=f"exits[{idx}].direction",
+                message=(
+                    f"duplicate exit direction '{direction}' from '{source}'; "
+                    f"already declared by exits[{previous_idx}]"
+                ),
+            ))
+            continue
+        seen_exit_directions[source_direction] = idx
 
     _validate_loot_table_overrides(errors, loot_table_overrides)
     _validate_social_topology(errors, social_nodes, social_edges)
