@@ -82,7 +82,8 @@ world/nodes/     zone-node effects
   work.
 - Historical plans can name old versions. Do not "correct" them during an
   unrelated change; verify current behavior from the pin, source, and tests.
-  `AGENTS.md` lists vault proposals that have been explicitly superseded.
+  `AGENTS.md` distinguishes historical vault implementation proposals from the
+  planned model-generated-content architecture and its authority boundary.
 
 ## Domain Skills
 

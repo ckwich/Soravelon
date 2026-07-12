@@ -20,13 +20,21 @@ When the documents conflict, do not silently choose the convenient one. State
 the contradiction, verify the live path, and reconcile the durable docs in the
 same clean slice where appropriate.
 
-### Superseded Vault Proposals
+### Historical Vault Proposals and Future Direction
 
-- `brain/Soravelon/soravelon-llm-quests.md` is an exploratory March 2026
-  proposal, not an implementation authority. Its model-generated zones,
-  rewards, and world consequences are superseded by this contract: authored,
-  deterministic systems own quest structure, rewards, and state mutation;
-  any LLM use is bounded phrasing over allowlisted context.
+- `brain/Soravelon/soravelon-llm-quests.md` records the intended late-stage
+  direction: model-generated quests, custom areas, and rewards that respond to
+  the player and the living world. It is product intent, not a current
+  implementation blueprint or launch dependency.
+- The model may eventually produce a versioned, structured content proposal.
+  It never writes persistent state directly. A deterministic, game-owned
+  validator/compiler must check allowed identifiers, source facts and lore,
+  quest and area topology, reachability, room roles, mechanical legality,
+  reward/economy budgets, safety, and current permissions/state before an
+  accepted proposal is atomically and idempotently committed.
+- Begin that future pipeline with human review and replayable provenance. Move
+  to automatic publication only after representative proposal corpora prove
+  grounding, fairness, validation, fallback, and rollback behavior.
 - `projects/Soravelon/plan.md` and older vault architecture headers that name
   Evennia 6.0 are historical runtime snapshots. The active baseline is the
   `requirements.txt` pin and its live verification.
@@ -151,8 +159,11 @@ the model instead of preserving the patch.
 - The Social Web is local standing, trust, betrayal, rumor, and subjective
   NPC worldview—not a global morality number. It may route and personalize
   authored content; it must not replace authored truth with freeform AI.
-- Deterministic authored systems own quest structure, rewards, and world-state
-  mutation. An LLM may phrase bounded, allowlisted context only.
+- For launch and current systems, deterministic authored content owns quest
+  structure, rewards, and world-state mutation. The planned generative-content
+  pipeline may propose quests, custom areas, and reward packages, but the
+  model has no direct mutation authority: game-owned validation and compilation
+  decide what may publish and commit.
 - Every quest must tell a story, reveal or change the world, guide meaningful
   exploration, or deepen a relationship. Completion should leave visible or
   trackable consequences when appropriate.
