@@ -127,6 +127,29 @@ Every slice declares the smallest truthful check before coding:
 **Gate:** no new validator claims success through static text presence, mocks
 that replace the deciding runtime, or an unrepresentative fixture.
 
+### M0 evidence scorecard — 2026-07-12
+
+| Workstream / legacy claim | State | Current evidence | Deciding next gate |
+| --- | --- | --- | --- |
+| M0 program control | **complete** | This scorecard reconciles the current branch, both dirty worktrees, the master-plan Engram handoff, and the live tests/commits below. | Keep the table current only when a later slice changes phase truth. |
+| Evennia 6.1 Telnet repair | **complete** | `39c1541` removed the local compatibility path in favor of the pinned upstream repair; `3ca18a4` and `9a9af7d` provide navigation, Telnet, and live Social verifier coverage. | Reopen only if the stock-path regression or live protocol gate fails. |
+| Social Web gameplay vertical | **complete** | `285647f` proves the live runtime vertical and `9a9af7d` stabilizes its verifier; `tests/test_social_web_warden_route.py` and `tests/test_social_web_playtest_harness.py` retain the player-path gates. | Re-run after content compiler, dialogue, quest, or area-contract changes. |
+| Cooperative combat and personal rewards | **complete** | `57f3f08`, `6f8dbf0`, `3fa9cce`, and `96388a1` culminate in `tests/test_cooperative_combat_vertical.py`. | Re-run as part of M4 and M6 vertical proof. |
+| Production configuration hardening | **complete** for source contract; host lifecycle remains **active** | `ceea166` and `3676aa7` established environment-owned secrets, fail-closed production settings, listener checks, and `tests/test_production_settings.py`. No production deployment is claimed. | M1 release proof still requires disposable PostgreSQL and Linux-like supervisor lifecycle evidence. |
+| Executable release verification | **active** | `df09dd8` added `scripts/verify_release.py`, CI wiring, and `tests/test_verify_release.py`; the master M6 twice-clean disposable-environment gate has not run. | Extend only when a missing real release gate is proven; do not treat dry-run/source checks as host proof. |
+| Revisioned world content | **blocked** on implementation | Startup still mutates AreaBuilder-owned runtime state; no compiled manifest, revision plan/apply record, rollback, or idempotent restart proof exists. | M2.1 compiler must reject unmodelled mutation before any revision plan can be trusted. |
+| Builder Social DSL round trip | **active and unsafe to save** | The current Builder branch has no `social_node`/`social_edge` support in its parser/model search, while live Soravelon areas use those literal calls. The Builder worktree also contains an unrelated deleted `src-tauri/binaries/.gitkeep`, which must be preserved. | In a required Builder GSD workflow, first add a red real-source preservation test that proves Social calls cannot be silently dropped and unknown `area.*` calls fail with a source location. |
+| Builder save, packaging, and UI rebuild | **blocked** on B1.1 | A unified atomic save path and reproducible target-sidecar proof cannot be trusted until supported/unsupported grammar is lossless and explicit. | Complete B1.1 before B1.2, B1.3, or any Social/UI affordance. |
+| Fresh-player, living-world integration, content quality, and release candidate | **blocked** on M2/B1 foundations | Existing isolated systems do not prove the database-backed fresh-player, combined Social/co-op, launch-content, or twice-clean release gates. | Resume in program order after content compilation and offline Builder integrity are truthful. |
+| Historical Evennia 6.0/local Telnet override proposals | **obsolete** | `requirements.txt`, `AGENTS.md`, `CLAUDE.md`, and commit `39c1541` establish Evennia 6.1 with no project-local protocol override. | None unless a new upstream defect is proven. |
+
+**Exact next slice:** start the Builder's required GSD workflow and add only the
+red B1.1 real-source contract test for `social_node`, `social_edge`, and unknown
+literal `area.*` calls. Its deciding gate is the focused test failing because
+the current parser/serializer silently loses or accepts unmodelled operations;
+implementation belongs to the following smallest green slice if the red gate
+proves that symptom.
+
 ## 6. M1 — Host-Safe Runtime
 
 ### M1.1 Production configuration and secret truth
