@@ -98,4 +98,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run canonical test shard
-        run: python scripts/verify_release.py tests --shard ${{ matrix.shard }}/4
+        run: python scripts/verify_release.py full --shard ${{ matrix.shard }}/4

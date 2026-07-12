@@ -202,6 +202,10 @@ class TestReleaseWorkflowWiring(unittest.TestCase):
         self.assertIn("python scripts/verify_release.py preflight", workflow)
         self.assertIn("shard: [1, 2, 3, 4]", workflow)
         self.assertIn(
+            "python scripts/verify_release.py full --shard ${{ matrix.shard }}/4",
+            workflow,
+        )
+        self.assertNotIn(
             "python scripts/verify_release.py tests --shard ${{ matrix.shard }}/4",
             workflow,
         )

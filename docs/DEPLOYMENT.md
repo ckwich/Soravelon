@@ -50,12 +50,14 @@ economy/inventory reconciliation, and the canonical test command. It therefore
 mutates the configured database by applying migrations; never point this mode at
 an unbacked production database.
 
-CI uses the same executable in two parts so the measured 21-minute canonical
-suite can run in parallel:
+CI runs an early preflight job, then runs `full` independently in each shard
+because every job receives its own fresh PostgreSQL service. Evennia initializes
+against that configured database before Django creates the test database, so
+each shard must migrate its own disposable base database first:
 
 ```bash
 python scripts/verify_release.py preflight
-python scripts/verify_release.py tests --shard 1/4
+python scripts/verify_release.py full --shard 1/4
 ```
 
 All four deterministic test shards must pass. `preflight` is also the staging
