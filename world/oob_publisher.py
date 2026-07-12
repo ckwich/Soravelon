@@ -21,6 +21,8 @@ Wire format (Evennia native):
 
 import time
 
+from world.tag_search import search_objects_by_exact_tag
+
 # ---------------------------------------------------------------------------
 # Debounce configuration — minimum seconds between sends per message type.
 # Interval <= 0 means no debounce (always send).
@@ -283,7 +285,7 @@ def push_map_update(character):
         fog_of_war = bool(room.db.fog_of_war if hasattr(room, "db") else False)
 
     # Collect all objects tagged with this zone_id, filter to rooms only
-    candidates = evennia.search_tag(zone_id, category="zone_id")
+    candidates = search_objects_by_exact_tag(zone_id, "zone_id")
     rooms_data = []
     for r in candidates:
         # Filter: only room typeclasses (Pitfall 3 — avoids exits/zone objects/mobs)

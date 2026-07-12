@@ -11,6 +11,7 @@ creation commands.
 from evennia.objects.objects import DefaultCharacter
 
 from .objects import ObjectParent
+from world.tag_search import search_objects_by_exact_tag
 
 
 START_ROOM_ID = "hg_arrival"
@@ -86,9 +87,7 @@ class Character(ObjectParent, DefaultCharacter):
     def _get_start_location(self):
         """Return Soravelon's authored new-character room if it is loaded."""
         try:
-            import evennia
-
-            candidates = evennia.search_tag(START_ROOM_ID, category="room_id") or []
+            candidates = search_objects_by_exact_tag(START_ROOM_ID, "room_id")
         except (AttributeError, RuntimeError, TypeError):
             return None
 

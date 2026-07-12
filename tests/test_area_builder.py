@@ -3,7 +3,8 @@ Tests for the AreaBuilder class (Build Order Step 12).
 """
 
 from unittest.mock import patch, MagicMock
-from evennia.utils.test_resources import EvenniaTest
+from django.test import TransactionTestCase
+from evennia.utils.test_resources import EvenniaTest, EvenniaTestMixin
 from evennia import create_object
 
 from world.area_builder import AreaBuilder, AreaBuilderValidationError
@@ -119,6 +120,24 @@ class TestRoomIdempotent(AreaBuilderTestBase):
         r2 = self._make_room(ab2, "room_001")
 
         self.assertEqual(r1.id, r2.id)
+
+    def test_room_lookup_is_batched_per_builder(self):
+        """Room creation must not run Evennia's global tag search per room."""
+        with patch(
+            "world.area_builder.evennia.search_tag",
+            wraps=area_builder_module.evennia.search_tag,
+        ) as search_tag:
+            ab = self._make_builder("batched_room_lookup_zone")
+            self._make_room(ab, "room_001")
+            self._make_room(ab, "room_002")
+            self._make_room(ab, "room_003")
+
+        room_searches = [
+            call
+            for call in search_tag.call_args_list
+            if call.kwargs.get("category") == "room_id"
+        ]
+        self.assertEqual(room_searches, [])
 
 
 # ------------------------------------------------------------------
@@ -625,7 +644,13 @@ class TestSpawnWarnings(AreaBuilderTestBase):
         self.assertIn("definitely_missing_template", ab._build_warnings[0])
 
 
-class TestServerStartLoadsAreasDir(AreaBuilderTestBase):
+class TestServerStartLoadsAreasDir(EvenniaTestMixin, TransactionTestCase):
+    """Exercise the production-style autocommit world-load boundary."""
+
+    def setUp(self):
+        super().setUp()
+        zone_registry.clear()
+
     def test_server_start_loads_areas_dir(self):
         """_load_all_zones() processes .py files in world/areas/ without error."""
         from server.conf.at_server_startstop import _load_all_zones
@@ -975,7 +1000,10 @@ class TestTwoPassLoadAllZones(AreaBuilderTestBase):
         from server.conf.at_server_startstop import _load_all_zones
         from world.area_builder import clear_unresolved_exits, get_unresolved_exits
 
-        with patch("world.area_builder.clear_unresolved_exits") as mock_clear:
+        with (
+            patch("os.listdir", return_value=[]),
+            patch("world.area_builder.clear_unresolved_exits") as mock_clear,
+        ):
             _load_all_zones()
             mock_clear.assert_called_once()
 
@@ -983,7 +1011,13 @@ class TestTwoPassLoadAllZones(AreaBuilderTestBase):
         """_load_all_zones() calls get_unresolved_exits() after pass 1."""
         from server.conf.at_server_startstop import _load_all_zones
 
-        with patch("world.area_builder.get_unresolved_exits", return_value=[]) as mock_get:
+        with (
+            patch("os.listdir", return_value=[]),
+            patch(
+                "world.area_builder.get_unresolved_exits",
+                return_value=[],
+            ) as mock_get,
+        ):
             _load_all_zones()
             mock_get.assert_called_once()
 

@@ -12,6 +12,8 @@ Backend level is INTERNAL ONLY — never expose to players.
 import math
 import random
 
+from world.tag_search import search_objects_by_exact_tag
+
 REFERENCE_LEVEL = 10
 SCALE_FLOOR = 0.5
 
@@ -140,8 +142,7 @@ def get_zone_obj_for_room(room):
     if not zone_id:
         return None
     # Search by zone_id tag first (O(1) indexed), fall back to scan
-    import evennia
-    tagged = evennia.search_tag(zone_id, category="zone_id")
+    tagged = search_objects_by_exact_tag(zone_id, "zone_id")
     for obj in tagged:
         if obj.tags.get("zone_object", category="object_type"):
             return obj

@@ -135,13 +135,16 @@ def _load_all_zones():
     import json
     from django.conf import settings
     from world import zone_registry
-    from world.area_builder import clear_unresolved_exits, get_unresolved_exits
+    from world.area_builder import (
+        clear_unresolved_exits,
+        get_unresolved_exits,
+    )
+    from world.tag_search import search_objects_by_exact_tag
     from world.flight_registry import FlightRegistry
     from world.social_topology import (
         clear_registered_social_topology,
         materialize_registered_social_topology,
     )
-    import evennia as _evennia
 
     # Clear registries before rebuild
     zone_registry.clear()
@@ -237,7 +240,7 @@ def _load_all_zones():
         target_str = exit_data["to"]
         target_zone_id, target_room_id = target_str.split(":", 1)
 
-        candidates = _evennia.search_tag(target_room_id, category="room_id")
+        candidates = search_objects_by_exact_tag(target_room_id, "room_id")
         target = None
         for room in candidates:
             if (room.db.zone_id or "") == target_zone_id:

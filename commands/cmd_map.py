@@ -9,6 +9,7 @@ Exports:
 """
 
 from commands.command import Command
+from world.tag_search import search_objects_by_exact_tag
 
 
 class CmdMap(Command):
@@ -48,9 +49,7 @@ class CmdMap(Command):
             return
 
         # Find all rooms in same zone
-        from evennia.utils.search import search_tag
-
-        zone_rooms = search_tag(zone_tag, category="zone_id")
+        zone_rooms = search_objects_by_exact_tag(zone_tag, "zone_id")
 
         visited = char.db.visited_room_ids or set()
 

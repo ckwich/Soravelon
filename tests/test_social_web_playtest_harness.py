@@ -137,8 +137,6 @@ class TestSocialWebCommandMovementAcceptance(EvenniaTest):
     """One database-heavy build proves the live verifier and player route."""
 
     def test_verifier_and_warden_player_path_write_live_social_consequences(self):
-        import evennia
-
         from commands.cmd_dialogue import CmdAccept, CmdTalk
         from world.areas import ashreach_plains, vaels_crossing
         from world.models import CharacterQuest, SocialClaim, SocialFact, SocialKnowledge
@@ -146,6 +144,7 @@ class TestSocialWebCommandMovementAcceptance(EvenniaTest):
             _shortest_route,
             verify_social_web_runtime,
         )
+        from world.tag_search import search_objects_by_exact_tag
 
         ashreach_plains.build()
         vaels_crossing.build()
@@ -168,15 +167,15 @@ class TestSocialWebCommandMovementAcceptance(EvenniaTest):
 
         calloway = next(
             npc
-            for npc in evennia.search_tag(
-                "npc_warden_agent_calloway", category="npc_id"
+            for npc in search_objects_by_exact_tag(
+                "npc_warden_agent_calloway", "npc_id"
             )
             if npc.db.zone_id == "vaels_crossing"
         )
         harven = next(
             npc
-            for npc in evennia.search_tag(
-                "npc_warden_outpost_commander", category="npc_id"
+            for npc in search_objects_by_exact_tag(
+                "npc_warden_outpost_commander", "npc_id"
             )
             if npc.db.zone_id == "ashreach_plains"
         )

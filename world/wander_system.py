@@ -15,6 +15,8 @@ Decision refs: D-27 in 07-CONTEXT.md
 import random
 from unittest.mock import Mock
 
+from world.tag_search import search_objects_by_exact_tag
+
 try:
     import evennia
 except Exception:  # pragma: no cover - fallback for pure-logic tests
@@ -133,7 +135,7 @@ def wander_tick():
     2.5 minutes -- creating organic, living zones without
     overwhelming movement.
     """
-    wanderers = evennia.search_tag("wanderer", category="mob_behavior")
+    wanderers = search_objects_by_exact_tag("wanderer", "mob_behavior")
 
     for mob in wanderers:
         if random.random() < WANDER_CHANCE:

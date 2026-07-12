@@ -17,6 +17,7 @@ import random
 from datetime import datetime, timedelta
 
 import evennia
+from world.tag_search import search_objects_by_exact_tag
 
 try:
     from django.utils import timezone
@@ -112,7 +113,7 @@ def _count_room_mobs(room, spawn_def):
     mob_key = spawn_def["mob"]
 
     if spawn_def.get("is_named"):
-        tagged = evennia.search_tag(mob_key, category=MOB_INSTANCE_TAG_CATEGORY)
+        tagged = search_objects_by_exact_tag(mob_key, MOB_INSTANCE_TAG_CATEGORY)
         return sum(1 for obj in tagged if obj.location is room)
 
     return sum(
@@ -247,7 +248,7 @@ def spawn_zone(zone_obj):
     Returns int: total mobs spawned across the zone.
     """
     zone_id = zone_obj.db.zone_id
-    tagged = evennia.search_tag(zone_id, category="zone_id")
+    tagged = search_objects_by_exact_tag(zone_id, "zone_id")
 
     total = 0
     for obj in tagged:
@@ -303,7 +304,7 @@ def _maybe_attach_patrol(mob, spawn_def, room):
     zone_id = room.db.zone_id
     resolved_route_ids = []
     for room_id_tag in matched_def.get("route_room_ids", []):
-        rooms = evennia.search_tag(room_id_tag, category="room_id")
+        rooms = search_objects_by_exact_tag(room_id_tag, "room_id")
         for r in rooms:
             # Match by zone to avoid cross-zone collisions
             if getattr(r, "db", None) and r.db.zone_id == zone_id:
@@ -446,7 +447,7 @@ def initialize_spawn_records():
     """
     from world.models import SpawnRecord
 
-    all_rooms = list(evennia.search_tag("soravelon_room", category="room_type") or [])
+    all_rooms = list(search_objects_by_exact_tag("soravelon_room", "room_type"))
     if not all_rooms:
         try:
             from evennia.objects.models import ObjectDB

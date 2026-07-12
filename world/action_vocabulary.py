@@ -23,6 +23,8 @@ execute_action() enforces a trigger chain depth limit of 3 (D-19).
 
 TRIGGER_CHAIN_DEPTH_LIMIT = 3
 
+from world.tag_search import search_objects_by_exact_tag
+
 
 # ---------------------------------------------------------------------------
 # Handlers
@@ -104,8 +106,7 @@ def _handle_give_item(action_dict, context, _depth):
         room = context.get("room") or (character.location if character else None)
         if not room:
             return False, "give_item: no room context for template lookup"
-        import evennia
-        zone_objs = evennia.search_tag("zone_object", category="object_type")
+        zone_objs = search_objects_by_exact_tag("zone_object", "object_type")
         zone_id = room.db.zone_id
         zone_obj = next((o for o in zone_objs if o.db.zone_id == zone_id), None)
         if not zone_obj:
@@ -226,8 +227,7 @@ def _handle_spawn_mob(action_dict, context, _depth):
     target_room = room
     room_id = action_dict.get("room_id")
     if room_id:
-        import evennia
-        results = evennia.search_tag(room_id, category="room_id")
+        results = search_objects_by_exact_tag(room_id, "room_id")
         if results:
             target_room = results[0]
     if not target_room:
@@ -829,8 +829,7 @@ def _handle_modify_node_failure(action_dict, context, _depth):
     delta = action_dict.get("delta", 0)
     if not zone_id:
         return False, "modify_node_failure: missing zone_id"
-    import evennia
-    zone_objs = evennia.search_tag(zone_id, category="zone_id")
+    zone_objs = search_objects_by_exact_tag(zone_id, "zone_id")
     if not zone_objs:
         return False, f"modify_node_failure: zone '{zone_id}' not found"
     # Filter to actual zone object, not rooms/mobs that share the zone_id tag

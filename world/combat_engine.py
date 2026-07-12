@@ -19,6 +19,7 @@ import random
 import time
 
 from world.equipment_effects import BARE_HANDS_MAX, BARE_HANDS_MIN
+from world.tag_search import search_objects_by_exact_tag
 
 # ---------------------------------------------------------------------------
 # Domain-to-stat mapping (validated against ability_registry.py)
@@ -749,7 +750,6 @@ def _respawn_player(character):
     Falls back to character home, then any respawn_point tagged room.
     """
     from collections import deque
-    from evennia.utils.search import search_tag
     from world.base_attributes import derive_max_hp, derive_max_stamina
     from world import oob_publisher
 
@@ -784,7 +784,10 @@ def _respawn_player(character):
     if destination is None and character.home:
         destination = character.home
     if destination is None:
-        respawn_rooms = search_tag("respawn_point", category="spawn_point")
+        respawn_rooms = search_objects_by_exact_tag(
+            "respawn_point",
+            "spawn_point",
+        )
         if respawn_rooms:
             destination = respawn_rooms[0]
     if destination is None:

@@ -826,8 +826,10 @@ class TestAwakeningWarnings(NodeTestBase):
         with patch("world.scripts.node_script.random") as mock_random:
             mock_random.random.return_value = 0.3  # < 0.5, will send
             mock_random.choice.return_value = "The air shimmers with an unseen pressure."
-            with patch("world.scripts.node_script.evennia") as mock_ev:
-                mock_ev.search_tag.return_value = [mock_room]
+            with patch(
+                "world.scripts.node_script.search_objects_by_exact_tag",
+                return_value=[mock_room],
+            ):
                 script._send_awakening_warnings()
 
         mock_player.msg.assert_any_call(
@@ -853,8 +855,10 @@ class TestAwakeningWarnings(NodeTestBase):
 
         with patch("world.scripts.node_script.random") as mock_random:
             mock_random.random.return_value = 0.8  # > 0.5, skip atmospheric
-            with patch("world.scripts.node_script.evennia") as mock_ev:
-                mock_ev.search_tag.return_value = [mock_room]
+            with patch(
+                "world.scripts.node_script.search_objects_by_exact_tag",
+                return_value=[mock_room],
+            ):
                 script._send_awakening_warnings()
 
         mock_player.msg.assert_called_with(

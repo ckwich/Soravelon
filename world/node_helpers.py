@@ -5,6 +5,8 @@ Define these before implementing the NodeScript — several components depend on
 
 import evennia
 
+from world.tag_search import search_objects_by_exact_tag
+
 
 def get_node_script(zone_id):
     """
@@ -62,7 +64,7 @@ def count_zone_actors(zone_id):
     stabilizer_list contains the actual character objects for stabilization
     tick processing in node_failure_tick().
     """
-    rooms = evennia.search_tag(zone_id, category="zone_id")
+    rooms = search_objects_by_exact_tag(zone_id, "zone_id")
     players = 0
     scholars = 0
     stabilizers = 0
@@ -206,7 +208,7 @@ def initialize_node_pool():
     On server start, recover orphaned active Layer 1 rooms.
     Idempotent — safe to call on every server start.
     """
-    orphaned = evennia.search_tag("active", category="node_layer")
+    orphaned = search_objects_by_exact_tag("active", "node_layer")
     for room in orphaned:
         zone_id = room.db.zone_id
         script = get_node_script(zone_id)

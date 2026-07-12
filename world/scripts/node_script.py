@@ -11,6 +11,7 @@ import random
 from evennia.scripts.scripts import DefaultScript
 from world.node_helpers import get_rooms_in_radius
 from world.nodes.node_effects import apply_node_effects, remove_node_effects
+from world.tag_search import search_objects_by_exact_tag
 import evennia
 
 # Atmospheric echo messages during awakening (D-13)
@@ -89,7 +90,7 @@ class NodeScript(DefaultScript):
 
         # Gather connected player characters in the zone
         zone_rooms = [
-            r for r in evennia.search_tag(zone_id, category="zone_id")
+            r for r in search_objects_by_exact_tag(zone_id, "zone_id")
             if hasattr(r, "contents")
             and (not hasattr(r, "db_typeclass_path")
                  or "rooms." in (r.db_typeclass_path or ""))
@@ -168,7 +169,7 @@ class NodeScript(DefaultScript):
             from world import oob_publisher
             # Find zone rooms, then get connected characters in those rooms
             zone_rooms = [
-                r for r in evennia.search_tag(zone_id, category="zone_id")
+                r for r in search_objects_by_exact_tag(zone_id, "zone_id")
                 if hasattr(r, "contents")
                 and (not hasattr(r, "db_typeclass_path") or "rooms." in (r.db_typeclass_path or ""))
             ]

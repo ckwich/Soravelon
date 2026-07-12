@@ -805,7 +805,7 @@ class TestModifyNodeFailureHandler(unittest.TestCase):
         script.db.failure = 50.0
         zone_obj.scripts.get.return_value = [script]
 
-        with patch("evennia.search_tag", return_value=[zone_obj]):
+        with patch("world.action_vocabulary.search_objects_by_exact_tag", return_value=[zone_obj]):
             action = {"action_type": "modify_node_failure", "zone_id": "ashreach", "delta": 10}
             success, msg = execute_action(action, {})
 
@@ -821,7 +821,7 @@ class TestModifyNodeFailureHandler(unittest.TestCase):
         script.db.failure = 50.0
         zone_obj.scripts.get.return_value = [script]
 
-        with patch("evennia.search_tag", return_value=[zone_obj]):
+        with patch("world.action_vocabulary.search_objects_by_exact_tag", return_value=[zone_obj]):
             action = {"action_type": "modify_node_failure", "zone_id": "ashreach", "delta": -20}
             success, msg = execute_action(action, {})
 
@@ -837,7 +837,7 @@ class TestModifyNodeFailureHandler(unittest.TestCase):
         script.db.failure = 10.0
         zone_obj.scripts.get.return_value = [script]
 
-        with patch("evennia.search_tag", return_value=[zone_obj]):
+        with patch("world.action_vocabulary.search_objects_by_exact_tag", return_value=[zone_obj]):
             action = {"action_type": "modify_node_failure", "zone_id": "ashreach", "delta": -50}
             success, msg = execute_action(action, {})
 
@@ -853,7 +853,7 @@ class TestModifyNodeFailureHandler(unittest.TestCase):
         script.db.failure = 90.0
         zone_obj.scripts.get.return_value = [script]
 
-        with patch("evennia.search_tag", return_value=[zone_obj]):
+        with patch("world.action_vocabulary.search_objects_by_exact_tag", return_value=[zone_obj]):
             action = {"action_type": "modify_node_failure", "zone_id": "ashreach", "delta": 50}
             success, msg = execute_action(action, {})
 
@@ -873,7 +873,7 @@ class TestModifyNodeFailureHandler(unittest.TestCase):
         """modify_node_failure with unknown zone_id returns failure."""
         from world.action_vocabulary import execute_action
 
-        with patch("evennia.search_tag", return_value=[]):
+        with patch("world.action_vocabulary.search_objects_by_exact_tag", return_value=[]):
             action = {"action_type": "modify_node_failure", "zone_id": "nonexistent", "delta": 10}
             success, msg = execute_action(action, {})
 
@@ -887,7 +887,7 @@ class TestModifyNodeFailureHandler(unittest.TestCase):
         zone_obj = MagicMock()
         zone_obj.scripts.get.return_value = []
 
-        with patch("evennia.search_tag", return_value=[zone_obj]):
+        with patch("world.action_vocabulary.search_objects_by_exact_tag", return_value=[zone_obj]):
             action = {"action_type": "modify_node_failure", "zone_id": "ashreach", "delta": 10}
             success, msg = execute_action(action, {})
 
@@ -903,7 +903,7 @@ class TestModifyNodeFailureHandler(unittest.TestCase):
         script.db.failure = 40.0
         zone_obj.scripts.get.return_value = [script]
 
-        with patch("evennia.search_tag", return_value=[zone_obj]):
+        with patch("world.action_vocabulary.search_objects_by_exact_tag", return_value=[zone_obj]):
             action = {"action_type": "modify_node_failure", "zone_id": "ashreach", "delta": 10}
             execute_action(action, {})
 

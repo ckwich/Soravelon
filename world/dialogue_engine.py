@@ -28,6 +28,7 @@ import re
 import time
 
 from django.db import OperationalError, ProgrammingError
+from world.tag_search import search_objects_by_exact_tag
 
 from world.dialogue_definitions import (
     MAX_HINTS_DISPLAYED,
@@ -871,10 +872,8 @@ def ambient_npc_tick():
     """
     import random
 
-    from evennia.utils.search import search_tag
-
     # Find all objects tagged as NPCs
-    npc_objects = search_tag("npc", category="character_type")
+    npc_objects = search_objects_by_exact_tag("npc", "character_type")
 
     now = time.time()
 

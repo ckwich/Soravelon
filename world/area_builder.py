@@ -25,6 +25,7 @@ import evennia
 from evennia import create_object
 
 from world import zone_registry
+from world.tag_search import search_objects_by_exact_tag
 
 
 # AreaBuilderValidationError imported from area_validator above
@@ -144,6 +145,7 @@ class AreaBuilder:
         self._zone_id = zone_id
         self._zone_data = {}
         self._rooms = {}                # room_id -> Evennia room object
+        self._existing_rooms_by_id = None  # lazy, batch-fetched per zone
         self._mobs = {}                 # mob_key -> Evennia mob object
         self._npc_ids = set()           # npc_ids from npc() calls (reconciliation)
         self._exit_ids = set()          # exit object IDs from exit()/cross-zone (reconciliation)
@@ -243,7 +245,7 @@ class AreaBuilder:
         """Find existing ZoneObject for this zone_id, or create one."""
         from typeclasses.objects import SoravelonObject
 
-        existing = evennia.search_tag("zone_object", category="object_type")
+        existing = search_objects_by_exact_tag("zone_object", "object_type")
         for obj in existing:
             if (obj.db.zone_id or "") == self._zone_id:
                 return obj
@@ -274,11 +276,14 @@ class AreaBuilder:
         Existing rooms found by room_id tag + zone_id filter.
         Updates attributes on existing rooms (reload = update in place).
         """
-        candidates = evennia.search_tag(room_id, category="room_id")
-        for room in candidates:
-            if (room.db.zone_id or "") == self._zone_id:
-                self._set_room_attrs(room, room_id, **kwargs)
-                return room
+        if self._existing_rooms_by_id is None:
+            self._existing_rooms_by_id = self._load_existing_rooms()
+
+        normalized_room_id = str(room_id).strip().casefold()
+        room = self._existing_rooms_by_id.get(normalized_room_id)
+        if room:
+            self._set_room_attrs(room, room_id, **kwargs)
+            return room
 
         from typeclasses.rooms import SoravelonRoom
         room_obj = create_object(
@@ -287,7 +292,42 @@ class AreaBuilder:
             location=None,
         )
         self._set_room_attrs(room_obj, room_id, **kwargs)
+        self._existing_rooms_by_id[normalized_room_id] = room_obj
         return room_obj
+
+    def _load_existing_rooms(self):
+        """Return this zone's existing rooms keyed by normalized room ID.
+
+        Evennia's generic tag lookup aggregates every tagged object before
+        filtering matches. At world scale that makes each idempotency check
+        progressively slower on PostgreSQL, so resolve the zone's room-tag
+        identities in one batch through the public Django M2M relation.
+        """
+        from evennia.objects.models import ObjectDB
+
+        through = ObjectDB.db_tags.through
+        zone_object_ids = through.objects.filter(
+            tag__db_key=str(self._zone_id).strip().casefold(),
+            tag__db_category="zone_id",
+            tag__db_model="objectdb",
+            tag__db_tagtype__isnull=True,
+        ).values("objectdb_id")
+        room_links = list(
+            through.objects.filter(
+                objectdb_id__in=zone_object_ids,
+                tag__db_category="room_id",
+                tag__db_model="objectdb",
+                tag__db_tagtype__isnull=True,
+            ).values_list("tag__db_key", "objectdb_id")
+        )
+        rooms_by_id = ObjectDB.objects.in_bulk(
+            object_id for _, object_id in room_links
+        )
+        return {
+            str(room_id).casefold(): rooms_by_id[object_id]
+            for room_id, object_id in room_links
+            if object_id in rooms_by_id
+        }
 
     def _set_room_attrs(self, room_obj, room_id, **kwargs):
         """Set all room attributes. Called on both create and update."""
@@ -550,7 +590,7 @@ class AreaBuilder:
         from typeclasses.mobs import SoravelonMob
 
         # Idempotent: search by npc_id tag within this zone
-        candidates = evennia.search_tag(npc_id, category="npc_id")
+        candidates = search_objects_by_exact_tag(npc_id, "npc_id")
         npc_obj = None
         for candidate in candidates:
             if (candidate.db.zone_id or "") == self._zone_id:
@@ -1323,7 +1363,7 @@ class AreaBuilder:
         # --- Eviction target (D-01 fallback chain) ---
         eviction_target = None
         for tag_key in ("respawn_point", "greeter_room"):
-            candidates = evennia.search_tag(tag_key, category="spawn_point")
+            candidates = search_objects_by_exact_tag(tag_key, "spawn_point")
             for room in candidates:
                 if (room.db.zone_id or "") == zone_id:
                     eviction_target = room
@@ -1342,7 +1382,7 @@ class AreaBuilder:
                     pass
 
         # Collect all zone-owned objects once
-        all_zone_objects = evennia.search_tag(zone_id, category="zone_id")
+        all_zone_objects = search_objects_by_exact_tag(zone_id, "zone_id")
 
         # --- 1. Orphan exits (D-02) ---
         from typeclasses.exits import SoravelonExit
@@ -1426,9 +1466,7 @@ class AreaBuilder:
             target_str = exit_data["to"]  # peek, don't pop
             target_zone_id, target_room_id = target_str.split(":", 1)
 
-            candidates = evennia.search_tag(
-                target_room_id, category="room_id"
-            )
+            candidates = search_objects_by_exact_tag(target_room_id, "room_id")
             target = None
             for room in candidates:
                 if (room.db.zone_id or "") == target_zone_id:

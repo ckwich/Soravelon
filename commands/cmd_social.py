@@ -8,6 +8,7 @@ Who shows online players (D-19).
 
 import evennia
 from commands.command import Command
+from world.tag_search import search_objects_by_exact_tag
 
 
 SHOUT_STAMINA_COST = 10
@@ -126,7 +127,7 @@ class CmdShout(Command):
 
         zone_id = zone_tags[0]
         # Find all rooms in this zone
-        zone_rooms = evennia.search_tag(zone_id, category="zone_id")
+        zone_rooms = search_objects_by_exact_tag(zone_id, "zone_id")
 
         # Message all characters in zone rooms
         shout_msg = f'|y{character.key} shouts: "{message}"|n'

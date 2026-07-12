@@ -34,11 +34,11 @@ def _require(condition, message):
 
 
 def _find_tagged_object(tag, category, zone_id):
-    import evennia
+    from world.tag_search import search_objects_by_exact_tag
 
     matches = [
         obj
-        for obj in evennia.search_tag(tag, category=category)
+        for obj in search_objects_by_exact_tag(tag, category)
         if (obj.db.zone_id or "") == zone_id
     ]
     _require(

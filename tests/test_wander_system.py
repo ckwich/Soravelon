@@ -258,32 +258,32 @@ class TestWanderTick(unittest.TestCase):
     """Tests for wander_tick() — batch tick function."""
 
     @patch("world.wander_system.wander_mob")
-    @patch("world.wander_system.evennia")
-    def test_finds_all_wandering_mobs(self, mock_evennia, mock_wander_mob):
+    @patch("world.wander_system.search_objects_by_exact_tag")
+    def test_finds_all_wandering_mobs(self, mock_search, mock_wander_mob):
         """wander_tick finds all wandering mobs via tag search and calls wander_mob."""
         from world.wander_system import wander_tick
 
         mob1 = MagicMock()
         mob2 = MagicMock()
-        mock_evennia.search_tag.return_value = [mob1, mob2]
+        mock_search.return_value = [mob1, mob2]
 
         with patch("world.wander_system.random") as mock_random:
             # Both mobs pass the 40% chance roll
             mock_random.random.side_effect = [0.1, 0.2]
             wander_tick()
 
-        mock_evennia.search_tag.assert_called_once_with("wanderer", category="mob_behavior")
+        mock_search.assert_called_once_with("wanderer", "mob_behavior")
         self.assertEqual(mock_wander_mob.call_count, 2)
 
     @patch("world.wander_system.wander_mob")
-    @patch("world.wander_system.evennia")
-    def test_stochastic_movement_chance(self, mock_evennia, mock_wander_mob):
+    @patch("world.wander_system.search_objects_by_exact_tag")
+    def test_stochastic_movement_chance(self, mock_search, mock_wander_mob):
         """wander_tick applies stochastic chance — some mobs may not move."""
         from world.wander_system import wander_tick
 
         mob1 = MagicMock()
         mob2 = MagicMock()
-        mock_evennia.search_tag.return_value = [mob1, mob2]
+        mock_search.return_value = [mob1, mob2]
 
         with patch("world.wander_system.random") as mock_random:
             # mob1 passes (0.1 < 0.4), mob2 fails (0.8 >= 0.4)
@@ -294,12 +294,12 @@ class TestWanderTick(unittest.TestCase):
         mock_wander_mob.assert_called_once_with(mob1)
 
     @patch("world.wander_system.wander_mob")
-    @patch("world.wander_system.evennia")
-    def test_handles_empty_mob_list(self, mock_evennia, mock_wander_mob):
+    @patch("world.wander_system.search_objects_by_exact_tag")
+    def test_handles_empty_mob_list(self, mock_search, mock_wander_mob):
         """wander_tick handles no wandering mobs gracefully."""
         from world.wander_system import wander_tick
 
-        mock_evennia.search_tag.return_value = []
+        mock_search.return_value = []
         wander_tick()
 
         mock_wander_mob.assert_not_called()

@@ -13,6 +13,7 @@ import random
 
 import evennia
 from typeclasses.scripts import SoravelonScript
+from world.tag_search import search_objects_by_exact_tag
 
 
 # ---------------------------------------------------------------------------
@@ -298,7 +299,7 @@ def _find_pool_script(node):
         return None
 
     # Find zone object
-    zone_objs = evennia.search_tag(zone_id, category="zone_id")
+    zone_objs = search_objects_by_exact_tag(zone_id, "zone_id")
     zone_obj = None
     for obj in zone_objs:
         if obj.tags.get("zone_object", category="object_type"):
@@ -364,7 +365,7 @@ def spawn_gathering_pool(zone_obj, pool_def):
     room_ids_str = pool_def.get("room_ids", [])
     eligible_room_ids = []
     for room_id_tag in room_ids_str:
-        candidates = evennia.search_tag(room_id_tag, category="room_id")
+        candidates = search_objects_by_exact_tag(room_id_tag, "room_id")
         for room in candidates:
             if (room.db.zone_id or "") == zone_id:
                 eligible_room_ids.append(room.id)

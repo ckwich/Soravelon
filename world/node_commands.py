@@ -10,7 +10,7 @@ between attempts (D-11).
 import time
 
 from commands.command import Command
-from evennia.utils.search import search_tag
+from world.tag_search import search_objects_by_exact_tag
 
 
 class CmdStabilize(Command):
@@ -93,7 +93,7 @@ class CmdStabilize(Command):
             caller.msg("This area has no active node.")
             return
 
-        zone_objs = search_tag(zone_id, category="zone_id")
+        zone_objs = search_objects_by_exact_tag(zone_id, "zone_id")
         zone_obj = None
         for obj in zone_objs:
             if obj.tags.has("zone_object", category="object_type"):

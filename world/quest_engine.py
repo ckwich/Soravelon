@@ -12,6 +12,8 @@ manages quest state via the CharacterQuest Django model.
 Lazy imports throughout to avoid circular dependencies (project convention).
 """
 
+from world.tag_search import search_objects_by_exact_tag
+
 # ---------------------------------------------------------------------------
 # Lazy model accessor — avoids import-time Django resolution
 # ---------------------------------------------------------------------------
@@ -63,9 +65,7 @@ def _get_quest_spec(quest_id):
     Searches zone objects tagged 'zone_object' for quest_definitions
     containing the given quest_id.
     """
-    import evennia
-
-    zone_objs = evennia.search_tag("zone_object", category="object_type")
+    zone_objs = search_objects_by_exact_tag("zone_object", "object_type")
     for zo in zone_objs:
         for qdef in (zo.db.quest_definitions or []):
             if qdef.get("quest_id") == quest_id:
@@ -84,10 +84,8 @@ def _get_all_quest_specs():
 
     Used by get_available_quest_for_npc to search for quests by NPC.
     """
-    import evennia
-
     specs = []
-    zone_objs = evennia.search_tag("zone_object", category="object_type")
+    zone_objs = search_objects_by_exact_tag("zone_object", "object_type")
     for zo in zone_objs:
         for qdef in (zo.db.quest_definitions or []):
             specs.append(_normalize_quest_spec(qdef))

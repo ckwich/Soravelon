@@ -12,7 +12,10 @@ class TestCharacterStartLocation(unittest.TestCase):
         wrong_zone = SimpleNamespace(db=SimpleNamespace(zone_id="other"))
         arrival = SimpleNamespace(db=SimpleNamespace(zone_id="vaels_crossing"))
 
-        with patch("evennia.search_tag", return_value=[wrong_zone, arrival]):
+        with patch(
+            "typeclasses.characters.search_objects_by_exact_tag",
+            return_value=[wrong_zone, arrival],
+        ):
             self.assertIs(Character._get_start_location(object()), arrival)
 
     def test_place_at_start_location_sets_home_and_location(self):

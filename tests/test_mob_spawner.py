@@ -116,6 +116,7 @@ class _MobSpawnerTestBase(unittest.TestCase):
 
         import world.mob_spawner
         self.spawner = world.mob_spawner
+        self.spawner.search_objects_by_exact_tag = MagicMock(return_value=[])
 
     def tearDown(self):
         # Remove cached mob_spawner
@@ -167,12 +168,17 @@ class TestCountRoomMobs(_MobSpawnerTestBase):
         mob_elsewhere = _make_mob(key="named_wolf")
         mob_elsewhere.location = _make_room()
 
-        self.evennia_stub.search_tag = MagicMock(return_value=[mob_in_room, mob_elsewhere])
+        self.spawner.search_objects_by_exact_tag = MagicMock(
+            return_value=[mob_in_room, mob_elsewhere]
+        )
 
         spawn_def = _make_spawn_def(mob="named_wolf", is_named=True)
         count = self.spawner._count_room_mobs(room, spawn_def)
         self.assertEqual(count, 1)
-        self.evennia_stub.search_tag.assert_called_with("named_wolf", category="mob_instance_id")
+        self.spawner.search_objects_by_exact_tag.assert_called_with(
+            "named_wolf",
+            "mob_instance_id",
+        )
 
     def test_counts_only_soravelon_mob_instances(self):
         """Non-mob objects in room contents are ignored."""
@@ -375,7 +381,9 @@ class TestSpawnZone(_MobSpawnerTestBase):
                 return [room1, room2, zone_obj]
             return []
 
-        self.evennia_stub.search_tag = MagicMock(side_effect=_search_tag_side_effect)
+        self.spawner.search_objects_by_exact_tag = MagicMock(
+            side_effect=_search_tag_side_effect
+        )
 
         total = self.spawner.spawn_zone(zone_obj)
         self.assertEqual(total, 2)
@@ -387,7 +395,7 @@ class TestSpawnZone(_MobSpawnerTestBase):
         zone_obj.tags.get = MagicMock(side_effect=lambda t, category=None: t == "zone_object")
         zone_obj.db.spawn_definitions = [_make_spawn_def(mob="wolf", count_min=5)]
 
-        self.evennia_stub.search_tag = MagicMock(return_value=[zone_obj])
+        self.spawner.search_objects_by_exact_tag = MagicMock(return_value=[zone_obj])
         total = self.spawner.spawn_zone(zone_obj)
         self.assertEqual(total, 0)
 
@@ -468,7 +476,9 @@ class TestMaybeAttachPatrol(_MobSpawnerTestBase):
                 return [room_obj_2]
             return []
 
-        self.evennia_stub.search_tag = MagicMock(side_effect=_search_tag_for_route)
+        self.spawner.search_objects_by_exact_tag = MagicMock(
+            side_effect=_search_tag_for_route
+        )
 
         mock_script = MagicMock()
         mob = _make_mob()
@@ -482,6 +492,9 @@ class TestMaybeAttachPatrol(_MobSpawnerTestBase):
                     del sys.modules[key]
             sys.modules["evennia"] = self.evennia_stub
             import world.mob_spawner as spawner
+            spawner.search_objects_by_exact_tag = MagicMock(
+                side_effect=_search_tag_for_route
+            )
             spawner._maybe_attach_patrol(mob, spawn_def, room)
 
         mob.scripts.add.assert_called_once()

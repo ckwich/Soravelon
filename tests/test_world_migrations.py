@@ -2,8 +2,21 @@
 
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.executor import MigrationExecutor
-from django.test import TransactionTestCase
+from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
+
+
+class TestEvenniaPostgresLookupIndexes(TestCase):
+    """Project migrations cover Evennia's case-insensitive hot lookup path."""
+
+    def test_attribute_identity_functional_index_exists(self):
+        with connection.cursor() as cursor:
+            constraints = connection.introspection.get_constraints(
+                cursor,
+                "typeclasses_attribute",
+            )
+
+        self.assertIn("soravelon_attr_identity_ci_idx", constraints)
 
 
 class TestWorldSchemaReconciliationMigration(TransactionTestCase):
