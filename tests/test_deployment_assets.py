@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -15,6 +16,11 @@ class TestSystemdService(unittest.TestCase):
         service = SERVICE_PATH.read_text()
 
         self.assertIn("Type=simple", service)
+        self.assertIn(
+            "Environment=PATH=/srv/soravelon/.venv/bin:/usr/local/sbin:"
+            "/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            service,
+        )
         self.assertIn("ExecStart=/srv/soravelon/.venv/bin/evennia ipstart", service)
         self.assertNotIn("/evennia start", service)
         self.assertIn("KillMode=control-group", service)
@@ -25,6 +31,11 @@ class TestSystemdService(unittest.TestCase):
     def test_systemd_runs_fail_closed_prestart_and_journald_logging(self):
         service = SERVICE_PATH.read_text()
 
+        self.assertIn(
+            "ExecStartPre=/usr/bin/install -d -m 0750 "
+            "/srv/soravelon/server/logs",
+            service,
+        )
         self.assertIn(
             "ExecStartPre=/srv/soravelon/.venv/bin/python "
             "scripts/verify_service_prestart.py",
@@ -43,7 +54,7 @@ class TestServicePrestart(unittest.TestCase):
         with patch.dict("os.environ", {"SORAVELON_ENV": "development"}, clear=True):
             self.assertEqual(run_prestart(), 2)
 
-    def test_runs_config_migration_smoke_and_collectstatic_checks_in_order(self):
+    def test_runs_config_migration_bootstrap_smoke_and_collectstatic_checks_in_order(self):
         from scripts.verify_service_prestart import run_prestart
 
         completed = subprocess.CompletedProcess(args=[], returncode=0)
@@ -83,6 +94,10 @@ class TestServicePrestart(unittest.TestCase):
                 ),
                 (
                     "/venv/bin/python",
+                    str(ROOT / "scripts" / "verify_runtime_bootstrap.py"),
+                ),
+                (
+                    "/venv/bin/python",
                     str(ROOT / "scripts" / "smoke_start.py"),
                 ),
                 (
@@ -114,3 +129,46 @@ class TestServicePrestart(unittest.TestCase):
 
         self.assertEqual(result, 7)
         mock_run.assert_called_once()
+
+
+class TestRuntimeBootstrap(unittest.TestCase):
+    def test_executable_bootstraps_the_repository_import_path(self):
+        script = f"""
+import runpy
+import sys
+
+repo_root = {str(ROOT)!r}
+sys.path = [entry for entry in sys.path if entry != repo_root]
+runpy.run_path(
+    {str(ROOT / "scripts" / "verify_runtime_bootstrap.py")!r},
+    run_name="runtime_bootstrap_contract_test",
+)
+raise SystemExit(0 if repo_root in sys.path else 29)
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=ROOT.parent,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_accepts_initialized_admin_account_one(self):
+        from scripts.verify_runtime_bootstrap import verify_runtime_bootstrap
+
+        with patch(
+            "scripts.verify_runtime_bootstrap._account_one_is_admin",
+            return_value=True,
+        ):
+            self.assertEqual(verify_runtime_bootstrap(), 0)
+
+    def test_rejects_database_without_initialized_admin_account_one(self):
+        from scripts.verify_runtime_bootstrap import verify_runtime_bootstrap
+
+        with patch(
+            "scripts.verify_runtime_bootstrap._account_one_is_admin",
+            return_value=False,
+        ):
+            self.assertEqual(verify_runtime_bootstrap(), 2)

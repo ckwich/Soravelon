@@ -10,6 +10,8 @@ Group=soravelon
 WorkingDirectory=/srv/soravelon
 EnvironmentFile=/etc/soravelon/soravelon.env
 Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/srv/soravelon/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStartPre=/usr/bin/install -d -m 0750 /srv/soravelon/server/logs
 ExecStartPre=/srv/soravelon/.venv/bin/python scripts/verify_service_prestart.py
 ExecStart=/srv/soravelon/.venv/bin/evennia ipstart
 ExecStop=/srv/soravelon/.venv/bin/evennia stop

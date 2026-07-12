@@ -29,8 +29,12 @@ Soravelon public v1 is designed for a single Linux host running Evennia with Pos
    ```
 7. Create the admin account:
    ```bash
-   evennia createsuperuser
+   python -m django createsuperuser
    ```
+   This must create superuser account `#1` before systemd starts Evennia. The
+   service preflight rejects an absent or non-admin account `#1` instead of
+   allowing Evennia's interactive first-run prompt to restart-loop under
+   systemd.
 
 ## Automated release verification
 
@@ -76,8 +80,10 @@ daemonizes and leaves `Type=simple` supervising a launcher that has already
 exited.
 
 The pre-start executable rejects non-production settings, security warnings,
-pending migrations, or broken runtime imports before it collects static
-assets. It checks migrations; it never applies them implicitly.
+pending migrations, a missing admin account `#1`, or broken runtime imports
+before it collects static assets. It checks migrations; it never applies them
+implicitly. The unit creates the ignored runtime log directory and explicitly
+puts the virtualenv on `PATH`, which Evennia needs when it launches `twistd`.
 
 The relevant unit contract is:
 
@@ -94,6 +100,8 @@ Group=soravelon
 WorkingDirectory=/srv/soravelon
 EnvironmentFile=/etc/soravelon/soravelon.env
 Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/srv/soravelon/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStartPre=/usr/bin/install -d -m 0750 /srv/soravelon/server/logs
 ExecStartPre=/srv/soravelon/.venv/bin/python scripts/verify_service_prestart.py
 ExecStart=/srv/soravelon/.venv/bin/evennia ipstart
 ExecStop=/srv/soravelon/.venv/bin/evennia stop

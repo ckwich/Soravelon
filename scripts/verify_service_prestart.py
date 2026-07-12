@@ -32,6 +32,10 @@ def build_prestart_steps(python: str) -> tuple[tuple[str, tuple[str, ...]], ...]
             (python, "-m", "django", "migrate", "--check"),
         ),
         (
+            "initialized admin account",
+            (python, str(REPO_ROOT / "scripts" / "verify_runtime_bootstrap.py")),
+        ),
+        (
             "runtime imports",
             (python, str(REPO_ROOT / "scripts" / "smoke_start.py")),
         ),
