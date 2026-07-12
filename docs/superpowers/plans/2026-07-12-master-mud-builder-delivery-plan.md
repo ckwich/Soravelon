@@ -138,17 +138,18 @@ that replace the deciding runtime, or an unrepresentative fixture.
 | Production configuration hardening | **complete** for source contract; host lifecycle remains **active** | `ceea166` and `3676aa7` established environment-owned secrets, fail-closed production settings, listener checks, and `tests/test_production_settings.py`. No production deployment is claimed. | M1 release proof still requires disposable PostgreSQL and Linux-like supervisor lifecycle evidence. |
 | Executable release verification | **active** | `df09dd8` added `scripts/verify_release.py`, CI wiring, and `tests/test_verify_release.py`; the master M6 twice-clean disposable-environment gate has not run. | Extend only when a missing real release gate is proven; do not treat dry-run/source checks as host proof. |
 | Revisioned world content | **blocked** on implementation | Startup still mutates AreaBuilder-owned runtime state; no compiled manifest, revision plan/apply record, rollback, or idempotent restart proof exists. | M2.1 compiler must reject unmodelled mutation before any revision plan can be trusted. |
-| Builder Social DSL round trip | **active and unsafe to save** | Builder commits `8170609`, `3b7d26a`, and `d712ec5` prove the live-source RED contract, fail-closed unknown literal `area.*` rejection with source location, and Python sidecar parse/serialize preservation for `social_node`/`social_edge`. Commit `4704138` added the frontend/store RED contract; `6e18e02` makes that contract GREEN with typed Social collections and lossless load/snapshot normalization. The focused editor-store gate passes all 8 tests. Frontend IPC/save-path preservation, validator coverage, and authoring surfaces remain unproven. The unrelated deleted `src-tauri/binaries/.gitkeep` remains preserved. | In a required Builder GSD workflow, add only a RED frontend IPC contract proving `social_nodes` and `social_edges` reach validator and serializer calls unchanged. Do not add Social UI or a save implementation in that slice. |
+| Builder Social DSL round trip | **active and unsafe to save** | Builder commits `8170609`, `3b7d26a`, and `d712ec5` prove the live-source contract, fail-closed unknown literal `area.*` rejection with source location, and Python sidecar parse/serialize preservation for `social_node`/`social_edge`. `4704138` and `6e18e02` prove typed Social collections plus lossless store normalization/snapshots. `0c7572e` proves browser-dev and native Tauri IPC preserve both collections unchanged into validator and serializer calls; the full frontend suite passes 28 tests. Semantic validator coverage and authoring surfaces remain unproven. The unrelated deleted `src-tauri/binaries/.gitkeep` remains preserved. | Add a focused RED sidecar validator contract for malformed Social node/edge identifiers, required endpoints, and references; make it GREEN without adding Social UI. |
 | Builder save, packaging, and UI rebuild | **blocked** on B1.1 | A unified atomic save path and reproducible target-sidecar proof cannot be trusted until supported/unsupported grammar is lossless and explicit. | Complete B1.1 before B1.2, B1.3, or any Social/UI affordance. |
 | Fresh-player, living-world integration, content quality, and release candidate | **blocked** on M2/B1 foundations | Existing isolated systems do not prove the database-backed fresh-player, combined Social/co-op, launch-content, or twice-clean release gates. | Resume in program order after content compilation and offline Builder integrity are truthful. |
 | Historical Evennia 6.0/local Telnet override proposals | **obsolete** | `requirements.txt`, `AGENTS.md`, `CLAUDE.md`, and commit `39c1541` establish Evennia 6.1 with no project-local protocol override. | None unless a new upstream defect is proven. |
 
-**Exact next slice:** start the Builder's required GSD workflow and add only a
-RED frontend IPC contract proving typed `social_nodes` and `social_edges` reach
-both validator and serializer calls unchanged. The deciding gate is the focused
-IPC test failing at the first real unsupported boundary, without weakening the
-already-green editor-store contract. Do not add the GREEN implementation,
-Social UI, or save-pipeline work in that slice.
+**Exact next slice:** add one focused RED sidecar validator contract proving
+malformed Social nodes and edges fail with precise errors for required identity,
+endpoint, and local-reference fields. The deciding gate is the focused sidecar
+validator test failing because invalid Social data currently passes. Make that
+contract GREEN without adding Social UI or widening into B1.2 save-pipeline
+work. The user explicitly removed the Builder GSD-workflow requirement for this
+program; continue with the repository's tests and scoped commit discipline.
 
 ## 6. M1 — Host-Safe Runtime
 
