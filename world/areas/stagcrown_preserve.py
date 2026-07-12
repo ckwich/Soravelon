@@ -544,19 +544,22 @@ def build():
     area.npc(mt_keeper_ladder, "npc_game_scout_vesh", faction="empire")
     area.npc(lg_steward_hall, "npc_lodge_steward_halric", faction="empire")
     _quartermaster = area.npc(lg_quartermaster_tent, "npc_keeper_quartermaster_tovin", faction="consortium")
-    _quartermaster.db.is_vendor = True
-    _quartermaster.db.vendor_accepts = ["consumable", "tool"]
-    _quartermaster.db.vendor_item_ids = [
-        "trail_rations",
-        "bandage",
-        "minor_healing_potion",
-        "minor_stamina_potion",
-        "antidote_potion",
-        "sickle",
-        "skinning_knife",
-        "fishing_rod",
-        "bait",
-    ]
+    area.vendor(
+        _quartermaster,
+        accepts=["consumable", "tool"],
+        item_ids=[
+            "trail_rations",
+            "bandage",
+            "minor_healing_potion",
+            "minor_stamina_potion",
+            "antidote_potion",
+            "sickle",
+            "skinning_knife",
+            "fishing_rod",
+            "bait",
+        ],
+        faction="consortium",
+    )
     area.npc(lg_ledger_desk, "npc_registry_clerk_vestri", faction="empire")
     area.npc(lb_fishing_steps, "npc_netter_mira")
     area.npc(lb_weed_bar, "npc_herbalist_renna", faction="circle")

@@ -35,6 +35,11 @@ from world.tag_search import search_objects_by_exact_tag
 
 _UNRESOLVED_EXITS_REGISTRY = []
 
+ROOM_ROLE_TAGS = {
+    "greeter": "greeter_room",
+    "respawn": "respawn_point",
+}
+
 
 def get_unresolved_exits():
     """Return all unresolved cross-zone exits registered during this load cycle."""
@@ -651,6 +656,58 @@ class AreaBuilder:
         npc_obj.db.ambient_reactive_echoes = ambient.get("reactive_echoes", {})
 
         return npc_obj
+
+    # ------------------------------------------------------------------
+    # literal runtime configuration
+    # ------------------------------------------------------------------
+
+    def room_role(self, room, role):
+        """Assign one supported runtime role without direct tag mutation."""
+        tag = ROOM_ROLE_TAGS.get(role)
+        if tag is None:
+            supported = ", ".join(sorted(ROOM_ROLE_TAGS))
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — unsupported room role '{role}'; "
+                f"expected one of: {supported}"
+            )
+        room.tags.add(tag, category="spawn_point")
+        return room
+
+    def vendor(
+        self,
+        npc,
+        *,
+        accepts=None,
+        item_ids=None,
+        exclude_item_ids=None,
+        faction=None,
+    ):
+        """Configure authored vendor policy while preserving runtime stock."""
+        npc.db.is_vendor = True
+        if accepts is not None:
+            npc.db.vendor_accepts = list(accepts)
+        if item_ids is not None:
+            npc.db.vendor_item_ids = list(item_ids)
+        if exclude_item_ids is not None:
+            npc.db.vendor_exclude_item_ids = list(exclude_item_ids)
+        npc.db.vendor_faction = faction
+        if npc.db.player_stock is None:
+            npc.db.player_stock = {}
+        return npc
+
+    def medic(self, npc):
+        """Mark an authored NPC as a medic."""
+        npc.db.is_medic = True
+        return npc
+
+    def initial_room_state(self, room, flags):
+        """Store a defensive copy of authored initial room-state flags."""
+        if not isinstance(flags, dict):
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — initial room state must be a dict"
+            )
+        room.db.initial_room_flags = copy.deepcopy(flags)
+        return room
 
     # ------------------------------------------------------------------
     # social_node() / social_edge()

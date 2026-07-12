@@ -67,7 +67,7 @@ def build():
         ],
     )
     # D-11: Tag arrival square as new character spawn point
-    hg_arrival.tags.add("greeter_room", category="spawn_point")
+    area.room_role(hg_arrival, "greeter")
 
     hg_gatehouse = area.room(
         "hg_gatehouse",
@@ -755,31 +755,19 @@ def build():
 
     # 6. Weapon vendor
     _brenna = area.npc(mk_weapon_shop, "npc_weaponsmith_brenna", faction=None)
-    _brenna.db.is_vendor = True
-    _brenna.db.vendor_accepts = ["equipment"]
-    _brenna.db.vendor_faction = None
-    _brenna.db.player_stock = {}
+    area.vendor(_brenna, accepts=["equipment"])
 
     # 7. Armor vendor
     _derik = area.npc(mk_armor_shop, "npc_armorsmith_derik", faction=None)
-    _derik.db.is_vendor = True
-    _derik.db.vendor_accepts = ["equipment"]
-    _derik.db.vendor_faction = None
-    _derik.db.player_stock = {}
+    area.vendor(_derik, accepts=["equipment"])
 
     # 8. Potion vendor
     _ystra = area.npc(mk_potion_shop, "npc_apothecary_ystra", faction=None)
-    _ystra.db.is_vendor = True
-    _ystra.db.vendor_accepts = ["consumable", "ingredient"]
-    _ystra.db.vendor_faction = None
-    _ystra.db.player_stock = {}
+    area.vendor(_ystra, accepts=["consumable", "ingredient"])
 
     # 9. General goods vendor
     _haldric = area.npc(mk_general_store, "npc_shopkeep_haldric", faction=None)
-    _haldric.db.is_vendor = True
-    _haldric.db.vendor_accepts = ["item", "material"]
-    _haldric.db.vendor_faction = None
-    _haldric.db.player_stock = {}
+    area.vendor(_haldric, accepts=["item", "material"])
 
     # 10. Smith (forge master)
     area.npc(mk_forge, "npc_smith_goram", faction=None)
@@ -801,10 +789,7 @@ def build():
 
     # 16b. Tanner vendor
     _tanner = area.npc(mk_tanner, "npc_tanner_blackhide", faction=None)
-    _tanner.db.is_vendor = True
-    _tanner.db.vendor_accepts = ["hide"]
-    _tanner.db.vendor_faction = None
-    _tanner.db.player_stock = {}
+    area.vendor(_tanner, accepts=["hide"])
 
     # ==================================================================
     #  DISTRICT 3: GUILD QUARTER (~20 rooms)
@@ -1522,7 +1507,7 @@ def build():
         indoor=True,
     )
     # D-14: Tag medic building as death respawn point
-    iq_medic_building.tags.add("respawn_point", category="spawn_point")
+    area.room_role(iq_medic_building, "respawn")
 
     iq_courier_platform = area.room(
         "iq_courier_platform",
@@ -1682,7 +1667,7 @@ def build():
 
     # 34. Medic (is_medic flag enables CmdBlessing interaction)
     _medic = area.npc(iq_medic_building, "npc_medic_surgeon_adela", faction="empire")
-    _medic.db.is_medic = True
+    area.medic(_medic)
 
     # 35. Courier agent
     area.npc(

@@ -308,6 +308,69 @@ class TestNpcStoredOnRoom(AreaBuilderTestBase):
         self.assertEqual(npcs[0]["quest"], "wolves_quest")
 
 
+class TestLiteralRuntimeConfiguration(AreaBuilderTestBase):
+    def test_room_role_materializes_supported_spawn_point_tag(self):
+        ab = self._make_builder()
+        room = self._make_room(ab, "arrival")
+
+        returned = ab.room_role(room, "greeter")
+
+        self.assertIs(returned, room)
+        self.assertTrue(room.tags.get("greeter_room", category="spawn_point"))
+
+    def test_room_role_rejects_unknown_role(self):
+        ab = self._make_builder()
+        room = self._make_room(ab, "arrival")
+
+        with self.assertRaises(AreaBuilderValidationError) as ctx:
+            ab.room_role(room, "teleport_anchor")
+
+        self.assertIn("unsupported room role", str(ctx.exception))
+
+    def test_vendor_configuration_preserves_runtime_player_stock(self):
+        ab = self._make_builder()
+        room = self._make_room(ab, "market")
+        npc = ab.npc(room, "npc_vendor")
+        npc.db.player_stock = {"player:7": ["reserved_item"]}
+
+        returned = ab.vendor(
+            npc,
+            accepts=["equipment", "consumable"],
+            item_ids=["iron_sword", "bandage"],
+            exclude_item_ids=["cursed_ring"],
+            faction="empire",
+        )
+
+        self.assertIs(returned, npc)
+        self.assertTrue(npc.db.is_vendor)
+        self.assertEqual(npc.db.vendor_accepts, ["equipment", "consumable"])
+        self.assertEqual(npc.db.vendor_item_ids, ["iron_sword", "bandage"])
+        self.assertEqual(npc.db.vendor_exclude_item_ids, ["cursed_ring"])
+        self.assertEqual(npc.db.vendor_faction, "empire")
+        self.assertEqual(npc.db.player_stock, {"player:7": ["reserved_item"]})
+
+    def test_medic_configuration_is_literal(self):
+        ab = self._make_builder()
+        room = self._make_room(ab, "infirmary")
+        npc = ab.npc(room, "npc_medic")
+
+        returned = ab.medic(npc)
+
+        self.assertIs(returned, npc)
+        self.assertTrue(npc.db.is_medic)
+
+    def test_initial_room_state_copies_authored_flags(self):
+        ab = self._make_builder()
+        room = self._make_room(ab, "misty_ruin")
+        flags = {"mist": {"intensity": 2}}
+
+        returned = ab.initial_room_state(room, flags)
+        flags["mist"]["intensity"] = 9
+
+        self.assertIs(returned, room)
+        self.assertEqual(room.db.initial_room_flags, {"mist": {"intensity": 2}})
+
+
 class TestNpcSocialMetadata(AreaBuilderTestBase):
     def test_npc_social_profile_and_edges_persist_on_db_attrs(self):
         ab = self._make_builder("social_authoring_zone")

@@ -88,19 +88,19 @@ def build():
 
 
 class TestLiveAreaAuthorityAudit(unittest.TestCase):
-    def test_live_area_audit_reports_every_unmodelled_runtime_mutation(self):
+    def test_every_live_area_compiles_without_runtime_mutation_escape_hatches(self):
         from world.content_compiler import audit_area_sources
 
         areas_dir = Path(__file__).resolve().parents[1] / "world" / "areas"
         audit = audit_area_sources(areas_dir)
+        expected_sources = {
+            path.relative_to(areas_dir.parents[1]).as_posix()
+            for path in areas_dir.glob("*.py")
+            if not path.name.startswith("_")
+        }
 
-        self.assertGreater(len(audit.diagnostics), 0)
-        self.assertTrue(
-            all(item.code == "forbidden-runtime-mutation" for item in audit.diagnostics)
-        )
-        locations = {(item.source_path, item.line) for item in audit.diagnostics}
-        self.assertEqual(len(locations), len(audit.diagnostics))
-        self.assertIn(
-            ("world/areas/vaels_crossing.py", 70),
-            locations,
+        self.assertEqual(audit.diagnostics, ())
+        self.assertEqual(
+            {definition.source_path for definition in audit.definitions},
+            expected_sources,
         )

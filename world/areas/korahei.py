@@ -344,23 +344,11 @@ def build():
     _quiet_mareva = area.npc(qh_quiet_house_porch, 'npc_quiet_house_mareva', faction='kauroran', dialogue={'greeting': 'Quiet House Mareva studies you with open attention.', 'topics': {'help': 'Keeps bowls, names, and the southern boat path.', 'custom': 'Korahei expects guests to learn by helping, listening, and returning what they carry.'}, 'hints': ['Use talk and ask to learn why the errand matters before you run it.']}, ambient={'idle_echoes': ['Quiet House Mareva adjusts a small detail, making the place easier for the next person.'], 'idle_interval': 90, 'idle_variance': 30})
     _market_auntie = area.npc(bm_saltfruit_awning, 'npc_market_auntie_sola', faction='kauroran', dialogue={'greeting': 'Auntie Sola studies you with open attention.', 'topics': {'help': 'Sells food while making sure new guests eat and listen.', 'custom': 'Korahei expects guests to learn by helping, listening, and returning what they carry.'}, 'hints': ['Use talk and ask to learn why the errand matters before you run it.']}, ambient={'idle_echoes': ['Auntie Sola adjusts a small detail, making the place easier for the next person.'], 'idle_interval': 90, 'idle_variance': 30})
     _first_bite_child = area.npc(bm_shared_bowl_bench, 'npc_first_bite_child_makoa', faction='kauroran', dialogue={'greeting': 'Makoa of the First Bite studies you with open attention.', 'topics': {'help': 'A child taking the custom very seriously.', 'custom': 'Korahei expects guests to learn by helping, listening, and returning what they carry.'}, 'hints': ['Use talk and ask to learn why the errand matters before you run it.']}, ambient={'idle_echoes': ['Makoa of the First Bite adjusts a small detail, making the place easier for the next person.'], 'idle_interval': 90, 'idle_variance': 30})
-    _market_auntie.db.is_vendor = True
-    _market_auntie.db.vendor_accepts = ['consumable']
-    _market_auntie.db.vendor_item_ids = ['trail_rations', 'spiced_fish', 'hearty_stew', 'minor_stamina_potion', 'bandage']
-    _market_auntie.db.vendor_faction = None
-    _market_auntie.db.player_stock = {}
+    area.vendor(_market_auntie, accepts=['consumable'], item_ids=['trail_rations', 'spiced_fish', 'hearty_stew', 'minor_stamina_potion', 'bandage'])
     _tool_mender = area.npc(bm_tool_menders_shade, 'npc_tool_mender_koa', faction='kauroran', dialogue={'greeting': 'The vendor nods toward practical island supplies.', 'topics': {'trade': 'Tools, food, and modest gear keep a guest useful without making them reckless.'}})
-    _tool_mender.db.is_vendor = True
-    _tool_mender.db.vendor_accepts = ['tool', 'consumable']
-    _tool_mender.db.vendor_item_ids = ['fishing_rod', 'bait', 'sickle', 'hatchet', 'skinning_knife', 'pickaxe', 'bandage']
-    _tool_mender.db.vendor_faction = None
-    _tool_mender.db.player_stock = {}
+    area.vendor(_tool_mender, accepts=['tool', 'consumable'], item_ids=['fishing_rod', 'bait', 'sickle', 'hatchet', 'skinning_knife', 'pickaxe', 'bandage'])
     _reef_outfitter = area.npc(ac_outer_mat_circle, 'npc_reef_outfitter_pao', faction='kauroran', dialogue={'greeting': 'The vendor nods toward practical island supplies.', 'topics': {'trade': 'Tools, food, and modest gear keep a guest useful without making them reckless.'}})
-    _reef_outfitter.db.is_vendor = True
-    _reef_outfitter.db.vendor_accepts = ['equipment', 'consumable', 'tool']
-    _reef_outfitter.db.vendor_item_ids = ['iron_dagger', 'iron_staff', 'leather_vest', 'leather_boots', 'travelers_cloak', 'fishing_rod', 'bait', 'minor_healing_potion']
-    _reef_outfitter.db.vendor_faction = None
-    _reef_outfitter.db.player_stock = {}
+    area.vendor(_reef_outfitter, accepts=['equipment', 'consumable', 'tool'], item_ids=['iron_dagger', 'iron_staff', 'leather_vest', 'leather_boots', 'travelers_cloak', 'fishing_rod', 'bait', 'minor_healing_potion'])
 
     # Quest and delivery item templates
     area.item('kor_first_bite_basket', key='first-bite basket', item_type='item', weight=0.4, rarity='normal', desc='A woven basket holding the best first pieces from the hearth.', value=0, is_quest_item=True)

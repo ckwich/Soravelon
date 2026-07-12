@@ -2285,22 +2285,21 @@ def build():
     # ==================================================================
 
     # Ruins have lingering ancient presence (discoverable by Sense)
-    # These are set as initial room state via room db attributes.
-    # The room_state system handles display; we set initial flags here.
-    ruins_13.db.initial_room_flags = {
+    # The room_state system handles display; literal authoring supplies initial flags.
+    area.initial_room_state(ruins_13, {
         "resonant": {"duration": -1},       # permanent, discoverable
         "ancient_presence": {"duration": -1},  # permanent, discoverable
-    }
-    ruins_04.db.initial_room_flags = {
+    })
+    area.initial_room_state(ruins_04, {
         "resonant": {"duration": -1},
-    }
-    ruins_06.db.initial_room_flags = {
+    })
+    area.initial_room_state(ruins_06, {
         "resonant": {"duration": -1},
-    }
+    })
     # Ash circle has a visible resonant quality
-    grass_12.db.initial_room_flags = {
+    area.initial_room_state(grass_12, {
         "resonant": {"duration": -1},
-    }
+    })
 
     # ==================================================================
     #  TRAINER NPCs (09-02: wilderness trainers)

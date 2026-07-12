@@ -1449,14 +1449,17 @@ def build():
     area.npc(cc_impound_pens, "npc_impound_keeper_ressa", faction="empire")
     area.npc(cc_levy_booth, "npc_permit_runner_hale", faction="empire")
     _hostel_keeper = area.npc(ry_hostel_court, "npc_hostel_keeper_marro", faction="consortium")
-    _hostel_keeper.db.is_vendor = True
-    _hostel_keeper.db.vendor_accepts = ["consumable"]
-    _hostel_keeper.db.vendor_item_ids = [
-        "trail_rations",
-        "bandage",
-        "minor_healing_potion",
-        "antidote_potion",
-    ]
+    area.vendor(
+        _hostel_keeper,
+        accepts=["consumable"],
+        item_ids=[
+            "trail_rations",
+            "bandage",
+            "minor_healing_potion",
+            "antidote_potion",
+        ],
+        faction="consortium",
+    )
     area.npc(ry_stable_ring, "npc_hostler_denn", faction="consortium")
     area.npc(ry_post_kitchen, "npc_waycook_fela", faction=None)
     area.npc(sd_waychapel_steps, "npc_waychapel_caretaker_iben", faction=None)

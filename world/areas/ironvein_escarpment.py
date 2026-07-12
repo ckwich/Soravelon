@@ -1227,16 +1227,19 @@ def build():
     area.npc(lt_marker_wall, "npc_blast_scout_orme", faction="circle")
     area.npc(sp_runoff_trench, "npc_runoff_picker_nella")
     _sutler = area.npc(lc_sutler_tent, "npc_sutler_dera", faction="consortium")
-    _sutler.db.is_vendor = True
-    _sutler.db.vendor_accepts = ["consumable", "tool"]
-    _sutler.db.vendor_item_ids = [
-        "pickaxe",
-        "trail_rations",
-        "bandage",
-        "minor_healing_potion",
-        "minor_stamina_potion",
-        "antidote_potion",
-    ]
+    area.vendor(
+        _sutler,
+        accepts=["consumable", "tool"],
+        item_ids=[
+            "pickaxe",
+            "trail_rations",
+            "bandage",
+            "minor_healing_potion",
+            "minor_stamina_potion",
+            "antidote_potion",
+        ],
+        faction="consortium",
+    )
     area.npc(lt_memorial_slab, "npc_memorial_reader_cast")
     area.npc(lc_nurse_tent, "npc_shift_nurse_verin")
     area.npc(hl_main_lift, "npc_lift_tender_jorad", faction="consortium")

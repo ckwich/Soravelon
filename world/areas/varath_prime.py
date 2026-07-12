@@ -113,7 +113,7 @@ def build():
             "Somewhere overhead, chains creak in the wind.",
         ],
     )
-    ca_arrival_court.tags.add("greeter_room", category="spawn_point")
+    area.room_role(ca_arrival_court, "greeter")
 
     ca_processional_way = area.room(
         "ca_processional_way",
@@ -904,7 +904,7 @@ def build():
         room_type="building",
         indoor=True,
     )
-    mq_infirmary.tags.add("respawn_point", category="spawn_point")
+    area.room_role(mq_infirmary, "respawn")
 
     mq_escarpment_road = area.room(
         "mq_escarpment_road",
@@ -2508,27 +2508,16 @@ def build():
     area.npc(ca_waybill_office, "npc_waybill_clerk_noren", faction="empire")
 
     _outfitter = area.npc(oc_red_market, "npc_outfitter_loric", faction=None)
-    _outfitter.db.is_vendor = True
-    _outfitter.db.vendor_accepts = ["equipment", "consumable"]
-    _outfitter.db.vendor_item_ids = [
-        "iron_sword",
-        "iron_dagger",
-        "iron_staff",
-        "iron_bow",
-        "iron_buckler",
-        "leather_cap",
-        "leather_vest",
-        "leather_gloves",
-        "leather_leggings",
-        "leather_boots",
-        "travelers_cloak",
-        "leather_mask",
-        "leather_bracers",
-        "trail_rations",
-        "bandage",
-    ]
-    _outfitter.db.vendor_faction = None
-    _outfitter.db.player_stock = {}
+    area.vendor(
+        _outfitter,
+        accepts=["equipment", "consumable"],
+        item_ids=[
+            "iron_sword", "iron_dagger", "iron_staff", "iron_bow",
+            "iron_buckler", "leather_cap", "leather_vest", "leather_gloves",
+            "leather_leggings", "leather_boots", "travelers_cloak",
+            "leather_mask", "leather_bracers", "trail_rations", "bandage",
+        ],
+    )
 
     area.npc(oc_wayfarer_inn, "npc_innkeeper_brinn_hal", faction=None)
     area.npc(oc_exchange_hall, "npc_bank_teller_vestri", faction="consortium")
@@ -2537,36 +2526,21 @@ def build():
     area.npc(oc_broker_steps, "npc_broker_yaran", faction="consortium")
 
     _stewpot = area.npc(oc_stewpot_arcade, "npc_stewpot_doria", faction=None)
-    _stewpot.db.is_vendor = True
-    _stewpot.db.vendor_accepts = ["consumable"]
-    _stewpot.db.vendor_item_ids = [
-        "cooked_meat",
-        "hearty_stew",
-        "trail_rations",
-        "minor_stamina_potion",
-    ]
-    _stewpot.db.vendor_faction = None
-    _stewpot.db.player_stock = {}
+    area.vendor(
+        _stewpot,
+        accepts=["consumable"],
+        item_ids=["cooked_meat", "hearty_stew", "trail_rations", "minor_stamina_potion"],
+    )
 
     _tinker = area.npc(oc_tinkers_row, "npc_tinker_solla", faction=None)
-    _tinker.db.is_vendor = True
-    _tinker.db.vendor_accepts = ["tool", "consumable", "equipment", "material"]
-    _tinker.db.vendor_item_ids = [
-        "pickaxe",
-        "sickle",
-        "hatchet",
-        "skinning_knife",
-        "fishing_rod",
-        "bait",
-        "bandage",
-    ]
-    _tinker.db.vendor_faction = None
-    _tinker.db.player_stock = {}
+    area.vendor(
+        _tinker,
+        accepts=["tool", "consumable", "equipment", "material"],
+        item_ids=["pickaxe", "sickle", "hatchet", "skinning_knife", "fishing_rod", "bait", "bandage"],
+    )
 
     _clothier = area.npc(oc_cloth_hall, "npc_clothier_penric", faction=None)
-    _clothier.db.is_vendor = True
-    _clothier.db.vendor_accepts = ["equipment"]
-    _clothier.db.vendor_item_ids = [
+    area.vendor(_clothier, accepts=["equipment"], item_ids=[
         "leather_cap",
         "hardened_leather_cap",
         "leather_vest",
@@ -2580,25 +2554,19 @@ def build():
         "travelers_cloak",
         "rangers_cloak",
         "leather_mask",
-    ]
-    _clothier.db.vendor_faction = None
-    _clothier.db.player_stock = {}
+    ])
     area.npc(oc_teamsters_hall, "npc_teamster_holl", faction=None)
     area.npc(oc_scribes_corner, "npc_scribe_galen", faction=None)
 
     _lanternwright = area.npc(oc_lantern_row, "npc_lanternwright_pes", faction=None)
-    _lanternwright.db.is_vendor = True
-    _lanternwright.db.vendor_accepts = ["equipment", "consumable", "tool", "material"]
-    _lanternwright.db.vendor_item_ids = [
+    area.vendor(_lanternwright, accepts=["equipment", "consumable", "tool", "material"], item_ids=[
         "travelers_cloak",
         "leather_mask",
         "bandage",
         "trail_rations",
         "minor_stamina_potion",
         "antidote_potion",
-    ]
-    _lanternwright.db.vendor_faction = None
-    _lanternwright.db.player_stock = {}
+    ])
 
     area.npc(mw_permit_hall, "npc_registrar_taveth", faction="empire")
     area.npc(mw_records_arcade, "npc_archivist_seln", faction="empire")
@@ -2610,9 +2578,7 @@ def build():
     area.npc(mw_public_records, "npc_records_keeper_ulis", faction="empire")
 
     _quartermaster = area.npc(mq_armory_lane, "npc_quartermaster_brenn", faction="empire")
-    _quartermaster.db.is_vendor = True
-    _quartermaster.db.vendor_accepts = ["equipment"]
-    _quartermaster.db.vendor_item_ids = [
+    area.vendor(_quartermaster, accepts=["equipment"], item_ids=[
         "iron_sword",
         "steel_sword",
         "iron_mace",
@@ -2636,16 +2602,12 @@ def build():
         "steel_greaves",
         "iron_sabatons",
         "steel_sabatons",
-    ]
-    _quartermaster.db.vendor_faction = "empire"
-    _quartermaster.db.player_stock = {}
+    ], faction="empire")
 
     area.npc(mq_muster_hall, "npc_muster_captain_rheon", faction="empire")
 
     _supply_sergeant = area.npc(mq_supply_depot, "npc_supply_sergeant_hadrik", faction="empire")
-    _supply_sergeant.db.is_vendor = True
-    _supply_sergeant.db.vendor_accepts = ["consumable"]
-    _supply_sergeant.db.vendor_item_ids = [
+    area.vendor(_supply_sergeant, accepts=["consumable"], item_ids=[
         "bandage",
         "minor_healing_potion",
         "minor_stamina_potion",
@@ -2656,15 +2618,11 @@ def build():
         "healing_draught",
         "mountain_tonic",
         "stamina_tonic",
-    ]
-    _supply_sergeant.db.vendor_faction = "empire"
-    _supply_sergeant.db.player_stock = {}
+    ], faction="empire")
     area.npc(mq_pay_window, "npc_paymaster_lurex", faction="empire")
 
     _forge_sergeant = area.npc(mq_forge_bay, "npc_forge_sergeant_tomas", faction="empire")
-    _forge_sergeant.db.is_vendor = True
-    _forge_sergeant.db.vendor_accepts = ["equipment", "tool", "material"]
-    _forge_sergeant.db.vendor_item_ids = [
+    area.vendor(_forge_sergeant, accepts=["equipment", "tool", "material"], item_ids=[
         "steel_sword",
         "steel_dagger",
         "steel_mace",
@@ -2675,14 +2633,12 @@ def build():
         "steel_kite_shield",
         "pickaxe",
         "hatchet",
-    ]
-    _forge_sergeant.db.vendor_faction = "empire"
-    _forge_sergeant.db.player_stock = {}
+    ], faction="empire")
     area.npc(mq_farrier_row, "npc_farrier_kerem", faction="empire")
     area.npc(mq_orders_desk, "npc_orders_lieutenant_serik", faction="empire")
 
     _medic = area.npc(mq_infirmary, "npc_medic_surgeon_halwen", faction="empire")
-    _medic.db.is_medic = True
+    area.medic(_medic)
 
     area.npc(dc_courier_platform, "npc_courier_factor_helian", faction="empire")
     area.npc(dc_handler_ring, "npc_handler_sergeant_vorun", faction="empire")
@@ -2693,9 +2649,7 @@ def build():
     area.npc(dc_roster_hall, "npc_roster_officer_mav", faction="empire")
 
     _harness_master = area.npc(dc_harness_loft, "npc_harness_master_torin", faction="empire")
-    _harness_master.db.is_vendor = True
-    _harness_master.db.vendor_accepts = ["equipment", "consumable", "material"]
-    _harness_master.db.vendor_item_ids = [
+    area.vendor(_harness_master, accepts=["equipment", "consumable", "material"], item_ids=[
         "iron_bow",
         "steel_bow",
         "iron_dagger",
@@ -2705,9 +2659,7 @@ def build():
         "rangers_cloak",
         "trail_rations",
         "bandage",
-    ]
-    _harness_master.db.vendor_faction = "empire"
-    _harness_master.db.player_stock = {}
+    ], faction="empire")
 
     area.npc(cd_survey_cloister, "npc_surveyor_lyessa", faction=None)
     area.npc(cd_copy_hall, "npc_copymaster_meren", faction=None)
@@ -2717,9 +2669,7 @@ def build():
     area.npc(cd_binding_hall, "npc_binder_orel", faction=None)
 
     _apothecary = area.npc(cd_apothecary, "npc_apothecary_meret", faction=None)
-    _apothecary.db.is_vendor = True
-    _apothecary.db.vendor_accepts = ["consumable", "ingredient"]
-    _apothecary.db.vendor_item_ids = [
+    area.vendor(_apothecary, accepts=["consumable", "ingredient"], item_ids=[
         "minor_healing_potion",
         "minor_stamina_potion",
         "antidote_potion",
@@ -2728,14 +2678,10 @@ def build():
         "healing_draught",
         "mountain_tonic",
         "stamina_tonic",
-    ]
-    _apothecary.db.vendor_faction = None
-    _apothecary.db.player_stock = {}
+    ])
 
     _reagent_keeper = area.npc(cd_glasshouse, "npc_reagent_keeper_olian", faction=None)
-    _reagent_keeper.db.is_vendor = True
-    _reagent_keeper.db.vendor_accepts = ["ingredient", "consumable", "equipment"]
-    _reagent_keeper.db.vendor_item_ids = [
+    area.vendor(_reagent_keeper, accepts=["ingredient", "consumable", "equipment"], item_ids=[
         "iron_staff",
         "steel_staff",
         "bone_talisman",
@@ -2743,9 +2689,7 @@ def build():
         "ring_of_acuity",
         "minor_healing_potion",
         "antidote_potion",
-    ]
-    _reagent_keeper.db.vendor_faction = None
-    _reagent_keeper.db.player_stock = {}
+    ])
 
     area.npc(nh_salon_steps, "npc_steward_maelin_rhest", faction="empire")
     area.npc(nh_private_archive, "npc_house_scholar_talvere", faction="empire")
@@ -2757,9 +2701,7 @@ def build():
     area.npc(nh_rhest_salon, "npc_guest_mistress_lura", faction="empire")
 
     _fence = area.npc(hw_smuggler_lantern, "npc_fence_ivera_coal", faction=None)
-    _fence.db.is_vendor = True
-    _fence.db.vendor_accepts = ["item", "material", "equipment", "consumable"]
-    _fence.db.vendor_item_ids = [
+    area.vendor(_fence, accepts=["item", "material", "equipment", "consumable"], item_ids=[
         "steel_dagger",
         "rangers_cloak",
         "leather_mask",
@@ -2767,9 +2709,7 @@ def build():
         "bone_talisman",
         "antidote_potion",
         "bandage",
-    ]
-    _fence.db.vendor_faction = None
-    _fence.db.player_stock = {}
+    ])
 
     area.npc(hw_print_cellar, "npc_printkeeper_elais", faction=None)
     area.npc(hw_cinder_loft, "npc_cinder_runner_mara", faction=None)

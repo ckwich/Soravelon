@@ -1147,15 +1147,18 @@ def build():
     area.npc(bs_seal_bench, "npc_stone_reader_miren", faction="empire")
     area.npc(ws_ledger_alcove, "npc_archivist_runner_pela", faction="empire")
     _waystation_host = area.npc(ws_gatecourt, "npc_waystation_host_tam", faction="consortium")
-    _waystation_host.db.is_vendor = True
-    _waystation_host.db.vendor_accepts = ["consumable"]
-    _waystation_host.db.vendor_item_ids = [
-        "trail_rations",
-        "bandage",
-        "minor_healing_potion",
-        "minor_stamina_potion",
-        "antidote_potion",
-    ]
+    area.vendor(
+        _waystation_host,
+        accepts=["consumable"],
+        item_ids=[
+            "trail_rations",
+            "bandage",
+            "minor_healing_potion",
+            "minor_stamina_potion",
+            "antidote_potion",
+        ],
+        faction="consortium",
+    )
     area.npc(ws_salvage_square, "npc_salvage_factor_brel", faction="consortium")
     area.npc(br_hidden_fork, "npc_branch_guide_siven", faction="consortium")
     area.npc(br_old_shrine, "npc_shrine_keeper_odan")
