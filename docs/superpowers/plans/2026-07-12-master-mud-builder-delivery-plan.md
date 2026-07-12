@@ -138,17 +138,17 @@ that replace the deciding runtime, or an unrepresentative fixture.
 | Production configuration hardening | **complete** for source contract; host lifecycle remains **active** | `ceea166` and `3676aa7` established environment-owned secrets, fail-closed production settings, listener checks, and `tests/test_production_settings.py`. No production deployment is claimed. | M1 release proof still requires disposable PostgreSQL and Linux-like supervisor lifecycle evidence. |
 | Executable release verification | **active** | `df09dd8` added `scripts/verify_release.py`, CI wiring, and `tests/test_verify_release.py`; the master M6 twice-clean disposable-environment gate has not run. | Extend only when a missing real release gate is proven; do not treat dry-run/source checks as host proof. |
 | Revisioned world content | **blocked** on implementation | Startup still mutates AreaBuilder-owned runtime state; no compiled manifest, revision plan/apply record, rollback, or idempotent restart proof exists. | M2.1 compiler must reject unmodelled mutation before any revision plan can be trusted. |
-| Builder Social DSL round trip | **active and unsafe to save** | The current Builder branch has no `social_node`/`social_edge` support in its parser/model search, while live Soravelon areas use those literal calls. The Builder worktree also contains an unrelated deleted `src-tauri/binaries/.gitkeep`, which must be preserved. | In a required Builder GSD workflow, first add a red real-source preservation test that proves Social calls cannot be silently dropped and unknown `area.*` calls fail with a source location. |
+| Builder Social DSL round trip | **active and unsafe to save** | Builder commits `8170609`, `3b7d26a`, and `d712ec5` prove the live-source RED contract, fail-closed unknown literal `area.*` rejection with source location, and Python sidecar parse/serialize preservation for `social_node`/`social_edge`. The TypeScript `ZoneModel`, store normalization, validator, and authoring surfaces still do not model Social calls. The unrelated deleted `src-tauri/binaries/.gitkeep` remains preserved. | In a required Builder GSD workflow, add the smallest RED frontend/store contract proving parsed Social collections survive load, normalization, snapshot, and serialization without being dropped; implementation belongs to the following GREEN slice. |
 | Builder save, packaging, and UI rebuild | **blocked** on B1.1 | A unified atomic save path and reproducible target-sidecar proof cannot be trusted until supported/unsupported grammar is lossless and explicit. | Complete B1.1 before B1.2, B1.3, or any Social/UI affordance. |
 | Fresh-player, living-world integration, content quality, and release candidate | **blocked** on M2/B1 foundations | Existing isolated systems do not prove the database-backed fresh-player, combined Social/co-op, launch-content, or twice-clean release gates. | Resume in program order after content compilation and offline Builder integrity are truthful. |
 | Historical Evennia 6.0/local Telnet override proposals | **obsolete** | `requirements.txt`, `AGENTS.md`, `CLAUDE.md`, and commit `39c1541` establish Evennia 6.1 with no project-local protocol override. | None unless a new upstream defect is proven. |
 
 **Exact next slice:** start the Builder's required GSD workflow and add only the
-red B1.1 real-source contract test for `social_node`, `social_edge`, and unknown
-literal `area.*` calls. Its deciding gate is the focused test failing because
-the current parser/serializer silently loses or accepts unmodelled operations;
-implementation belongs to the following smallest green slice if the red gate
-proves that symptom.
+RED B1.1 frontend/store contract for parsed `social_nodes` and `social_edges`.
+Its deciding gate is a focused test proving the current TypeScript model/store
+boundary cannot truthfully preserve the sidecar's Social collections through
+load, normalization, snapshot, and serialization. Do not add Social UI or the
+GREEN implementation in that same slice.
 
 ## 6. M1 — Host-Safe Runtime
 
