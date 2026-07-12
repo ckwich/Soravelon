@@ -120,9 +120,8 @@ class TestVaelWardenSocialRoute(EvenniaTest):
         return zone
 
     def test_vael_south_road_reaches_harven_through_real_exit_objects(self):
-        import evennia
-
         from world.areas import ashreach_plains, vaels_crossing
+        from world.tag_search import search_objects_by_exact_tag
 
         # Build the destination first so Vael's authored cross-zone exit must
         # resolve to the real Ashway room rather than a local stand-in.
@@ -131,14 +130,14 @@ class TestVaelWardenSocialRoute(EvenniaTest):
 
         source = next(
             room
-            for room in evennia.search_tag("hg_south_road", category="room_id")
+            for room in search_objects_by_exact_tag("hg_south_road", "room_id")
             if room.db.zone_id == "vaels_crossing"
         )
         harven = next(
             npc
-            for npc in evennia.search_tag(
+            for npc in search_objects_by_exact_tag(
                 "npc_warden_outpost_commander",
-                category="npc_id",
+                "npc_id",
             )
             if npc.db.zone_id == "ashreach_plains"
         )

@@ -150,8 +150,8 @@ class TestCmdWho(unittest.TestCase):
 class TestCmdShout(unittest.TestCase):
 
     @patch("world.recovery_engine.push_stat_update")
-    @patch("commands.cmd_social.evennia")
-    def test_shout_reaches_zone(self, mock_evennia, mock_push):
+    @patch("commands.cmd_social.search_objects_by_exact_tag")
+    def test_shout_reaches_zone(self, mock_search, mock_push):
         """CmdShout sends message to all characters in same zone."""
         from commands.cmd_social import CmdShout
 
@@ -163,7 +163,7 @@ class TestCmdShout(unittest.TestCase):
         room1.contents = [caller]
         room2 = listener.location
         room2.contents = [listener]
-        mock_evennia.search_tag.return_value = [room1, room2]
+        mock_search.return_value = [room1, room2]
 
         cmd = CmdShout()
         cmd.caller = caller

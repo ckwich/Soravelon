@@ -589,6 +589,46 @@ HELP_ENTRY_DICTS = [
         ),
     },
     {
+        "key": "protect",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n protect <npc>\n\n"
+            "Make a visible protection action for an NPC in your room. "
+            "When an authored quest is waiting for that action, it advances "
+            "the matching objective; otherwise the NPC remains protected only "
+            "in the moment.\n\n"
+            "|wExample:|n\n"
+            "  > protect Harven"
+        ),
+    },
+    {
+        "key": "confront",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n confront <npc> about <topic>\n\n"
+            "Confront an NPC about a topic they can discuss. Their authored "
+            "knowledge, your relationship, and active quest state determine "
+            "whether the confrontation can advance anything.\n\n"
+            "|wExample:|n\n"
+            "  > confront Raith about the missing ledger"
+        ),
+    },
+    {
+        "key": "report",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n report <npc> about <evidence>\n\n"
+            "Give authored evidence to an NPC who recognizes the subject. "
+            "A valid report can advance a matching quest objective; unsupported "
+            "subjects are rejected rather than invented.\n\n"
+            "|wExample:|n\n"
+            "  > report Harven about the Ashway tracks"
+        ),
+    },
+    {
         "key": "accept",
         "category": "Commands",
         "locks": "read:all()",
@@ -707,6 +747,44 @@ HELP_ENTRY_DICTS = [
             "Shows item name, material tier, and key stats.\n\n"
             "|wExample:|n\n"
             "  > gear"
+        ),
+    },
+    {
+        "key": "inventory",
+        "aliases": ["inv", "i"],
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n inventory\n\n"
+            "Show equipped, carried, contained, and keyring items together "
+            "with carried Scales and your current weight-based encumbrance.\n\n"
+            "|wExample:|n\n"
+            "  > inventory"
+        ),
+    },
+    {
+        "key": "put",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n put <item> in <container>\n\n"
+            "Place a directly carried item into a container you own. "
+            "Containers cannot be nested, and the move must remain within "
+            "your weight and ownership rules.\n\n"
+            "|wExample:|n\n"
+            "  > put dried herbs in field satchel"
+        ),
+    },
+    {
+        "key": "take",
+        "category": "Commands",
+        "locks": "read:all()",
+        "text": (
+            "|wUsage:|n take <item> from <container>\n\n"
+            "Move an item from one of your containers back into your directly "
+            "carried inventory.\n\n"
+            "|wExample:|n\n"
+            "  > take dried herbs from field satchel"
         ),
     },
     # -- Node Interaction --

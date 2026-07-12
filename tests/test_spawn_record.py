@@ -258,8 +258,8 @@ class TestInitializeSpawnRecords(unittest.TestCase):
 
     @patch("world.models.SpawnRecord.objects")
     @patch("world.mob_spawner.timezone")
-    @patch("world.mob_spawner.evennia")
-    def test_creates_records_per_definition(self, mock_evennia, mock_tz, mock_sr_objects):
+    @patch("world.mob_spawner.search_objects_by_exact_tag")
+    def test_creates_records_per_definition(self, mock_search, mock_tz, mock_sr_objects):
         """Each spawn_definition gets a SpawnRecord via get_or_create."""
         from world.mob_spawner import initialize_spawn_records
 
@@ -274,7 +274,7 @@ class TestInitializeSpawnRecords(unittest.TestCase):
             ],
         )
         room.tags.get.return_value = None  # not a zone_object
-        mock_evennia.search_tag.return_value = [room]
+        mock_search.return_value = [room]
 
         mock_sr_objects.get_or_create.return_value = (MagicMock(), True)
 
@@ -284,8 +284,8 @@ class TestInitializeSpawnRecords(unittest.TestCase):
 
     @patch("world.models.SpawnRecord.objects")
     @patch("world.mob_spawner.timezone")
-    @patch("world.mob_spawner.evennia")
-    def test_existing_records_preserved(self, mock_evennia, mock_tz, mock_sr_objects):
+    @patch("world.mob_spawner.search_objects_by_exact_tag")
+    def test_existing_records_preserved(self, mock_search, mock_tz, mock_sr_objects):
         """Existing records are not overwritten (idempotent)."""
         from world.mob_spawner import initialize_spawn_records
 
@@ -293,7 +293,7 @@ class TestInitializeSpawnRecords(unittest.TestCase):
 
         room = _make_room(spawn_defs=[{"mob": "Wolf"}])
         room.tags.get.return_value = None
-        mock_evennia.search_tag.return_value = [room]
+        mock_search.return_value = [room]
 
         # Existing record
         mock_sr_objects.get_or_create.return_value = (MagicMock(), False)
