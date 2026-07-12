@@ -138,18 +138,17 @@ that replace the deciding runtime, or an unrepresentative fixture.
 | Production configuration hardening | **complete** for source contract; host lifecycle remains **active** | `ceea166` and `3676aa7` established environment-owned secrets, fail-closed production settings, listener checks, and `tests/test_production_settings.py`. No production deployment is claimed. | M1 release proof still requires disposable PostgreSQL and Linux-like supervisor lifecycle evidence. |
 | Executable release verification | **active** | `df09dd8` added `scripts/verify_release.py`, CI wiring, and `tests/test_verify_release.py`; the master M6 twice-clean disposable-environment gate has not run. | Extend only when a missing real release gate is proven; do not treat dry-run/source checks as host proof. |
 | Revisioned world content | **blocked** on implementation | Startup still mutates AreaBuilder-owned runtime state; no compiled manifest, revision plan/apply record, rollback, or idempotent restart proof exists. | M2.1 compiler must reject unmodelled mutation before any revision plan can be trusted. |
-| Builder Social DSL round trip | **active and unsafe to save** | Builder commits `8170609`, `3b7d26a`, and `d712ec5` prove the live-source RED contract, fail-closed unknown literal `area.*` rejection with source location, and Python sidecar parse/serialize preservation for `social_node`/`social_edge`. Commit `4704138` adds the frontend/store RED contract; its focused run fails at the real normalization boundary because absent `social_nodes` remain `undefined` instead of normalizing to `[]`. The TypeScript `ZoneModel`, store normalization, validator, and authoring surfaces still do not model Social calls. The unrelated deleted `src-tauri/binaries/.gitkeep` remains preserved. | In a required Builder GSD workflow, make only the focused store contract GREEN by adding typed Social collections and lossless load/snapshot normalization. Serialization and Social UI remain later slices. |
+| Builder Social DSL round trip | **active and unsafe to save** | Builder commits `8170609`, `3b7d26a`, and `d712ec5` prove the live-source RED contract, fail-closed unknown literal `area.*` rejection with source location, and Python sidecar parse/serialize preservation for `social_node`/`social_edge`. Commit `4704138` added the frontend/store RED contract; `6e18e02` makes that contract GREEN with typed Social collections and lossless load/snapshot normalization. The focused editor-store gate passes all 8 tests. Frontend IPC/save-path preservation, validator coverage, and authoring surfaces remain unproven. The unrelated deleted `src-tauri/binaries/.gitkeep` remains preserved. | In a required Builder GSD workflow, add only a RED frontend IPC contract proving `social_nodes` and `social_edges` reach validator and serializer calls unchanged. Do not add Social UI or a save implementation in that slice. |
 | Builder save, packaging, and UI rebuild | **blocked** on B1.1 | A unified atomic save path and reproducible target-sidecar proof cannot be trusted until supported/unsupported grammar is lossless and explicit. | Complete B1.1 before B1.2, B1.3, or any Social/UI affordance. |
 | Fresh-player, living-world integration, content quality, and release candidate | **blocked** on M2/B1 foundations | Existing isolated systems do not prove the database-backed fresh-player, combined Social/co-op, launch-content, or twice-clean release gates. | Resume in program order after content compilation and offline Builder integrity are truthful. |
 | Historical Evennia 6.0/local Telnet override proposals | **obsolete** | `requirements.txt`, `AGENTS.md`, `CLAUDE.md`, and commit `39c1541` establish Evennia 6.1 with no project-local protocol override. | None unless a new upstream defect is proven. |
 
-**Exact next slice:** start the Builder's required GSD workflow and make only
-the committed RED B1.1 store contract in `src/store/editorStore.test.ts` GREEN.
-Add typed `social_nodes` and `social_edges` collections at the TypeScript model
-boundary and preserve them through load normalization and the saved snapshot.
-The deciding gate is the focused editor-store test: it must pass without
-weakening the assertions. Do not add Social UI or widen this slice into the
-validator/serializer contract.
+**Exact next slice:** start the Builder's required GSD workflow and add only a
+RED frontend IPC contract proving typed `social_nodes` and `social_edges` reach
+both validator and serializer calls unchanged. The deciding gate is the focused
+IPC test failing at the first real unsupported boundary, without weakening the
+already-green editor-store contract. Do not add the GREEN implementation,
+Social UI, or save-pipeline work in that slice.
 
 ## 6. M1 — Host-Safe Runtime
 
