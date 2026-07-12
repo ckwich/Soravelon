@@ -139,16 +139,16 @@ that replace the deciding runtime, or an unrepresentative fixture.
 | Executable release verification | **active** | `df09dd8` added `scripts/verify_release.py`, CI wiring, and `tests/test_verify_release.py`; the master M6 twice-clean disposable-environment gate has not run. | Extend only when a missing real release gate is proven; do not treat dry-run/source checks as host proof. |
 | Revisioned world content | **blocked** on implementation | Startup still mutates AreaBuilder-owned runtime state; no compiled manifest, revision plan/apply record, rollback, or idempotent restart proof exists. | M2.1 compiler must reject unmodelled mutation before any revision plan can be trusted. |
 | Builder Social DSL round trip | **complete** | Builder commits through `687a589` prove fail-closed parsing, typed storage, IPC preservation, serialization, validation, explicit dynamic-helper rejection, a real local sidecar save/reopen path, and a 57-test live-area gate. `fedd997` completes typed Social node/edge creation, outline and command-palette selection, structured inspectors, reference-safe store mutations, and linked navigation without raw JSON or a MUD connection. Frontend tests pass 31/31, the production build passes, and a live browser smoke on Vael's Crossing proved both node and edge inspector flows. The unrelated deleted `src-tauri/binaries/.gitkeep` remains preserved. | Re-run B1.1 after parser, validator, serializer, store, or Social UI changes. |
-| Builder save, packaging, and UI rebuild | **active at B1.2** | Native and browser-dev writes already use local temp/backup replacement helpers, but validation and serialization are orchestrated separately in `App.tsx`; auto-save writes a different `.tmp` path without the full validation chain, and native/browser transactions are separate implementations. | Define one typed save transaction contract and prove validation, temp validation, backup, replacement, and recovery failures preserve the original before consolidating implementations. |
+| Builder save, packaging, and UI rebuild | **active at B1.2** | Native and browser-dev writes already use local temp/backup replacement helpers, but validation and serialization remain orchestrated separately in `App.tsx`; auto-save writes a different `.tmp` path without the full validation chain. Builder commit `47ceb98` adds a typed native `save_zone_file` transaction that owns sidecar serialization, serialized-source validation, and atomic replacement. Its injected validation-failure test proves the original, an existing backup, and temp state remain unchanged. The command is registered but frontend/browser-dev callers have not cut over. Rust tests pass only with a test-only empty `externalBin` override because the real macOS sidecar artifact is still missing; that is B1.3 evidence. | Cut the frontend API to the typed transaction, add equivalent browser-dev behavior behind the same TypeScript contract, then prove serialization, temp-validation, backup, replacement, and recovery failures. |
 | Fresh-player, living-world integration, content quality, and release candidate | **blocked** on M2/B1 foundations | Existing isolated systems do not prove the database-backed fresh-player, combined Social/co-op, launch-content, or twice-clean release gates. | Resume in program order after content compilation and offline Builder integrity are truthful. |
 | Historical Evennia 6.0/local Telnet override proposals | **obsolete** | `requirements.txt`, `AGENTS.md`, `CLAUDE.md`, and commit `39c1541` establish Evennia 6.1 with no project-local protocol override. | None unless a new upstream defect is proven. |
 
-**Exact next slice:** add a RED Rust contract around one typed native save
-transaction proving an injected validation failure leaves the original file and
-existing backup unchanged. The transaction must own serialize/validate/write as
-one authority boundary; do not preserve `App.tsx` choreography as the contract.
-Make that single failure-path contract GREEN before extending it to browser-dev,
-auto-save, or other failure modes. The user explicitly removed the Builder
+**Exact next slice:** add a RED frontend IPC contract for `saveZoneFile(path,
+zone)` proving native mode sends the typed model to `save_zone_file` and never
+calls the legacy serialized-content writer. Make it GREEN by adding the typed
+client and cutting only manual Save/Save As over to it; preserve validation
+errors as structured problems and leave browser-dev, auto-save, and legacy-path
+removal for subsequent slices. The user explicitly removed the Builder
 GSD-workflow requirement for this program; continue with the repository's tests
 and scoped commit discipline.
 
