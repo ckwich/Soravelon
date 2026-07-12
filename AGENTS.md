@@ -20,6 +20,17 @@ When the documents conflict, do not silently choose the convenient one. State
 the contradiction, verify the live path, and reconcile the durable docs in the
 same clean slice where appropriate.
 
+### Superseded Vault Proposals
+
+- `brain/Soravelon/soravelon-llm-quests.md` is an exploratory March 2026
+  proposal, not an implementation authority. Its model-generated zones,
+  rewards, and world consequences are superseded by this contract: authored,
+  deterministic systems own quest structure, rewards, and state mutation;
+  any LLM use is bounded phrasing over allowlisted context.
+- `projects/Soravelon/plan.md` and older vault architecture headers that name
+  Evennia 6.0 are historical runtime snapshots. The active baseline is the
+  `requirements.txt` pin and its live verification.
+
 ## Session Start: Establish Truth Before Editing
 
 1. Read this file and `CLAUDE.md`.
@@ -44,6 +55,9 @@ From macOS, use an existing authenticated, read-only LAN/Tailscale mount or
 other user-authorized access path. If access requires credentials or the Hub
 cannot expose the raw files, report that gate; do not invent a local copy,
 reconfigure remote services, or treat stale cached notes as live-vault proof.
+A user-authorized Taildrop bundle is a point-in-time source snapshot: verify
+its integrity and received date, use it for the current session, and do not
+represent it as continuous vault access.
 
 Use tools proactively for code search, architecture cross-checks, upstream
 dependency verification, focused tests, live playtests, and Engram retrieval.
