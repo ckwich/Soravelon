@@ -4,6 +4,7 @@
     "action_types": [
       "add_room_flag",
       "despawn_self",
+      "discover_flight_point",
       "echo",
       "give_item",
       "give_scales",

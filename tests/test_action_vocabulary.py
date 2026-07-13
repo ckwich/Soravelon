@@ -77,10 +77,10 @@ class TestActionHandlersRegistry(EvenniaTest):
     """ACTION_HANDLERS dict contains all registered action types."""
 
     def test_handler_count(self):
-        """ACTION_HANDLERS has exactly 21 keys."""
+        """ACTION_HANDLERS has exactly 22 keys."""
         from world.action_vocabulary import ACTION_HANDLERS
 
-        self.assertEqual(len(ACTION_HANDLERS), 21)
+        self.assertEqual(len(ACTION_HANDLERS), 22)
 
     def test_all_expected_action_types_present(self):
         """All 21 required action types are registered."""
@@ -96,6 +96,7 @@ class TestActionHandlersRegistry(EvenniaTest):
             "modify_standing",
             "spawn_mob",
             "despawn_self",
+            "discover_flight_point",
             "open_dialogue",
             "log_world_event",
             "modify_attunement",

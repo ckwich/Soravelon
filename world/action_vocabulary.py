@@ -4,13 +4,13 @@ Action Vocabulary for Soravelon.
 Shared dispatch module for all trigger-driven and command-driven game events.
 Every action type in the game routes through execute_action().
 
-21 action types (D-07, D-24):
+22 action types (D-07, D-24):
   Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
                modify_standing, modify_attunement, log_world_event, despawn_self,
                spawn_mob, add_room_flag, give_scales, give_skill_xp,
                grant_practice, modify_node_failure, set_quest_flag,
                open_dialogue, learn_recipe, record_social_event, grant_access,
-               release_social_claim
+               release_social_claim, discover_flight_point
 
 All handlers use lazy imports to avoid circular dependencies (Pitfall 3).
 execute_action() enforces a trigger chain depth limit of 3 (D-19).
@@ -307,6 +307,39 @@ def _handle_give_skill_xp(action_dict, context, _depth):
         f"|g[+{count} {skill_id.replace('_', ' ').title()} XP]|n",
     )
     return True, ""
+
+
+def _handle_discover_flight_point(action_dict, context, _depth):
+    """Grant authored route knowledge without moving the character."""
+
+    character = context.get("character")
+    if not character:
+        return False, "discover_flight_point: no character in context"
+    point_id = action_dict.get("point_id")
+    if not point_id:
+        return False, "discover_flight_point: missing point_id"
+
+    from world.flight_registry import FlightRegistry
+
+    point = FlightRegistry.get_point(point_id)
+    if point is None:
+        return False, f"discover_flight_point: unknown point_id '{point_id}'"
+
+    previous = set(character.db.discovered_flight_points or set())
+    if point_id in previous:
+        return True, f"Already knew flight point {point_id}"
+
+    discovered = set(previous)
+    discovered.add(point_id)
+    character.db.discovered_flight_points = discovered
+    _register_rollback(
+        context,
+        lambda: setattr(character.db, "discovered_flight_points", previous),
+    )
+    message = action_dict.get("message")
+    if message:
+        _emit_action_message(context, message)
+    return True, f"Discovered flight point {point_id}"
 
 
 def _handle_grant_practice(action_dict, context, _depth):
@@ -991,6 +1024,7 @@ ACTION_HANDLERS = {
     "add_room_flag": _action_add_room_flag,
     "give_scales": _handle_give_scales,
     "give_skill_xp": _handle_give_skill_xp,
+    "discover_flight_point": _handle_discover_flight_point,
     "grant_practice": _handle_grant_practice,
     "grant_access": _handle_grant_access,
     "release_social_claim": _handle_release_social_claim,
