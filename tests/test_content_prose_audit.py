@@ -118,18 +118,10 @@ class TestContentProseAudit(unittest.TestCase):
 
         self.assertEqual(audit.findings, ())
 
-    def test_live_repo_exposes_the_known_vault_dependent_rewrite_gate(self):
+    def test_live_repo_satisfies_the_authored_prose_release_gate(self):
         from scripts.audit_content_prose import audit_prose_directory
 
         areas_dir = Path(__file__).resolve().parents[1] / "world" / "areas"
         audit = audit_prose_directory(areas_dir)
 
-        self.assertTrue(audit.findings)
-        self.assertTrue(
-            {"meta-prose", "repeated-sentence"}.issubset(
-                {finding.code for finding in audit.findings}
-            )
-        )
-        flagged_paths = {finding.source_path for finding in audit.findings}
-        self.assertNotIn("world/areas/korahei.py", flagged_paths)
-        self.assertNotIn("world/areas/tremen.py", flagged_paths)
+        self.assertEqual(audit.findings, ())
