@@ -2158,12 +2158,14 @@ def build():
         ),
         faction=None,
         dialogue={
-            "greeting": (
-                "Merrow keeps one eye on the horizon even while he speaks. "
-                "'If you came up here, either the light is short on oil or "
-                "someone down below has finally decided storms do not wait "
-                "for paperwork.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Merrow keeps one eye on the horizon even while he speaks. "
+                    "'If you came up here, either the light is short on oil or "
+                    "someone down below has finally decided storms do not wait "
+                    "for paperwork.'"
+                ),
+            },
             "topics": {
                 "light": (
                     "'A dark lantern kills as surely as a reef. Fishing "
@@ -2193,11 +2195,13 @@ def build():
         ),
         faction=None,
         dialogue={
-            "greeting": (
-                "Kellan gives you a flat look. 'I do not know you. If "
-                "someone sent you, say the name. Otherwise, I am just a "
-                "dock hand minding cargo.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Kellan gives you a flat look. 'I do not know you. If "
+                    "someone sent you, say the name. Otherwise, I am just a "
+                    "dock hand minding cargo.'"
+                ),
+            },
             "topics": {
                 "cargo": (
                     "'Cargo moves through here every day. Most of it is "

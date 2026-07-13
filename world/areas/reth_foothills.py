@@ -2121,11 +2121,13 @@ def build():
         faction="consortium",
         trainer_id="npc_trainer_smithing_reth",
         dialogue={
-            "greeting": (
-                "Halvek flattens a survey map with both hands. 'If the mine "
-                "wanted to be quiet, it chose a poor week for it. I need facts "
-                "before the Consortium turns fear into policy.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Halvek flattens a survey map with both hands. 'If the mine "
+                    "wanted to be quiet, it chose a poor week for it. I need facts "
+                    "before the Consortium turns fear into policy.'"
+                ),
+            },
             "topics": {
                 "miners": (
                     "'Three went below with chalk, rope, and enough sense to "
@@ -2143,10 +2145,7 @@ def build():
                     "poorly if the mountain starts answering back.'"
                 ),
             },
-            "base_hints": [
-                "Halvek's map links the collapse, lower passage, and deep caverns with fresh chalk.",
-                "A second sheet on Halvek's desk compares mine cuts against older stonework.",
-            ],
+            "base_hints": ['miners', 'survey', 'consortium'],
         },
     )
 
@@ -2155,11 +2154,13 @@ def build():
         ra_warden_camp, "npc_warden_captain_serra",
         faction="wardens",
         dialogue={
-            "greeting": (
-                "Serra rolls a patrol token between two scarred fingers. 'The "
-                "foothills look open until a boulder stands up and swings. "
-                "Tell me you brought patience as well as steel.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Serra rolls a patrol token between two scarred fingers. 'The "
+                    "foothills look open until a boulder stands up and swings. "
+                    "Tell me you brought patience as well as steel.'"
+                ),
+            },
             "topics": {
                 "trolls": (
                     "'They are not wandering at random. The hollow below the "
@@ -2177,10 +2178,7 @@ def build():
                     "everyone's disaster.'"
                 ),
             },
-            "base_hints": [
-                "Serra's stones mark the troll hollow, the mine entrance, and the western ridge.",
-                "A folded tonic request sits under Serra's patrol knife.",
-            ],
+            "base_hints": ['trolls', 'patrol', 'line'],
         },
     )
 
@@ -2189,11 +2187,13 @@ def build():
         wr_hermit_cave, "npc_hermit_alchemist_old_renn",
         faction=None,
         dialogue={
-            "greeting": (
-                "Renn looks up from a steaming clay cup. 'If you are bleeding, "
-                "sit. If you are asking, speak softly. The mountain gives better "
-                "answers to people who do not shout over it.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Renn looks up from a steaming clay cup. 'If you are bleeding, "
+                    "sit. If you are asking, speak softly. The mountain gives better "
+                    "answers to people who do not shout over it.'"
+                ),
+            },
             "topics": {
                 "tonic": (
                     "'Serra's patrol tonic is not bravery in a bottle. It is "
@@ -2212,10 +2212,7 @@ def build():
                     "we may yet become almost wise.'"
                 ),
             },
-            "base_hints": [
-                "Renn's drying cord separates alpine cuttings by where the stone around them held warmth.",
-                "A half-finished tonic recipe is written over an older sketch of eight radiating chambers.",
-            ],
+            "base_hints": ['tonic', 'ingredients', 'foundation'],
         },
     )
 
@@ -2503,7 +2500,7 @@ def build():
         desc="A wiry man with scarred hands and a coil of rope over one shoulder. He leans against the rock face, testing handholds with casual expertise.",
         faction=None,
         trainer_id="npc_trainer_climbing_reth",
-        dialogue={"greeting": "Grenn looks you up and down. 'The foothills are gentle enough, but the real peaks will kill you if you do not know what you are doing. I can teach you to read the rock. It is not cheap, but it is cheaper than a funeral.'", "topics": {"climbing": "'Three rules: test every hold twice, never look down when you are committed, and always know your escape route before you start. The mountain does not forgive mistakes.'"}},
+        dialogue={"greeting_tiers": {"neutral": "Grenn looks you up and down. 'The foothills are gentle enough, but the real peaks will kill you if you do not know what you are doing. I can teach you to read the rock. It is not cheap, but it is cheaper than a funeral.'"}, "topics": {"climbing": "'Three rules: test every hold twice, never look down when you are committed, and always know your escape route before you start. The mountain does not forgive mistakes.'"}},
     )
 
     # ==================================================================

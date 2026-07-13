@@ -2186,12 +2186,14 @@ def build():
         faction="wardens",
         trainer_id="npc_trainer_foraging_cantera",
         dialogue={
-            "greeting": (
-                "Thaelen looks up from his bark notes. 'Another one drawn "
-                "to the pulse? I cannot blame you. I have studied it for "
-                "thirty years and still do not understand what is happening "
-                "down there. But I can tell you this -- it is getting worse.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Thaelen looks up from his bark notes. 'Another one drawn "
+                    "to the pulse? I cannot blame you. I have studied it for "
+                    "thirty years and still do not understand what is happening "
+                    "down there. But I can tell you this -- it is getting worse.'"
+                ),
+            },
             "topics": {
                 "node": (
                     "'The resonance is not natural. Oh, the forest is natural "
@@ -2240,12 +2242,14 @@ def build():
         faction="wardens",
         trainer_id="npc_trainer_tracking_cantera",
         dialogue={
-            "greeting": (
-                "Kaelen glances up briefly. 'You heading deeper? Watch "
-                "yourself. The wildlife has been aggressive lately -- worse "
-                "than usual. Something in the center is stirring them up. "
-                "I have been tracking it for weeks.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Kaelen glances up briefly. 'You heading deeper? Watch "
+                    "yourself. The wildlife has been aggressive lately -- worse "
+                    "than usual. Something in the center is stirring them up. "
+                    "I have been tracking it for weeks.'"
+                ),
+            },
             "topics": {
                 "corruption": (
                     "'The red marks on this map? Each one is a sighting of "
@@ -2284,13 +2288,15 @@ def build():
             "trees as if expecting them to move."
         ),
         dialogue={
-            "greeting": (
-                "Mirren startles at your approach. 'Thank the Crown -- a "
-                "person! I have been walking in circles for two days. My "
-                "wagon train was heading to Vael's Crossing but I went to "
-                "gather firewood and... the forest moved. I swear it moved. "
-                "The path I came in on was not there when I turned around.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Mirren startles at your approach. 'Thank the Crown -- a "
+                    "person! I have been walking in circles for two days. My "
+                    "wagon train was heading to Vael's Crossing but I went to "
+                    "gather firewood and... the forest moved. I swear it moved. "
+                    "The path I came in on was not there when I turned around.'"
+                ),
+            },
             "topics": {
                 "supplies": (
                     "'My pack had three days of food. Most of it spilled when "
@@ -2323,12 +2329,14 @@ def build():
         ),
         faction="wardens",
         dialogue={
-            "greeting": (
-                "Voss barely glances up from her manifest. 'If you are "
-                "carrying supply crates, stack them there. If you are not, "
-                "stay out of the way -- I have three outposts running on "
-                "fumes and the last resupply runner never came back.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Voss barely glances up from her manifest. 'If you are "
+                    "carrying supply crates, stack them there. If you are not, "
+                    "stay out of the way -- I have three outposts running on "
+                    "fumes and the last resupply runner never came back.'"
+                ),
+            },
             "topics": {
                 "supplies": (
                     "'We need rations, binding salve, and fire oil. In that "
@@ -2358,11 +2366,13 @@ def build():
         ),
         faction="wardens",
         dialogue={
-            "greeting": (
-                "Taen nods once, barely moving. 'Heading in? Stay on the "
-                "marked trail and do not follow sounds off the path. The "
-                "forest plays tricks when the resonance is high.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Taen nods once, barely moving. 'Heading in? Stay on the "
+                    "marked trail and do not follow sounds off the path. The "
+                    "forest plays tricks when the resonance is high.'"
+                ),
+            },
             "topics": {
                 "trail": (
                     "'I keep the first mile of trail clear and marked. Beyond "

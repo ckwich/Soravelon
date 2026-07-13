@@ -1936,12 +1936,14 @@ def build():
         outpost_07, "npc_warden_captain_ashwyn",
         faction="wardens",
         dialogue={
-            "greeting": (
-                "Ashwyn lifts two fingers from the tally board. 'If you came "
-                "from Vael's Crossing, you already know the road is louder "
-                "than it should be. Tell me what you saw, then I will tell "
-                "you what still needs doing.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Ashwyn lifts two fingers from the tally board. 'If you came "
+                    "from Vael's Crossing, you already know the road is louder "
+                    "than it should be. Tell me what you saw, then I will tell "
+                    "you what still needs doing.'"
+                ),
+            },
             "topics": {
                 "wolves": (
                     "'The ash wolves used to keep to the ridges unless hunger "
@@ -1961,10 +1963,7 @@ def build():
                     "lonely problems. When it goes blind, people disappear.'"
                 ),
             },
-            "base_hints": [
-                "Ashwyn's tally board separates wolf sightings from bandit marks.",
-                "Fresh reports on Ashwyn's desk trace trouble from the ridges to the trade road.",
-            ],
+            "base_hints": ['wolves', 'bandits', 'ashway'],
         },
     )
 
@@ -1973,11 +1972,13 @@ def build():
         outpost_15, "npc_hermit_scholar_obed",
         faction=None,
         dialogue={
-            "greeting": (
-                "Obed peers over a slate covered in copied angles. 'Careful "
-                "where you stand. Half the Ashreach is trying to erase its "
-                "own handwriting, and the other half resents being read.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Obed peers over a slate covered in copied angles. 'Careful "
+                    "where you stand. Half the Ashreach is trying to erase its "
+                    "own handwriting, and the other half resents being read.'"
+                ),
+            },
             "topics": {
                 "ruins": (
                     "'Do not go looking for treasure. Look for repetition: "
@@ -1995,10 +1996,7 @@ def build():
                     "That is why I need witnesses, not just theories.'"
                 ),
             },
-            "base_hints": [
-                "Obed keeps separate rubbings labeled chamber, channel, and archive.",
-                "A sketch beside Obed marks the octagonal platform without naming what made it.",
-            ],
+            "base_hints": ['ruins', 'archive', 'ash'],
         },
     )
 
@@ -2007,11 +2005,13 @@ def build():
         ash_road_09, "npc_merchant_reva",
         faction="consortium",
         dialogue={
-            "greeting": (
-                "Reva weighs you with a merchant's quick arithmetic. 'If you "
-                "are buying, I am delighted. If you are carrying, I am still "
-                "delighted, but in a more urgent way.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Reva weighs you with a merchant's quick arithmetic. 'If you "
+                    "are buying, I am delighted. If you are carrying, I am still "
+                    "delighted, but in a more urgent way.'"
+                ),
+            },
             "topics": {
                 "order": (
                     "'Old Korrin knows the smokehouse schedules better than "
@@ -2030,10 +2030,7 @@ def build():
                     "it prosperity instead of survival.'"
                 ),
             },
-            "base_hints": [
-                "Reva's satchel has separate oilcloth pockets for orders, coin, and favors owed.",
-                "A Stormhaven tide-table is pinned under Reva's thumb.",
-            ],
+            "base_hints": ['order', 'stormhaven', 'road'],
         },
     )
 
@@ -2066,11 +2063,13 @@ def build():
             },
         },
         dialogue={
-            "greeting": (
-                "Harven looks up from a stack of reports. 'If you are here "
-                "to deliver something, set it on the desk. If you are here "
-                "to complain, get in line behind the rest of the Ashreach.'"
-            ),
+            "greeting_tiers": {
+                "neutral": (
+                    "Harven looks up from a stack of reports. 'If you are here "
+                    "to deliver something, set it on the desk. If you are here "
+                    "to complain, get in line behind the rest of the Ashreach.'"
+                ),
+            },
             "topics": {
                 "outpost": (
                     "'This post is the last Warden presence before the deep "
@@ -2100,10 +2099,7 @@ def build():
                     "let the Ashway's calm talk you into delay.'"
                 ),
             },
-            "base_hints": [
-                "Harven's reports are stacked by route: coast, crossing, and treeline.",
-                "A sealed relay satchel waits beside Harven's field desk.",
-            ],
+            "base_hints": ['outpost', 'report', 'relay', 'treeline'],
         },
     )
 
@@ -2319,7 +2315,7 @@ def build():
         desc="A weathered woman with sun-darkened skin sits on the bank, mending a fishing net with practiced fingers. Several rods lean against a rock beside her, each rigged differently.",
         faction=None,
         trainer_id="npc_trainer_fishing_ashreach",
-        dialogue={"greeting": "Neddra glances at your empty hands. 'Heading through the plains without knowing how to fish? The rivers here are generous if you know where to cast. I can show you, for a fair price.'", "topics": {"fish": "'The silverscale trout run heavy in spring. Use grubs, not worms -- the trout here are picky. And stay upstream of the ashfall zones. The fish there taste like sulfur.'"}},
+        dialogue={"greeting_tiers": {"neutral": "Neddra glances at your empty hands. 'Heading through the plains without knowing how to fish? The rivers here are generous if you know where to cast. I can show you, for a fair price.'"}, "topics": {"fish": "'The silverscale trout run heavy in spring. Use grubs, not worms -- the trout here are picky. And stay upstream of the ashfall zones. The fish there taste like sulfur.'"}},
     )
 
     # Herbalism trainer in the grasslands
@@ -2330,7 +2326,7 @@ def build():
         desc="A young woman kneels among the grasses, carefully separating dried stalks into bundles. Her satchel overflows with cuttings. She hums tunelessly as she works.",
         faction="wardens",
         trainer_id="npc_trainer_herbalism_ashreach",
-        dialogue={"greeting": "Senna looks up with grass-stained fingers. 'The ashreach grasses look dead but they are not. Half these stalks have medicinal properties if you know how to prepare them. Want me to show you?'", "topics": {"herbs": "'Ash sage grows where the soil is darkest -- near old burn patches. Bittervine clings to rocks along the ridgeline. And never eat the red-tipped grass. It looks like everything else but it will put you down for days.'"}},
+        dialogue={"greeting_tiers": {"neutral": "Senna looks up with grass-stained fingers. 'The ashreach grasses look dead but they are not. Half these stalks have medicinal properties if you know how to prepare them. Want me to show you?'"}, "topics": {"herbs": "'Ash sage grows where the soil is darkest -- near old burn patches. Bittervine clings to rocks along the ridgeline. And never eat the red-tipped grass. It looks like everything else but it will put you down for days.'"}},
     )
 
     # ==================================================================

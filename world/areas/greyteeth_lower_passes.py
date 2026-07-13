@@ -370,10 +370,10 @@ def build():
     area.exit(tg_tremen_gate, 'tremen:gt_lower_gate', 'north', one_way=True)
 
     # NPCs
-    _route_warden = area.npc(ra_rethward_arrival, 'npc_route_warden_mirren', name='Route Warden Mirren', faction='wardens', dialogue={'greeting': 'Mirren counts your party twice and your rope three times.', 'topics': {'route': 'The road is generous if you respect its bookkeeping.'}, 'base_hints': []})
-    _bellpost_keeper = area.npc(bw_bellpost_waystation, 'npc_bellpost_keeper_roven', name='Bellpost Keeper Roven', faction='wardens', dialogue={'greeting': 'Roven has soup on the hook and chalk dust on both thumbs.', 'topics': {'markers': 'A mark that only locals understand is a vanity, not a rescue tool.'}, 'base_hints': []})
-    _shelter_medic = area.npc(as_avalanche_shelter, 'npc_shelter_medic_essa', name='Shelter Medic Essa', faction='verdance', dialogue={'greeting': 'Essa checks ears, fingers, and courage in that order.', 'topics': {'rescue': 'Fast help matters, but careful help keeps the helpers alive.'}, 'base_hints': []})
-    _surveyor = area.npc(sp_survey_pull_off, 'npc_surveyor_pel', name='Surveyor Pel', faction='western_arcana', dialogue={'greeting': 'Pel keeps a map pinned with spoon handles and old chain links.', 'topics': {'survey': 'The old chain pins were accurate. That does not mean they were kind.'}, 'base_hints': []})
+    _route_warden = area.npc(ra_rethward_arrival, 'npc_route_warden_mirren', name='Route Warden Mirren', faction='wardens', dialogue={'greeting_tiers': {"neutral": 'Mirren counts your party twice and your rope three times.'}, 'topics': {'route': 'The road is generous if you respect its bookkeeping.'}, 'base_hints': []})
+    _bellpost_keeper = area.npc(bw_bellpost_waystation, 'npc_bellpost_keeper_roven', name='Bellpost Keeper Roven', faction='wardens', dialogue={'greeting_tiers': {"neutral": 'Roven has soup on the hook and chalk dust on both thumbs.'}, 'topics': {'markers': 'A mark that only locals understand is a vanity, not a rescue tool.'}, 'base_hints': []})
+    _shelter_medic = area.npc(as_avalanche_shelter, 'npc_shelter_medic_essa', name='Shelter Medic Essa', faction='verdance', dialogue={'greeting_tiers': {"neutral": 'Essa checks ears, fingers, and courage in that order.'}, 'topics': {'rescue': 'Fast help matters, but careful help keeps the helpers alive.'}, 'base_hints': []})
+    _surveyor = area.npc(sp_survey_pull_off, 'npc_surveyor_pel', name='Surveyor Pel', faction='western_arcana', dialogue={'greeting_tiers': {"neutral": 'Pel keeps a map pinned with spoon handles and old chain links.'}, 'topics': {'survey': 'The old chain pins were accurate. That does not mean they were kind.'}, 'base_hints': []})
 
     # Quest item templates
     area.item('glp_marker_tally', key='marker tally', item_type='item', weight=0.5, rarity='normal', desc='A damp tally of repaired lower-pass markers, smudged by glove thumbs and snow.', value=0, is_quest_item=True)

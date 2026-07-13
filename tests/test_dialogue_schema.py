@@ -1,6 +1,7 @@
 """Contracts for runtime-effective authored dialogue payloads."""
 
 import unittest
+from pathlib import Path
 
 
 class TestDialogueSchema(unittest.TestCase):
@@ -75,3 +76,35 @@ class TestDialogueSchema(unittest.TestCase):
 
         with self.assertRaisesRegex(DialogueSchemaError, "unknown dialogue keys"):
             validate_dialogue_payload({"topics": {}, "quest_copy": {}})
+
+    def test_every_authored_area_dialogue_payload_passes_the_schema(self):
+        from world.content_compiler import (
+            _frozen_map_get,
+            _thaw,
+            compile_world_manifest,
+        )
+        from world.dialogue_schema import (
+            DialogueSchemaError,
+            validate_dialogue_payload,
+        )
+
+        areas_dir = Path(__file__).resolve().parents[1] / "world" / "areas"
+        compilation = compile_world_manifest(areas_dir)
+        self.assertEqual(compilation.diagnostics, ())
+
+        failures = []
+        for zone in compilation.manifest.zones:
+            for operation in zone.operations:
+                if operation.method != "npc":
+                    continue
+                dialogue = _thaw(
+                    _frozen_map_get(operation.keyword_arguments, "dialogue", {})
+                )
+                try:
+                    validate_dialogue_payload(dialogue)
+                except DialogueSchemaError as error:
+                    failures.append(
+                        f"{operation.source_path}:{operation.line}: {error}"
+                    )
+
+        self.assertEqual(failures, [])
