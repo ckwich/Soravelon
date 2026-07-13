@@ -92,7 +92,7 @@ def _get_equipped_items(actor):
 
 
 def get_effective_stats(actor):
-    """Return intrinsic base stats plus each equipped bonus exactly once."""
+    """Return intrinsic, equipped, and ancestry-adjusted stats exactly once."""
     base_stats = getattr(actor.db, "base_stats", None)
     if not base_stats:
         return {}
@@ -112,7 +112,12 @@ def get_effective_stats(actor):
             ):
                 continue
             effective[stat_name] += bonus
-    return effective
+    if not _is_player_character(actor):
+        return effective
+
+    from world.ancestry_effects import apply_effective_stat_traits
+
+    return apply_effective_stat_traits(actor, effective)
 
 
 def get_total_equipped_armor(actor):

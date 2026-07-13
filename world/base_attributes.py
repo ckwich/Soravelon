@@ -227,41 +227,6 @@ def apply_point_buy(character, allocations):
 
 
 # ---------------------------------------------------------------------------
-# Ancestry modifiers
-# ---------------------------------------------------------------------------
-
-ANCESTRY_STAT_MODIFIERS = {
-    "human": {"presence": 2, "acuity": 1},
-    "kauroran": {"strength": 3, "endurance": 2, "acuity": -2},
-    "veth": {"acuity": 2, "agility": 2, "strength": -1},
-    "selvar": {"resonance": 2, "presence": 1, "agility": 1, "endurance": -1},
-}
-
-
-def apply_ancestry_modifiers(character):
-    """
-    Read character.db.ancestry and apply additive stat modifiers.
-
-    Uses SaverDict copy pattern: copy base_stats to plain dict, mutate,
-    assign once.
-    """
-    ancestry = character.db.ancestry
-    if not ancestry:
-        return
-
-    modifiers = ANCESTRY_STAT_MODIFIERS.get(ancestry.lower(), {})
-    if not modifiers:
-        return
-
-    # SaverDict copy pattern
-    stats = dict(character.db.base_stats or {stat: 10 for stat in STAT_NAMES})
-    for stat, mod in modifiers.items():
-        current = stats.get(stat, 10)
-        stats[stat] = max(1, current + mod)  # floor at 1, no stat goes to 0
-    character.db.base_stats = stats
-
-
-# ---------------------------------------------------------------------------
 # HP and Stamina derivation
 # ---------------------------------------------------------------------------
 

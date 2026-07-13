@@ -2,7 +2,7 @@
 Tests for the base attribute system (world/base_attributes.py).
 
 Covers point-buy validation, descriptor lookup, HP/stamina derivation,
-action budget, initiative, stat growth tracking, and ancestry modifiers.
+action budget, initiative, and stat growth tracking.
 Uses unittest.TestCase + MagicMock (no Evennia DB required).
 """
 
@@ -11,7 +11,6 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from world.base_attributes import (
-    ANCESTRY_STAT_MODIFIERS,
     BASE_HP,
     BASE_STAMINA,
     HP_PER_ENDURANCE,
@@ -21,7 +20,6 @@ from world.base_attributes import (
     STAT_GROWTH_ACTIONS,
     STAT_NAMES,
     STAT_XP_PER_USE,
-    apply_ancestry_modifiers,
     apply_point_buy,
     commit_stat_growth,
     derive_hp,
@@ -226,79 +224,6 @@ class TestApplyPointBuy(unittest.TestCase):
         alloc = _valid_allocation(strength=0)  # below min
         ok, msg = apply_point_buy(char, alloc)
         self.assertFalse(ok)
-
-
-# ---------------------------------------------------------------------------
-# Ancestry Modifiers
-# ---------------------------------------------------------------------------
-
-
-class TestAncestryModifiers(unittest.TestCase):
-    """apply_ancestry_modifiers adds stat bonuses/penalties per ancestry."""
-
-    def test_human_gets_presence_and_acuity(self):
-        char = _make_character(ancestry="human")
-        char.db.base_stats = {s: 10 for s in STAT_NAMES}
-        apply_ancestry_modifiers(char)
-        stats = char.db.base_stats
-        self.assertEqual(stats["presence"], 12)
-        self.assertEqual(stats["acuity"], 11)
-
-    def test_kauroran_gets_strength_endurance_minus_acuity(self):
-        char = _make_character(ancestry="kauroran")
-        char.db.base_stats = {s: 10 for s in STAT_NAMES}
-        apply_ancestry_modifiers(char)
-        stats = char.db.base_stats
-        self.assertEqual(stats["strength"], 13)
-        self.assertEqual(stats["endurance"], 12)
-        self.assertEqual(stats["acuity"], 8)
-
-    def test_veth_modifiers(self):
-        char = _make_character(ancestry="veth")
-        char.db.base_stats = {s: 10 for s in STAT_NAMES}
-        apply_ancestry_modifiers(char)
-        stats = char.db.base_stats
-        self.assertEqual(stats["acuity"], 12)
-        self.assertEqual(stats["agility"], 12)
-        self.assertEqual(stats["strength"], 9)
-
-    def test_selvar_modifiers(self):
-        char = _make_character(ancestry="selvar")
-        char.db.base_stats = {s: 10 for s in STAT_NAMES}
-        apply_ancestry_modifiers(char)
-        stats = char.db.base_stats
-        self.assertEqual(stats["resonance"], 12)
-        self.assertEqual(stats["presence"], 11)
-        self.assertEqual(stats["agility"], 11)
-        self.assertEqual(stats["endurance"], 9)
-
-    def test_stat_floor_at_1(self):
-        """No stat can go to 0 from ancestry penalty."""
-        char = _make_character(ancestry="kauroran")
-        char.db.base_stats = {s: 1 for s in STAT_NAMES}
-        apply_ancestry_modifiers(char)
-        stats = char.db.base_stats
-        self.assertGreaterEqual(stats["acuity"], 1)
-
-    def test_no_ancestry_is_noop(self):
-        char = _make_character(ancestry=None)
-        original = {s: 10 for s in STAT_NAMES}
-        char.db.base_stats = dict(original)
-        apply_ancestry_modifiers(char)
-        self.assertEqual(char.db.base_stats, original)
-
-    def test_unknown_ancestry_is_noop(self):
-        char = _make_character(ancestry="dragonborn")
-        original = {s: 10 for s in STAT_NAMES}
-        char.db.base_stats = dict(original)
-        apply_ancestry_modifiers(char)
-        self.assertEqual(char.db.base_stats, original)
-
-    def test_case_insensitive(self):
-        char = _make_character(ancestry="Human")
-        char.db.base_stats = {s: 10 for s in STAT_NAMES}
-        apply_ancestry_modifiers(char)
-        self.assertEqual(char.db.base_stats["presence"], 12)
 
 
 # ---------------------------------------------------------------------------
