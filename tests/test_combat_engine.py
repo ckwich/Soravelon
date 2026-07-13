@@ -652,7 +652,7 @@ class TestDeathHandling(unittest.TestCase):
         self.assertNotEqual(corpse.db.mob_key, "Ash Wolf")
 
     def test_player_death_creates_corpse(self):
-        """handle_player_death moves items to corpse."""
+        """handle_player_death moves carried items to the corpse."""
         from world.combat_engine import handle_player_death
 
         player = _make_player()
@@ -663,6 +663,10 @@ class TestDeathHandling(unittest.TestCase):
         player.contents = [item1, item2]
 
         with patch("world.combat_engine._spawn_player_corpse") as mock_corpse, \
+             patch(
+                 "world.inventory_engine.get_equipped_items",
+                 return_value=[],
+             ), \
              patch(
                  "world.inventory_engine.move_owned_items_to_world_container"
              ) as mock_transfer, \
@@ -677,6 +681,37 @@ class TestDeathHandling(unittest.TestCase):
                 corpse,
             )
             self.assertIn("fallen", msg.lower())
+
+    def test_player_death_preserves_equipped_items(self):
+        """Death drops carried possessions without stripping equipped gear."""
+        from world.combat_engine import handle_player_death
+
+        player = _make_player()
+        equipped_item = MagicMock()
+        equipped_item.id = 1
+        carried_item = MagicMock()
+        carried_item.id = 2
+        player.contents = [equipped_item, carried_item]
+
+        with patch("world.combat_engine._spawn_player_corpse") as mock_corpse, \
+             patch(
+                 "world.inventory_engine.get_equipped_items",
+                 return_value=[(equipped_item, MagicMock())],
+             ), \
+             patch(
+                 "world.inventory_engine.move_owned_items_to_world_container"
+             ) as mock_transfer, \
+             patch("world.banking.on_character_death"):
+            corpse = MagicMock()
+            mock_corpse.return_value = corpse
+
+            handle_player_death(player)
+
+            mock_transfer.assert_called_once_with(
+                player,
+                [carried_item],
+                corpse,
+            )
 
     def test_check_death_at_zero(self):
         """check_death returns True when HP is 0."""

@@ -723,11 +723,23 @@ def handle_player_death(character):
     room = character.location
     if room:
         corpse = _spawn_player_corpse(character, room)
-        from world.inventory_engine import move_owned_items_to_world_container
+        from world.inventory_engine import (
+            get_equipped_items,
+            move_owned_items_to_world_container,
+        )
+
+        equipped_item_ids = {
+            item.id for item, _record in get_equipped_items(character)
+        }
+        carried_items = [
+            item
+            for item in character.contents
+            if item.id not in equipped_item_ids
+        ]
 
         move_owned_items_to_world_container(
             character,
-            list(character.contents),
+            carried_items,
             corpse,
         )
 
