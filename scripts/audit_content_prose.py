@@ -29,7 +29,6 @@ DEFAULT_PROSE_ALLOWLIST = frozenset()
 META_PROSE_PATTERNS = (
     ("player", re.compile(r"\bplayers?\b", re.IGNORECASE)),
     ("this-part-of", re.compile(r"\bthis part of\b", re.IGNORECASE)),
-    ("centers-on", re.compile(r"\bcenters on\b", re.IGNORECASE)),
     (
         "production-language",
         re.compile(

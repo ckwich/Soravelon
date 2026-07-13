@@ -105,6 +105,19 @@ class TestContentProseAudit(unittest.TestCase):
 
         self.assertEqual(audit.findings, ())
 
+    def test_spatial_centers_on_phrase_is_not_treated_as_meta_prose(self):
+        from scripts.audit_content_prose import audit_prose_sources
+
+        audit = audit_prose_sources(
+            {
+                "world/areas/clean.py": _area_source(
+                    "The court still centers on a cracked bell frame, though the bell now rings for quarry shifts."
+                )
+            }
+        )
+
+        self.assertEqual(audit.findings, ())
+
     def test_live_repo_exposes_the_known_vault_dependent_rewrite_gate(self):
         from scripts.audit_content_prose import audit_prose_directory
 
