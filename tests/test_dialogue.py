@@ -56,6 +56,44 @@ def _extract_authored_npc_dialogue(path, npc_id):
 class TestQuestOfferAcceptance(unittest.TestCase):
     """Quest-offer command edge cases that do not need live Evennia objects."""
 
+    def test_talk_hints_include_an_executable_ask_target(self):
+        from evennia.utils.ansi import parse_ansi
+
+        from commands.cmd_dialogue import CmdTalk
+
+        room = SimpleNamespace()
+        npc = SimpleNamespace(
+            db=SimpleNamespace(npc_name="Npc Greeter Maren"),
+            key="Npc Greeter Maren",
+            location=room,
+        )
+        character = MagicMock()
+        character.location = room
+        character.ndb = SimpleNamespace(pending_quest_offer=None)
+
+        with (
+            patch("commands.cmd_dialogue._find_npc_in_room", return_value=npc),
+            patch(
+                "world.dialogue_engine.resolve_greeting",
+                return_value=("Good road.", "neutral"),
+            ),
+            patch("world.dialogue_engine.get_npc_hints", return_value=["work"]),
+            patch("world.dialogue_engine.get_quest_offers", return_value=[]),
+            patch("world.quest_engine.check_talk_to_objectives"),
+            patch("world.quest_engine.check_deliver_objectives"),
+            patch("world.guild_engine.get_recruitment_for_contact", return_value=None),
+        ):
+            command = CmdTalk()
+            command.caller = character
+            command.args = "maren"
+            command.func()
+
+        rendered = "\n".join(
+            parse_ansi(call.args[0], strip_ansi=True)
+            for call in character.msg.call_args_list
+        )
+        self.assertIn("ask Npc Greeter Maren about work", rendered)
+
     def test_oob_payload_handles_chained_offer_without_npc(self):
         from commands.cmd_dialogue import _build_quest_oob_payload
 

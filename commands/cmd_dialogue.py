@@ -215,7 +215,7 @@ class CmdTalk(Command):
         # Hints
         hints = get_npc_hints(npc, character)
         if hints:
-            hint_parts = [f"ask about |w{h}|n" for h in hints]
+            hint_parts = [f"ask {npc_display} about |w{h}|n" for h in hints]
             hint_str = "|x, ".join(hint_parts)
             character.msg(f"|x[Try: {hint_str}|x]|n")
 

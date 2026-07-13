@@ -355,6 +355,15 @@ class TestStarterKitContracts(unittest.TestCase):
 class TestAncestryCommandOutput(unittest.TestCase):
     """Player-facing ancestry usage text renders literal separators."""
 
+    def test_help_docstring_renders_selvar_coat_separator(self):
+        from evennia.utils.ansi import parse_ansi
+
+        from commands.cmd_ancestry import CmdSetAncestry
+
+        rendered = parse_ansi(CmdSetAncestry.__doc__, strip_ansi=True)
+
+        self.assertIn("ancestry selvar <summer|winter>", rendered)
+
     def test_no_arg_usage_renders_selvar_coat_separator(self):
         from evennia.utils.ansi import parse_ansi
 

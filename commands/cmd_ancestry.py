@@ -15,7 +15,7 @@ class CmdSetAncestry(Command):
 
     Usage:
       ancestry <name>
-      ancestry selvar <summer|winter>
+      ancestry selvar <summer||winter>
 
     Available ancestries: Human, Kau'roran, Veth, Selvar
     Selvar requires a coat choice (summer or winter).
