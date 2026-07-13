@@ -43,7 +43,7 @@ def audit_world_connectivity(
     *,
     start_room: str = FRESH_START_ROOM,
 ) -> ConnectivityAudit:
-    """Audit walking plus authored bidirectional flight reachability."""
+    """Audit walking plus flight reachability under the live discovery gate."""
 
     rooms: set[str] = set()
     adjacency: dict[str, set[str]] = defaultdict(set)
@@ -73,6 +73,7 @@ def audit_world_connectivity(
                     (str(operation.arguments[0]), str(operation.arguments[1]))
                 )
 
+    valid_flight_routes: list[tuple[str, str]] = []
     for first, second in flight_routes:
         missing = [point for point in (first, second) if point not in flight_points]
         if missing:
@@ -84,10 +85,7 @@ def audit_world_connectivity(
                 )
             )
             continue
-        first_room = flight_points[first]
-        second_room = flight_points[second]
-        adjacency[first_room].add(second_room)
-        adjacency[second_room].add(first_room)
+        valid_flight_routes.append((first, second))
 
     if start_room not in rooms:
         diagnostics.append(
@@ -107,6 +105,29 @@ def audit_world_connectivity(
                 if neighbor in rooms and neighbor not in reachable:
                     reachable.add(neighbor)
                     frontier.append(neighbor)
+
+    discovered_flight_points = {
+        point_id for point_id, room in flight_points.items() if room in reachable
+    }
+    for first, second in valid_flight_routes:
+        first_discovered = first in discovered_flight_points
+        second_discovered = second in discovered_flight_points
+        if first_discovered == second_discovered:
+            continue
+        origin, blocked_destination = (
+            (first, second) if first_discovered else (second, first)
+        )
+        diagnostics.append(
+            ConnectivityDiagnostic(
+                code="circular-flight-discovery",
+                entity_id=f"{origin}:{blocked_destination}",
+                message=(
+                    f"Fresh players can reach '{origin}', but booking to "
+                    f"'{blocked_destination}' requires discovering that inaccessible "
+                    "destination first."
+                ),
+            )
+        )
 
     unreachable_rooms = rooms - reachable
     all_zones = {definition.zone_id for definition in manifest.zones}

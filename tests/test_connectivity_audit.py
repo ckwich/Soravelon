@@ -8,7 +8,7 @@ from world.content_compiler import compile_world_manifest
 
 
 class TestProductionWorldConnectivity(TestCase):
-    def test_reports_the_disconnected_korahei_cluster_from_fresh_start(self):
+    def test_reports_flight_clusters_blocked_by_destination_discovery(self):
         compilation = compile_world_manifest(Path("world/areas"))
         self.assertIsNotNone(compilation.manifest)
 
@@ -18,15 +18,28 @@ class TestProductionWorldConnectivity(TestCase):
             audit.unreachable_zones,
             {
                 "colonist_ruins",
+                "crownroad_north",
+                "greyteeth_lower_passes",
+                "ironvein_escarpment",
                 "kiai_grounds",
                 "korahei",
+                "old_causeway",
+                "stagcrown_preserve",
+                "tremen",
+                "tremeneth_deep_mines",
+                "tremeneth_high_passes",
+                "tremeneth_underhalls",
+                "varath_prime",
                 "veluana_central_isle",
                 "veluana_outer_reefs",
             },
         )
-        self.assertEqual(
-            [item.code for item in audit.diagnostics],
-            ["unreachable-zone"] * 5,
+        self.assertIn(
+            (
+                "circular-flight-discovery",
+                "vaels_crossing_courier:varath_prime_courier",
+            ),
+            {(item.code, item.entity_id) for item in audit.diagnostics},
         )
 
     def test_rejects_a_flight_route_with_an_unknown_endpoint(self):
