@@ -1,0 +1,157 @@
+{
+  "schema_version": "soravelon.release-evidence.v1",
+  "release": {
+    "git_commit": "",
+    "manifest_hash": "",
+    "created_at_utc": "",
+    "limitations": [],
+    "rollback_instructions": []
+  },
+  "environment": {
+    "os": "",
+    "architecture": "",
+    "python": "",
+    "postgresql": "",
+    "django": "",
+    "evennia": "",
+    "psycopg": ""
+  },
+  "rehearsals": [
+    {
+      "run_id": "run-1",
+      "fresh_content": {
+        "database_kind": "fresh",
+        "database_name": "",
+        "initial_state": "",
+        "first_state": "",
+        "reapply_state": "",
+        "final_state": "",
+        "manifest_hash": "",
+        "revision_id": 0,
+        "git_commit": ""
+      },
+      "restored_content": {
+        "database_kind": "restored",
+        "database_name": "",
+        "initial_state": "",
+        "first_state": "",
+        "reapply_state": "",
+        "final_state": "",
+        "manifest_hash": "",
+        "revision_id": 0,
+        "git_commit": ""
+      },
+      "candidate_database": "",
+      "backup": {
+        "artifact": "",
+        "sha256": "",
+        "restore_verified": false
+      },
+      "failure_injection": {
+        "content": false,
+        "economy": false,
+        "inventory": false,
+        "quest": false
+      },
+      "lifecycle": {
+        "start": false,
+        "crash_restart": false,
+        "reload": false,
+        "stop": false,
+        "reboot": false,
+        "listeners_recovered": false,
+        "portal_pid_preserved_on_reload": false,
+        "startup_content_writes": []
+      },
+      "candidate": {
+        "passed": false,
+        "output_sha256": ""
+      }
+    },
+    {
+      "run_id": "run-2",
+      "fresh_content": {
+        "database_kind": "fresh",
+        "database_name": "",
+        "initial_state": "",
+        "first_state": "",
+        "reapply_state": "",
+        "final_state": "",
+        "manifest_hash": "",
+        "revision_id": 0,
+        "git_commit": ""
+      },
+      "restored_content": {
+        "database_kind": "restored",
+        "database_name": "",
+        "initial_state": "",
+        "first_state": "",
+        "reapply_state": "",
+        "final_state": "",
+        "manifest_hash": "",
+        "revision_id": 0,
+        "git_commit": ""
+      },
+      "candidate_database": "",
+      "backup": {
+        "artifact": "",
+        "sha256": "",
+        "restore_verified": false
+      },
+      "failure_injection": {
+        "content": false,
+        "economy": false,
+        "inventory": false,
+        "quest": false
+      },
+      "lifecycle": {
+        "start": false,
+        "crash_restart": false,
+        "reload": false,
+        "stop": false,
+        "reboot": false,
+        "listeners_recovered": false,
+        "portal_pid_preserved_on_reload": false,
+        "startup_content_writes": []
+      },
+      "candidate": {
+        "passed": false,
+        "output_sha256": ""
+      }
+    }
+  ],
+  "builder_packages": [
+    {
+      "platform": "macos-arm64",
+      "artifact": "",
+      "sha256": "",
+      "tests_passed": false
+    },
+    {
+      "platform": "macos-x64",
+      "artifact": "",
+      "sha256": "",
+      "tests_passed": false
+    },
+    {
+      "platform": "windows-x64",
+      "artifact": "",
+      "sha256": "",
+      "tests_passed": false
+    },
+    {
+      "platform": "linux-x64",
+      "artifact": "",
+      "sha256": "",
+      "tests_passed": false
+    }
+  ],
+  "human_acceptance": {
+    "timed_fresh_player": false,
+    "co_op": false,
+    "living_world": false,
+    "observed_by": "",
+    "notes": ""
+  },
+  "artifacts": []
+}
