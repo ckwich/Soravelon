@@ -166,6 +166,16 @@ def _candidate_steps(candidate: ReleaseCandidateInputs) -> list[ReleaseStep]:
             _python_command("scripts/audit_content_prose.py"),
         ),
         ReleaseStep(
+            "Transactional failure injection",
+            _python_command(
+                "scripts/run_tests.py",
+                "tests.test_content_revisions.TestWorldContentApplyLifecycle.test_injected_failure_rolls_back_runtime_and_persists_failure",
+                "tests.test_economy_transactions.TestAtomicCashAndBankOperations.test_deposit_rolls_back_after_every_write",
+                "tests.test_inventory_transactions.TestAtomicPickup.test_pickup_rolls_back_location_and_ownership_after_every_write",
+                "tests.test_quest_outcomes.TestAtomicQuestOutcomes.test_failure_after_outcome_writes_rolls_back_every_effect",
+            ),
+        ),
+        ReleaseStep(
             "Release gameplay verticals",
             _python_command(
                 "scripts/run_tests.py",

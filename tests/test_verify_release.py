@@ -227,6 +227,14 @@ class TestReleasePlan(unittest.TestCase):
             commands["Canonical tests"],
             (sys.executable, "scripts/run_tests.py"),
         )
+        rollback = commands["Transactional failure injection"]
+        for label in (
+            "tests.test_content_revisions.TestWorldContentApplyLifecycle.test_injected_failure_rolls_back_runtime_and_persists_failure",
+            "tests.test_economy_transactions.TestAtomicCashAndBankOperations.test_deposit_rolls_back_after_every_write",
+            "tests.test_inventory_transactions.TestAtomicPickup.test_pickup_rolls_back_location_and_ownership_after_every_write",
+            "tests.test_quest_outcomes.TestAtomicQuestOutcomes.test_failure_after_outcome_writes_rolls_back_every_effect",
+        ):
+            self.assertIn(label, rollback)
         self.assertEqual(
             commands["Live player protocols"],
             (

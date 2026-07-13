@@ -118,9 +118,10 @@ python scripts/verify_release.py candidate \
 ```
 
 This candidate mode runs the release preflight, prepared content verification,
-world connectivity and prose audits, named M3/M4/Social/co-op verticals, the
-complete unsharded canonical suite, and real Telnet/HTTP/WebSocket checks. It is
-supposed to fail while any release blocker, including authored prose, remains.
+world connectivity and prose audits, explicit content/economy/inventory/quest
+failure injection, named M3/M4/Social/co-op verticals, the complete unsharded
+canonical suite, and real Telnet/HTTP/WebSocket checks. It is supposed to fail
+while any release blocker, including authored prose, remains.
 
 ## Systemd units
 
