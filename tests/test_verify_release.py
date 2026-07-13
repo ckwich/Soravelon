@@ -343,6 +343,7 @@ class TestCanonicalTestRunner(unittest.TestCase):
             patch("django.setup"),
             patch("django.conf.settings", SimpleNamespace(DATABASES={"default": database})),
             patch("scripts.run_tests.reset_precreated_test_database") as reset,
+            patch("scripts.run_tests.prepare_precreated_test_database") as prepare,
             patch("django.core.management.call_command") as call_command,
         ):
             result = run_tests.main(
@@ -351,6 +352,7 @@ class TestCanonicalTestRunner(unittest.TestCase):
 
         self.assertEqual(result, 0)
         reset.assert_called_once_with(database)
+        prepare.assert_called_once_with(database, REPO_ROOT)
         call_command.assert_called_once_with(
             "test",
             "tests.test_example",
@@ -444,6 +446,127 @@ class TestPrecreatedTestDatabaseReset(unittest.TestCase):
             [call.args[0] for call in cursor.execute.call_args_list],
             ["SELECT current_database()"],
         )
+
+
+class TestPrecreatedTestDatabasePreparation(unittest.TestCase):
+    def test_preparation_targets_only_explicit_test_database(self):
+        from scripts.run_tests import prepare_precreated_test_database
+
+        database = {
+            "NAME": "soravelon_rehearsal_candidate_1",
+            "TEST": {"NAME": "test_soravelon_rehearsal_candidate_1"},
+        }
+        run = MagicMock()
+
+        prepare_precreated_test_database(
+            database,
+            Path("/srv/soravelon"),
+            run=run,
+            environ={
+                "DATABASE_NAME": "soravelon_rehearsal_candidate_1",
+                "DATABASE_TEST_NAME": "test_soravelon_rehearsal_candidate_1",
+                "SECRET_KEY": "preserved",
+            },
+        )
+
+        run.assert_called_once()
+        command = run.call_args.args[0]
+        self.assertEqual(
+            command,
+            [
+                sys.executable,
+                "scripts/prepare_candidate_test_database.py",
+                "--expected-database-name",
+                "test_soravelon_rehearsal_candidate_1",
+            ],
+        )
+        self.assertEqual(run.call_args.kwargs["cwd"], Path("/srv/soravelon"))
+        self.assertTrue(run.call_args.kwargs["check"])
+        child_env = run.call_args.kwargs["env"]
+        self.assertEqual(
+            child_env["DATABASE_NAME"],
+            "test_soravelon_rehearsal_candidate_1",
+        )
+        self.assertNotIn("DATABASE_TEST_NAME", child_env)
+        self.assertEqual(child_env["SECRET_KEY"], "preserved")
+
+
+class TestCandidateTestDatabaseFoundation(unittest.TestCase):
+    def test_database_identity_must_be_explicit_and_disposable(self):
+        from scripts.prepare_candidate_test_database import require_candidate_database
+
+        database = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "test_soravelon_rehearsal_candidate_1",
+        }
+
+        require_candidate_database(
+            database,
+            expected_name="test_soravelon_rehearsal_candidate_1",
+            actual_name="test_soravelon_rehearsal_candidate_1",
+        )
+        for changed in (
+            {**database, "NAME": "soravelon"},
+            {**database, "ENGINE": "django.db.backends.sqlite3"},
+        ):
+            with self.subTest(database=changed):
+                with self.assertRaisesRegex(RuntimeError, "disposable PostgreSQL"):
+                    require_candidate_database(
+                        changed,
+                        expected_name="test_soravelon_rehearsal_candidate_1",
+                        actual_name="test_soravelon_rehearsal_candidate_1",
+                    )
+        with self.assertRaisesRegex(RuntimeError, "live database identity"):
+            require_candidate_database(
+                database,
+                expected_name="test_soravelon_rehearsal_candidate_1",
+                actual_name="soravelon",
+            )
+
+    def test_seed_creates_unusable_admin_and_evennia_objects(self):
+        from scripts.prepare_candidate_test_database import seed_evennia_foundation
+
+        account = SimpleNamespace(
+            pk=1,
+            is_superuser=True,
+            is_staff=True,
+            has_usable_password=MagicMock(return_value=False),
+        )
+        account_model = SimpleNamespace(objects=MagicMock())
+        account_model.objects.exists.return_value = False
+        account_model.objects.create_superuser.return_value = account
+        object_model = SimpleNamespace(objects=MagicMock())
+        object_model.objects.filter.return_value.count.return_value = 2
+        initialize = MagicMock()
+
+        seed_evennia_foundation(
+            account_model=account_model,
+            object_model=object_model,
+            initialize=initialize,
+        )
+
+        account_model.objects.create_superuser.assert_called_once_with(
+            username="CandidateTestAdmin",
+            email="candidate-test-admin@example.invalid",
+            password=None,
+        )
+        initialize.assert_called_once_with()
+        object_model.objects.filter.assert_called_once_with(pk__in=(1, 2))
+
+    def test_seed_refuses_nonempty_database_before_creating_account(self):
+        from scripts.prepare_candidate_test_database import seed_evennia_foundation
+
+        account_model = SimpleNamespace(objects=MagicMock())
+        account_model.objects.exists.return_value = True
+
+        with self.assertRaisesRegex(RuntimeError, "empty account table"):
+            seed_evennia_foundation(
+                account_model=account_model,
+                object_model=SimpleNamespace(objects=MagicMock()),
+                initialize=MagicMock(),
+            )
+
+        account_model.objects.create_superuser.assert_not_called()
 
 
 class TestEconomyInventoryReconciliation(unittest.TestCase):

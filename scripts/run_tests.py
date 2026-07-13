@@ -11,6 +11,7 @@ import argparse
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 from typing import Any, Callable, Mapping
 
@@ -77,6 +78,40 @@ def reset_precreated_test_database(
             cursor.execute("CREATE SCHEMA public")
 
 
+def prepare_precreated_test_database(
+    database: Mapping[str, Any],
+    repo_root: Path,
+    *,
+    run: Callable[..., Any] = subprocess.run,
+    environ: Mapping[str, str] | None = None,
+) -> None:
+    """Migrate and seed the disposable test database in a child process."""
+
+    test_name = str((database.get("TEST") or {}).get("NAME") or "")
+    if (
+        _REHEARSAL_TEST_DATABASE.fullmatch(test_name) is None
+        or len(test_name) > 63
+    ):
+        raise RuntimeError(
+            "Test foundation preparation requires a disposable "
+            "test_soravelon_rehearsal_* database."
+        )
+    child_env = dict(os.environ if environ is None else environ)
+    child_env["DATABASE_NAME"] = test_name
+    child_env.pop("DATABASE_TEST_NAME", None)
+    run(
+        [
+            sys.executable,
+            "scripts/prepare_candidate_test_database.py",
+            "--expected-database-name",
+            test_name,
+        ],
+        cwd=repo_root,
+        env=child_env,
+        check=True,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -109,6 +144,7 @@ def main(argv: list[str] | None = None) -> int:
     django.setup()
     if args.reset_kept_db:
         reset_precreated_test_database(settings.DATABASES["default"])
+        prepare_precreated_test_database(settings.DATABASES["default"], repo_root)
     test_labels = args.test_labels or ["tests"]
     call_command(
         "test",

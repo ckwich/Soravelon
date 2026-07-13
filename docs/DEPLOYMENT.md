@@ -125,10 +125,12 @@ The candidate test database must be pre-created as an empty database owned by
 the restricted application role. Candidate mode reuses it with Django's
 `keepdb` path and resets its `public` schema before each independent test
 invocation. The reset refuses non-rehearsal names and verifies the live database
-identity before dropping the schema. This rebuilds Evennia's required foundation
-records without giving the production-like role cluster-wide `CREATEDB`
-privilege. Both names are explicit and restricted to disposable rehearsal naming
-contracts.
+identity before dropping the schema. It then migrates that explicit test
+database and creates an unusable-password test-only admin plus Evennia's required
+object foundation. The canonical suite therefore retains account `#1` and
+default home `#2` across `EvenniaTest` cases without giving the production-like
+role cluster-wide `CREATEDB` privilege. Both names are explicit and restricted
+to disposable rehearsal naming contracts.
 
 This candidate mode runs the release preflight, prepared content verification,
 world connectivity and prose audits, explicit content/economy/inventory/quest
