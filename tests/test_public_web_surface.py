@@ -1,5 +1,7 @@
 """Player-facing website and webclient launch-surface contracts."""
 
+import hashlib
+import re
 from pathlib import Path
 
 from django.test import TestCase
@@ -47,3 +49,31 @@ class TestPublicWebSurface(TestCase):
         self.assertIn('setAttribute("aria-label", "Send command")', bridge)
         self.assertIn("postInit: postInit", bridge)
         self.assertIn("onLayoutChanged: onLayoutChanged", bridge)
+
+    def test_public_browser_dependencies_are_local_pinned_and_licensed(self):
+        homepage = self.client.get("/").content.decode()
+        webclient = self.client.get("/webclient/").content.decode()
+
+        remote_asset = re.compile(
+            r'<(?:script|link)\b[^>]+(?:src|href)=["\']https?://', re.IGNORECASE
+        )
+        self.assertNotRegex(homepage, remote_asset)
+        self.assertNotRegex(webclient, remote_asset)
+
+        expected_assets = (
+            "jquery-3.7.1.min.js",
+            "bootstrap-4.6.2.min.css",
+            "bootstrap-4.6.2.bundle.min.js",
+            "goldenlayout-1.5.9.min.js",
+            "goldenlayout-1.5.9-base.css",
+            "goldenlayout-1.5.9-dark-theme.css",
+            "favico-0.3.10.min.js",
+        )
+        rendered = homepage + webclient
+        manifest = Path("web/static/vendor/THIRD_PARTY_ASSETS.md").read_text()
+        for asset in expected_assets:
+            asset_path = Path("web/static/vendor", asset)
+            self.assertIn(f"/static/vendor/{asset}", rendered)
+            self.assertTrue(asset_path.is_file())
+            digest = hashlib.sha256(asset_path.read_bytes()).hexdigest()
+            self.assertRegex(manifest, rf"{re.escape(asset)}.*`{digest}`")
