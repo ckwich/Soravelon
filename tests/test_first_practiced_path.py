@@ -4,7 +4,7 @@ from pathlib import Path
 
 from evennia.utils.test_resources import EvenniaTest
 
-from world.content_compiler import FrozenMap, compile_world_manifest
+from world.content_compiler import compile_world_manifest, thaw_compiled_value
 
 
 FIRST_PRACTICED_OPPORTUNITY_IDS = (
@@ -13,14 +13,6 @@ FIRST_PRACTICED_OPPORTUNITY_IDS = (
     "ash_road_read_wolf_sign",
     "ash_grass_test_shelter_grass",
 )
-
-
-def _thaw(value):
-    if isinstance(value, FrozenMap):
-        return {key: _thaw(item) for key, item in value.entries}
-    if isinstance(value, tuple):
-        return [_thaw(item) for item in value]
-    return value
 
 
 def _authored_first_practiced_payloads():
@@ -36,7 +28,7 @@ def _authored_first_practiced_payloads():
             if operation.method != "practice_opportunity":
                 continue
             opportunity_id = operation.arguments[0]
-            payload = _thaw(operation.keyword_arguments)
+            payload = thaw_compiled_value(operation.keyword_arguments)
             payload["opportunity_id"] = opportunity_id
             by_id[opportunity_id] = payload
 

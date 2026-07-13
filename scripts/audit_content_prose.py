@@ -17,7 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from world.content_compiler import (  # noqa: E402
-    _operation_value,
+    compiled_operation_value,
     compile_world_sources,
 )
 
@@ -106,7 +106,7 @@ def _room_prose_from_sources(sources):
             if operation.method != "room" or not operation.arguments:
                 continue
             room_id = operation.arguments[0]
-            description = _operation_value(operation, 2, "desc", "")
+            description = compiled_operation_value(operation, 2, "desc", "")
             if not isinstance(room_id, str) or not isinstance(description, str):
                 continue
             rooms.append(

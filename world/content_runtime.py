@@ -11,8 +11,8 @@ from world.content_compiler import (
     FrozenMap,
     SymbolicReference,
     WorldManifest,
-    _operation_value,
-    _thaw,
+    compiled_operation_value,
+    thaw_compiled_value,
 )
 from world.tag_search import search_objects_by_exact_tag
 
@@ -75,7 +75,7 @@ def hydrate_runtime_registries(manifest: WorldManifest) -> None:
                 FlightRegistry.register_point(
                     point_id,
                     room,
-                    name=_operation_value(operation, 2, "name"),
+                    name=compiled_operation_value(operation, 2, "name"),
                 )
             elif operation.method == "flight_route":
                 first, second, fare = operation.arguments[:3]
@@ -83,8 +83,8 @@ def hydrate_runtime_registries(manifest: WorldManifest) -> None:
                     first,
                     second,
                     fare,
-                    _operation_value(operation, 3, "leg_duration", 30),
-                    _operation_value(operation, 4, "echoes", ()) or [],
+                    compiled_operation_value(operation, 3, "leg_duration", 30),
+                    compiled_operation_value(operation, 4, "echoes", ()) or [],
                 )
 
 
@@ -103,7 +103,7 @@ def _plain(value):
 
 
 def _kwargs(operation: AreaOperation) -> dict[str, object]:
-    value = _thaw(operation.keyword_arguments)
+    value = thaw_compiled_value(operation.keyword_arguments)
     return value if isinstance(value, dict) else {}
 
 
@@ -760,9 +760,9 @@ class _RuntimeVerifier:
     def expected_gathering_pool(self, operation) -> dict[str, object]:
         kwargs = _kwargs(operation)
         return {
-            "pool_type": _operation_value(operation, 0, "pool_type"),
-            "room_ids": _operation_value(operation, 1, "rooms"),
-            "materials": _operation_value(operation, 2, "materials"),
+            "pool_type": compiled_operation_value(operation, 0, "pool_type"),
+            "room_ids": compiled_operation_value(operation, 1, "rooms"),
+            "materials": compiled_operation_value(operation, 2, "materials"),
             "max_active": kwargs.get("max_active", 3),
             "respawn_minutes": kwargs.get("respawn_minutes", 15),
             "respawn_variance": kwargs.get("respawn_variance", 5),
@@ -806,7 +806,7 @@ class _RuntimeVerifier:
                 {
                     "trigger_id": kwargs.get("trigger_id"),
                     "event": operation.arguments[1],
-                    "actions": _operation_value(operation, 2, "actions"),
+                    "actions": compiled_operation_value(operation, 2, "actions"),
                     "once_per_character": kwargs.get("once_per_character", False),
                     "cooldown_seconds": kwargs.get("cooldown_seconds", 0),
                 }

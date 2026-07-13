@@ -5,7 +5,11 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from dataclasses import dataclass
 
-from world.content_compiler import SymbolicReference, WorldManifest, _thaw
+from world.content_compiler import (
+    SymbolicReference,
+    WorldManifest,
+    thaw_compiled_value,
+)
 
 FRESH_START_ROOM = "vaels_crossing:hg_arrival"
 
@@ -74,7 +78,7 @@ def audit_world_connectivity(
                     (str(operation.arguments[0]), str(operation.arguments[1]))
                 )
             elif operation.method == "quest":
-                kwargs = _thaw(operation.keyword_arguments)
+                kwargs = thaw_compiled_value(operation.keyword_arguments)
                 for reward in kwargs.get("rewards", []) if isinstance(kwargs, dict) else []:
                     if not isinstance(reward, dict):
                         continue

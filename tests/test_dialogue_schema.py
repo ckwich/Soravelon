@@ -79,9 +79,8 @@ class TestDialogueSchema(unittest.TestCase):
 
     def test_every_authored_area_dialogue_payload_passes_the_schema(self):
         from world.content_compiler import (
-            _frozen_map_get,
-            _thaw,
             compile_world_manifest,
+            thaw_compiled_value,
         )
         from world.dialogue_schema import (
             DialogueSchemaError,
@@ -97,9 +96,8 @@ class TestDialogueSchema(unittest.TestCase):
             for operation in zone.operations:
                 if operation.method != "npc":
                     continue
-                dialogue = _thaw(
-                    _frozen_map_get(operation.keyword_arguments, "dialogue", {})
-                )
+                kwargs = thaw_compiled_value(operation.keyword_arguments)
+                dialogue = kwargs.get("dialogue", {})
                 try:
                     validate_dialogue_payload(dialogue)
                 except DialogueSchemaError as error:

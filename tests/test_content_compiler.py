@@ -5,6 +5,46 @@ import unittest
 
 
 class TestAreaSourceAuthority(unittest.TestCase):
+    def test_compiled_values_have_one_public_mutable_conversion(self):
+        from world.content_compiler import (
+            AreaOperation,
+            FrozenMap,
+            compiled_operation_value,
+            thaw_compiled_value,
+        )
+
+        frozen = FrozenMap(
+            (
+                ("nested", FrozenMap((("items", ("first", "second")),))),
+                ("enabled", True),
+            )
+        )
+
+        self.assertEqual(
+            thaw_compiled_value(frozen),
+            {
+                "nested": {"items": ["first", "second"]},
+                "enabled": True,
+            },
+        )
+
+        operation = AreaOperation(
+            source_path="test.py",
+            line=1,
+            column=0,
+            method="room",
+            arguments=("positional",),
+            keyword_arguments=FrozenMap((("value", "keyword"),)),
+        )
+        self.assertEqual(
+            compiled_operation_value(operation, 0, "value"),
+            "positional",
+        )
+        self.assertEqual(
+            compiled_operation_value(operation, 1, "value"),
+            "keyword",
+        )
+
     def test_literal_operations_compile_with_immutable_source_locations(self):
         from world.content_compiler import (
             FrozenMap,

@@ -160,15 +160,20 @@ def _frozen_map_get(mapping: FrozenMap, key: str, default: object = None) -> obj
     return dict(mapping.entries).get(key, default)
 
 
-def _thaw(value: object) -> object:
+def thaw_compiled_value(value: object) -> object:
+    """Return a mutable copy of an immutable compiled-content value."""
+
     if isinstance(value, FrozenMap):
-        return {key: _thaw(item) for key, item in value.entries}
+        return {
+            key: thaw_compiled_value(item)
+            for key, item in value.entries
+        }
     if isinstance(value, tuple):
-        return [_thaw(item) for item in value]
+        return [thaw_compiled_value(item) for item in value]
     return value
 
 
-def _operation_value(
+def compiled_operation_value(
     operation: AreaOperation,
     position: int,
     keyword: str,
@@ -575,7 +580,7 @@ def _validate_world_definitions(
         rooms_by_zone[definition.zone_id] = room_ids
         for operation in definition.operations:
             if operation.method == "npc":
-                dialogue = _thaw(
+                dialogue = thaw_compiled_value(
                     _frozen_map_get(
                         operation.keyword_arguments,
                         "dialogue",
@@ -776,7 +781,7 @@ def _validate_world_definitions(
                 )
             if operation.method in {"spawn", "named_mob"}:
                 mob_position = 1 if operation.method == "spawn" else 0
-                mob_id = _operation_value(operation, mob_position, "mob")
+                mob_id = compiled_operation_value(operation, mob_position, "mob")
                 if mob_id not in MOB_TEMPLATES:
                     diagnostics.append(
                         _diagnostic(
@@ -841,7 +846,7 @@ def _validate_world_definitions(
                                 "Absorbed material properties must be non-empty identifiers.",
                             )
                         )
-                    profession_bonus = _thaw(
+                    profession_bonus = thaw_compiled_value(
                         _frozen_map_get(
                             operation.keyword_arguments,
                             "profession_bonus",
@@ -957,7 +962,7 @@ def _validate_world_definitions(
                                 f"Room '{room_id}' is not authored in zone '{definition.zone_id}'.",
                             )
                         )
-                materials = _operation_value(operation, 2, "materials", ())
+                materials = compiled_operation_value(operation, 2, "materials", ())
                 for material_id in materials if isinstance(materials, tuple) else ():
                     if material_id not in MATERIAL_REGISTRY:
                         diagnostics.append(
@@ -999,7 +1004,7 @@ def _validate_world_definitions(
                                 f"Quest reference '{quest_id}' is not authored in this manifest.",
                             )
                         )
-                objectives = _thaw(
+                objectives = thaw_compiled_value(
                     _frozen_map_get(operation.keyword_arguments, "objectives", ())
                 )
                 if not objectives:
@@ -1044,12 +1049,12 @@ def _validate_world_definitions(
             if operation.method == "quest":
                 actions = _frozen_map_get(operation.keyword_arguments, "rewards", ())
             elif operation.method == "trigger":
-                actions = _operation_value(operation, 2, "actions", ())
+                actions = compiled_operation_value(operation, 2, "actions", ())
             elif operation.method == "custom_command":
-                action = _operation_value(operation, 2, "action_dict")
+                action = compiled_operation_value(operation, 2, "action_dict")
                 actions = (action,) if action is not None else ()
             for action in actions if isinstance(actions, tuple) else ():
-                action_dict = _thaw(action)
+                action_dict = thaw_compiled_value(action)
                 if not isinstance(action_dict, dict):
                     continue
                 action_type = action_dict.get("action_type")
@@ -1329,7 +1334,7 @@ def _operation_identity(operation: AreaOperation) -> tuple[str, str] | None:
         if room and isinstance(mob, str):
             return ("spawn", f"{room}:{mob}")
     if operation.method in {"initial_room_state", "medic", "vendor"}:
-        target = _reference_key(_operation_value(operation, 0, "target"))
+        target = _reference_key(compiled_operation_value(operation, 0, "target"))
         if target:
             return (operation.method, target)
     if operation.method == "room_role" and len(operation.arguments) >= 2:
@@ -1338,11 +1343,11 @@ def _operation_identity(operation: AreaOperation) -> tuple[str, str] | None:
         if room and isinstance(role, str):
             return ("room_role", f"{room}:{role}")
     if operation.method == "loot_table_override":
-        mob_type = _operation_value(operation, 0, "mob_type")
+        mob_type = compiled_operation_value(operation, 0, "mob_type")
         if isinstance(mob_type, str):
             return ("loot_table_override", mob_type)
     if operation.method == "patrol":
-        mob_key = _operation_value(operation, 0, "mob_key")
+        mob_key = compiled_operation_value(operation, 0, "mob_key")
         if isinstance(mob_key, str):
             return ("patrol", mob_key)
     if operation.method == "trigger":
@@ -1355,7 +1360,7 @@ def _operation_identity(operation: AreaOperation) -> tuple[str, str] | None:
         if target and isinstance(key, str):
             return ("custom_command", f"{target}:{key}")
     if operation.method == "gathering_pool":
-        pool_type = _operation_value(operation, 0, "pool_type")
+        pool_type = compiled_operation_value(operation, 0, "pool_type")
         if isinstance(pool_type, str):
             return ("gathering_pool", pool_type)
     if operation.method == "flight_route" and len(operation.arguments) >= 2:
