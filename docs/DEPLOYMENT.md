@@ -76,10 +76,12 @@ remain explicit staging gates.
 M6 uses `scripts/rehearse_content_release.py` after migrations and creation of
 admin account `#1`. The executable refuses SQLite, refuses the ordinary
 `soravelon` database name, and requires the configured PostgreSQL database to
-exactly match an explicit `soravelon_rehearsal_*` name. It compiles the live
-literal sources, initializes or applies the target revision, verifies the
-materialized runtime, reapplies the same revision as a required no-op, and emits
-the manifest, revision, database, and Git identities as evidence.
+exactly match an explicit `soravelon_rehearsal_*` name. Before importing Django
+or opening the database, it also requires the claimed full Git SHA to equal a
+clean checkout `HEAD`. It compiles the live literal sources, initializes or
+applies the target revision, verifies the materialized runtime, reapplies the
+same revision as a required no-op, and emits the manifest, revision, database,
+and Git identities as evidence.
 
 Run each path against its own disposable database:
 

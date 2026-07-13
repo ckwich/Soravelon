@@ -2,6 +2,7 @@
 
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 
 def _status(state, *, target="a" * 64, applied=None):
@@ -63,6 +64,48 @@ class TestDisposableDatabaseGate(unittest.TestCase):
                 expected_name="soravelon_rehearsal_fake",
             )
 
+
+class TestCheckoutIdentityGate(unittest.TestCase):
+    def test_accepts_only_the_exact_clean_checkout_commit(self):
+        from scripts.rehearse_content_release import require_checkout_commit
+
+        with patch(
+            "scripts.rehearse_content_release.subprocess.run",
+            side_effect=[
+                SimpleNamespace(returncode=0, stdout="a" * 40 + "\n", stderr=""),
+                SimpleNamespace(returncode=0, stdout="", stderr=""),
+            ],
+        ):
+            actual = require_checkout_commit("a" * 40)
+
+        self.assertEqual(actual, "a" * 40)
+
+    def test_rejects_mismatched_or_dirty_checkout_before_database_work(self):
+        from scripts.rehearse_content_release import RehearsalSafetyError
+        from scripts.rehearse_content_release import require_checkout_commit
+
+        with patch(
+            "scripts.rehearse_content_release.subprocess.run",
+            return_value=SimpleNamespace(
+                returncode=0,
+                stdout="a" * 40 + "\n",
+                stderr="",
+            ),
+        ), self.assertRaisesRegex(RehearsalSafetyError, "does not match"):
+            require_checkout_commit("b" * 40)
+
+        with patch(
+            "scripts.rehearse_content_release.subprocess.run",
+            side_effect=[
+                SimpleNamespace(returncode=0, stdout="a" * 40 + "\n", stderr=""),
+                SimpleNamespace(
+                    returncode=0,
+                    stdout=" M world/content_revisions.py\n",
+                    stderr="",
+                ),
+            ],
+        ), self.assertRaisesRegex(RehearsalSafetyError, "not clean"):
+            require_checkout_commit("a" * 40)
 
 class TestContentRevisionRehearsal(unittest.TestCase):
     def test_fresh_path_initializes_verifies_and_reapplies_as_noop(self):

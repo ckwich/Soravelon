@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 from typing import Any, Callable, Mapping
 
@@ -47,6 +48,46 @@ class ContentRehearsalEvidence:
     final_state: str
     revision_id: int
     git_commit: str
+
+
+def require_checkout_commit(
+    expected_commit: str,
+    *,
+    repo_root: Path = REPO_ROOT,
+) -> str:
+    """Require the claimed full commit to equal a clean live checkout."""
+
+    revision = subprocess.run(
+        ("git", "rev-parse", "--verify", "HEAD"),
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if revision.returncode != 0:
+        raise RehearsalSafetyError(
+            "Content release rehearsal requires a readable Git checkout."
+        )
+    actual_commit = revision.stdout.strip()
+    if actual_commit != expected_commit:
+        raise RehearsalSafetyError(
+            f"Claimed Git commit {expected_commit!r} does not match checkout "
+            f"HEAD {actual_commit!r}."
+        )
+    checkout = subprocess.run(
+        ("git", "status", "--porcelain"),
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if checkout.returncode != 0:
+        raise RehearsalSafetyError("Git checkout status could not be verified.")
+    if checkout.stdout.strip():
+        raise RehearsalSafetyError(
+            "Content release rehearsal checkout is not clean."
+        )
+    return actual_commit
 
 
 def require_disposable_postgres(
@@ -187,6 +228,7 @@ def rehearse_content_revision(
 
 
 def _run(args: argparse.Namespace) -> ContentRehearsalEvidence:
+    require_checkout_commit(args.git_commit)
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.conf.settings")
     import django
 
