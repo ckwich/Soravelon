@@ -2741,8 +2741,63 @@ def build():
         rewards=[
             {"action_type": "give_scales", "amount": 50},
             {"action_type": "modify_standing", "faction_id": "consortium", "delta": 10000},
+            {
+                "action_type": "modify_dimension",
+                "dimension": "reputation",
+                "delta": 3,
+                "effect_id": "vc_q_rat_problem:reputation",
+                "message": "|cWord of your useful work begins to settle into Vael's Crossing.|n",
+            },
+            {
+                "action_type": "record_social_event",
+                "nodes": [
+                    {
+                        "ref": "player",
+                        "node_type": "player",
+                        "identifier_template": "{character_id}",
+                        "display_name_template": "{character_key}",
+                        "zone_id": "vaels_crossing",
+                        "settlement_id": "vaels_crossing",
+                    },
+                    {
+                        "ref": "marta",
+                        "node_type": "npc",
+                        "identifier": "npc_barkeep_marta_voss",
+                        "display_name": "Marta Voss",
+                        "zone_id": "vaels_crossing",
+                        "settlement_id": "vaels_crossing",
+                        "faction_id": "consortium",
+                    },
+                ],
+                "fact": {
+                    "fact_key_template": "fact:{character_id}:vc_q_rat_problem:cellar_cleared",
+                    "subject": "player",
+                    "actor": "player",
+                    "scope": "marta",
+                    "event_type": "cellar_service",
+                    "summary": "The player helped clear the rats from Marta's cellar.",
+                    "tags": ["local_service", "cellar", "quest"],
+                    "visibility": "local",
+                    "evidence": {
+                        "quest_id": "vc_q_rat_problem",
+                        "source": "quest_reward",
+                    },
+                },
+                "knowledge": [
+                    {
+                        "node": "marta",
+                        "fact_key_template": "fact:{character_id}:vc_q_rat_problem:cellar_cleared",
+                        "channel": "direct_witness",
+                        "confidence": 1.0,
+                        "spreading": False,
+                    },
+                ],
+            },
             {"action_type": "echo", "message": "|gMarta slides a pouch of coins across the bar. \"That should keep them out for a while. Drink's on me.\"|n"},
         ],
+        can_share=True,
+        share_radius=1,
+        share_cap=6,
         # Legacy fields (backward compat)
         objective_type="kill",
         objective_target="sewer_rat",
