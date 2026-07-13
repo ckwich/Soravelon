@@ -206,6 +206,81 @@ button:focus-visible {
   color: var(--sora-text);
 }
 
+.form-control:focus {
+  border-color: var(--sora-cyan);
+  background: #0c0e11;
+  color: var(--sora-text);
+  box-shadow: 0 0 0 0.2rem rgba(105, 214, 208, 0.22);
+}
+
+.account-surface {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.account-card {
+  border-top: 3px solid var(--sora-ember);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+
+.account-card .card-body {
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+}
+
+.account-card .card-title {
+  margin-bottom: 1.5rem;
+  color: #fffaf0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-weight: 800;
+}
+
+.account-card label {
+  color: var(--sora-text);
+  font-weight: 700;
+}
+
+.account-card .text-muted,
+.account-intro {
+  color: var(--sora-muted) !important;
+  line-height: 1.6;
+}
+
+.account-card .form-text ul {
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.account-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.account-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.account-secondary-action,
+.account-return {
+  margin: 1.5rem 0 0;
+  color: var(--sora-muted);
+  text-align: center;
+}
+
+.account-return {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--sora-line);
+  font-size: 0.9rem;
+}
+
+.field-errors ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: #ff9aab;
+}
+
 .help-surface {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -399,5 +474,10 @@ button:focus-visible {
 
   .help-category-section-wide {
     grid-column: auto;
+  }
+
+  .account-actions {
+    align-items: center;
+    flex-direction: column;
   }
 }

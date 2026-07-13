@@ -27,7 +27,7 @@ class TestPublicWebSurface(TestCase):
         self.assertIn("Soravelon", html)
         self.assertIn("A living dark-fantasy world", html)
         self.assertNotIn("evennia_logo.png", html)
-        self.assertIn("website/css/custom.css?v=20260713-2", html)
+        self.assertIn("website/css/custom.css?v=20260713-3", html)
 
     def test_webclient_terminal_controls_have_accessible_names(self):
         response = self.client.get("/webclient/")
@@ -96,3 +96,46 @@ class TestPublicWebSurface(TestCase):
         self.assertIn('<h1 class="card-title">Scaling</h1>', html)
         self.assertIn('class="help-entry-text"', html)
         self.assertNotIn("scaling detail", html.lower())
+
+    def test_account_entry_pages_preserve_the_branded_navigation(self):
+        for path in ("/auth/login/", "/auth/register", "/auth/password_reset/"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                html = response.content.decode()
+
+                self.assertEqual(response.status_code, 200)
+                self.assertIn('aria-label="Primary navigation"', html)
+                self.assertIn('id="main-content"', html)
+                self.assertIn('class="account-surface"', html)
+
+    def test_account_recovery_controls_have_correct_labels_and_destinations(self):
+        login = self.client.get("/auth/login/").content.decode()
+        reset = self.client.get("/auth/password_reset/").content.decode()
+        register = self.client.get("/auth/register").content.decode()
+
+        self.assertIn('<label for="id_username">Username:</label>', login)
+        self.assertIn('<label for="id_password">Password:</label>', login)
+        self.assertIn('<label for="id_email">Email address:</label>', reset)
+        self.assertIn(">Send reset link</button>", reset)
+        self.assertIn('href="/auth/login/">Log in</a>', register)
+
+    def test_every_account_page_uses_the_shared_branded_surface(self):
+        template_dir = Path("web/templates/website/registration")
+        account_pages = (
+            "login.html",
+            "register.html",
+            "password_reset_form.html",
+            "password_reset_done.html",
+            "password_reset_confirm.html",
+            "password_reset_complete.html",
+            "password_change_form.html",
+            "password_change_done.html",
+        )
+
+        for name in account_pages:
+            with self.subTest(template=name):
+                template = (template_dir / name).read_text()
+                self.assertIn(
+                    '{% extends "website/registration/base.html" %}', template
+                )
+                self.assertNotIn("{% block body %}", template)
