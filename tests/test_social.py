@@ -355,6 +355,17 @@ class TestDomainChannel(unittest.TestCase):
 
 class TestDefaultChannelConfiguration(unittest.TestCase):
 
+    def test_staff_mudinfo_channel_is_not_a_player_default(self):
+        """Connection logs exist for staff without auto-subscribing players."""
+        from django.conf import settings
+
+        self.assertEqual(settings.CHANNEL_MUDINFO["key"], "MudInfo")
+        self.assertIn("listen:perm(Admin)", settings.CHANNEL_MUDINFO["locks"])
+        self.assertNotIn(
+            "MudInfo",
+            {channel["key"] for channel in settings.DEFAULT_CHANNELS},
+        )
+
     def test_default_channels_include_domain_channels(self):
         """Every Soravelon domain is provisioned as a default channel."""
         from django.conf import settings

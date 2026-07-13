@@ -73,19 +73,23 @@ SORAVELON_DOMAIN_CHANNELS = (
     "remnance",
 )
 
-# Channel configuration — OOC global chat for all players
+# Staff-only connection log. This must stay separate from DEFAULT_CHANNELS:
+# Evennia auto-subscribes every new account to every default channel, while
+# MudInfo intentionally denies non-admin listeners.
+CHANNEL_MUDINFO = {
+    "key": "MudInfo",
+    "aliases": "",
+    "desc": "Connection log",
+    "locks": "control:perm(Admin);listen:perm(Admin);send:false()",
+}
+
+# Channel configuration — player auto-subscriptions
 DEFAULT_CHANNELS = [
     {
         "key": "Public",
         "aliases": ("pub",),
         "desc": "Public discussion",
         "locks": "control:perm(Admin);listen:all();send:all()",
-    },
-    {
-        "key": "MudInfo",
-        "aliases": "",
-        "desc": "Connection log",
-        "locks": "control:perm(Admin);listen:perm(Admin);send:false()",
     },
     {
         "key": "OOC",
