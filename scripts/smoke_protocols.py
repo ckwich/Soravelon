@@ -82,11 +82,18 @@ def verify_telnet(*, host: str, port: int, timeout: float) -> str:
     return f"{host}:{port} login banner and look round-trip"
 
 
-def verify_webclient_http(*, host: str, port: int, timeout: float) -> str:
-    """Prove the stock webclient entry page is served over real HTTP."""
+def verify_webclient_http(
+    *,
+    host: str,
+    port: int,
+    timeout: float,
+    forwarded_https: bool = False,
+) -> str:
+    """Prove the stock webclient page through direct or trusted-proxy HTTP."""
     connection = http.client.HTTPConnection(host, port, timeout=timeout)
     try:
-        connection.request("GET", "/webclient/")
+        headers = {"X-Forwarded-Proto": "https"} if forwarded_https else {}
+        connection.request("GET", "/webclient/", headers=headers)
         response = connection.getresponse()
         body = response.read(MAX_RESPONSE_BYTES + 1)
     except (OSError, TimeoutError, http.client.HTTPException) as exc:
@@ -111,9 +118,10 @@ def verify_webclient_http(*, host: str, port: int, timeout: float) -> str:
             "Webclient HTTP response did not load the Soravelon OOB "
             "compatibility bridge."
         )
+    transport = " via forwarded HTTPS" if forwarded_https else ""
     return (
-        f"{host}:{port}/webclient/ webclient page returned HTTP 200 with "
-        "the Soravelon OOB bridge"
+        f"{host}:{port}/webclient/ webclient page returned HTTP 200{transport} "
+        "with the Soravelon OOB bridge"
     )
 
 
@@ -323,6 +331,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--websocket-port", type=_port, required=True)
     parser.add_argument("--timeout", type=float, default=5.0)
     parser.add_argument(
+        "--forwarded-https",
+        action="store_true",
+        help=(
+            "model a trusted TLS reverse proxy by sending "
+            "X-Forwarded-Proto: https to the internal web listener"
+        ),
+    )
+    parser.add_argument(
         "--allow-remote",
         action="store_true",
         help="explicitly authorize network checks against a non-loopback host",
@@ -348,7 +364,12 @@ def main(argv: list[str] | None = None) -> int:
         (
             "webclient HTTP",
             verify_webclient_http,
-            {"host": args.host, "port": args.web_port, "timeout": args.timeout},
+            {
+                "host": args.host,
+                "port": args.web_port,
+                "timeout": args.timeout,
+                "forwarded_https": args.forwarded_https,
+            },
         ),
         (
             "websocket",

@@ -254,6 +254,7 @@ class TestReleasePlan(unittest.TestCase):
                 "4001",
                 "--websocket-port",
                 "4002",
+                "--forwarded-https",
             ),
         )
 

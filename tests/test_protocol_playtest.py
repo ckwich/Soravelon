@@ -201,6 +201,37 @@ class TestLiveProtocolChecks(unittest.TestCase):
         self.assertIn(b"GET /webclient/ HTTP/1.1", received[0])
         self.assertIn("webclient page returned HTTP 200", detail)
 
+    def test_webclient_check_can_model_the_trusted_https_proxy(self):
+        received: list[bytes] = []
+
+        def responder(connection):
+            request = connection.recv(4096)
+            received.append(request)
+            body = (
+                b"<html><title>Evennia Webclient</title>"
+                b'<script src="soravelon_oob.js"></script></html>'
+            )
+            connection.sendall(
+                b"HTTP/1.1 200 OK\r\n"
+                + f"Content-Length: {len(body)}\r\n".encode("ascii")
+                + b"Connection: close\r\n\r\n"
+                + body
+            )
+
+        port, thread, failures = self._serve_once(responder)
+
+        detail = smoke_protocols.verify_webclient_http(
+            host="127.0.0.1",
+            port=port,
+            timeout=2.0,
+            forwarded_https=True,
+        )
+        thread.join(timeout=2.0)
+
+        self.assertEqual(failures, [])
+        self.assertIn(b"X-Forwarded-Proto: https\r\n", received[0])
+        self.assertIn("forwarded HTTPS", detail)
+
     def test_webclient_check_rejects_a_page_without_the_oob_bridge(self):
         def responder(connection):
             connection.recv(4096)
@@ -304,7 +335,7 @@ class TestProtocolSmokeCli(unittest.TestCase):
             smoke_protocols,
             "verify_webclient_http",
             return_value="http live",
-        ), patch.object(
+        ) as verify_http, patch.object(
             smoke_protocols,
             "verify_websocket",
             return_value="websocket live",
@@ -319,10 +350,17 @@ class TestProtocolSmokeCli(unittest.TestCase):
                     "45101",
                     "--websocket-port",
                     "45102",
+                    "--forwarded-https",
                 ]
             )
 
         self.assertEqual(result, 0)
+        verify_http.assert_called_once_with(
+            host="127.0.0.1",
+            port=45101,
+            timeout=5.0,
+            forwarded_https=True,
+        )
         self.assertIn("PASS telnet: telnet live", output.getvalue())
         self.assertIn("PASS webclient HTTP: http live", output.getvalue())
         self.assertIn("PASS websocket: websocket live", output.getvalue())

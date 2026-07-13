@@ -144,6 +144,7 @@ def _candidate_steps(candidate: ReleaseCandidateInputs) -> list[ReleaseStep]:
             str(candidate.web_port),
             "--websocket-port",
             str(candidate.websocket_port),
+            "--forwarded-https",
         )
     )
     if candidate.allow_remote_protocol:
