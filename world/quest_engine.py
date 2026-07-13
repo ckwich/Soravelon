@@ -243,6 +243,55 @@ def _consume_delivery_item(character, item):
 # Core quest functions
 # ---------------------------------------------------------------------------
 
+def _quest_acceptance_error(character, quest_id, quest_spec):
+    """Return the canonical reason a character cannot start this quest."""
+    _ensure_model()
+
+    active_count = CharacterQuest.objects.filter(
+        character=character,
+        status="active",
+    ).count()
+    if active_count >= MAX_ACTIVE_QUESTS:
+        return (
+            f"You already have {MAX_ACTIVE_QUESTS} active quests. "
+            "Abandon one first."
+        )
+
+    if quest_spec.get("one_chance"):
+        if CharacterQuest.objects.filter(
+            character=character,
+            quest_id=quest_id,
+            status="failed",
+        ).exists():
+            return "This quest is no longer available to you."
+        if CharacterQuest.objects.filter(
+            character=character,
+            quest_id=quest_id,
+            status="complete",
+        ).exists():
+            return "You have already completed this quest."
+
+    if CharacterQuest.objects.filter(
+        character=character,
+        quest_id=quest_id,
+        status="active",
+    ).exists():
+        return "You already have this quest."
+
+    prerequisite_ids = _get_prerequisite_quest_ids(quest_spec)
+    if prerequisite_ids:
+        complete_ids = set(
+            CharacterQuest.objects.filter(
+                character=character,
+                status="complete",
+                quest_id__in=prerequisite_ids,
+            ).values_list("quest_id", flat=True)
+        )
+        if any(quest_id not in complete_ids for quest_id in prerequisite_ids):
+            return "Complete the earlier quests in this chain first."
+    return ""
+
+
 def accept_quest(character, quest_id, quest_spec):
     """
     Accept a quest. Creates a CharacterQuest record.
@@ -255,42 +304,9 @@ def accept_quest(character, quest_id, quest_spec):
     """
     _ensure_model()
 
-    # Check active quest cap (D-02)
-    active_count = CharacterQuest.objects.filter(
-        character=character, status="active"
-    ).count()
-    if active_count >= MAX_ACTIVE_QUESTS:
-        return False, f"You already have {MAX_ACTIVE_QUESTS} active quests. Abandon one first."
-
-    # Check one_chance lock (D-03)
-    if quest_spec.get("one_chance"):
-        if CharacterQuest.objects.filter(
-            character=character, quest_id=quest_id, status="failed"
-        ).exists():
-            return False, "This quest is no longer available to you."
-        if CharacterQuest.objects.filter(
-            character=character, quest_id=quest_id, status="complete"
-        ).exists():
-            return False, "You have already completed this quest."
-
-    # Check not already active
-    if CharacterQuest.objects.filter(
-        character=character, quest_id=quest_id, status="active"
-    ).exists():
-        return False, "You already have this quest."
-
-    prerequisite_ids = _get_prerequisite_quest_ids(quest_spec)
-    if prerequisite_ids:
-        complete_ids = set(
-            CharacterQuest.objects.filter(
-                character=character,
-                status="complete",
-                quest_id__in=prerequisite_ids,
-            ).values_list("quest_id", flat=True)
-        )
-        missing = [quest_id for quest_id in prerequisite_ids if quest_id not in complete_ids]
-        if missing:
-            return False, "Complete the earlier quests in this chain first."
+    acceptance_error = _quest_acceptance_error(character, quest_id, quest_spec)
+    if acceptance_error:
+        return False, acceptance_error
 
     # Initialize progress dict with zero values for all objectives
     spec = deepcopy(_normalize_quest_spec(quest_spec))
@@ -338,6 +354,217 @@ def abandon_quest(character, quest_id):
     cq.status = "abandoned"
     cq.save(update_fields=["status"])
     return True, f"Quest abandoned: {quest_id}"
+
+
+def _quest_name_matches(quest_id, quest_spec, query):
+    """Return whether a player query identifies this quest."""
+    query = str(query or "").strip().lower()
+    if not query:
+        return False
+    name = str(quest_spec.get("name") or quest_id).lower()
+    return query in name or query in str(quest_id).lower()
+
+
+def _find_active_quest(character, query):
+    """Find the first active quest matching a player-facing query."""
+    _ensure_model()
+    for quest in CharacterQuest.objects.filter(character=character, status="active"):
+        spec = get_character_quest_spec(quest)
+        if spec and _quest_name_matches(quest.quest_id, spec, query):
+            return quest, spec
+    return None, None
+
+
+def share_quest(character, query):
+    """Offer one authored, frozen quest run to eligible nearby allies."""
+    from world.group_engine import get_members_in_proximity, is_in_group
+    from world.models import QuestShareOffer
+
+    source_quest, quest_spec = _find_active_quest(character, query)
+    if not source_quest:
+        return False, f"No active quest matching '{query}'."
+    if quest_spec.get("can_share") is not True:
+        return False, "That quest must remain your own story."
+    if not is_in_group(character):
+        return False, "You must be in a group to share a quest."
+
+    try:
+        radius = max(0, int(quest_spec.get("share_radius", 1)))
+        share_cap = max(1, int(quest_spec.get("share_cap", 6)))
+    except (TypeError, ValueError):
+        return False, "That quest has invalid sharing rules."
+
+    existing_recipient_ids = set(
+        QuestShareOffer.objects.filter(source_quest=source_quest).values_list(
+            "recipient_id",
+            flat=True,
+        )
+    )
+    counted_offers = QuestShareOffer.objects.filter(
+        source_quest=source_quest,
+        status__in=("pending", "accepted"),
+    ).count()
+    remaining_slots = max(0, share_cap - 1 - counted_offers)
+    nearby_allies = [
+        member
+        for member in get_members_in_proximity(character, radius=radius)
+        if (
+            member.id != character.id
+            and member.id not in existing_recipient_ids
+            and not _quest_acceptance_error(
+                member,
+                source_quest.quest_id,
+                quest_spec,
+            )
+        )
+    ]
+    recipients = nearby_allies[:remaining_slots]
+    if not recipients:
+        return False, "No eligible group members are close enough to receive it."
+
+    quest_name = quest_spec.get("name") or source_quest.quest_id
+    created = []
+    for recipient in recipients:
+        offer, was_created = QuestShareOffer.objects.get_or_create(
+            source_quest=source_quest,
+            recipient=recipient,
+            defaults={
+                "sender": character,
+                "quest_id": source_quest.quest_id,
+                "quest_spec": deepcopy(quest_spec),
+            },
+        )
+        if not was_created:
+            continue
+        created.append(offer)
+        recipient.msg(
+            f"|w{character.key}|n offers to share |w{quest_name}|n. "
+            f"Type '|wquest accept {quest_name}|n' or "
+            f"'|wquest decline {quest_name}|n'."
+        )
+
+    if not created:
+        return False, "No new eligible group members could receive it."
+    names = ", ".join(offer.recipient.key for offer in created)
+    return True, f"Shared {quest_name} with {names}."
+
+
+def _find_pending_share_offer(character, query):
+    """Return one pending incoming offer matching a player-facing query."""
+    from world.models import QuestShareOffer
+
+    offers = QuestShareOffer.objects.filter(
+        recipient=character,
+        status="pending",
+    ).select_related("source_quest", "sender")
+    for offer in offers:
+        if _quest_name_matches(offer.quest_id, offer.quest_spec or {}, query):
+            return offer
+    return None
+
+
+def get_pending_share_offers(character):
+    """Return incoming player quest offers that still await a response."""
+    from world.models import QuestShareOffer
+
+    return QuestShareOffer.objects.filter(
+        recipient=character,
+        status="pending",
+    ).select_related("sender", "source_quest").order_by("created_at", "pk")
+
+
+def accept_shared_quest(character, query):
+    """Accept one pending offer after revalidating live group proximity."""
+    from django.db import transaction
+    from django.utils import timezone
+    from world.group_engine import are_allies, get_members_in_proximity
+    from world.models import QuestShareOffer
+
+    found = _find_pending_share_offer(character, query)
+    if not found:
+        return False, f"No pending shared quest matching '{query}'."
+
+    with transaction.atomic():
+        offer = QuestShareOffer.objects.select_for_update().select_related(
+            "source_quest",
+            "sender",
+        ).get(pk=found.pk)
+        if offer.status != "pending":
+            return False, "That shared quest offer is no longer pending."
+        if offer.source_quest.status != "active":
+            offer.status = "expired"
+            offer.responded_at = timezone.now()
+            offer.save(update_fields=["status", "responded_at"])
+            return False, "That shared quest offer has expired."
+        if not are_allies(character, offer.sender):
+            return False, "You must still be grouped with the sharer."
+
+        try:
+            radius = max(0, int((offer.quest_spec or {}).get("share_radius", 1)))
+        except (TypeError, ValueError):
+            return False, "That quest has invalid sharing rules."
+        nearby_ids = {
+            member.id
+            for member in get_members_in_proximity(offer.sender, radius=radius)
+        }
+        if character.id not in nearby_ids:
+            return False, "Move closer to the sharer before accepting."
+
+        accepted, message = accept_quest(
+            character,
+            offer.quest_id,
+            deepcopy(offer.quest_spec),
+        )
+        if not accepted:
+            return False, message
+
+        accepted_quest = CharacterQuest.objects.get(
+            character=character,
+            quest_id=offer.quest_id,
+            status="active",
+        )
+        offer.status = "accepted"
+        offer.responded_at = timezone.now()
+        offer.accepted_quest = accepted_quest
+        offer.save(
+            update_fields=["status", "responded_at", "accepted_quest"]
+        )
+        transaction.on_commit(
+            lambda: offer.sender.msg(
+                f"|w{character.key}|n accepted your shared quest "
+                f"|w{offer.quest_spec.get('name') or offer.quest_id}|n."
+            )
+        )
+        return True, message
+
+
+def decline_shared_quest(character, query):
+    """Decline one pending shared quest offer without creating a quest run."""
+    from django.db import transaction
+    from django.utils import timezone
+    from world.models import QuestShareOffer
+
+    found = _find_pending_share_offer(character, query)
+    if not found:
+        return False, f"No pending shared quest matching '{query}'."
+
+    with transaction.atomic():
+        offer = QuestShareOffer.objects.select_for_update().select_related(
+            "sender",
+        ).get(pk=found.pk)
+        if offer.status != "pending":
+            return False, "That shared quest offer is no longer pending."
+        offer.status = "declined"
+        offer.responded_at = timezone.now()
+        offer.save(update_fields=["status", "responded_at"])
+        quest_name = offer.quest_spec.get("name") or offer.quest_id
+        transaction.on_commit(
+            lambda: offer.sender.msg(
+                f"|w{character.key}|n declined your shared quest "
+                f"|w{quest_name}|n."
+            )
+        )
+    return True, f"You decline {quest_name}."
 
 
 # ---------------------------------------------------------------------------

@@ -5,6 +5,10 @@ Usage:
     quest             - List active quests
     quest <name>      - Show quest details
     quest abandon <name> - Abandon a quest
+    quest share <name>   - Offer a shareable quest to nearby group members
+    quest accept <name>  - Accept a shared quest offer
+    quest decline <name> - Decline a shared quest offer
+    quest offers         - Review pending shared quest offers
 """
 
 from commands.command import Command
@@ -18,6 +22,10 @@ class CmdQuest(Command):
       quest                   List all active quests
       quest <name>            Show quest details
       quest abandon <name>    Abandon a quest
+      quest share <name>      Offer a shareable quest to nearby allies
+      quest accept <name>     Accept a shared quest offer
+      quest decline <name>    Decline a shared quest offer
+      quest offers             Review pending shared quest offers
 
     Shows quest name, progress, giver, and objectives.
     """
@@ -31,11 +39,20 @@ class CmdQuest(Command):
         character = self.caller
         args = self.args.strip()
 
-        # Subcommand: abandon
-        if args.lower().startswith("abandon "):
-            quest_name = args[8:].strip()
-            self._abandon(character, quest_name)
+        if args.lower() == "offers":
+            self._list_share_offers(character)
             return
+
+        for subcommand, handler in (
+            ("abandon", self._abandon),
+            ("share", self._share),
+            ("accept", self._accept_shared),
+            ("decline", self._decline_shared),
+        ):
+            prefix = f"{subcommand} "
+            if args.lower().startswith(prefix):
+                handler(character, args[len(prefix):].strip())
+                return
 
         if not args:
             self._list_quests(character)
@@ -187,3 +204,38 @@ class CmdQuest(Command):
 
         success, msg = abandon_quest(character, match_id)
         character.msg(f"|y{msg}|n" if success else f"|r{msg}|n")
+
+    def _share(self, character, quest_name):
+        from world.quest_engine import share_quest
+
+        success, message = share_quest(character, quest_name)
+        character.msg(f"|g{message}|n" if success else f"|r{message}|n")
+
+    def _accept_shared(self, character, quest_name):
+        from world.quest_engine import accept_shared_quest
+
+        success, message = accept_shared_quest(character, quest_name)
+        character.msg(f"|g{message}|n" if success else f"|r{message}|n")
+
+    def _decline_shared(self, character, quest_name):
+        from world.quest_engine import decline_shared_quest
+
+        success, message = decline_shared_quest(character, quest_name)
+        character.msg(f"|y{message}|n" if success else f"|r{message}|n")
+
+    def _list_share_offers(self, character):
+        from world.quest_engine import get_pending_share_offers
+
+        offers = list(get_pending_share_offers(character))
+        if not offers:
+            character.msg("|yYou have no pending shared quest offers.|n")
+            return
+
+        lines = ["|w=== Shared Quest Offers ===|n"]
+        for offer in offers:
+            name = offer.quest_spec.get("name") or offer.quest_id
+            lines.append(f"  |w{name}|n — offered by {offer.sender.key}")
+            lines.append(
+                f"    |xquest accept {name}  /  quest decline {name}|n"
+            )
+        character.msg("\n".join(lines))

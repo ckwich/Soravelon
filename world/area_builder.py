@@ -1206,7 +1206,7 @@ class AreaBuilder:
             "incident_seed": kwargs.get("incident_seed"),
             "quest_archetype": kwargs.get("quest_archetype"),
             "social_quest_context": kwargs.get("social_quest_context"),
-            # Sharing (deferred but stored for future use)
+            # Player-consented group sharing rules
             "can_share": kwargs.get("can_share", False),
             "share_radius": kwargs.get("share_radius", 1),
             "share_cap": kwargs.get("share_cap", 6),
