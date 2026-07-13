@@ -39,12 +39,18 @@ def _make_character(carried_scales=1000):
     return char
 
 
-def _make_skill_record(value=0.0, last_practiced_at=None, skill_type="general"):
+def _make_skill_record(
+    value=0.0,
+    last_practiced_at=None,
+    skill_type="general",
+    passive_use_remainder=0,
+):
     """Create a MagicMock CharacterSkill record."""
     record = MagicMock()
     record.value = value
     record.last_practiced_at = last_practiced_at
     record.skill_type = skill_type
+    record.passive_use_remainder = passive_use_remainder
     record.save = MagicMock()
     return record
 
@@ -108,7 +114,7 @@ class TestCommitSkillAccumulators(unittest.TestCase):
         setattr(char.ndb, "skill_use_lockpicking", 10)
 
         record = _make_skill_record(value=10.0)
-        mock_cs_objects.get_or_create.return_value = (record, False)
+        mock_cs_objects.select_for_update.return_value.get_or_create.return_value = (record, False)
 
         commit_skill_accumulators(char)
 
@@ -125,24 +131,29 @@ class TestCommitSkillAccumulators(unittest.TestCase):
         setattr(char.ndb, "skill_use_lockpicking", 13)
 
         record = _make_skill_record(value=5.0)
-        mock_cs_objects.get_or_create.return_value = (record, False)
+        mock_cs_objects.select_for_update.return_value.get_or_create.return_value = (record, False)
 
         commit_skill_accumulators(char)
 
-        # 13 // 10 = 1 threshold, 13 % 10 = 3 remainder
-        self.assertEqual(getattr(char.ndb, "skill_use_lockpicking", 0), 3)
+        # The partial threshold is durable; volatile state is fully cleared.
+        self.assertEqual(record.passive_use_remainder, 3)
+        self.assertEqual(getattr(char.ndb, "skill_use_lockpicking", 0), 0)
 
     @patch("world.models.CharacterSkill.objects")
-    def test_below_threshold_no_commit(self, mock_cs_objects):
-        """Below 10 uses, no DB write occurs."""
+    def test_below_threshold_is_persisted(self, mock_cs_objects):
+        """Below 10 uses persist so a process reset cannot erase progress."""
         from world.skill_engine import commit_skill_accumulators
 
         char = _make_character()
         setattr(char.ndb, "skill_use_lockpicking", 5)
 
+        record = _make_skill_record(value=0.0)
+        mock_cs_objects.select_for_update.return_value.get_or_create.return_value = (record, False)
+
         commit_skill_accumulators(char)
 
-        mock_cs_objects.get_or_create.assert_not_called()
+        self.assertEqual(record.passive_use_remainder, 5)
+        self.assertEqual(getattr(char.ndb, "skill_use_lockpicking", 0), 0)
 
 
 class TestDiminishingReturns(unittest.TestCase):

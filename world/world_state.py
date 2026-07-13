@@ -156,25 +156,45 @@ def commit_session_xp(character):
     Batch commit all accumulated domain XP from ndb to DB.
     Called at session end, deliberate practice, login recovery, safety flush.
     """
-    # Copy to plain dict to avoid SaverDict N+1 repickle.
-    # Mutate the plain dict, then assign once at the end.
-    scores = dict(character.db.domain_scores or {})
+    volatile_awards = {
+        domain: getattr(character.ndb, f"domain_xp_{domain}", 0) or 0
+        for domain in ALL_DOMAINS
+    }
 
+    def _apply_awards(durable_domain_awards, durable_skill_awards):
+        # Copy to plain dict to avoid SaverDict N+1 repickle.
+        scores = dict(character.db.domain_scores or {})
+        for domain in ALL_DOMAINS:
+            accumulated = volatile_awards[domain] + durable_domain_awards.get(domain, 0)
+            if accumulated <= 0:
+                continue
+
+            current = scores.get(domain, 0.0)
+            rate = _get_diminishing_rate(current)
+            gain = accumulated * XP_CONVERSION_RATE * rate
+            scores[domain] = min(100.0, current + gain)
+
+        # This attribute write and durable event acknowledgement share one DB
+        # transaction. A failure leaves every event pending for safe recovery.
+        character.db.domain_scores = scores
+
+        from world.skill_engine import apply_skill_use_counts
+
+        apply_skill_use_counts(character, durable_skill_awards)
+
+    from world.atomic_state import atomic_evennia_state
+    from world.progression_engine import apply_pending_progression_events
+
+    # Django rolls the Attribute row back, but Evennia's idmapper can retain
+    # the attempted value. Track it so a failed mixed domain/skill apply is
+    # safe to retry on this same live typeclass instance.
+    with atomic_evennia_state(character) as cache_tracker:
+        cache_tracker.track(character, attributes=("domain_scores",))
+        apply_pending_progression_events(character, _apply_awards)
+
+    # Volatile awards clear only after the durable transaction succeeds.
     for domain in ALL_DOMAINS:
-        key = f"domain_xp_{domain}"
-        accumulated = getattr(character.ndb, key, 0) or 0
-        if accumulated <= 0:
-            continue
-
-        current = scores.get(domain, 0.0)
-        rate = _get_diminishing_rate(current)
-        gain = accumulated * XP_CONVERSION_RATE * rate
-        new_score = min(100.0, current + gain)
-        scores[domain] = new_score
-        setattr(character.ndb, key, 0)
-
-    # Single DB write for all domain score changes
-    character.db.domain_scores = scores
+        setattr(character.ndb, f"domain_xp_{domain}", 0)
 
     # Recalculate backend level
     character.db.backend_level = calculate_backend_level(character)

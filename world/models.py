@@ -99,6 +99,7 @@ class CharacterSkill(models.Model):
     skill_id = models.CharField(max_length=128)
     skill_type = models.CharField(max_length=32, choices=SKILL_TYPES)
     value = models.FloatField(default=0.0)
+    passive_use_remainder = models.PositiveIntegerField(default=0)
     last_practiced_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -109,6 +110,55 @@ class CharacterSkill(models.Model):
 
     def __str__(self):
         return f"{self.character.db_key}:{self.skill_id}={self.value}"
+
+
+class ProgressionEvent(models.Model):
+    """Durable, idempotent authored domain and skill growth event."""
+
+    EVENT_TYPES = (
+        ("combat_outcome", "Combat outcome"),
+        ("quest_outcome", "Quest outcome"),
+        ("practice", "Practice"),
+        ("gathering", "Gathering"),
+        ("crafting", "Crafting"),
+        ("exploration", "Exploration"),
+        ("investigation", "Investigation"),
+    )
+
+    character = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.CASCADE,
+        related_name="progression_events",
+    )
+    event_id = models.CharField(max_length=160)
+    event_type = models.CharField(max_length=32, choices=EVENT_TYPES)
+    source_id = models.CharField(max_length=128)
+    domain_awards = models.JSONField(default=dict)
+    skill_awards = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    applied_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["character", "event_id"],
+                name="unique_character_progression_event",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["character", "applied_at"],
+                name="progression_pending_idx",
+            ),
+            models.Index(
+                fields=["event_type", "created_at"],
+                name="progression_type_time_idx",
+            ),
+        ]
+
+    def __str__(self):
+        state = "applied" if self.applied_at else "pending"
+        return f"{self.character_id}:{self.event_id}:{state}"
 
 
 class NodeEventLog(models.Model):

@@ -23,26 +23,28 @@ class _Character:
 def _practice_dependencies():
     skill_engine = types.ModuleType("world.skill_engine")
     skill_engine.accumulate_skill_use = Mock()
-    world_state = types.ModuleType("world.world_state")
-    world_state.accumulate_domain_xp = Mock()
+    progression_engine = types.ModuleType("world.progression_engine")
+    progression_engine.record_progression_event = Mock(
+        return_value=(True, "")
+    )
     quest_engine = types.ModuleType("world.quest_engine")
     quest_engine.check_practice_objectives = Mock()
 
     modules = {
         "world.skill_engine": skill_engine,
-        "world.world_state": world_state,
+        "world.progression_engine": progression_engine,
         "world.quest_engine": quest_engine,
     }
     old_attrs = {
         name: getattr(sys.modules["world"], name, None)
-        for name in ("skill_engine", "world_state", "quest_engine")
+        for name in ("skill_engine", "progression_engine", "quest_engine")
     }
     try:
         with unittest.mock.patch.dict(sys.modules, modules):
             sys.modules["world"].skill_engine = skill_engine
-            sys.modules["world"].world_state = world_state
+            sys.modules["world"].progression_engine = progression_engine
             sys.modules["world"].quest_engine = quest_engine
-            yield skill_engine, world_state, quest_engine
+            yield skill_engine, progression_engine, quest_engine
     finally:
         for name, value in old_attrs.items():
             if value is None:
@@ -69,15 +71,22 @@ class TestResolvePracticeOpportunity(unittest.TestCase):
         }
 
         with _practice_dependencies() as deps:
-            skill_engine, world_state, quest_engine = deps
+            skill_engine, progression_engine, quest_engine = deps
             success, message = resolve_practice_opportunity(
                 payload, {"character": character, "args": "canal winch"}
             )
 
         self.assertTrue(success)
         self.assertEqual(message, "")
-        skill_engine.accumulate_skill_use.assert_called_once_with(character, "engineering", 4)
-        world_state.accumulate_domain_xp.assert_called_once_with(character, "engineering", 120)
+        skill_engine.accumulate_skill_use.assert_not_called()
+        progression_engine.record_progression_event.assert_called_once_with(
+            character,
+            event_id="practice:vp_canal_winch_repair",
+            event_type="practice",
+            source_id="vp_canal_winch_repair",
+            domain_awards={"engineering": 120},
+            skill_awards={"engineering": 4},
+        )
         quest_engine.check_practice_objectives.assert_called_once_with(character, "vp_canal_winch_repair")
         self.assertEqual(character.messages, [payload["success_text"]])
         self.assertNotIn("XP", character.messages[0])
@@ -95,7 +104,7 @@ class TestResolvePracticeOpportunity(unittest.TestCase):
         }
 
         with _practice_dependencies() as deps:
-            skill_engine, _world_state, _quest_engine = deps
+            skill_engine, _progression_engine, _quest_engine = deps
             success, message = resolve_practice_opportunity(
                 payload, {"character": character, "args": "broken gate"}
             )
@@ -157,7 +166,7 @@ class TestResolvePracticeOpportunity(unittest.TestCase):
         }
 
         with _practice_dependencies() as deps:
-            skill_engine, _world_state, _quest_engine = deps
+            skill_engine, _progression_engine, _quest_engine = deps
             first_success, _ = resolve_practice_opportunity(
                 payload, {"character": character, "args": "old lock"}
             )
@@ -168,7 +177,7 @@ class TestResolvePracticeOpportunity(unittest.TestCase):
         self.assertTrue(first_success)
         self.assertFalse(second_success)
         self.assertIn("already", second_message.lower())
-        skill_engine.accumulate_skill_use.assert_called_once_with(character, "lockpicking", 3)
+        skill_engine.accumulate_skill_use.assert_not_called()
 
     def test_practice_opportunities_default_to_one_shot(self):
         from world.practice_engine import resolve_practice_opportunity
@@ -184,7 +193,7 @@ class TestResolvePracticeOpportunity(unittest.TestCase):
         }
 
         with _practice_dependencies() as deps:
-            skill_engine, world_state, quest_engine = deps
+            skill_engine, progression_engine, quest_engine = deps
             first_success, _ = resolve_practice_opportunity(
                 payload, {"character": character, "args": "road marker"}
             )
@@ -195,8 +204,15 @@ class TestResolvePracticeOpportunity(unittest.TestCase):
         self.assertTrue(first_success)
         self.assertFalse(second_success)
         self.assertIn("already", second_message.lower())
-        skill_engine.accumulate_skill_use.assert_called_once_with(character, "navigation", 3)
-        world_state.accumulate_domain_xp.assert_called_once_with(character, "tactics", 75)
+        skill_engine.accumulate_skill_use.assert_not_called()
+        progression_engine.record_progression_event.assert_called_once_with(
+            character,
+            event_id="practice:road_marker_survey",
+            event_type="practice",
+            source_id="road_marker_survey",
+            domain_awards={"tactics": 75},
+            skill_awards={"navigation": 3},
+        )
         quest_engine.check_practice_objectives.assert_called_once_with(character, "road_marker_survey")
 
     def test_remnance_domain_award_is_not_player_facing_or_awarded(self):
@@ -213,7 +229,7 @@ class TestResolvePracticeOpportunity(unittest.TestCase):
         }
 
         with _practice_dependencies() as deps:
-            skill_engine, world_state, _quest_engine = deps
+            skill_engine, progression_engine, _quest_engine = deps
             success, message = resolve_practice_opportunity(
                 payload, {"character": character, "args": "sealed pattern"}
             )
@@ -223,4 +239,4 @@ class TestResolvePracticeOpportunity(unittest.TestCase):
         self.assertEqual(character.messages, [])
         self.assertNotIn("remnance", message.lower())
         skill_engine.accumulate_skill_use.assert_not_called()
-        world_state.accumulate_domain_xp.assert_not_called()
+        progression_engine.record_progression_event.assert_not_called()

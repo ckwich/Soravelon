@@ -2,7 +2,7 @@
 Skill engine for Soravelon.
 
 Handles all three skill improvement methods:
-- Passive use: ndb accumulators batched to DB (10 uses = +0.1 before diminishing)
+- Passive use: ndb counts batch into durable remainders (10 uses = +0.1 before diminishing)
 - Deliberate practice: 24hr rolling cooldown per skill, tier-based random gains
 - Trainer sessions: NPC-driven, costs Scales, enhances next practice gain
 
@@ -10,12 +10,13 @@ Also handles ancestry seed application and the discovery trigger framework.
 Skills are independent of the domain/guild system (SKL-04).
 
 Performance: get_skill_value makes 1 DB read. commit_skill_accumulators makes
-up to N get_or_create calls (only for skills with accumulated uses).
+up to N locked get_or_create calls (only for skills with accumulated uses).
 """
 
 import random
 from datetime import timedelta
 
+from django.db import transaction
 from django.utils import timezone
 
 from world.skill_definitions import (
@@ -121,45 +122,57 @@ def commit_skill_accumulators(character):
     For each skill with >= PASSIVE_ACCUMULATOR_THRESHOLD uses,
     applies passive gain with diminishing returns.
     """
+    pending = {
+        skill_id: getattr(character.ndb, f"skill_use_{skill_id}", 0) or 0
+        for skill_id in SKILL_DEFINITIONS
+    }
+    pending = {skill_id: count for skill_id, count in pending.items() if count > 0}
+    if not pending:
+        return
+
+    with transaction.atomic():
+        apply_skill_use_counts(character, pending)
+
+    # Volatile counts clear only after every durable write succeeds. Partial
+    # thresholds are now retained on CharacterSkill rather than in ndb.
+    for skill_id in pending:
+        setattr(character.ndb, f"skill_use_{skill_id}", 0)
+
+
+def apply_skill_use_counts(character, skill_counts):
+    """Persist passive-use counts, including sub-threshold remainders."""
     from world.models import CharacterSkill
 
-    for skill_id in SKILL_DEFINITIONS:
-        key = f"skill_use_{skill_id}"
-        accumulated = getattr(character.ndb, key, 0) or 0
-        if accumulated < PASSIVE_ACCUMULATOR_THRESHOLD:
-            continue
+    for skill_id, use_count in skill_counts.items():
+        if skill_id not in SKILL_DEFINITIONS:
+            raise ValueError(f"Unknown skill: {skill_id}")
+        if not isinstance(use_count, int) or isinstance(use_count, bool) or use_count <= 0:
+            raise ValueError(f"Skill use count for {skill_id} must be a positive integer.")
 
-        thresholds_hit = accumulated // PASSIVE_ACCUMULATOR_THRESHOLD
-        remainder = accumulated % PASSIVE_ACCUMULATOR_THRESHOLD
-
-        record, _ = CharacterSkill.objects.get_or_create(
+        record, _ = CharacterSkill.objects.select_for_update().get_or_create(
             character=character,
             skill_id=skill_id,
             defaults={
                 "skill_type": SKILL_DEFINITIONS[skill_id]["skill_type"],
                 "value": 0.0,
+                "passive_use_remainder": 0,
             },
         )
 
+        accumulated = int(record.passive_use_remainder or 0) + use_count
+        thresholds_hit, remainder = divmod(accumulated, PASSIVE_ACCUMULATOR_THRESHOLD)
         old_value = record.value
-        total_gain = 0.0
         current = record.value
         for _ in range(thresholds_hit):
             rate = _get_diminishing_rate(current)
-            gain = PASSIVE_GAIN_PER_THRESHOLD * rate
-            current = min(100.0, current + gain)
-            total_gain += gain
+            current = min(100.0, current + PASSIVE_GAIN_PER_THRESHOLD * rate)
 
-        if total_gain > 0:
-            record.value = min(100.0, old_value + total_gain)
-            record.save()
+        record.value = current
+        record.passive_use_remainder = remainder
+        record.save(update_fields=["value", "passive_use_remainder"])
 
-        # Reset accumulator to remainder
-        setattr(character.ndb, key, remainder)
-
-        # Check discoveries on threshold crossing
-        if total_gain > 0 and _crossed_threshold(old_value, record.value):
-            check_discoveries(character, skill_id, record.value)
+        if current > old_value and _crossed_threshold(old_value, current):
+            check_discoveries(character, skill_id, current)
 
 
 # --- Deliberate Practice ---

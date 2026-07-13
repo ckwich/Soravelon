@@ -98,8 +98,8 @@ def resolve_practice_opportunity(payload, context):
     """
     Execute a practice opportunity from a custom command or trigger.
 
-    Awards skill-use counts and raw domain XP through the existing accumulator
-    lifecycles. The player sees authored prose, never numeric XP.
+    Records skill-use counts and raw domain XP as one durable authored event.
+    The player sees authored prose, never numeric XP.
     """
     character = context.get("character")
     if not character:
@@ -122,15 +122,19 @@ def resolve_practice_opportunity(payload, context):
     skill_awards = payload.get("skill_awards") or payload.get("skills") or {}
     domain_awards = payload.get("domain_awards") or payload.get("domains") or {}
 
-    from world.skill_engine import accumulate_skill_use
-    for skill_id, count in skill_awards.items():
-        if count and count > 0:
-            accumulate_skill_use(character, skill_id, count)
+    if domain_awards or skill_awards:
+        from world.progression_engine import record_progression_event
 
-    from world.world_state import accumulate_domain_xp
-    for domain, raw_xp in domain_awards.items():
-        if raw_xp and raw_xp > 0:
-            accumulate_domain_xp(character, domain, raw_xp)
+        recorded, record_message = record_progression_event(
+            character,
+            event_id=f"practice:{opportunity_id}",
+            event_type="practice",
+            source_id=opportunity_id,
+            domain_awards=domain_awards,
+            skill_awards=skill_awards,
+        )
+        if not recorded:
+            return False, record_message
 
     from world.quest_engine import check_practice_objectives
     check_practice_objectives(character, opportunity_id)
