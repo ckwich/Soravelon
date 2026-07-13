@@ -324,7 +324,7 @@ def _best_input_quality(items_to_consume):
 
 # --- Item Creation ---
 
-def _create_crafted_item(character, recipe, quality):
+def _create_crafted_item(character, recipe, quality, *, recipe_id=None):
     """
     Create the output item from a recipe with the given quality tier.
 
@@ -335,19 +335,43 @@ def _create_crafted_item(character, recipe, quality):
     output = recipe.get("output", {})
     template_id = output.get("template_id", "unknown")
     item_name = f"{quality.capitalize()} {recipe['name']}"
+    quality_multiplier = get_quality_modifier(quality)
     overrides = {
         "key": item_name,
         "quality": quality,
-        "quality_modifier": get_quality_modifier(quality),
         "crafted": True,
-        "recipe_id": template_id,
-        "base_item_type": output.get("base_item_type", "misc"),
+        "crafted_recipe_id": recipe_id or template_id,
     }
 
-    from world.item_catalog import ItemTemplateNotFound
+    from world.item_catalog import ItemTemplateNotFound, get_item_template
     from world.item_spawner import create_item_from_catalog
 
     try:
+        template = get_item_template(template_id)
+        quality_affects = output.get("quality_affects")
+        if quality_affects == "damage":
+            overrides["damage_min"] = round(template["damage_min"] * quality_multiplier)
+            overrides["damage_max"] = round(template["damage_max"] * quality_multiplier)
+        elif quality_affects == "armor_value":
+            overrides["armor_value"] = round(
+                template["armor_value"] * quality_multiplier
+            )
+        elif quality_affects == "effect_amount":
+            effect = dict(template.get("use_effect") or {})
+            scalable_fields = [
+                field
+                for field in ("amount", "hp", "stamina")
+                if isinstance(effect.get(field), (int, float))
+                and not isinstance(effect.get(field), bool)
+            ]
+            if not scalable_fields:
+                return None
+            for field in scalable_fields:
+                effect[field] = round(effect[field] * quality_multiplier)
+            overrides["use_effect"] = effect
+        elif quality_affects is not None:
+            return None
+
         return create_item_from_catalog(
             template_id,
             location=character,
@@ -473,7 +497,12 @@ def craft_item(character, recipe_id, *, operation_id=None):
                     difficulty,
                     has_station_bonus=has_station_bonus,
                 )
-                item = _create_crafted_item(locked_character, recipe, quality)
+                item = _create_crafted_item(
+                    locked_character,
+                    recipe,
+                    quality,
+                    recipe_id=recipe_id,
+                )
                 if not item:
                     return False, "|rSomething went wrong creating the item.|n"
                 tracker.track(item)

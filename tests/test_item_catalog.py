@@ -68,6 +68,36 @@ class TestCraftingOutputCatalogContracts(unittest.TestCase):
                 else:
                     self.fail(f"Unsupported authored output kind: {authored_kind}")
 
+    def test_quality_affects_names_a_real_scalable_mechanic(self):
+        for recipe_id, recipe in RECIPE_REGISTRY.items():
+            if recipe.get("recipe_type") == "processing":
+                continue
+            output = recipe["output"]
+            template = get_item_template(output["template_id"])
+            quality_affects = output.get("quality_affects")
+            with self.subTest(recipe_id=recipe_id, quality_affects=quality_affects):
+                self.assertIn(
+                    quality_affects,
+                    {"damage", "armor_value", "effect_amount", None},
+                )
+                if quality_affects == "damage":
+                    self.assertGreater(template.get("damage_min", 0), 0)
+                    self.assertGreaterEqual(
+                        template.get("damage_max", 0),
+                        template["damage_min"],
+                    )
+                elif quality_affects == "armor_value":
+                    self.assertGreater(template.get("armor_value", 0), 0)
+                elif quality_affects == "effect_amount":
+                    effect = template.get("use_effect") or {}
+                    self.assertTrue(
+                        any(
+                            isinstance(effect.get(field), (int, float))
+                            for field in ("amount", "hp", "stamina")
+                        ),
+                        f"{recipe_id} declares effect_amount without a numeric effect",
+                    )
+
     def test_lookup_returns_an_isolated_copy(self):
         template = get_item_template("iron_dagger")
         template["key"] = "mutated"

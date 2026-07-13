@@ -374,6 +374,65 @@ class TestCraftItemIntegration(EvenniaTest):
         self.assertEqual(item_def["quality"], "fine")
         self.assertTrue(item_def["crafted"])
 
+    def test_weapon_quality_changes_only_authored_damage_fields(self):
+        from world.crafting_definitions import RECIPE_REGISTRY
+        from world.crafting_engine import _create_crafted_item
+        from world.item_catalog import get_item_template
+
+        recipe = RECIPE_REGISTRY["iron_dagger"]
+        base = get_item_template("iron_dagger")
+        with patch("world.item_spawner.create_item_from_template") as create:
+            _create_crafted_item(self.char1, recipe, "fine", recipe_id="iron_dagger")
+
+        item_def = create.call_args.args[0]
+        self.assertEqual(item_def["damage_min"], round(base["damage_min"] * 1.3))
+        self.assertEqual(item_def["damage_max"], round(base["damage_max"] * 1.3))
+        self.assertEqual(item_def["stat_bonuses"], base["stat_bonuses"])
+        self.assertNotIn("quality_modifier", item_def)
+        self.assertEqual(item_def["crafted_recipe_id"], "iron_dagger")
+
+    def test_armor_quality_changes_only_authored_armor_value(self):
+        from world.crafting_definitions import RECIPE_REGISTRY
+        from world.crafting_engine import _create_crafted_item
+        from world.item_catalog import get_item_template
+
+        recipe = RECIPE_REGISTRY["iron_chainmail"]
+        base = get_item_template("iron_chainmail")
+        with patch("world.item_spawner.create_item_from_template") as create:
+            _create_crafted_item(
+                self.char1,
+                recipe,
+                "superior",
+                recipe_id="iron_chainmail",
+            )
+
+        item_def = create.call_args.args[0]
+        self.assertEqual(item_def["armor_value"], round(base["armor_value"] * 1.6))
+        self.assertEqual(item_def.get("stat_bonuses"), base.get("stat_bonuses"))
+        self.assertEqual(item_def["value"], base["value"])
+
+    def test_consumable_quality_changes_effect_amount_without_mutating_catalog(self):
+        from world.crafting_definitions import RECIPE_REGISTRY
+        from world.crafting_engine import _create_crafted_item
+        from world.item_catalog import get_item_template
+
+        recipe = RECIPE_REGISTRY["basic_healing_draught"]
+        base = get_item_template("basic_healing_draught")
+        with patch("world.item_spawner.create_item_from_template") as create:
+            _create_crafted_item(
+                self.char1,
+                recipe,
+                "masterwork",
+                recipe_id="basic_healing_draught",
+            )
+
+        item_def = create.call_args.args[0]
+        self.assertEqual(item_def["use_effect"]["amount"], base["use_effect"]["amount"] * 2)
+        self.assertEqual(
+            get_item_template("basic_healing_draught")["use_effect"],
+            base["use_effect"],
+        )
+
     def test_standard_craft_uses_station_bonus_in_quality_roll(self):
         from world.crafting_engine import craft_item
 

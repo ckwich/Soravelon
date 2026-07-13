@@ -192,7 +192,6 @@ RECIPE_REGISTRY = {
         "output": {
             "template_id": "antidote_potion",
             "base_item_type": "consumable",
-            "quality_affects": "effect_amount",
         },
         "default_known": False,
         "command": "brew",
