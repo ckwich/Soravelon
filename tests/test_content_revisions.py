@@ -762,6 +762,32 @@ def build():
             [],
         )
 
+    def test_fresh_initialization_prepares_evennia_before_atomic_content_apply(self):
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import initialize_world_content
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("fresh_order")
+    area.zone(name="Fresh", zone_type="frontier", continent="varath")
+    area.room("entry", name="Entry", desc="Freshly initialized.")
+    return area.build()
+"""
+        manifest = compile_world_sources(
+            {"world/areas/fresh_order.py": source}
+        ).manifest
+        assert manifest is not None
+        initial_atomic_depth = len(connection.atomic_blocks)
+        atomic_depths = []
+
+        with patch(
+            "world.content_revisions._ensure_evennia_runtime_initialized",
+            side_effect=lambda: atomic_depths.append(len(connection.atomic_blocks)),
+        ):
+            initialize_world_content(manifest, git_commit="a" * 40)
+
+        self.assertEqual(atomic_depths, [initial_atomic_depth])
+
     def test_initialize_command_records_json_result(self):
         from world.content_compiler import compile_world_sources
 

@@ -229,6 +229,11 @@ def initialize_world_content(
     from world.models import WorldContentDeploymentLock, WorldContentRevision
 
     _validate_git_object_id(git_commit)
+    # Evennia configures SQLite connection PRAGMAs during its one-time public
+    # initialization. SQLite rejects those changes inside an atomic block, so
+    # prepare the framework-owned object foundation before locking and
+    # materializing Soravelon's content revision.
+    _ensure_evennia_runtime_initialized()
     failure_message = None
     failed_revision = None
     result = None
@@ -238,7 +243,6 @@ def initialize_world_content(
             raise ApplyPreconditionError(
                 "World content authority is already initialized."
             )
-        _ensure_evennia_runtime_initialized()
         empty = compile_world_sources({}).manifest
         assert empty is not None
         hydrate_runtime_registries(empty)
