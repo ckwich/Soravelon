@@ -48,6 +48,7 @@ raise SystemExit(0 if repo_root in sys.path else 29)
 
         self.assertEqual(result.returncode, 0, result.stderr)
         for step_name in (
+            "git object integrity",
             "repository hygiene",
             "working-tree diff check",
             "staged diff check",
@@ -112,6 +113,10 @@ class TestReleasePlan(unittest.TestCase):
         steps = verify_release.build_release_steps("full")
         commands = {step.name: step.command for step in steps}
 
+        self.assertEqual(
+            commands["Git object integrity"],
+            ("git", "fsck", "--full", "--no-reflogs"),
+        )
         self.assertEqual(
             commands["World migration drift"],
             (
@@ -191,7 +196,8 @@ class TestReleasePlan(unittest.TestCase):
         )
         commands = {step.name: step.command for step in steps}
 
-        self.assertEqual(steps[0].name, "Prepared world-content verification")
+        self.assertEqual(steps[0].name, "Git object integrity")
+        self.assertEqual(steps[1].name, "Prepared world-content verification")
         self.assertEqual(
             commands["Prepared world-content verification"],
             (

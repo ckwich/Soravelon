@@ -61,8 +61,16 @@ def _python_command(*args: str) -> tuple[str, ...]:
     return (sys.executable, *args)
 
 
+def _git_integrity_step() -> ReleaseStep:
+    return ReleaseStep(
+        "Git object integrity",
+        ("git", "fsck", "--full", "--no-reflogs"),
+    )
+
+
 def _preflight_steps() -> list[ReleaseStep]:
     return [
+        _git_integrity_step(),
         ReleaseStep(
             "Repository hygiene",
             _python_command("scripts/audit_repo_hygiene.py"),
@@ -154,9 +162,11 @@ def _candidate_steps(candidate: ReleaseCandidateInputs) -> list[ReleaseStep]:
             "json",
         ),
     )
+    preflight = _preflight_steps()
     return [
+        preflight[0],
         prepared_content_step,
-        *_preflight_steps(),
+        *preflight[1:],
         ReleaseStep(
             "Playable world connectivity",
             _python_command("scripts/audit_world_connectivity.py"),

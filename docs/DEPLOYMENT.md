@@ -48,8 +48,9 @@ gate:
 python scripts/verify_release.py full
 ```
 
-`full` runs repository hygiene, working and staged diff checks, migration drift,
-`migrate --noinput`, Django's production deploy check, smoke imports,
+`full` runs Git object integrity, repository hygiene, working and staged diff
+checks, migration drift, `migrate --noinput`, Django's production deploy check,
+smoke imports,
 economy/inventory reconciliation, and the canonical test command. It therefore
 mutates the configured database by applying migrations; never point this mode at
 an unbacked production database.
@@ -124,6 +125,11 @@ world connectivity and prose audits, explicit content/economy/inventory/quest
 failure injection, named M3/M4/Social/co-op verticals, the complete unsharded
 canonical suite, and real Telnet/HTTP/WebSocket checks. It is supposed to fail
 while any release blocker, including authored prose, remains.
+
+Git object integrity is the first candidate step. Use an exact-commit bundle or
+clean remote clone when a development repository contains damaged unreachable
+objects; do not prune, rewrite, or silently repair a user-owned working repo as
+part of release rehearsal.
 
 ## Systemd units
 
