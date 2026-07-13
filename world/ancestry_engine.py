@@ -168,7 +168,7 @@ def get_ancestry_trait(character, trait_name, default=None):
     Convenience function for other modules that need ancestry data
     without importing the full ANCESTRY_TRAITS dict.
     """
-    ancestry_id = character.db.ancestry
+    ancestry_id = getattr(character.db, "ancestry", None)
     if not ancestry_id:
         return default
     traits = ANCESTRY_TRAITS.get(ancestry_id)

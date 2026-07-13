@@ -221,31 +221,26 @@ def commit_session_xp(character):
 
 def _check_guild_discovery(character):
     """
-    Fire guild recruitment message if character qualifies and has no guild.
-    Called from commit_session_xp. D-17: fire-and-forget notification.
+    Persist and announce newly earned guild recruitment.
+
+    Called from commit_session_xp. Repeated commits are silent because the
+    durable recruitment row is the delivery authority.
     """
     if character.db.guild_id:
         return
-    from world.guild_engine import check_guild_eligibility, GUILDS
-    from world.remnance_visibility import guild_is_player_visible
+    from world.guild_engine import GUILDS, ensure_guild_recruitments
 
-    eligible = check_guild_eligibility(character)
-    if not eligible:
+    new_recruitments = ensure_guild_recruitments(character)
+    if not new_recruitments:
         return
-    visible = []
-    for guild_id in eligible:
-        guild = GUILDS.get(guild_id, {})
-        if guild_is_player_visible(guild_id, guild, character):
-            visible.append(guild_id)
-    if not visible:
-        return
-    # Send recruitment message for first eligible guild
-    guild = GUILDS.get(visible[0], {})
-    guild_name = guild.get("name", visible[0])
-    character.msg(
-        f"|y[A messenger approaches with a sealed letter bearing the mark "
-        f"of the {guild_name}. Type 'joinguild' to respond.]|n"
-    )
+    for recruitment in new_recruitments:
+        guild = GUILDS.get(recruitment.guild_id, {})
+        guild_name = guild.get("name", recruitment.guild_id)
+        character.msg(
+            f"|y[A messenger brings a sealed letter from {guild_name}. "
+            "It names a guild contact in Vael's Crossing; type "
+            "|wjoinguild|y to review the invitation.]|n"
+        )
 
 
 # --- Backend Level (INTERNAL ONLY — never expose to player) ---

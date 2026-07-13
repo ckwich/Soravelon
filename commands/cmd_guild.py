@@ -1,22 +1,30 @@
-"""
-Guild join command.
-
-CmdJoinGuild presents eligible guilds when a character qualifies (any domain
-score >= 30) and has no guild. Delegates to world.guild_engine.join_guild()
-with secondary domain selection.
-"""
+"""Guild invitation breadcrumb; induction itself happens with the contact."""
 
 from commands.command import Command
 
 
+def _display_contact(npc_id):
+    """Turn stable authored contact ids into their established short names."""
+    return str(npc_id).rsplit("_", 1)[-1].replace("-", " ").title()
+
+
+def _display_location(stable_id, prefix):
+    value = str(stable_id)
+    if value.startswith(prefix):
+        value = value[len(prefix):]
+    return value.replace("_", " ").title()
+
+
 class CmdJoinGuild(Command):
     """
-    Join a guild when you receive an invitation.
+    Review guild invitations and learn where to answer them.
 
     Usage:
       joinguild
       joinguild <guild_name>
-      joinguild <guild_name> <secondary_domain>
+
+    Guild membership cannot be completed remotely. Meet the named contact,
+    talk with them, and choose your second path in that conversation.
     """
 
     key = "joinguild"
@@ -26,144 +34,52 @@ class CmdJoinGuild(Command):
     def func(self):
         character = self.caller
 
-        # Already in a guild
         if character.db.guild_id:
             from world.guild_engine import GUILDS
+
             guild = GUILDS.get(character.db.guild_id, {})
             guild_name = guild.get("name", character.db.guild_id)
             character.msg(f"You are already a member of {guild_name}.")
             return
 
-        from world.guild_engine import (
-            GUILDS,
-            SUBCLASSES,
-            check_guild_eligibility,
-            join_guild,
-        )
-        from world.remnance_visibility import (
-            domain_is_player_visible,
-            guild_is_player_visible,
-        )
-        from world.world_state import ALL_DOMAINS
+        from world.guild_engine import GUILDS, get_open_guild_recruitments
 
-        eligible = check_guild_eligibility(character)
-        if not eligible:
+        invitations = get_open_guild_recruitments(character)
+        if not invitations:
             character.msg(
-                "No guild has extended an invitation to you yet. "
-                "Keep practicing your domains."
+                "No guild has sent you an invitation yet. Keep learning through "
+                "meaningful work in the world."
             )
             return
 
-        args = self.args.strip().lower().split()
-
-        # Filter out hidden current-era guilds until a future story unlocks them.
-        visible = []
-        for gid in eligible:
-            guild = GUILDS.get(gid, {})
-            if not guild_is_player_visible(gid, guild, character):
-                continue
-            visible.append(gid)
-
-        if not visible:
-            character.msg(
-                "No guild has extended an invitation to you yet. "
-                "Keep practicing your domains."
-            )
-            return
-
-        # Determine guild_id from args or single match
-        guild_id = None
-        secondary = None
-
-        if args:
-            # First arg is guild name
-            guild_arg = args[0]
-            for gid in visible:
-                guild = GUILDS.get(gid, {})
-                name_lower = guild.get("name", "").lower()
-                short_name = gid.lower()
-                if guild_arg == short_name or guild_arg in name_lower:
-                    guild_id = gid
-                    break
-            if not guild_id:
+        requested = self.args.strip().lower().split()
+        if requested:
+            guild_arg = requested[0]
+            matched = [
+                invitation
+                for invitation in invitations
+                if guild_arg == invitation.guild_id.lower()
+                or guild_arg in GUILDS.get(invitation.guild_id, {}).get("name", "").lower()
+            ]
+            if not matched:
                 character.msg(
-                    f"Unknown guild '{args[0]}'. "
-                    "Type 'joinguild' to see available guilds."
+                    f"No open invitation matches '{requested[0]}'. "
+                    "Type |wjoinguild|n to review the letters you carry."
                 )
                 return
-            if len(args) > 1:
-                secondary = args[1]
-                if not domain_is_player_visible(secondary, character):
-                    character.msg(
-                        "That secondary domain is not available for induction."
-                    )
-                    return
+            invitations = matched
 
-        elif len(visible) == 1:
-            guild_id = visible[0]
-        else:
-            # Multiple eligible — list them
-            lines = ["|wGuild Invitations|n", ""]
-            for gid in visible:
-                guild = GUILDS.get(gid, {})
-                name = guild.get("name", gid)
-                domain = guild.get("primary_domain", "unknown")
-                motto = guild.get("motto", "")
-                lines.append(f"  |w{name}|n ({domain})")
-                lines.append(f"    |c{motto}|n")
-            lines.append("")
-            lines.append("Usage: |wjoinguild <guild_name> <secondary_domain>|n")
-            character.msg("\n".join(lines))
-            return
-
-        guild = GUILDS.get(guild_id, {})
-        primary = guild.get("primary_domain")
-
-        # Need secondary domain
-        if not secondary:
-            scores = character.db.domain_scores or {}
-            candidates = []
-            for d in ALL_DOMAINS:
-                if not domain_is_player_visible(d, character):
-                    continue
-                if d == primary:
-                    continue
-                s = float(scores.get(d, 0.0))
-                if s > 0:
-                    candidates.append((d, s))
-            candidates.sort(key=lambda x: x[1], reverse=True)
-
-            lines = [
-                f"|wJoining the {guild.get('name', guild_id)}|n",
-                f"Primary domain: |w{primary}|n",
-                "",
-                "Choose a secondary domain:",
-            ]
-            for d, s in candidates:
-                tag = " |g(recommended)|n" if candidates and d == candidates[0][0] else ""
-                lines.append(f"  |w{d:15}|n (score: {s:.0f}){tag}")
-            if not candidates:
-                for d in ALL_DOMAINS:
-                    if not domain_is_player_visible(d, character):
-                        continue
-                    if d != primary:
-                        lines.append(f"  |w{d}|n")
-            lines.append("")
+        lines = ["|wGuild Invitations|n", ""]
+        for invitation in invitations:
+            guild = GUILDS.get(invitation.guild_id, {})
+            guild_name = guild.get("name", invitation.guild_id)
+            contact = _display_contact(invitation.contact_npc_id)
+            room = _display_location(invitation.location_room_id, "gq_")
+            zone = _display_location(invitation.location_zone_id, "")
+            lines.append(f"  |w{guild_name}|n")
+            lines.append(f"    Meet |w{contact}|n at the |w{room}|n in {zone}.")
             lines.append(
-                f"Usage: |wjoinguild {guild_id} <secondary_domain>|n"
+                f"    Speak face to face: |wtalk {contact}|n. "
+                "Your second path is chosen in that conversation."
             )
-            character.msg("\n".join(lines))
-            return
-
-        # Join with secondary
-        ok, msg = join_guild(character, guild_id, secondary)
-        character.msg(msg)
-
-        if ok:
-            subclass_id = character.db.subclass_id
-            sc = SUBCLASSES.get(subclass_id, {})
-            sc_name = sc.get("name", subclass_id)
-            character.msg(
-                f"|yThe {guild.get('name', guild_id)} welcomes you. "
-                f"You walk the path of the {sc_name}.|n"
-            )
+        character.msg("\n".join(lines))

@@ -488,8 +488,8 @@ from world.models import CharacterAbility
 from world.models import CharacterGuild
 
 
-class TestJoinGuildValid(EvenniaTest):
-    """Successful guild join creates record and updates db caches."""
+class TestLegacyRemoteGuildMutationBlocked(EvenniaTest):
+    """Retired mutation helpers cannot bypass authored recruitment."""
 
     def test_join_valid_guild(self):
         self.char1.db.domain_scores = {"combat": 50, "subterfuge": 30}
@@ -499,16 +499,10 @@ class TestJoinGuildValid(EvenniaTest):
         self.char1.db.subclass_id = None
 
         success, msg = join_guild(self.char1, "ironblood", "subterfuge")
-        self.assertTrue(success)
-        self.assertEqual(self.char1.db.guild_id, "ironblood")
-        self.assertEqual(self.char1.db.subclass_id, "duskblade")
-        self.assertEqual(self.char1.db.primary_domain, "combat")
-        self.assertEqual(self.char1.db.secondary_domain, "subterfuge")
-
-        record = CharacterGuild.objects.get(character=self.char1)
-        self.assertEqual(record.guild_id, "ironblood")
-        self.assertEqual(record.subclass_id, "duskblade")
-        self.assertFalse(record.induction_complete)
+        self.assertFalse(success)
+        self.assertIn("in-person induction", msg)
+        self.assertIsNone(self.char1.db.guild_id)
+        self.assertFalse(CharacterGuild.objects.filter(character=self.char1).exists())
 
     def test_join_guild_grants_tier_one_domain_abilities(self):
         self.char1.db.ancestry = "human"
@@ -519,14 +513,14 @@ class TestJoinGuildValid(EvenniaTest):
         self.char1.db.subclass_id = None
 
         success, _ = join_guild(self.char1, "ironblood", "subterfuge")
-        self.assertTrue(success)
+        self.assertFalse(success)
 
         known = set(
             CharacterAbility.objects.filter(character=self.char1).values_list("ability_id", flat=True)
         )
-        self.assertIn("second_wind", known)
-        self.assertIn("crushing_advance", known)
-        self.assertIn("iron_resolve", known)
+        self.assertNotIn("second_wind", known)
+        self.assertNotIn("crushing_advance", known)
+        self.assertNotIn("iron_resolve", known)
         self.assertNotIn("rending_strike", known)
 
     def test_join_guild_grants_new_tier_unlocks_when_gts_is_high_enough(self):
@@ -538,13 +532,13 @@ class TestJoinGuildValid(EvenniaTest):
         self.char1.db.subclass_id = None
 
         success, _ = join_guild(self.char1, "ironblood", "subterfuge")
-        self.assertTrue(success)
+        self.assertFalse(success)
 
         known = set(
             CharacterAbility.objects.filter(character=self.char1).values_list("ability_id", flat=True)
         )
-        self.assertIn("rending_strike", known)
-        self.assertIn("duskblade_shadow_strike", known)
+        self.assertNotIn("rending_strike", known)
+        self.assertNotIn("duskblade_shadow_strike", known)
         self.assertNotIn("duskblade_vanishing_edge", known)
 
 
@@ -555,7 +549,7 @@ class TestJoinGuildInvalidGuild(EvenniaTest):
         self.char1.db.guild_id = None
         success, msg = join_guild(self.char1, "bad_guild", "subterfuge")
         self.assertFalse(success)
-        self.assertIn("Unknown guild", msg)
+        self.assertIn("durable invitation", msg)
 
 
 class TestJoinGuildInvalidDomainPair(EvenniaTest):
@@ -566,7 +560,7 @@ class TestJoinGuildInvalidDomainPair(EvenniaTest):
         # combat + combat would be a self-pair with no subclass
         success, msg = join_guild(self.char1, "ironblood", "combat")
         self.assertFalse(success)
-        self.assertIn("No subclass for", msg)
+        self.assertIn("in-person induction", msg)
 
 
 class TestJoinGuildAlreadyMember(EvenniaTest):
@@ -580,7 +574,7 @@ class TestJoinGuildAlreadyMember(EvenniaTest):
 
 
 class TestCompleteInductionValid(EvenniaTest):
-    """Successful induction marks induction_complete=True."""
+    """Detached induction helper is retired."""
 
     def test_complete(self):
         self.char1.db.guild_id = None
@@ -588,14 +582,10 @@ class TestCompleteInductionValid(EvenniaTest):
         self.char1.db.secondary_domain = None
         self.char1.db.subclass_id = None
 
-        success, _ = join_guild(self.char1, "ironblood", "subterfuge")
-        self.assertTrue(success)
-
         success, msg = complete_induction(self.char1)
-        self.assertTrue(success)
-
-        record = CharacterGuild.objects.get(character=self.char1)
-        self.assertTrue(record.induction_complete)
+        self.assertFalse(success)
+        self.assertIn("in person", msg)
+        self.assertFalse(CharacterGuild.objects.filter(character=self.char1).exists())
 
 
 class TestCompleteInductionNoGuild(EvenniaTest):
@@ -605,4 +595,4 @@ class TestCompleteInductionNoGuild(EvenniaTest):
         self.char1.db.guild_id = None
         success, msg = complete_induction(self.char1)
         self.assertFalse(success)
-        self.assertIn("No guild membership found", msg)
+        self.assertIn("in person", msg)

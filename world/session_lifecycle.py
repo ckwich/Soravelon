@@ -42,30 +42,23 @@ def get_new_player_guidance(character):
     guild_id = getattr(character.db, "guild_id", None)
     if not guild_id:
         try:
-            from world.guild_engine import GUILDS, check_guild_eligibility
-            from world.remnance_visibility import guild_is_player_visible
+            from world.guild_engine import get_open_guild_recruitments
 
-            eligible = check_guild_eligibility(character) or []
-            visible = []
-            for candidate in eligible:
-                guild = GUILDS.get(candidate, {})
-                if not guild_is_player_visible(candidate, guild, character):
-                    continue
-                visible.append(guild.get("name", candidate))
+            open_recruitments = get_open_guild_recruitments(character)
         except Exception:
-            visible = []
+            open_recruitments = []
 
-        if visible:
+        if open_recruitments:
             return (
                 "|y[A guild invitation is waiting for you. Type |wjoinguild|n "
-                "to review your offers, then choose your path with "
-                "|wjoinguild <guild> <secondary_domain>|n.]|n"
+                "to find its named contact, then meet them and |wtalk|n "
+                "face to face to choose your second path.]|n"
             )
 
         return (
             "|y[You have not joined a guild yet. Explore guild halls in the "
             "hub city, keep practicing the domains that fit your style, and "
-            "watch for a messenger telling you to type |wjoinguild|n.]|n"
+            "watch for a messenger carrying a named invitation.]|n"
         )
 
     pending_offer = getattr(character.ndb, "pending_quest_offer", None)

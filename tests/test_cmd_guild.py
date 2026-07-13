@@ -2,6 +2,7 @@
 
 import os
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.conf.settings")
@@ -58,27 +59,25 @@ class TestCmdJoinGuild(unittest.TestCase):
         self.assertIn("already a member of Warblades", message)
 
     @patch.dict("world.guild_engine.GUILDS", {
-        "warblades": {
-            "name": "Warblades",
-            "primary_domain": "combat",
-            "motto": "Steel answers first.",
-            "hidden": False,
-        },
-        "embersigil": {
-            "name": "Embersigil",
-            "primary_domain": "arcana",
-            "motto": "Every spark remembers.",
-            "hidden": False,
-        },
-        "vaelborn": {
-            "name": "Vaelborn",
-            "primary_domain": "sorcery",
-            "motto": "Silence keeps the old bargains.",
-            "hidden": True,
-        },
+        "verdance": {"name": "Guild of Verdance", "primary_domain": "naturalism"},
+        "arcane": {"name": "Guild of the Arcane", "primary_domain": "arcana"},
     }, clear=True)
-    @patch("world.guild_engine.check_guild_eligibility", return_value=["warblades", "embersigil", "vaelborn"])
-    def test_joinguild_lists_only_visible_invitations(self, _mock_eligibility):
+    @patch("world.guild_engine.get_open_guild_recruitments")
+    def test_joinguild_lists_durable_invitations_and_contact_routes(self, mock_open):
+        mock_open.return_value = [
+            SimpleNamespace(
+                guild_id="verdance",
+                contact_npc_id="npc_guildmaster_naturalism_elwen",
+                location_zone_id="vaels_crossing",
+                location_room_id="gq_naturalism_hall",
+            ),
+            SimpleNamespace(
+                guild_id="arcane",
+                contact_npc_id="npc_guildmaster_arcana_thessa",
+                location_zone_id="vaels_crossing",
+                location_room_id="gq_arcana_hall",
+            ),
+        ]
         character = _make_character()
         cmd = self._make_cmd(character)
 
@@ -86,61 +85,44 @@ class TestCmdJoinGuild(unittest.TestCase):
 
         message = character.msg.call_args[0][0]
         self.assertIn("Guild Invitations", message)
-        self.assertIn("Warblades", message)
-        self.assertIn("Embersigil", message)
-        self.assertNotIn("Vaelborn", message)
-        self.assertIn("joinguild <guild_name> <secondary_domain>", message)
+        self.assertIn("Guild of Verdance", message)
+        self.assertIn("Elwen", message)
+        self.assertIn("Naturalism Hall", message)
+        self.assertIn("talk", message.lower())
+        self.assertNotIn("score", message.lower())
 
-    @patch.dict("world.guild_engine.GUILDS", {
-        "warblades": {
-            "name": "Warblades",
-            "primary_domain": "combat",
-            "motto": "Steel answers first.",
-            "hidden": False,
-        },
-    }, clear=True)
-    @patch("world.guild_engine.check_guild_eligibility", return_value=["warblades"])
-    def test_joinguild_prompts_for_secondary_domain(self, _mock_eligibility):
-        character = _make_character(
-            domain_scores={"combat": 55, "subterfuge": 22, "naturalism": 10}
-        )
-        cmd = self._make_cmd(character, "warblades")
+    @patch("world.guild_engine.get_open_guild_recruitments", return_value=[])
+    def test_joinguild_without_durable_invitation_does_not_infer_from_scores(self, _open):
+        character = _make_character(domain_scores={"naturalism": 99})
+        cmd = self._make_cmd(character)
 
         cmd.func()
 
         message = character.msg.call_args[0][0]
-        self.assertIn("Choose a secondary domain", message)
-        self.assertIn("subterfuge", message.lower())
-        self.assertIn("(recommended)", message)
+        self.assertIn("No guild has sent you an invitation", message)
 
     @patch.dict("world.guild_engine.GUILDS", {
-        "warblades": {
-            "name": "Warblades",
-            "primary_domain": "combat",
-            "motto": "Steel answers first.",
-            "hidden": False,
-        },
+        "verdance": {"name": "Guild of Verdance", "primary_domain": "naturalism"},
     }, clear=True)
-    @patch.dict("world.guild_engine.SUBCLASSES", {
-        "war_scout": {"name": "War Scout"},
-    }, clear=True)
-    @patch("world.guild_engine.join_guild", return_value=(True, "You swear the guild oath."))
-    @patch("world.guild_engine.check_guild_eligibility", return_value=["warblades"])
-    def test_joinguild_calls_join_engine_and_reports_welcome(
-        self,
-        _mock_eligibility,
-        mock_join_guild,
+    @patch("world.guild_engine.get_open_guild_recruitments")
+    @patch("world.guild_engine.join_guild", return_value=(True, "remote join"))
+    def test_joinguild_arguments_cannot_remotely_mutate_membership(
+        self, mock_join_guild, mock_open
     ):
-        character = _make_character(
-            domain_scores={"combat": 55, "wilderness": 22},
-            subclass_id="war_scout",
-        )
-        cmd = self._make_cmd(character, "warblades wilderness")
+        mock_open.return_value = [
+            SimpleNamespace(
+                guild_id="verdance",
+                contact_npc_id="npc_guildmaster_naturalism_elwen",
+                location_zone_id="vaels_crossing",
+                location_room_id="gq_naturalism_hall",
+            )
+        ]
+        character = _make_character()
+        cmd = self._make_cmd(character, "verdance resonance")
 
         cmd.func()
 
-        mock_join_guild.assert_called_once_with(character, "warblades", "wilderness")
-        messages = [call.args[0] for call in character.msg.call_args_list]
-        self.assertIn("You swear the guild oath.", messages[0])
-        self.assertIn("Warblades welcomes you", messages[1])
-        self.assertIn("War Scout", messages[1])
+        mock_join_guild.assert_not_called()
+        message = character.msg.call_args[0][0]
+        self.assertIn("Elwen", message)
+        self.assertIn("talk", message.lower())

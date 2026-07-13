@@ -589,7 +589,7 @@ class CharacterGuild(models.Model):
     Source of truth for guild/subclass assignment. character.db.guild_id and
     character.db.subclass_id are fast-read caches updated when this model
     changes (D-15). Lazy creation: no record = Wanderer (no guild). Created
-    on join_guild() (D-15).
+    only when an authored recruitment induction completes.
     """
 
     character = models.OneToOneField(
@@ -614,6 +614,46 @@ class CharacterGuild(models.Model):
 
     def __str__(self):
         return f"{self.character.db_key}:{self.guild_id}/{self.subclass_id}"
+
+
+class GuildRecruitment(models.Model):
+    """Durable invitation and completed induction provenance."""
+
+    STATUS_CHOICES = (
+        ("offered", "Offered"),
+        ("completed", "Completed"),
+    )
+
+    character = models.ForeignKey(
+        "objects.ObjectDB",
+        on_delete=models.CASCADE,
+        related_name="guild_recruitments",
+    )
+    guild_id = models.CharField(max_length=64)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="offered")
+    contact_npc_id = models.CharField(max_length=128)
+    location_zone_id = models.CharField(max_length=64)
+    location_room_id = models.CharField(max_length=128)
+    secondary_domain = models.CharField(max_length=32, blank=True, default="")
+    offered_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["character", "guild_id"],
+                name="unique_character_guild_recruitment",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["character", "status"],
+                name="guild_recruitment_status_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.character_id}:{self.guild_id}:{self.status}"
 
 
 class CharacterAbility(models.Model):

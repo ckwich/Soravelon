@@ -224,6 +224,42 @@ class CmdTalk(Command):
         check_talk_to_objectives(character, npc)
         check_deliver_objectives(character, npc)
 
+        # Guild recruitment is a local conversation, reconstructed from its
+        # durable invitation rather than a remote numeric join screen.
+        from world.guild_engine import (
+            GUILDS,
+            get_recruitment_for_contact,
+            get_recruitment_secondary_choices,
+        )
+
+        recruitment = get_recruitment_for_contact(character, npc)
+        if recruitment:
+            guild = GUILDS[recruitment.guild_id]
+            choices = get_recruitment_secondary_choices(character, recruitment)
+            scores = character.db.domain_scores or {}
+            recommended = max(
+                choices,
+                key=lambda domain: float(scores.get(domain, 0.0)),
+                default=None,
+            )
+            choice_lines = []
+            for domain in choices:
+                note = " |g(your strongest second path)|n" if domain == recommended else ""
+                choice_lines.append(f"  |w{domain}|n{note}")
+            character.msg(
+                f"\n|y{npc_display} opens the sealed invitation from "
+                f"{guild['name']}. The guild recognized what you have done, "
+                "but your second path must be named here, face to face.|n\n"
+                + "\n".join(choice_lines)
+                + "\n|x[Type |waccept <secondary_domain>|x to enter the induction, "
+                "or |wdecline|x to leave the invitation open.]|n"
+            )
+            character.ndb.pending_guild_recruitment = {
+                "npc": npc,
+                "recruitment_id": recruitment.id,
+            }
+            return
+
         # Quest offer
         quest_offers = tuple(get_quest_offers(npc, character) or ())
         if quest_offers:
@@ -573,6 +609,58 @@ class CmdAccept(Command):
 
     def func(self):
         character = self.caller
+        guild_offer = getattr(character.ndb, "pending_guild_recruitment", None)
+        if guild_offer:
+            npc = guild_offer.get("npc")
+            if npc is None or npc.location != character.location:
+                character.msg(
+                    "|rThe guild contact is no longer here. Speak with them again in person.|n"
+                )
+                character.ndb.pending_guild_recruitment = None
+                return
+            secondary_domain = self.args.strip().lower()
+            if not secondary_domain:
+                character.msg(
+                    "|yName your second path with |waccept <secondary_domain>|y.|n"
+                )
+                return
+
+            from world.guild_engine import complete_recruitment_induction
+            from world.models import GuildRecruitment
+
+            try:
+                recruitment = GuildRecruitment.objects.get(
+                    pk=guild_offer.get("recruitment_id"),
+                    character=character,
+                )
+            except GuildRecruitment.DoesNotExist:
+                character.msg("|rThat invitation is no longer available.|n")
+                character.ndb.pending_guild_recruitment = None
+                return
+
+            success, message = complete_recruitment_induction(
+                character,
+                recruitment,
+                secondary_domain,
+                npc,
+            )
+            if not success:
+                character.msg(f"|y{message}|n")
+                return
+
+            from world.guild_engine import GUILDS, SUBCLASSES
+
+            guild = GUILDS[recruitment.guild_id]
+            subclass = SUBCLASSES.get(character.db.subclass_id, {})
+            npc_display = npc.db.npc_name or npc.key
+            character.msg(
+                f"|g{npc_display} witnesses your induction into {guild['name']}. "
+                f"Your joined path is {subclass.get('name', character.db.subclass_id)}. "
+                "The choice is recorded here, and the guild now answers you in kind.|n"
+            )
+            character.ndb.pending_guild_recruitment = None
+            return
+
         offer = character.ndb.pending_quest_offer
 
         if not offer:
@@ -667,6 +755,17 @@ class CmdDecline(Command):
 
     def func(self):
         character = self.caller
+        guild_offer = getattr(character.ndb, "pending_guild_recruitment", None)
+        if guild_offer:
+            npc = guild_offer.get("npc")
+            npc_display = "The contact" if not npc else (npc.db.npc_name or npc.key)
+            character.msg(
+                f"|y{npc_display} closes the letter without tearing it. "
+                "The invitation remains open; return when you are ready to choose.|n"
+            )
+            character.ndb.pending_guild_recruitment = None
+            return
+
         offer = character.ndb.pending_quest_offer
 
         if not offer:

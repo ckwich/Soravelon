@@ -84,6 +84,18 @@ class TestHelpEntries(unittest.TestCase):
         ):
             self.assertIn(key, keys)
 
+    def test_guild_help_keeps_induction_local_and_progression_qualitative(self):
+        from world.help_entries import HELP_ENTRY_DICTS
+
+        by_key = {entry["key"]: entry["text"] for entry in HELP_ENTRY_DICTS}
+        combined = by_key["guilds"] + by_key["joinguild"] + by_key["domains"]
+        self.assertIn("talk", combined.lower())
+        self.assertIn("accept <secondary_domain>", combined.lower())
+        self.assertNotIn("joinguild <guild_name> <secondary_domain>", combined)
+        self.assertNotIn("guild tier score", combined.lower())
+        self.assertNotIn("tier thresholds", combined.lower())
+        self.assertNotIn("domain scores", combined.lower())
+
     def test_every_custom_command_has_direct_help_coverage(self):
         from world.help_entries import HELP_ENTRY_DICTS
 

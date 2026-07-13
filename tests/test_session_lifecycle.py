@@ -185,11 +185,10 @@ class TestSessionLifecycle(unittest.TestCase):
         self.assertIn("ancestry", rendered.lower())
         self.assertIn("ancestry selvar <summer|winter>", rendered)
 
-    @patch("world.guild_engine.check_guild_eligibility", return_value=["ironblood"])
-    @patch("world.guild_engine.GUILDS", {"ironblood": {"name": "Ironblood"}})
+    @patch("world.guild_engine.get_open_guild_recruitments", return_value=[object()])
     def test_guidance_points_eligible_guildless_character_to_joinguild(
         self,
-        mock_guild_eligibility,
+        _mock_recruitments,
     ):
         from world.session_lifecycle import get_new_player_guidance
 
@@ -198,7 +197,8 @@ class TestSessionLifecycle(unittest.TestCase):
         guidance = get_new_player_guidance(char)
 
         self.assertIn("joinguild", guidance.lower())
-        self.assertIn("secondary_domain", guidance.lower())
+        self.assertIn("named contact", guidance.lower())
+        self.assertIn("talk", guidance.lower())
 
     @patch("world.quest_engine.get_active_quests", return_value=[])
     def test_guidance_points_low_level_guild_member_toward_quests(

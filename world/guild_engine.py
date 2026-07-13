@@ -1518,6 +1518,18 @@ GTS_TIER_THRESHOLDS = [
 
 GUILD_ELIGIBILITY_THRESHOLD = 30
 
+GUILD_RECRUITMENT_CONTACTS = {
+    "ironblood": ("vaels_crossing", "gq_combat_hall", "npc_guildmaster_combat_haren"),
+    "veilcraft": ("vaels_crossing", "gq_subterfuge_den", "npc_guildmaster_subterfuge_dessa"),
+    "verdance": ("vaels_crossing", "gq_naturalism_hall", "npc_guildmaster_naturalism_elwen"),
+    "resonance": ("vaels_crossing", "gq_resonance_hall", "npc_guildmaster_resonance_kael"),
+    "arcane": ("vaels_crossing", "gq_arcana_hall", "npc_guildmaster_arcana_thessa"),
+    "accord": ("vaels_crossing", "gq_diplomacy_hall", "npc_guildmaster_diplomacy_aldric"),
+    "thornwork": ("vaels_crossing", "gq_alchemy_lab", "npc_guildmaster_alchemy_mirelle"),
+    "warcraft": ("vaels_crossing", "gq_tactics_hall", "npc_guildmaster_tactics_brennus"),
+    "forge": ("vaels_crossing", "gq_engineering_hall", "npc_guildmaster_engineering_pren"),
+}
+
 # ---------------------------------------------------------------------------
 # Module-level lookup indexes (built once at import)
 # ---------------------------------------------------------------------------
@@ -1629,6 +1641,204 @@ def _resolve_subclass(primary_domain, secondary_domain):
     return _DOMAIN_PAIR_TO_SUBCLASS.get((primary_domain, secondary_domain))
 
 
+def ensure_guild_recruitments(character):
+    """Persist each newly earned, player-visible guild invitation."""
+    from world.models import GuildRecruitment
+    from world.remnance_visibility import guild_is_player_visible
+
+    created_records = []
+    for guild_id in check_guild_eligibility(character):
+        guild = GUILDS.get(guild_id, {})
+        contact = GUILD_RECRUITMENT_CONTACTS.get(guild_id)
+        if not contact or not guild_is_player_visible(guild_id, guild, character):
+            continue
+        zone_id, room_id, npc_id = contact
+        recruitment, created = GuildRecruitment.objects.get_or_create(
+            character=character,
+            guild_id=guild_id,
+            defaults={
+                "contact_npc_id": npc_id,
+                "location_zone_id": zone_id,
+                "location_room_id": room_id,
+            },
+        )
+        if created:
+            created_records.append(recruitment)
+    return created_records
+
+
+def get_recruitment_for_contact(character, contact):
+    """Return an open invitation only at its authored contact and location."""
+    from world.models import GuildRecruitment
+
+    npc_id = getattr(contact.db, "npc_id", None)
+    location = getattr(contact, "location", None)
+    if not npc_id or location != character.location:
+        return None
+    recruitment = GuildRecruitment.objects.filter(
+        character=character,
+        contact_npc_id=npc_id,
+        status="offered",
+    ).first()
+    if not recruitment or not location.tags.has(
+        recruitment.location_room_id,
+        category="room_id",
+    ):
+        return None
+    return recruitment
+
+
+def get_open_guild_recruitments(character):
+    """Return durable open invitations in delivery order."""
+    from world.models import GuildRecruitment
+
+    return list(
+        GuildRecruitment.objects.filter(
+            character=character,
+            status="offered",
+        ).order_by("offered_at", "id")
+    )
+
+
+def get_recruitment_secondary_choices(character, recruitment):
+    """Return visible secondary domains in authored domain order."""
+    from world.remnance_visibility import domain_is_player_visible
+
+    primary = GUILDS[recruitment.guild_id]["primary_domain"]
+    return [
+        domain
+        for domain in ALL_DOMAINS
+        if domain != primary and domain_is_player_visible(domain, character)
+    ]
+
+
+def _record_induction_social_fact(character, recruitment, contact):
+    from world.social_engine import ensure_social_node, mark_known, record_social_fact
+
+    guild = GUILDS[recruitment.guild_id]
+    player = ensure_social_node(
+        "player",
+        str(character.id),
+        display_name=character.key,
+    )
+    contact_node = ensure_social_node(
+        "npc",
+        recruitment.contact_npc_id,
+        display_name=contact.key,
+        zone_id=recruitment.location_zone_id,
+    )
+    guild_node = ensure_social_node(
+        "guild",
+        recruitment.guild_id,
+        display_name=guild["name"],
+        zone_id=recruitment.location_zone_id,
+    )
+    fact_key = f"fact:guild_induction:{character.id}:{recruitment.guild_id}"
+    ok, message, fact = record_social_fact(
+        fact_key=fact_key,
+        subject_node_key=player.node_key,
+        actor_node_key=contact_node.node_key,
+        scope_node_key=guild_node.node_key,
+        event_type="guild_inducted",
+        summary=(
+            f"{character.key} completed induction into {guild['name']} "
+            f"under {contact.key}."
+        ),
+        tags=["guild", "induction", recruitment.guild_id],
+        visibility="institutional",
+        evidence={
+            "guild_id": recruitment.guild_id,
+            "secondary_domain": recruitment.secondary_domain,
+            "contact_npc_id": recruitment.contact_npc_id,
+        },
+    )
+    if not ok:
+        raise RuntimeError(message)
+    for node in (contact_node, guild_node):
+        ok, message, _knowledge = mark_known(
+            node_key=node.node_key,
+            fact_key=fact.fact_key,
+            source_node_key=contact_node.node_key,
+            channel="guild_record",
+            confidence=1.0,
+            spreading=False,
+            evidence={"source": "guild_induction"},
+        )
+        if not ok:
+            raise RuntimeError(message)
+
+
+def complete_recruitment_induction(character, recruitment, secondary_domain, contact):
+    """Complete one invitation only at its authored NPC and room."""
+    from django.utils import timezone
+
+    from world.models import CharacterGuild, GuildRecruitment
+    from world.remnance_visibility import domain_is_player_visible
+
+    if recruitment.character_id != character.id:
+        return False, "That invitation does not belong to you."
+    if recruitment.status == "completed":
+        return True, "Your induction is already complete."
+    if character.location != getattr(contact, "location", None):
+        return False, "You must meet the guild contact in person."
+    if getattr(contact.db, "npc_id", None) != recruitment.contact_npc_id:
+        return False, "This is not the contact named in your invitation."
+    if not character.location.tags.has(
+        recruitment.location_room_id,
+        category="room_id",
+    ):
+        return False, "You must meet the guild contact in person."
+    if recruitment.guild_id not in check_guild_eligibility(character):
+        return False, "That guild invitation is no longer available."
+
+    guild = GUILDS[recruitment.guild_id]
+    primary_domain = guild["primary_domain"]
+    if not domain_is_player_visible(secondary_domain, character):
+        return False, "That secondary domain is not available for induction."
+    subclass_id = _resolve_subclass(primary_domain, secondary_domain)
+    if not subclass_id:
+        return False, "That secondary path does not fit this guild."
+
+    from world.atomic_state import atomic_evennia_state
+
+    cache_names = ("guild_id", "subclass_id", "primary_domain", "secondary_domain")
+    with atomic_evennia_state(character) as cache_tracker:
+        cache_tracker.track(character, attributes=cache_names)
+        locked = GuildRecruitment.objects.select_for_update().get(pk=recruitment.pk)
+        if locked.status == "completed":
+            return True, "Your induction is already complete."
+
+        membership, _created = CharacterGuild.objects.update_or_create(
+            character=character,
+            defaults={
+                "guild_id": locked.guild_id,
+                "primary_domain": primary_domain,
+                "secondary_domain": secondary_domain,
+                "subclass_id": subclass_id,
+                "induction_complete": True,
+            },
+        )
+        character.db.guild_id = membership.guild_id
+        character.db.subclass_id = membership.subclass_id
+        character.db.primary_domain = membership.primary_domain
+        character.db.secondary_domain = membership.secondary_domain
+
+        locked.status = "completed"
+        locked.secondary_domain = secondary_domain
+        locked.completed_at = timezone.now()
+        locked.save(update_fields=["status", "secondary_domain", "completed_at"])
+        _record_induction_social_fact(character, locked, contact)
+
+        from world.ability_engine import sync_character_ability_unlocks
+
+        sync_character_ability_unlocks(character)
+
+    from world.ability_engine import initialize_domain_resource
+
+    initialize_domain_resource(character)
+    return True, f"Your induction into {guild['name']} is complete."
+
+
 # ---------------------------------------------------------------------------
 # Mutation functions
 # ---------------------------------------------------------------------------
@@ -1636,62 +1846,26 @@ def _resolve_subclass(primary_domain, secondary_domain):
 
 def join_guild(character, guild_id, secondary_domain):
     """
-    Join a guild, creating CharacterGuild record and updating db caches.
-    Returns (bool, str) per project convention (D-15).
+    Fail-closed compatibility boundary for the retired remote join path.
+
+    Membership now exists only after complete_recruitment_induction validates
+    the durable invitation, authored contact, and current room.
     """
-    # Check if already in a guild
     if character.db.guild_id:
         existing = GUILDS.get(character.db.guild_id, {})
         existing_name = existing.get("name", character.db.guild_id)
         return False, f"Already a member of {existing_name}."
-
-    guild = GUILDS.get(guild_id)
-    if not guild:
-        return False, f"Unknown guild: {guild_id}"
-
-    primary = guild["primary_domain"]
-    subclass_id = _resolve_subclass(primary, secondary_domain)
-    if not subclass_id:
-        return False, f"No subclass for {primary}/{secondary_domain}."
-
-    from world.models import CharacterGuild as CGModel
-    CGModel.objects.update_or_create(
-        character=character,
-        defaults={
-            "guild_id": guild_id,
-            "primary_domain": primary,
-            "secondary_domain": secondary_domain,
-            "subclass_id": subclass_id,
-            "induction_complete": False,
-        },
+    return False, (
+        "Guild membership requires a durable invitation and an in-person "
+        "induction with its named contact."
     )
-    # Update fast-read caches (D-15)
-    character.db.guild_id = guild_id
-    character.db.subclass_id = subclass_id
-    character.db.primary_domain = primary
-    character.db.secondary_domain = secondary_domain
-    # Initialize domain resource for mid-session guild join
-    from world.ability_engine import initialize_domain_resource, sync_character_ability_unlocks
-    initialize_domain_resource(character)
-    sync_character_ability_unlocks(character)
-    return True, f"You have joined the {guild['name']}."
 
 
 def complete_induction(character):
     """
-    Mark guild induction as complete.
-    Returns (bool, str) per project convention.
+    Fail-closed compatibility boundary for detached induction completion.
     """
-    guild_id = character.db.guild_id
-    if not guild_id:
-        return False, "No guild membership found."
-
-    from world.models import CharacterGuild as CGModel
-    try:
-        record = CGModel.objects.get(character=character)
-    except CGModel.DoesNotExist:
-        return False, "No guild membership found."
-
-    record.induction_complete = True
-    record.save(update_fields=["induction_complete"])
-    return True, "Guild induction complete."
+    return False, (
+        "Induction can only be completed in person through the durable "
+        "recruitment scene."
+    )

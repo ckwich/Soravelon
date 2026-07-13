@@ -46,6 +46,7 @@ def _authored_first_practiced_payloads():
 class TestFirstPracticedPath(EvenniaTest):
     def test_four_authored_interactions_reach_only_naturalism_practiced_once(self):
         from world.guild_engine import check_guild_eligibility
+        from world.models import GuildRecruitment
         from world.practice_engine import resolve_practice_opportunity
         from world.world_state import commit_session_xp, init_session_accumulators
 
@@ -65,6 +66,9 @@ class TestFirstPracticedPath(EvenniaTest):
 
         self.assertEqual(self.char1.db.domain_scores, {"naturalism": 30.0})
         self.assertEqual(check_guild_eligibility(self.char1), ["verdance"])
+        recruitment = GuildRecruitment.objects.get(character=self.char1)
+        self.assertEqual(recruitment.guild_id, "verdance")
+        self.assertEqual(recruitment.status, "offered")
 
         for payload in payloads:
             success, message = resolve_practice_opportunity(
