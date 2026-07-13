@@ -2715,6 +2715,11 @@ def build():
         rewards=[
             {"action_type": "give_scales", "amount": 80},
             {"action_type": "modify_standing", "faction_id": "consortium", "delta": 150},
+            {
+                "action_type": "discover_flight_point",
+                "point_id": "varath_prime_courier",
+                "message": "|gCarston adds the Varath Prime courier line to your corrected route slate. The destination is now available from any connected Courier platform.|n",
+            },
             {"action_type": "echo", "message": "|gCarston folds the corrected manifest into his ledger. \"So that is how it walked. Quiet work, and useful work. I can use people who notice the seams in a city.\"|n"},
         ],
         next_quest_id="vc_q_stolen_goods",

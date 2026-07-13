@@ -18,28 +18,15 @@ class TestProductionWorldConnectivity(TestCase):
             audit.unreachable_zones,
             {
                 "colonist_ruins",
-                "crownroad_north",
-                "greyteeth_lower_passes",
-                "ironvein_escarpment",
                 "kiai_grounds",
                 "korahei",
-                "old_causeway",
-                "stagcrown_preserve",
-                "tremen",
-                "tremeneth_deep_mines",
-                "tremeneth_high_passes",
-                "tremeneth_underhalls",
-                "varath_prime",
                 "veluana_central_isle",
                 "veluana_outer_reefs",
             },
         )
-        self.assertIn(
-            (
-                "circular-flight-discovery",
-                "vaels_crossing_courier:varath_prime_courier",
-            ),
-            {(item.code, item.entity_id) for item in audit.diagnostics},
+        self.assertNotIn(
+            "circular-flight-discovery",
+            {item.code for item in audit.diagnostics},
         )
 
     def test_rejects_a_flight_route_with_an_unknown_endpoint(self):

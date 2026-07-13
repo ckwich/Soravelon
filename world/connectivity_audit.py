@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from dataclasses import dataclass
 
-from world.content_compiler import SymbolicReference, WorldManifest
+from world.content_compiler import SymbolicReference, WorldManifest, _thaw
 
 FRESH_START_ROOM = "vaels_crossing:hg_arrival"
 
@@ -49,6 +49,7 @@ def audit_world_connectivity(
     adjacency: dict[str, set[str]] = defaultdict(set)
     flight_points: dict[str, str] = {}
     flight_routes: list[tuple[str, str]] = []
+    authored_flight_grants_by_zone: dict[str, set[str]] = defaultdict(set)
     diagnostics: list[ConnectivityDiagnostic] = []
 
     for definition in manifest.zones:
@@ -72,6 +73,15 @@ def audit_world_connectivity(
                 flight_routes.append(
                     (str(operation.arguments[0]), str(operation.arguments[1]))
                 )
+            elif operation.method == "quest":
+                kwargs = _thaw(operation.keyword_arguments)
+                for reward in kwargs.get("rewards", []) if isinstance(kwargs, dict) else []:
+                    if not isinstance(reward, dict):
+                        continue
+                    if reward.get("action_type") == "discover_flight_point":
+                        point_id = reward.get("point_id")
+                        if isinstance(point_id, str) and point_id:
+                            authored_flight_grants_by_zone[zone_id].add(point_id)
 
     valid_flight_routes: list[tuple[str, str]] = []
     for first, second in flight_routes:
@@ -106,16 +116,45 @@ def audit_world_connectivity(
                     reachable.add(neighbor)
                     frontier.append(neighbor)
 
-    discovered_flight_points = {
-        point_id for point_id, room in flight_points.items() if room in reachable
-    }
+    def expand_walking(seed_rooms: set[str]) -> None:
+        frontier = deque(seed_rooms)
+        while frontier:
+            current = frontier.popleft()
+            for neighbor in adjacency.get(current, ()):
+                if neighbor in rooms and neighbor not in reachable:
+                    reachable.add(neighbor)
+                    frontier.append(neighbor)
+
+    while True:
+        reachable_zones = {room.partition(":")[0] for room in reachable}
+        discovered_flight_points = {
+            point_id for point_id, room in flight_points.items() if room in reachable
+        }
+        for zone_id in reachable_zones:
+            discovered_flight_points.update(
+                authored_flight_grants_by_zone.get(zone_id, set())
+            )
+        newly_reachable = set()
+        for first, second in valid_flight_routes:
+            first_room = flight_points[first]
+            second_room = flight_points[second]
+            if first_room in reachable and second in discovered_flight_points:
+                newly_reachable.add(second_room)
+            if second_room in reachable and first in discovered_flight_points:
+                newly_reachable.add(first_room)
+        newly_reachable -= reachable
+        if not newly_reachable:
+            break
+        reachable.update(newly_reachable)
+        expand_walking(newly_reachable)
+
     for first, second in valid_flight_routes:
-        first_discovered = first in discovered_flight_points
-        second_discovered = second in discovered_flight_points
-        if first_discovered == second_discovered:
+        first_reachable = flight_points[first] in reachable
+        second_reachable = flight_points[second] in reachable
+        if first_reachable == second_reachable:
             continue
         origin, blocked_destination = (
-            (first, second) if first_discovered else (second, first)
+            (first, second) if first_reachable else (second, first)
         )
         diagnostics.append(
             ConnectivityDiagnostic(
