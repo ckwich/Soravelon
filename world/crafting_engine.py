@@ -219,8 +219,9 @@ def calculate_processing_quality(character_skill, recipe_difficulty, raw_quality
     raw_index = QUALITY_TIERS.index(raw_quality) if raw_quality in QUALITY_TIERS else 1
     base_index = QUALITY_TIERS.index(base_quality)
 
-    # Final quality is average of raw and skill-based, rounded down (floor influence)
-    final_index = (raw_index + base_index) // 2
+    # Processing skill may improve a batch, but it cannot erase the quality
+    # already earned while gathering its raw material.
+    final_index = max(raw_index, base_index)
     return QUALITY_TIERS[final_index]
 
 
@@ -304,22 +305,32 @@ def _consume_ingredients(character, items_to_consume):
     return consume_owned_quantities(character, items_to_consume)
 
 
-def _best_input_quality(items_to_consume):
+def _input_batch_quality(items_to_consume):
     """
-    Return the strongest recognized quality present in the consumed inputs.
+    Return the quantity-weighted quality of every consumed input.
 
-    Processing recipes use this as the raw-material quality influence so
-    higher-quality gathered ingredients can improve refined outputs.
+    This prevents one premium unit from upgrading an otherwise poor batch,
+    while still preserving the value of consistently high-quality gathering.
     """
     quality_index = {quality: idx for idx, quality in enumerate(QUALITY_TIERS)}
-    best_index = quality_index["standard"]
+    weighted_total = 0
+    total_quantity = 0
 
     for spec in items_to_consume:
         obj = spec["item"] if isinstance(spec, dict) else spec
+        quantity = spec.get("quantity", 1) if isinstance(spec, dict) else 1
+        if not isinstance(quantity, int) or isinstance(quantity, bool) or quantity <= 0:
+            continue
         obj_quality = getattr(getattr(obj, "db", None), "quality", None) or "standard"
-        best_index = max(best_index, quality_index.get(obj_quality, quality_index["standard"]))
+        weighted_total += quality_index.get(
+            obj_quality,
+            quality_index["standard"],
+        ) * quantity
+        total_quantity += quantity
 
-    return QUALITY_TIERS[best_index]
+    if not total_quantity:
+        return "standard"
+    return QUALITY_TIERS[weighted_total // total_quantity]
 
 
 # --- Item Creation ---
@@ -471,7 +482,7 @@ def craft_item(character, recipe_id, *, operation_id=None):
                 quality = calculate_processing_quality(
                     skill_value,
                     difficulty,
-                    raw_quality=_best_input_quality(items_to_consume),
+                    raw_quality=_input_batch_quality(items_to_consume),
                     has_station=has_station_bonus,
                 )
                 output_def = dict(recipe["output"])

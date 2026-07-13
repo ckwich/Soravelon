@@ -389,6 +389,53 @@ class TestProcessingRecipes(unittest.TestCase):
         for r in results:
             self.assertGreaterEqual(QUALITY_TIERS.index(r), 1)
 
+    @patch("world.crafting_engine.calculate_craft_quality", return_value="flawed")
+    def test_processing_never_downgrades_the_real_input_quality(self, _quality):
+        from world.crafting_engine import calculate_processing_quality
+
+        self.assertEqual(
+            calculate_processing_quality(
+                0,
+                100,
+                raw_quality="superior",
+            ),
+            "superior",
+        )
+
+    def test_batch_quality_uses_every_consumed_quantity(self):
+        from world.crafting_engine import _input_batch_quality
+
+        superior = MagicMock()
+        superior.db.quality = "superior"
+        flawed = MagicMock()
+        flawed.db.quality = "flawed"
+
+        quality = _input_batch_quality(
+            [
+                {"item": superior, "quantity": 1},
+                {"item": flawed, "quantity": 1},
+            ]
+        )
+
+        self.assertEqual(quality, "standard")
+
+    def test_one_premium_unit_cannot_launder_a_poor_batch(self):
+        from world.crafting_engine import _input_batch_quality
+
+        superior = MagicMock()
+        superior.db.quality = "superior"
+        flawed = MagicMock()
+        flawed.db.quality = "flawed"
+
+        quality = _input_batch_quality(
+            [
+                {"item": superior, "quantity": 1},
+                {"item": flawed, "quantity": 3},
+            ]
+        )
+
+        self.assertEqual(quality, "flawed")
+
 
 # ---------------------------------------------------------------------------
 # SC-6: Tool Durability Lifecycle
