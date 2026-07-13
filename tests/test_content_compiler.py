@@ -289,6 +289,31 @@ def build():
             ],
         )
 
+    def test_material_affordances_fail_closed_when_they_cannot_be_consumed(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("materials")
+    area.zone(name="Materials", zone_type="frontier", continent="varath")
+    area.material("iron_ore", tier=2, absorbed_property="",
+                  profession_bonus={"missing_skill": 0.1, "smithing": 0})
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/materials.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(
+            [diagnostic.code for diagnostic in result.diagnostics],
+            [
+                "invalid-material-profession-bonus",
+                "invalid-material-property",
+                "material-tier-mismatch",
+                "unknown-material-profession",
+            ],
+        )
+
     def test_globally_stable_entity_ids_cannot_be_redefined(self):
         from world.content_compiler import compile_world_sources
 

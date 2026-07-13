@@ -9,6 +9,8 @@ Mirrors the mob_spawner.py pattern: zone-level pool definitions drive
 random room placement with configurable limits.
 """
 
+from collections.abc import Mapping
+from numbers import Real
 import random
 
 import evennia
@@ -152,6 +154,30 @@ def _pick_material(pool_script):
     return random.choice(eligible)
 
 
+def _zone_material_affordance(zone_id, material_id):
+    """Resolve one compiled zone's authored material mechanics."""
+    if not zone_id:
+        return {}
+    for candidate in search_objects_by_exact_tag(zone_id, "zone_id"):
+        if not candidate.tags.has("zone_object", category="object_type"):
+            continue
+        definitions = candidate.db.material_definitions or []
+        if not isinstance(definitions, (list, tuple)):
+            continue
+        for definition in definitions:
+            if (
+                isinstance(definition, Mapping)
+                and definition.get("material") == material_id
+            ):
+                return {
+                    "absorbed_property": definition.get("absorbed_property"),
+                    "profession_bonus": dict(
+                        definition.get("profession_bonus") or {}
+                    ),
+                }
+    return {}
+
+
 # ---------------------------------------------------------------------------
 # Core public functions
 # ---------------------------------------------------------------------------
@@ -196,6 +222,9 @@ def spawn_node_in_pool(pool_script, exclude_room_id=None):
     node.db.zone_id = pool_script.db.zone_id or ""
     node.db.pool_id = pool_script.db.pool_id or ""
     node.db.visibility = mat_def.get("visibility", "low")
+    affordance = _zone_material_affordance(node.db.zone_id, mat_id)
+    node.db.absorbed_property = affordance.get("absorbed_property")
+    node.db.profession_bonus = affordance.get("profession_bonus", {})
 
     # Tag for zone queries
     zone_id = pool_script.db.zone_id or ""
@@ -528,8 +557,6 @@ def _after_tool_repair_write(checkpoint):
 
 def repair_tool(character, tool):
     """Atomically repair one owned canonical tool and charge carried Scales."""
-    from numbers import Real
-
     from evennia.objects.models import ObjectDB
 
     from world.atomic_state import atomic_evennia_state
@@ -600,6 +627,27 @@ def repair_tool(character, tool):
     )
 
 
+def _learn_material_processing(character, material_id):
+    """Discover one material's processing recipe through first-hand gathering."""
+    from world.crafting_definitions import (
+        PROCESSING_RECIPE_BY_MATERIAL,
+        RECIPE_REGISTRY,
+    )
+    from world.crafting_engine import learn_recipe
+
+    recipe_id = PROCESSING_RECIPE_BY_MATERIAL.get(material_id)
+    if not recipe_id:
+        return ""
+    if RECIPE_REGISTRY[recipe_id].get("default_known"):
+        return ""
+    learned, message = learn_recipe(
+        character,
+        recipe_id,
+        learned_from=f"gather:{material_id}",
+    )
+    return message if learned else ""
+
+
 # ---------------------------------------------------------------------------
 # Gather completion logic (extracted from cmd_gathering.py per D-06)
 # ---------------------------------------------------------------------------
@@ -622,7 +670,10 @@ def complete_gather(character, node, tool, skill_name, skill_val):
         On failure: (False, message, [], False).
     """
     from world.crafting_definitions import QUALITY_DISPLAY
-    from world.crafting_engine import calculate_craft_quality
+    from world.crafting_engine import (
+        _effective_skill_with_materials,
+        calculate_craft_quality,
+    )
     from world.item_spawner import create_item_from_template
     from world.material_definitions import MATERIAL_REGISTRY
     from world.skill_engine import accumulate_skill_use
@@ -635,16 +686,28 @@ def complete_gather(character, node, tool, skill_name, skill_val):
     material_id = result
     mat = MATERIAL_REGISTRY.get(material_id, {})
     tier_difficulty = (node.db.tier or 1) * 15  # tier 1=15, tier 5=75
-    quality = calculate_craft_quality(skill_val, tier_difficulty)
+    profession_bonus = node.db.profession_bonus or {}
+    if not isinstance(profession_bonus, Mapping):
+        profession_bonus = {}
+    effective_skill = _effective_skill_with_materials(
+        skill_val,
+        skill_name,
+        {"profession_bonus": profession_bonus},
+    )
+    quality = calculate_craft_quality(effective_skill, tier_difficulty)
 
     item_def = {
         "item_id": material_id,
+        "material_id": material_id,
         "key": mat.get("display_name", material_id.replace("_", " ").title()),
-        "item_type": "item",
+        "item_type": "material",
         "weight": 0.5,
         "desc": f"Raw {mat.get('display_name', material_id)}.",
         "value": (node.db.tier or 1) * 5,
         "quality": quality,
+        "source_zone_id": node.db.zone_id or "",
+        "absorbed_property": node.db.absorbed_property,
+        "profession_bonus": dict(profession_bonus),
     }
     item = create_item_from_template(item_def, location=character)
     items = [item]
@@ -674,6 +737,10 @@ def complete_gather(character, node, tool, skill_name, skill_val):
     # Skill progression
     accumulate_skill_use(character, skill_name)
 
+    learning_message = _learn_material_processing(character, material_id)
+    if learning_message:
+        msg += f"\n{learning_message}"
+
     return (True, msg, items, tool_broken)
 
 
@@ -681,7 +748,41 @@ def complete_gather(character, node, tool, skill_name, skill_val):
 # Fish catch logic (extracted from cmd_fishing.py per D-05)
 # ---------------------------------------------------------------------------
 
+class _FishingRejected(RuntimeError):
+    pass
+
+
 def catch_fish(character, node, tool, bait=None, quality_multiplier=1.0):
+    """Resolve one catch as an atomic node/item/tool/bait mutation."""
+    from world.atomic_state import atomic_evennia_state
+
+    tracked = [obj for obj in (character, node, tool, bait) if obj is not None]
+    try:
+        with atomic_evennia_state(*tracked) as tracker:
+            tracker.track(node, attributes=("gathers_remaining",))
+            if tool is not None:
+                tracker.track(tool, attributes=("durability",))
+            return _catch_fish_locked(
+                character,
+                node,
+                tool,
+                bait=bait,
+                quality_multiplier=quality_multiplier,
+                tracker=tracker,
+            )
+    except _FishingRejected as error:
+        return False, str(error), None, False, False
+
+
+def _catch_fish_locked(
+    character,
+    node,
+    tool,
+    bait=None,
+    quality_multiplier=1.0,
+    *,
+    tracker,
+):
     """
     Process a fish catch. Handles node depletion, quality calc, bait
     consumption, tool durability, skill XP, and item creation.
@@ -699,7 +800,10 @@ def catch_fish(character, node, tool, bait=None, quality_multiplier=1.0):
         On failure: (False, message, None, False, False).
     """
     from world.crafting_definitions import QUALITY_DISPLAY, QUALITY_TIERS
-    from world.crafting_engine import calculate_craft_quality
+    from world.crafting_engine import (
+        _effective_skill_with_materials,
+        calculate_craft_quality,
+    )
     from world.item_spawner import create_item_from_template
     from world.material_definitions import MATERIAL_REGISTRY
     from world.skill_engine import accumulate_skill_use, get_skill_value
@@ -715,7 +819,15 @@ def catch_fish(character, node, tool, bait=None, quality_multiplier=1.0):
     # Quality calculation
     skill_val = get_skill_value(character, "fishing")
     tier_difficulty = node.db.tier * 15
-    quality = calculate_craft_quality(skill_val, tier_difficulty)
+    profession_bonus = node.db.profession_bonus or {}
+    if not isinstance(profession_bonus, Mapping):
+        profession_bonus = {}
+    effective_skill = _effective_skill_with_materials(
+        skill_val,
+        "fishing",
+        {"profession_bonus": profession_bonus},
+    )
+    quality = calculate_craft_quality(effective_skill, tier_difficulty)
 
     # Idle mode quality penalty (D-16: diminished returns)
     if quality_multiplier < 1.0:
@@ -729,20 +841,31 @@ def catch_fish(character, node, tool, bait=None, quality_multiplier=1.0):
         qi = QUALITY_TIERS.index(quality)
         qi = min(len(QUALITY_TIERS) - 1, qi + 1)  # +1 tier with bait
         quality = QUALITY_TIERS[qi]
-        # Consume bait
-        bait.delete()
+        from world.inventory_engine import consume_owned_quantities
+
+        consumed, consume_message = consume_owned_quantities(
+            character,
+            [{"item": bait, "quantity": 1}],
+        )
+        if not consumed:
+            raise _FishingRejected(consume_message)
         bait_consumed = True
 
     item_def = {
         "item_id": material_id,
+        "material_id": material_id,
         "key": mat.get("display_name", material_id.replace("_", " ").title()),
-        "item_type": "item",
+        "item_type": "material",
         "weight": 0.3,
         "desc": f"A freshly caught {mat.get('display_name', material_id)}.",
         "value": node.db.tier * 8,
         "quality": quality,
+        "source_zone_id": node.db.zone_id or "",
+        "absorbed_property": node.db.absorbed_property,
+        "profession_bonus": dict(profession_bonus),
     }
     item = create_item_from_template(item_def, location=character)
+    tracker.track(item)
 
     q_display = QUALITY_DISPLAY.get(quality, "")
     msg = f"|gYou catch {q_display} {item.key}!|n"
@@ -756,6 +879,10 @@ def catch_fish(character, node, tool, bait=None, quality_multiplier=1.0):
             tool_broken = True
 
     accumulate_skill_use(character, "fishing")
+
+    learning_message = _learn_material_processing(character, material_id)
+    if learning_message:
+        msg += f"\n{learning_message}"
 
     return (True, msg, item, bait_consumed, tool_broken)
 

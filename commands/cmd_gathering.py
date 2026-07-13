@@ -215,7 +215,7 @@ class CmdButcher(_BaseGatherCmd):
     target_category = "hide"
 
     def _find_node(self, character):
-        """Find a butcherable corpse in the room."""
+        """Find a butcherable corpse or an authored hide gathering node."""
         from typeclasses.objects import CorpseContainer
 
         target_name = self.args.strip().lower() if self.args else None
@@ -227,10 +227,26 @@ class CmdButcher(_BaseGatherCmd):
                 can, msg = obj.can_butcher(character)
                 if can:
                     return obj
+        gathering_node = super()._find_node(character)
+        if gathering_node and (
+            not target_name or target_name in gathering_node.key.lower()
+        ):
+            return gathering_node
         return None
 
     def _gather_callback(self, character, node, tool, start_room, skill_val):
         """Override: butcher extracts materials from corpse, not from gathering node."""
+        from typeclasses.objects import GatheringNode
+
+        if isinstance(node, GatheringNode):
+            return super()._gather_callback(
+                character,
+                node,
+                tool,
+                start_room,
+                skill_val,
+            )
+
         character.ndb.gathering_in_progress = False
 
         if character.location != start_room:
@@ -271,7 +287,8 @@ class CmdButcher(_BaseGatherCmd):
                 item_def = {
                     "item_id": yield_def["material_id"],
                     "key": yield_def["display_name"],
-                    "item_type": "item",
+                    "item_type": "material",
+                    "material_id": yield_def["material_id"],
                     "weight": 0.3,
                     "desc": yield_def.get("desc", f"Raw material from {mob_key}."),
                     "value": yield_def.get("value", 5),
@@ -279,6 +296,15 @@ class CmdButcher(_BaseGatherCmd):
                 }
                 item = create_item_from_template(item_def, location=character)
                 gathered.append(item.key)
+
+                from world.gathering_engine import _learn_material_processing
+
+                learning_message = _learn_material_processing(
+                    character,
+                    yield_def["material_id"],
+                )
+                if learning_message:
+                    character.msg(learning_message)
 
         character.msg(f"|gYou butcher the corpse and obtain: {q_display} {', '.join(gathered)}.|n")
 

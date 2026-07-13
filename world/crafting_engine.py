@@ -9,6 +9,8 @@ Performance: craft_item makes 1 skill read + 1-2 model queries + N inventory sca
 calculate_craft_quality is pure computation (no DB).
 """
 
+from collections.abc import Mapping
+from numbers import Real
 import random
 
 from world.atomic_state import atomic_evennia_state
@@ -333,9 +335,103 @@ def _input_batch_quality(items_to_consume):
     return QUALITY_TIERS[weighted_total // total_quantity]
 
 
+def _material_affordances(items_to_consume):
+    """Aggregate quantity-weighted authored properties from consumed materials."""
+    total_quantity = 0
+    weighted_bonuses = {}
+    properties = set()
+    source_materials = set()
+
+    for spec in items_to_consume:
+        obj = spec["item"] if isinstance(spec, dict) else spec
+        quantity = spec.get("quantity", 1) if isinstance(spec, dict) else 1
+        if not isinstance(quantity, int) or isinstance(quantity, bool) or quantity <= 0:
+            continue
+        total_quantity += quantity
+
+        bonuses = getattr(getattr(obj, "db", None), "profession_bonus", None)
+        if isinstance(bonuses, Mapping):
+            for skill_id, bonus in bonuses.items():
+                if (
+                    isinstance(skill_id, str)
+                    and isinstance(bonus, Real)
+                    and not isinstance(bonus, bool)
+                    and bonus > 0
+                ):
+                    weighted_bonuses[skill_id] = (
+                        weighted_bonuses.get(skill_id, 0.0) + bonus * quantity
+                    )
+
+        absorbed = getattr(getattr(obj, "db", None), "absorbed_property", None)
+        if isinstance(absorbed, str) and absorbed:
+            properties.add(absorbed)
+        absorbed_many = getattr(
+            getattr(obj, "db", None),
+            "absorbed_properties",
+            None,
+        )
+        if isinstance(absorbed_many, (list, tuple)):
+            properties.update(
+                value for value in absorbed_many if isinstance(value, str) and value
+            )
+
+        material_id = getattr(getattr(obj, "db", None), "material_id", None)
+        if isinstance(material_id, str) and material_id:
+            source_materials.add(material_id)
+
+    if not total_quantity:
+        return {
+            "profession_bonus": {},
+            "absorbed_properties": [],
+            "source_materials": [],
+        }
+    return {
+        "profession_bonus": {
+            skill_id: bonus / total_quantity
+            for skill_id, bonus in sorted(weighted_bonuses.items())
+        },
+        "absorbed_properties": sorted(properties),
+        "source_materials": sorted(source_materials),
+    }
+
+
+def _effective_skill_with_materials(skill_value, skill_id, affordances):
+    """Apply only the material bonus authored for the active profession."""
+    bonus = affordances.get("profession_bonus", {}).get(skill_id, 0)
+    if not isinstance(bonus, Real) or isinstance(bonus, bool) or bonus <= 0:
+        return skill_value
+    return round(skill_value * (1 + bonus), 4)
+
+
+def _apply_processing_affordances(output_def, quality, affordances):
+    """Make processed material provenance affect its durable trade value."""
+    output_def["item_type"] = "material"
+    output_def["material_id"] = output_def["item_id"]
+    properties = list(affordances.get("absorbed_properties", []))
+    sources = list(affordances.get("source_materials", []))
+    bonuses = dict(affordances.get("profession_bonus", {}))
+    output_def["absorbed_properties"] = properties
+    output_def["source_materials"] = sources
+    output_def["profession_bonus"] = bonuses
+    base_value = output_def.get("value", 0)
+    if isinstance(base_value, Real) and not isinstance(base_value, bool):
+        property_multiplier = 1 + 0.10 * len(properties)
+        output_def["value"] = round(
+            base_value * get_quality_modifier(quality) * property_multiplier
+        )
+    return output_def
+
+
 # --- Item Creation ---
 
-def _create_crafted_item(character, recipe, quality, *, recipe_id=None):
+def _create_crafted_item(
+    character,
+    recipe,
+    quality,
+    *,
+    recipe_id=None,
+    material_affordances=None,
+):
     """
     Create the output item from a recipe with the given quality tier.
 
@@ -382,6 +478,22 @@ def _create_crafted_item(character, recipe, quality, *, recipe_id=None):
             overrides["use_effect"] = effect
         elif quality_affects is not None:
             return None
+
+        if material_affordances:
+            properties = list(
+                material_affordances.get("absorbed_properties", [])
+            )
+            overrides["absorbed_properties"] = properties
+            overrides["source_materials"] = list(
+                material_affordances.get("source_materials", [])
+            )
+            overrides["profession_bonus"] = dict(
+                material_affordances.get("profession_bonus", {})
+            )
+            if properties:
+                overrides["value"] = round(
+                    template.get("value", 0) * (1 + 0.10 * len(properties))
+                )
 
         return create_item_from_catalog(
             template_id,
@@ -469,32 +581,48 @@ def craft_item(character, recipe_id, *, operation_id=None):
 
             skill_id = recipe.get("skill", "cooking")
             skill_value = get_skill_value(locked_character, skill_id)
+            material_affordances = _material_affordances(items_to_consume)
+            effective_skill = _effective_skill_with_materials(
+                skill_value,
+                skill_id,
+                material_affordances,
+            )
             difficulty = recipe.get("difficulty", 10)
             has_station_bonus = bool(station)
-            processing = (
-                recipe.get("recipe_type") == "processing"
-                and recipe.get("output", {}).get("item_id")
-            )
+            processing = recipe.get("recipe_type") == "processing"
 
             if processing:
-                from world.item_spawner import create_item_from_template
-
                 quality = calculate_processing_quality(
-                    skill_value,
+                    effective_skill,
                     difficulty,
                     raw_quality=_input_batch_quality(items_to_consume),
                     has_station=has_station_bonus,
                 )
-                output_def = dict(recipe["output"])
-                output_def["quality"] = quality
-                item = create_item_from_template(
-                    output_def,
-                    location=locked_character,
-                )
+                if recipe.get("output", {}).get("template_id"):
+                    item = _create_crafted_item(
+                        locked_character,
+                        recipe,
+                        quality,
+                        recipe_id=recipe_id,
+                        material_affordances=material_affordances,
+                    )
+                else:
+                    from world.item_spawner import create_item_from_template
+
+                    output_def = dict(recipe["output"])
+                    output_def["quality"] = quality
+                    _apply_processing_affordances(
+                        output_def,
+                        quality,
+                        material_affordances,
+                    )
+                    item = create_item_from_template(
+                        output_def,
+                        location=locked_character,
+                    )
                 if not item:
                     return False, "|rSomething went wrong creating the item.|n"
                 tracker.track(item)
-                item.tags.add(output_def["item_id"], category="item_tag")
                 if quality != "standard":
                     quality_display = QUALITY_DISPLAY.get(quality, quality)
                     item.key = f"{quality_display} {item.key}"
@@ -504,7 +632,7 @@ def craft_item(character, recipe_id, *, operation_id=None):
                 )
             else:
                 quality = calculate_craft_quality(
-                    skill_value,
+                    effective_skill,
                     difficulty,
                     has_station_bonus=has_station_bonus,
                 )
@@ -513,6 +641,7 @@ def craft_item(character, recipe_id, *, operation_id=None):
                     recipe,
                     quality,
                     recipe_id=recipe_id,
+                    material_affordances=material_affordances,
                 )
                 if not item:
                     return False, "|rSomething went wrong creating the item.|n"

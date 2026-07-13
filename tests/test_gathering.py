@@ -89,6 +89,36 @@ class TestMaterialRegistry(unittest.TestCase):
 
         self.assertGreaterEqual(len(MATERIAL_REGISTRY), 18)
 
+    def test_every_material_has_a_matching_processing_recipe(self):
+        from world.crafting_definitions import RECIPE_REGISTRY
+        from world.material_definitions import MATERIAL_REGISTRY
+
+        processing_recipes = [
+            recipe
+            for recipe in RECIPE_REGISTRY.values()
+            if recipe.get("recipe_type") == "processing"
+        ]
+        for material_id, material in MATERIAL_REGISTRY.items():
+            processed_form = material["processed_form"]
+            with self.subTest(material_id=material_id):
+                matches = [
+                    recipe
+                    for recipe in processing_recipes
+                    if (
+                        recipe.get("output", {}).get("item_id")
+                        or recipe.get("output", {}).get("template_id")
+                    ) == processed_form
+                    and any(
+                        ingredient.get("item_tag") == material_id
+                        for ingredient in recipe.get("ingredients", [])
+                    )
+                ]
+                self.assertEqual(
+                    len(matches),
+                    1,
+                    f"{material_id} must have one reachable recipe for {processed_form}",
+                )
+
 
 # ---------------------------------------------------------------------------
 # SC-1: Gathering Pool Spawn and Node Lifecycle
@@ -110,6 +140,30 @@ class TestGatheringPoolSpawn(unittest.TestCase):
 
         self.assertIs(script_cls, GatheringPoolScript.get_class())
         self.assertTrue(issubclass(script_cls, SoravelonScript))
+
+    @patch("world.gathering_engine.search_objects_by_exact_tag")
+    def test_zone_material_affordance_resolves_compiled_zone_data(self, search):
+        from world.gathering_engine import _zone_material_affordance
+
+        zone = MagicMock()
+        zone.tags.has.return_value = True
+        zone.db.material_definitions = [
+            {
+                "material": "greyteeth_iron",
+                "absorbed_property": "stability",
+                "profession_bonus": {"smithing": 0.10, "mining": 0.05},
+            }
+        ]
+        search.return_value = [zone]
+
+        self.assertEqual(
+            _zone_material_affordance("tremen", "greyteeth_iron"),
+            {
+                "absorbed_property": "stability",
+                "profession_bonus": {"smithing": 0.10, "mining": 0.05},
+            },
+        )
+        search.assert_called_once_with("tremen", "zone_id")
 
     def _make_pool_script(self, eligible_room_ids=None, max_active=3):
         """Create a mock pool script with standard defaults."""
@@ -435,6 +489,349 @@ class TestProcessingRecipes(unittest.TestCase):
         )
 
         self.assertEqual(quality, "flawed")
+
+    def test_profession_bonus_applies_only_to_the_named_skill(self):
+        from world.crafting_engine import (
+            _effective_skill_with_materials,
+            _material_affordances,
+        )
+
+        material = MagicMock()
+        material.db.profession_bonus = {
+            "smithing": 0.10,
+            "mining": 0.05,
+        }
+        material.db.absorbed_property = "hardite"
+        material.db.material_id = "iron_ore"
+        affordances = _material_affordances(
+            [{"item": material, "quantity": 2}]
+        )
+
+        self.assertEqual(
+            _effective_skill_with_materials(50, "smithing", affordances),
+            55,
+        )
+        self.assertEqual(
+            _effective_skill_with_materials(50, "alchemy", affordances),
+            50,
+        )
+
+    def test_absorbed_property_changes_processed_material_value(self):
+        from world.crafting_engine import (
+            _apply_processing_affordances,
+            _material_affordances,
+        )
+
+        material = MagicMock()
+        material.db.profession_bonus = {"smithing": 0.10}
+        material.db.absorbed_property = "hardite"
+        material.db.material_id = "iron_ore"
+        affordances = _material_affordances(
+            [{"item": material, "quantity": 1}]
+        )
+        output = {
+            "item_id": "iron_ingot",
+            "item_type": "item",
+            "value": 10,
+        }
+
+        _apply_processing_affordances(output, "standard", affordances)
+
+        self.assertEqual(output["item_type"], "material")
+        self.assertEqual(output["absorbed_properties"], ["hardite"])
+        self.assertEqual(output["source_materials"], ["iron_ore"])
+        self.assertEqual(output["value"], 11)
+
+
+class TestGatheredMaterialAffordances(unittest.TestCase):
+    def test_gathered_material_is_sellable_and_uses_only_its_gathering_bonus(self):
+        from world.gathering_engine import complete_gather
+
+        character = MagicMock()
+        node = MagicMock()
+        node.db.tier = 2
+        node.db.absorbed_property = "stability"
+        node.db.profession_bonus = {"smithing": 0.10, "mining": 0.05}
+        node.db.zone_id = "tremen"
+        gathered_item = MagicMock(key="Greyteeth Iron")
+
+        with patch(
+            "world.gathering_engine.gather_from_node",
+            return_value=(True, "greyteeth_iron"),
+        ), patch(
+            "world.crafting_engine.calculate_craft_quality",
+            return_value="fine",
+        ) as quality, patch(
+            "world.item_spawner.create_item_from_template",
+            return_value=gathered_item,
+        ) as create, patch(
+            "world.crafting_engine.learn_recipe",
+            return_value=(True, "learned"),
+        ) as learn, patch(
+            "world.skill_engine.accumulate_skill_use",
+        ), patch("world.gathering_engine.random.random", return_value=1.0):
+            ok, message, _, _ = complete_gather(
+                character,
+                node,
+                None,
+                "mining",
+                50,
+            )
+
+        self.assertTrue(ok, message)
+        quality.assert_called_once_with(52.5, 30)
+        item_def = create.call_args.args[0]
+        self.assertEqual(item_def["item_type"], "material")
+        self.assertEqual(item_def["material_id"], "greyteeth_iron")
+        self.assertEqual(item_def["source_zone_id"], "tremen")
+        self.assertEqual(item_def["absorbed_property"], "stability")
+        self.assertEqual(
+            item_def["profession_bonus"],
+            {"smithing": 0.10, "mining": 0.05},
+        )
+        learn.assert_called_once()
+        self.assertIn("learned", message)
+
+    def test_caught_fish_uses_the_same_material_and_discovery_contract(self):
+        from world.gathering_engine import catch_fish
+
+        character = MagicMock()
+        node = MagicMock()
+        node.db.tier = 2
+        node.db.absorbed_property = "timing"
+        node.db.profession_bonus = {"cooking": 0.10, "fishing": 0.05}
+        node.db.zone_id = "korahei"
+        caught_item = MagicMock(key="Tide Eel")
+        tool = MagicMock()
+        tool.db.durability = None
+
+        with patch(
+            "world.gathering_engine.gather_from_node",
+            return_value=(True, "tide_eel"),
+        ), patch(
+            "world.crafting_engine.calculate_craft_quality",
+            return_value="fine",
+        ) as quality, patch(
+            "world.item_spawner.create_item_from_template",
+            return_value=caught_item,
+        ) as create, patch(
+            "world.crafting_engine.learn_recipe",
+            return_value=(True, "learned eel recipe"),
+        ) as learn, patch(
+            "world.skill_engine.get_skill_value",
+            return_value=40,
+        ), patch(
+            "world.skill_engine.accumulate_skill_use",
+        ):
+            ok, message, _, _, _ = catch_fish(
+                character,
+                node,
+                tool,
+            )
+
+        self.assertTrue(ok, message)
+        quality.assert_called_once_with(42, 30)
+        item_def = create.call_args.args[0]
+        self.assertEqual(item_def["item_type"], "material")
+        self.assertEqual(item_def["material_id"], "tide_eel")
+        self.assertEqual(item_def["absorbed_property"], "timing")
+        self.assertEqual(item_def["profession_bonus"]["cooking"], 0.10)
+        learn.assert_called_once()
+        self.assertIn("learned eel recipe", message)
+
+
+class TestRegionalMaterialProcessingRuntime(EvenniaTest):
+    def test_failed_fish_creation_rolls_back_node_and_bait(self):
+        from evennia import create_object
+        from typeclasses.objects import GatheringNode
+        from world.gathering_engine import catch_fish
+        from world.item_spawner import create_item_from_catalog
+        from world.models import InventoryItem
+
+        self.char1.location = self.room1
+        bait = create_item_from_catalog("bait", location=self.char1)
+        bait_record = InventoryItem.objects.get(item_id=bait.id)
+        bait_record.quantity = 2
+        bait_record.save(update_fields=["quantity"])
+        rod = create_item_from_catalog("fishing_rod", location=self.char1)
+        node = create_object(
+            GatheringNode,
+            key="Reef Silverjack Pool",
+            location=self.room1,
+        )
+        node.db.material_id = "reef_silverjack"
+        node.db.gathers_remaining = 2
+        node.db.tier = 1
+        node.db.zone_id = ""
+        node.db.absorbed_property = "finesse"
+        node.db.profession_bonus = {"fishing": 0.05}
+
+        with patch(
+            "world.crafting_engine.calculate_craft_quality",
+            return_value="standard",
+        ), patch(
+            "world.skill_engine.get_skill_value",
+            return_value=10,
+        ), patch(
+            "world.item_spawner.create_item_from_template",
+            side_effect=RuntimeError("fish creation failed"),
+        ), self.assertRaisesRegex(RuntimeError, "fish creation failed"):
+            catch_fish(self.char1, node, rod, bait=bait)
+
+        node.attributes.reset_cache()
+        bait.attributes.reset_cache()
+        self.assertEqual(node.db.gathers_remaining, 2)
+        self.assertEqual(
+            InventoryItem.objects.get(item_id=bait.id).quantity,
+            2,
+        )
+        self.assertEqual(bait.location, self.char1)
+
+    def test_fishing_consumes_one_quantity_from_a_real_bait_stack(self):
+        from world.gathering_engine import catch_fish
+        from world.item_spawner import create_item_from_catalog
+        from world.models import InventoryItem
+
+        self.char1.location = self.room1
+        bait = create_item_from_catalog("bait", location=self.char1)
+        bait_record = InventoryItem.objects.get(item_id=bait.id)
+        bait_record.quantity = 2
+        bait_record.save(update_fields=["quantity"])
+        rod = create_item_from_catalog("fishing_rod", location=self.char1)
+        node = MagicMock()
+        node.db.tier = 1
+        node.db.zone_id = "korahei"
+        node.db.absorbed_property = "finesse"
+        node.db.profession_bonus = {"cooking": 0.10, "fishing": 0.05}
+
+        with patch(
+            "world.gathering_engine.gather_from_node",
+            return_value=(True, "reef_silverjack"),
+        ), patch(
+            "world.crafting_engine.calculate_craft_quality",
+            return_value="standard",
+        ), patch(
+            "world.skill_engine.get_skill_value",
+            return_value=10,
+        ), patch("world.skill_engine.accumulate_skill_use"):
+            ok, message, _, bait_consumed, _ = catch_fish(
+                self.char1,
+                node,
+                rod,
+                bait=bait,
+            )
+
+        self.assertTrue(ok, message)
+        self.assertTrue(bait_consumed)
+        self.assertEqual(
+            InventoryItem.objects.get(item_id=bait.id).quantity,
+            1,
+        )
+        bait.refresh_from_db()
+        self.assertEqual(bait.location, self.char1)
+
+    def test_butcher_can_reach_authored_hide_gathering_nodes(self):
+        from evennia import create_object
+        from commands.cmd_gathering import CmdButcher
+        from typeclasses.objects import GatheringNode
+
+        self.char1.location = self.room1
+        node = create_object(
+            GatheringNode,
+            key="Ridgecat Traces",
+            location=self.room1,
+        )
+        node.db.node_type = "hide"
+        node.db.visibility = "low"
+        command = CmdButcher()
+        command.caller = self.char1
+        command.args = ""
+
+        self.assertEqual(command._find_node(self.char1), node)
+
+        with patch(
+            "world.gathering_engine.complete_gather",
+            return_value=(True, "gathered hide", [], False),
+        ) as gather:
+            command._gather_callback(
+                self.char1,
+                node,
+                None,
+                self.room1,
+                10,
+            )
+
+        gather.assert_called_once_with(
+            self.char1,
+            node,
+            None,
+            "skinning",
+            10,
+        )
+
+    def test_gather_discovery_to_processed_material_preserves_affordances(self):
+        from world.crafting_definitions import PROCESSING_RECIPE_BY_MATERIAL
+        from world.crafting_engine import craft_item
+        from world.gathering_engine import complete_gather
+        from world.models import CharacterRecipe, InventoryItem
+
+        self.char1.location = self.room1
+        self.room1.tags.add("crafting_forge", category="crafting_station")
+        node = MagicMock()
+        node.db.tier = 2
+        node.db.zone_id = "tremen"
+        node.db.absorbed_property = "stability"
+        node.db.profession_bonus = {"smithing": 0.10, "mining": 0.05}
+        recipe_id = PROCESSING_RECIPE_BY_MATERIAL["greyteeth_iron"]
+
+        with patch(
+            "world.gathering_engine.gather_from_node",
+            return_value=(True, "greyteeth_iron"),
+        ), patch(
+            "world.crafting_engine.calculate_craft_quality",
+            return_value="superior",
+        ), patch(
+            "world.skill_engine.get_skill_value",
+            return_value=90,
+        ), patch(
+            "world.skill_engine.accumulate_skill_use",
+        ), patch("world.gathering_engine.random.random", return_value=1.0):
+            gathered, gather_message, raw_items, _ = complete_gather(
+                self.char1,
+                node,
+                None,
+                "mining",
+                90,
+            )
+            crafted, craft_message = craft_item(
+                self.char1,
+                recipe_id,
+                operation_id="regional-material-loop",
+            )
+
+        self.assertTrue(gathered, gather_message)
+        self.assertTrue(crafted, craft_message)
+        self.assertTrue(
+            CharacterRecipe.objects.filter(
+                character=self.char1,
+                recipe_id=recipe_id,
+                learned_from="gather:greyteeth_iron",
+            ).exists()
+        )
+        raw_item = raw_items[0]
+        self.assertFalse(
+            InventoryItem.objects.filter(item_id=raw_item.id).exists()
+        )
+        output_record = InventoryItem.objects.get(character=self.char1)
+        from evennia.objects.models import ObjectDB
+
+        output = ObjectDB.objects.get(pk=output_record.item_id)
+        self.assertEqual(output.db.item_type, "material")
+        self.assertEqual(output.db.quality, "superior")
+        self.assertEqual(output.db.absorbed_properties, ["stability"])
+        self.assertEqual(output.db.source_materials, ["greyteeth_iron"])
+        self.assertEqual(output.db.profession_bonus["smithing"], 0.10)
+        self.assertEqual(output.db.value_scales, 53)
 
 
 # ---------------------------------------------------------------------------

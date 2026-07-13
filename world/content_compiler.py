@@ -6,6 +6,7 @@ import ast
 from dataclasses import dataclass
 import hashlib
 import json
+from numbers import Real
 from pathlib import Path
 from typing import Mapping
 
@@ -687,6 +688,73 @@ def _validate_world_definitions(
                             f"Material '{material_id}' is not registered.",
                         )
                     )
+                else:
+                    material = MATERIAL_REGISTRY[material_id]
+                    tier = _frozen_map_get(
+                        operation.keyword_arguments,
+                        "tier",
+                        1,
+                    )
+                    if tier != material["tier"]:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "material-tier-mismatch",
+                                f"Material '{material_id}' is tier {material['tier']}, not {tier}.",
+                            )
+                        )
+                    absorbed_property = _frozen_map_get(
+                        operation.keyword_arguments,
+                        "absorbed_property",
+                    )
+                    if absorbed_property is not None and (
+                        not isinstance(absorbed_property, str)
+                        or not absorbed_property.strip()
+                    ):
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "invalid-material-property",
+                                "Absorbed material properties must be non-empty identifiers.",
+                            )
+                        )
+                    profession_bonus = _thaw(
+                        _frozen_map_get(
+                            operation.keyword_arguments,
+                            "profession_bonus",
+                            FrozenMap(()),
+                        )
+                    )
+                    if not isinstance(profession_bonus, dict):
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "invalid-material-profession-bonus",
+                                "Material profession_bonus must be a literal map.",
+                            )
+                        )
+                    else:
+                        for skill_id, bonus in profession_bonus.items():
+                            if skill_id not in SKILL_DEFINITIONS:
+                                diagnostics.append(
+                                    _diagnostic(
+                                        operation,
+                                        "unknown-material-profession",
+                                        f"Material bonus skill '{skill_id}' is not registered.",
+                                    )
+                                )
+                            if (
+                                not isinstance(bonus, Real)
+                                or isinstance(bonus, bool)
+                                or not 0 < bonus <= 0.25
+                            ):
+                                diagnostics.append(
+                                    _diagnostic(
+                                        operation,
+                                        "invalid-material-profession-bonus",
+                                        "Material profession bonuses must be greater than 0 and at most 0.25.",
+                                    )
+                                )
 
             if operation.method == "exit" and len(operation.arguments) >= 3:
                 source, destination, direction = operation.arguments[:3]

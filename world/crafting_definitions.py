@@ -4,8 +4,9 @@ Crafting definitions registry for Soravelon.
 Pure-data module defining all recipe data, quality tiers, station requirements,
 and skill-to-command mappings for the crafting system. No Django imports.
 
-Recipes are static data — CharacterRecipe model tracks which recipes each
-character has discovered. Recipes with default_known=True are auto-learned.
+Recipes are deterministic data — CharacterRecipe tracks which recipes each
+character has discovered. Registered regional materials expand into one
+processing recipe when no explicit recipe already owns that conversion.
 """
 
 # --- Quality Tiers (lowest to highest) ---
@@ -877,3 +878,102 @@ RECIPE_REGISTRY = {
         "craft_echo": "You follow the old formula, grinding the mountain herbs with mortar and stone...",
     },
 }
+
+
+def _processing_output_id(recipe):
+    output = recipe.get("output", {})
+    return output.get("item_id") or output.get("template_id")
+
+
+def _generated_processing_recipe(material_id, material):
+    """Build deterministic processing data for a registered regional material."""
+    from world.item_catalog import CATALOG
+
+    processed_form = material["processed_form"]
+    skill = material["processing_skill"]
+    tier = material["tier"]
+    name = processed_form.replace("_", " ").title()
+    output = {
+        "item_id": processed_form,
+        "key": name,
+        "item_type": "material",
+        "weight": {
+            "ore": 1.0,
+            "wood": 1.5,
+            "hide": 0.5,
+            "fish": 0.3,
+        }.get(material["category"], 0.2),
+        "desc": (
+            f"Processed {material['display_name'].lower()}, ready for trade "
+            "or further craftwork."
+        ),
+        "value": tier * 15,
+    }
+    if processed_form in CATALOG:
+        template = CATALOG[processed_form]
+        output = {
+            "template_id": processed_form,
+            "base_item_type": template["item_type"],
+            "quality_affects": (
+                "effect_amount" if template.get("use_effect") else None
+            ),
+        }
+
+    return {
+        "name": name,
+        "skill": skill,
+        "difficulty": tier * 15,
+        "station": material["processing_station"],
+        "recipe_type": "processing",
+        "ingredients": [{"item_tag": material_id, "quantity": 3}],
+        "conversion_ratio": {
+            "thresholds": [30, 60, 85],
+            "quantities": [3, 2, 1],
+        },
+        "output": output,
+        "default_known": False,
+        "command": SKILL_TO_COMMAND[skill],
+        "craft_time": 2 + tier * 2,
+        "craft_echo": (
+            f"You work the {material['display_name'].lower()} into {name.lower()}..."
+        ),
+    }
+
+
+def _install_registered_processing_recipes():
+    from world.material_definitions import MATERIAL_REGISTRY
+
+    processing_by_material = {}
+    for material_id, material in MATERIAL_REGISTRY.items():
+        processed_form = material["processed_form"]
+        for recipe_id, recipe in RECIPE_REGISTRY.items():
+            if (
+                recipe.get("recipe_type") == "processing"
+                and _processing_output_id(recipe) == processed_form
+                and any(
+                    ingredient.get("item_tag") == material_id
+                    for ingredient in recipe.get("ingredients", [])
+                )
+            ):
+                processing_by_material[material_id] = recipe_id
+                break
+        else:
+            preferred_id = processed_form
+            recipe_id = (
+                preferred_id
+                if preferred_id not in RECIPE_REGISTRY
+                else f"{material_id}_processing"
+            )
+            if recipe_id in RECIPE_REGISTRY:
+                raise ValueError(
+                    f"Generated processing recipe id collision: {recipe_id}"
+                )
+            RECIPE_REGISTRY[recipe_id] = _generated_processing_recipe(
+                material_id,
+                material,
+            )
+            processing_by_material[material_id] = recipe_id
+    return processing_by_material
+
+
+PROCESSING_RECIPE_BY_MATERIAL = _install_registered_processing_recipes()
