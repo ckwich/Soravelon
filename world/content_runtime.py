@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass
 
@@ -118,6 +119,181 @@ class _RuntimeVerifier:
     def __init__(self, manifest: WorldManifest):
         self.manifest = manifest
         self.diagnostics: list[RuntimeManifestDiagnostic] = []
+        self._load_runtime_snapshot()
+
+    def _load_runtime_snapshot(self) -> None:
+        """Load authored object, attribute, tag, and social state in bounded queries."""
+
+        from evennia.objects.models import ObjectDB
+        from django.db.models import Q
+        from world.models import SocialEdge, SocialNode, SocialTopologyBinding
+
+        tag_links = ObjectDB.db_tags.through.objects
+        authored_object_ids = tag_links.filter(
+            tag__db_category="zone_id",
+            tag__db_tagtype__isnull=True,
+        ).values("objectdb_id")
+        identified_object_ids = tag_links.filter(
+            Q(tag__db_category__in=("room_id", "npc_id"))
+            | Q(tag__db_category="object_type", tag__db_key="zone_object"),
+            tag__db_tagtype__isnull=True,
+        ).values("objectdb_id")
+        objects = list(
+            ObjectDB.objects.filter(
+                Q(id__in=identified_object_ids)
+                | Q(id__in=authored_object_ids, db_destination__isnull=False)
+            )
+            .select_related("db_location", "db_destination")
+            .distinct()
+        )
+        object_ids = [obj.id for obj in objects]
+        self.objects = {obj.id: obj for obj in objects}
+        self.tags: dict[int, dict[str | None, list[str]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        runtime_tag_links = (
+            ObjectDB.db_tags.through.objects.filter(
+                objectdb_id__in=object_ids,
+                tag__db_tagtype__isnull=True,
+            )
+            .select_related("tag")
+            .order_by("id")
+        )
+        for link in runtime_tag_links:
+            self.tags[link.objectdb_id][link.tag.db_category].append(link.tag.db_key)
+        zone_object_ids = {
+            obj.id
+            for obj in objects
+            if "zone_object" in self.tags[obj.id].get("object_type", [])
+        }
+        room_object_ids = {
+            obj.id for obj in objects if self.tags[obj.id].get("room_id")
+        }
+        npc_object_ids = {obj.id for obj in objects if self.tags[obj.id].get("npc_id")}
+        exit_object_ids = {
+            obj.id for obj in objects if obj.db_destination_id is not None
+        }
+        common_attribute_keys = {"zone_id"}
+        zone_attribute_keys = {
+            "gathering_pools",
+            "item_definitions",
+            "layer_1_overrides",
+            "material_definitions",
+            "name",
+            "node_lore_fragments",
+            "quest_definitions",
+        }
+        room_attribute_keys = {
+            "ambient_echoes",
+            "ambient_interval",
+            "ambient_variance",
+            "desc",
+            "flags",
+            "grid_x",
+            "grid_y",
+            "indoor",
+            "initial_room_flags",
+            "is_layer1",
+            "lore_fragments",
+            "practice_opportunities",
+            "room_type",
+            "spawn_definitions",
+            "terrain",
+            "time_echoes",
+            "triggers",
+        }
+        npc_attribute_keys = {
+            "dialogue_base_hints",
+            "dialogue_greeting_tiers",
+            "dialogue_network_hints",
+            "dialogue_quest_hints",
+            "dialogue_scholar_hints",
+            "dialogue_tier_hints",
+            "dialogue_topics",
+            "dialogue_warden_hints",
+            "faction",
+            "is_medic",
+            "is_vendor",
+            "social_edges",
+            "social_profile",
+            "trainer_id",
+            "vendor_accepts",
+            "vendor_exclude_item_ids",
+            "vendor_faction",
+            "vendor_item_ids",
+        }
+        exit_attribute_keys = {
+            "desc",
+            "hidden",
+            "lock_tag",
+            "requires_ancestry",
+            "requires_quest",
+            "requires_standing",
+        }
+        for definition in self.manifest.zones:
+            zone_operation = next(
+                operation
+                for operation in definition.operations
+                if operation.method == "zone"
+            )
+            zone_attribute_keys.update(_kwargs(zone_operation))
+        self.attributes: dict[int, dict[str, object]] = defaultdict(dict)
+        attribute_scope = Q(
+            objectdb_id__in=object_ids,
+            attribute__db_key__in=common_attribute_keys,
+        )
+        for ids, keys in (
+            (zone_object_ids, zone_attribute_keys),
+            (room_object_ids, room_attribute_keys),
+            (npc_object_ids, npc_attribute_keys),
+            (exit_object_ids, exit_attribute_keys),
+        ):
+            attribute_scope |= Q(objectdb_id__in=ids, attribute__db_key__in=keys)
+        attribute_links = (
+            ObjectDB.db_attributes.through.objects.filter(attribute_scope)
+            .filter(
+                attribute__db_category__isnull=True,
+                attribute__db_attrtype__isnull=True,
+            )
+            .select_related("attribute")
+        )
+        for link in attribute_links:
+            self.attributes[link.objectdb_id][
+                link.attribute.db_key
+            ] = link.attribute.value
+        self.owned_by_zone: dict[str, list[object]] = defaultdict(list)
+        for obj in objects:
+            zone_ids = self.tags[obj.id].get("zone_id", [])
+            if zone_ids:
+                self.owned_by_zone[zone_ids[0]].append(obj)
+        self.room_identity_by_pk = {
+            obj.id: (self.attr(obj, "zone_id"), room_ids[0])
+            for obj in objects
+            if (room_ids := self.tags[obj.id].get("room_id", []))
+        }
+        self.social_nodes = {node.node_key: node for node in SocialNode.objects.all()}
+        self.social_edges = {
+            edge.edge_key: edge
+            for edge in SocialEdge.objects.select_related("source_node", "target_node")
+        }
+        self.social_bindings_by_zone: dict[str, set[tuple[str, str]]] = defaultdict(set)
+        for zone_id, kind, object_key in SocialTopologyBinding.objects.values_list(
+            "zone_id", "kind", "object_key"
+        ):
+            self.social_bindings_by_zone[zone_id].add((kind, object_key))
+
+    def attr(self, obj, key: str, default=None):
+        return self.attributes.get(obj.id, {}).get(key, default)
+
+    def tag_values(self, obj, category: str) -> list[str]:
+        return self.tags.get(obj.id, {}).get(category, [])
+
+    def tag_value(self, obj, category: str):
+        values = self.tag_values(obj, category)
+        return values[0] if values else None
+
+    def has_tag(self, obj, key: str, category: str) -> bool:
+        return key in self.tag_values(obj, category)
 
     def report(
         self,
@@ -159,9 +335,10 @@ class _RuntimeVerifier:
     def verify(self) -> RuntimeManifestVerification:
         expected_zone_ids = {definition.zone_id for definition in self.manifest.zones}
         zone_objects = {
-            str(obj.db.zone_id): obj
-            for obj in search_objects_by_exact_tag("zone_object", "object_type")
-            if obj.db.zone_id
+            str(zone_id): obj
+            for obj in self.objects.values()
+            if self.has_tag(obj, "zone_object", "object_type")
+            and (zone_id := self.attr(obj, "zone_id"))
         }
         actual_zone_ids = set(zone_objects)
         for definition in self.manifest.zones:
@@ -224,18 +401,20 @@ class _RuntimeVerifier:
         zone_operation = by_method["zone"][0]
         for field, expected in _kwargs(zone_operation).items():
             actual = (
-                zone_obj.db.name if field == "name" else getattr(zone_obj.db, field)
+                self.attr(zone_obj, "name")
+                if field == "name"
+                else self.attr(zone_obj, field)
             )
             self.compare(
                 zone_operation, zone_id, f"{zone_id}.{field}", expected, actual
             )
 
-        owned = search_objects_by_exact_tag(zone_id, "zone_id")
+        owned = self.owned_by_zone.get(zone_id, [])
         rooms = {
             str(room_id): obj
             for obj in owned
-            if (room_id := obj.tags.get(category="room_id"))
-            and not getattr(obj.db, "is_layer1", False)
+            if (room_id := self.tag_value(obj, "room_id"))
+            and not self.attr(obj, "is_layer1", False)
         }
         expected_rooms = {
             str(operation.arguments[0]): operation
@@ -254,7 +433,7 @@ class _RuntimeVerifier:
         npcs = {
             str(npc_id): obj
             for obj in owned
-            if (npc_id := obj.tags.get(category="npc_id"))
+            if (npc_id := self.tag_value(obj, "npc_id"))
         }
         expected_npcs = {
             str(operation.arguments[1]): operation
@@ -272,7 +451,7 @@ class _RuntimeVerifier:
             npc = npcs[npc_id]
             room_id = _ref_key(operation.arguments[0])
             actual_room_id = (
-                npc.location.tags.get(category="room_id") if npc.location else None
+                self.tag_value(npc.location, "room_id") if npc.location else None
             )
             self.compare(
                 operation, zone_id, f"{npc_id}.location", room_id, actual_room_id
@@ -288,13 +467,15 @@ class _RuntimeVerifier:
             for authored, runtime in field_map.items():
                 if authored not in kwargs:
                     continue
-                actual = npc.key if runtime == "key" else getattr(npc.db, runtime)
+                actual = npc.key if runtime == "key" else self.attr(npc, runtime)
                 self.compare(
                     operation, zone_id, f"{npc_id}.{authored}", kwargs[authored], actual
                 )
             self.verify_npc_dialogue(operation, zone_id, npc_id, npc, kwargs)
 
-        self.verify_exits(zone_id, zone_operation, by_method.get("exit", []), rooms)
+        self.verify_exits(
+            zone_id, zone_operation, by_method.get("exit", []), rooms, owned
+        )
         self.verify_zone_definitions(zone_id, zone_obj, by_method)
         self.verify_room_definitions(zone_id, rooms, by_method)
         self.verify_runtime_flags(zone_id, rooms, npcs, by_method)
@@ -374,7 +555,7 @@ class _RuntimeVerifier:
         }
         for field, default in defaults.items():
             expected = kwargs.get(field, default)
-            actual = room.key if field == "name" else getattr(room.db, field)
+            actual = room.key if field == "name" else self.attr(room, field)
             self.compare(operation, zone_id, f"{room_id}.{field}", expected, actual)
         for field in ("grid_x", "grid_y"):
             if field in kwargs:
@@ -383,12 +564,12 @@ class _RuntimeVerifier:
                     zone_id,
                     f"{room_id}.{field}",
                     kwargs[field],
-                    getattr(room.db, field),
+                    self.attr(room, field),
                 )
         if "crafting_stations" in kwargs:
             actual = [
                 str(tag).removeprefix("crafting_")
-                for tag in room.tags.get(category="crafting_station", return_list=True)
+                for tag in self.tag_values(room, "crafting_station")
             ]
             self.compare(
                 operation,
@@ -425,10 +606,10 @@ class _RuntimeVerifier:
                 zone_id,
                 f"{npc_id}.dialogue.{authored}",
                 expected,
-                getattr(npc.db, runtime),
+                self.attr(npc, runtime),
             )
 
-    def verify_exits(self, zone_id, zone_operation, operations, rooms) -> None:
+    def verify_exits(self, zone_id, zone_operation, operations, rooms, owned) -> None:
         expected = {}
         for operation in operations:
             source = _ref_key(operation.arguments[0])
@@ -436,11 +617,12 @@ class _RuntimeVerifier:
             direction = operation.arguments[2]
             expected[(source, direction)] = (operation, destination)
         actual = {}
-        for room_id, room in rooms.items():
-            for exit_obj in room.exits:
-                if not exit_obj.tags.has(zone_id, category="zone_id"):
-                    continue
-                actual[(room_id, exit_obj.key)] = exit_obj
+        room_ids_by_pk = {room.id: room_id for room_id, room in rooms.items()}
+        for exit_obj in owned:
+            if exit_obj.db_location_id in room_ids_by_pk and exit_obj.db_destination_id:
+                actual[(room_ids_by_pk[exit_obj.db_location_id], exit_obj.key)] = (
+                    exit_obj
+                )
         self.compare_identity_sets(
             zone_operation, zone_id, "exit", set(expected), set(actual)
         )
@@ -453,10 +635,12 @@ class _RuntimeVerifier:
                 expected_destination = destination
             actual_destination = None
             if exit_obj.destination:
-                dest_room_id = exit_obj.destination.tags.get(category="room_id")
-                if dest_room_id:
+                destination_identity = self.room_identity_by_pk.get(
+                    exit_obj.db_destination_id
+                )
+                if destination_identity:
                     actual_destination = (
-                        f"{exit_obj.destination.db.zone_id}:{dest_room_id}"
+                        f"{destination_identity[0]}:{destination_identity[1]}"
                     )
             self.compare(
                 operation,
@@ -477,9 +661,9 @@ class _RuntimeVerifier:
             for field, default in defaults.items():
                 expected_value = kwargs.get(field, default)
                 if field == "locked":
-                    actual_value = bool(exit_obj.db.lock_tag)
+                    actual_value = bool(self.attr(exit_obj, "lock_tag"))
                 else:
-                    actual_value = getattr(exit_obj.db, field)
+                    actual_value = self.attr(exit_obj, field)
                 self.compare(
                     operation,
                     zone_id,
@@ -498,7 +682,7 @@ class _RuntimeVerifier:
             by_method,
             "item",
             expected_items,
-            zone_obj.db.item_definitions or [],
+            self.attr(zone_obj, "item_definitions", []) or [],
         )
         expected_materials = [
             {
@@ -515,7 +699,7 @@ class _RuntimeVerifier:
             by_method,
             "material",
             expected_materials,
-            zone_obj.db.material_definitions or [],
+            self.attr(zone_obj, "material_definitions", []) or [],
         )
         expected_quests = [
             self.expected_quest(operation) for operation in by_method.get("quest", [])
@@ -525,7 +709,7 @@ class _RuntimeVerifier:
             by_method,
             "quest",
             expected_quests,
-            zone_obj.db.quest_definitions or [],
+            self.attr(zone_obj, "quest_definitions", []) or [],
         )
         expected_pools = [
             self.expected_gathering_pool(operation)
@@ -536,7 +720,7 @@ class _RuntimeVerifier:
             by_method,
             "gathering_pool",
             expected_pools,
-            zone_obj.db.gathering_pools or [],
+            self.attr(zone_obj, "gathering_pools", []) or [],
         )
 
     def compare_collection(self, zone_id, by_method, method, expected, actual) -> None:
@@ -653,13 +837,25 @@ class _RuntimeVerifier:
                 if operation.arguments[0] == room_id
             )
             for label, expected, actual in (
-                ("spawns", expected_spawns[room_id], room.db.spawn_definitions or []),
-                ("lore", expected_lore[room_id], room.db.lore_fragments or []),
-                ("triggers", expected_triggers[room_id], room.db.triggers or []),
+                (
+                    "spawns",
+                    expected_spawns[room_id],
+                    self.attr(room, "spawn_definitions", []) or [],
+                ),
+                (
+                    "lore",
+                    expected_lore[room_id],
+                    self.attr(room, "lore_fragments", []) or [],
+                ),
+                (
+                    "triggers",
+                    expected_triggers[room_id],
+                    self.attr(room, "triggers", []) or [],
+                ),
                 (
                     "practice",
                     expected_practice[room_id],
-                    room.db.practice_opportunities or [],
+                    self.attr(room, "practice_opportunities", []) or [],
                 ),
             ):
                 self.compare(
@@ -701,7 +897,7 @@ class _RuntimeVerifier:
                 zone_id,
                 f"{room_id}.role.{role}",
                 True,
-                rooms[room_id].tags.has(tag, category="spawn_point"),
+                self.has_tag(rooms[room_id], tag, "spawn_point"),
             )
         for operation in by_method.get("initial_room_state", []):
             room_id = _ref_key(operation.arguments[0])
@@ -710,14 +906,18 @@ class _RuntimeVerifier:
                 zone_id,
                 f"{room_id}.initial_room_state",
                 operation.arguments[1],
-                rooms[room_id].db.initial_room_flags,
+                self.attr(rooms[room_id], "initial_room_flags"),
             )
         for operation in by_method.get("vendor", []):
             npc_id = _ref_key(operation.arguments[0])
             kwargs = _kwargs(operation)
             npc = npcs[npc_id]
             self.compare(
-                operation, zone_id, f"{npc_id}.is_vendor", True, npc.db.is_vendor
+                operation,
+                zone_id,
+                f"{npc_id}.is_vendor",
+                True,
+                self.attr(npc, "is_vendor"),
             )
             for authored, runtime in (
                 ("accepts", "vendor_accepts"),
@@ -731,16 +931,19 @@ class _RuntimeVerifier:
                         zone_id,
                         f"{npc_id}.{authored}",
                         kwargs.get(authored),
-                        getattr(npc.db, runtime),
+                        self.attr(npc, runtime),
                     )
         for operation in by_method.get("medic", []):
             npc_id = _ref_key(operation.arguments[0])
             self.compare(
-                operation, zone_id, f"{npc_id}.is_medic", True, npcs[npc_id].db.is_medic
+                operation,
+                zone_id,
+                f"{npc_id}.is_medic",
+                True,
+                self.attr(npcs[npc_id], "is_medic"),
             )
 
     def verify_flight(self, zone_id, by_method) -> None:
-        from evennia.objects.models import ObjectDB
         from world.flight_registry import FlightRegistry
 
         for operation in by_method.get("flight_point", []):
@@ -749,9 +952,9 @@ class _RuntimeVerifier:
             point = FlightRegistry.get_point(point_id)
             actual_room = None
             if point:
-                room = ObjectDB.objects.filter(id=point.get("room_id")).first()
-                if room:
-                    actual_room = room.tags.get(category="room_id")
+                identity = self.room_identity_by_pk.get(point.get("room_id"))
+                if identity:
+                    actual_room = identity[1]
             self.compare(
                 operation,
                 zone_id,
@@ -775,14 +978,13 @@ class _RuntimeVerifier:
             )
 
     def verify_social(self, zone_id, by_method) -> None:
-        from world.models import SocialEdge, SocialNode, SocialTopologyBinding
         from world.social_topology import social_edge_key
 
         expected_bindings = set()
         for operation in by_method.get("social_node", []):
             node_key = f"{operation.arguments[0]}:{operation.arguments[1]}"
             expected_bindings.add(("node", node_key))
-            node = SocialNode.objects.filter(node_key=node_key).first()
+            node = self.social_nodes.get(node_key)
             if node is None:
                 self.report(
                     operation,
@@ -809,7 +1011,7 @@ class _RuntimeVerifier:
                 operation.arguments[0], operation.arguments[1], kwargs.get("edge_type")
             )
             expected_bindings.add(("edge", edge_key))
-            edge = SocialEdge.objects.filter(edge_key=edge_key).first()
+            edge = self.social_edges.get(edge_key)
             if edge is None:
                 self.report(
                     operation,
@@ -850,11 +1052,7 @@ class _RuntimeVerifier:
                     },
                 }
                 self.compare(operation, zone_id, edge_key, expected, actual)
-        actual_bindings = set(
-            SocialTopologyBinding.objects.filter(zone_id=zone_id).values_list(
-                "kind", "object_key"
-            )
-        )
+        actual_bindings = self.social_bindings_by_zone.get(zone_id, set())
         operation = (
             by_method.get("social_node")
             or by_method.get("social_edge")
@@ -897,14 +1095,14 @@ class _RuntimeVerifier:
                 zone_id,
                 f"{zone_id}.node.layer_1_overrides",
                 overrides,
-                zone_obj.db.layer_1_overrides or {},
+                self.attr(zone_obj, "layer_1_overrides", {}) or {},
             )
             self.compare(
                 operation,
                 zone_id,
                 f"{zone_id}.node.lore_fragments",
                 _kwargs(operation).get("lore_fragments", []),
-                zone_obj.db.node_lore_fragments or [],
+                self.attr(zone_obj, "node_lore_fragments", []) or [],
             )
 
 

@@ -58,6 +58,7 @@ class TestAreaBuilderRuntimeImports(SimpleTestCase):
 # Zone tests
 # ------------------------------------------------------------------
 
+
 class TestZoneCreatesZoneObject(AreaBuilderTestBase):
     def test_zone_creates_zone_object(self):
         """area.zone() creates ZoneObject with correct zone_id and metadata."""
@@ -96,6 +97,7 @@ class TestZoneNoLevelFloorCap(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 # Room tests
 # ------------------------------------------------------------------
+
 
 class TestRoomCreatesWithCorrectTags(AreaBuilderTestBase):
     def test_room_tagged_with_zone_id_and_room_type(self):
@@ -151,6 +153,7 @@ class TestRoomIdempotent(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 # Exit tests
 # ------------------------------------------------------------------
+
 
 class TestExitCreatesSoravelonExit(AreaBuilderTestBase):
     def test_exit_creates_soravelon_exit(self):
@@ -234,13 +237,15 @@ class TestExitCrossZoneDeferred(AreaBuilderTestBase):
 # Spawn tests
 # ------------------------------------------------------------------
 
+
 class TestSpawnStoredOnRoom(AreaBuilderTestBase):
     def test_spawn_stored_on_room(self):
         """Spawn definition stored in room.db.spawn_definitions."""
         ab = self._make_builder()
         r1 = self._make_room(ab, "room_001")
         ab.spawn(
-            r1, "forest_wolf",
+            r1,
+            "forest_wolf",
             behavior=["aggressive"],
             count_min=1,
             count_max=3,
@@ -257,6 +262,7 @@ class TestSpawnStoredOnRoom(AreaBuilderTestBase):
 # Named mob tests
 # ------------------------------------------------------------------
 
+
 class TestNamedMobStoredOnRoom(AreaBuilderTestBase):
     def test_named_mob_stored_in_spawn_definitions(self):
         """Named mob stored in room.db.spawn_definitions with is_named=True.
@@ -268,7 +274,8 @@ class TestNamedMobStoredOnRoom(AreaBuilderTestBase):
         ab = self._make_builder()
         r1 = self._make_room(ab, "room_001")
         ab.named_mob(
-            "old_guardian", r1,
+            "old_guardian",
+            r1,
             behavior=["territorial"],
             respawn_minutes=120,
             tome_drop="tome_verdant",
@@ -302,6 +309,7 @@ class TestNamedMobIsNamedFlag(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 # NPC tests
 # ------------------------------------------------------------------
+
 
 class TestNpcStoredOnRoom(AreaBuilderTestBase):
     def test_npc_stored_on_room(self):
@@ -437,6 +445,7 @@ class TestNpcSocialMetadata(AreaBuilderTestBase):
 # Node tests
 # ------------------------------------------------------------------
 
+
 class TestNodeCallsInitializeNode(AreaBuilderTestBase):
     def test_node_calls_initialize_node(self):
         """area.node() causes build() to call zone_obj.initialize_node()."""
@@ -466,6 +475,7 @@ class TestNodeCallsInitializeNode(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 # Quest tests
 # ------------------------------------------------------------------
+
 
 class TestQuestStoredOnZone(AreaBuilderTestBase):
     def test_quest_stored_on_zone(self):
@@ -527,6 +537,7 @@ class TestQuestStoredOnZone(AreaBuilderTestBase):
 # Material tests
 # ------------------------------------------------------------------
 
+
 class TestMaterialStoredOnZone(AreaBuilderTestBase):
     def test_material_stored_on_zone(self):
         """Material definition stored in zone_obj.db.material_definitions."""
@@ -552,7 +563,9 @@ class TestZoneReloadClearsZoneOwnedDefinitions(AreaBuilderTestBase):
         ab.quest("old_quest", quest_type="collection")
         ab.material("old_material", tier=1)
         ab.gathering_pool("ore", ["room_a"], ["iron_ore"])
-        ab.loot_table_override("wolf", drops=[{"item_id": "old_fang", "key": "old fang"}])
+        ab.loot_table_override(
+            "wolf", drops=[{"item_id": "old_fang", "key": "old fang"}]
+        )
 
         self.assertEqual(len(ab._zone_obj.db.item_definitions), 1)
         self.assertEqual(len(ab._zone_obj.db.quest_definitions), 1)
@@ -573,13 +586,15 @@ class TestZoneReloadClearsZoneOwnedDefinitions(AreaBuilderTestBase):
 # Lore fragment tests
 # ------------------------------------------------------------------
 
+
 class TestLoreFragmentStoredOnRoom(AreaBuilderTestBase):
     def test_lore_fragment_stored_on_room(self):
         """Lore fragment stored in room.db.lore_fragments."""
         ab = self._make_builder()
         r1 = self._make_room(ab, "room_001")
         ab.lore_fragment(
-            "lore_cantera_001", r1,
+            "lore_cantera_001",
+            r1,
             discovery_method="investigate_node",
             text="The stone is older than the trees.",
             insight_gain=25,
@@ -594,6 +609,7 @@ class TestLoreFragmentStoredOnRoom(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 # Build tests
 # ------------------------------------------------------------------
+
 
 class TestBuildReturnsReport(AreaBuilderTestBase):
     def test_build_returns_report(self):
@@ -629,13 +645,18 @@ class TestBuildRegistersZone(AreaBuilderTestBase):
 # Validation tests
 # ------------------------------------------------------------------
 
+
 class TestValidationInvalidZoneType(AreaBuilderTestBase):
     def test_validation_invalid_zone_type(self):
         """Raises AreaBuilderValidationError for unknown zone_type."""
         ab = AreaBuilder("bad_zone")
         with self.assertRaises(AreaBuilderValidationError) as ctx:
-            ab.zone(name="Bad", zone_type="bog", continent="varath",
-                     faction_territory="neutral")
+            ab.zone(
+                name="Bad",
+                zone_type="bog",
+                continent="varath",
+                faction_territory="neutral",
+            )
         self.assertIn("bog", str(ctx.exception))
 
 
@@ -654,6 +675,7 @@ class TestValidationInvalidDirection(AreaBuilderTestBase):
 # Cross-zone exit resolution
 # ------------------------------------------------------------------
 
+
 class TestCrossZoneExitResolvedWhenTargetLoaded(AreaBuilderTestBase):
     def test_cross_zone_exit_resolved_when_target_loaded(self):
         """After both zones loaded, cross-zone exit resolves correctly."""
@@ -665,8 +687,11 @@ class TestCrossZoneExitResolvedWhenTargetLoaded(AreaBuilderTestBase):
         # Build zone B with a cross-zone exit to zone_a:target_room
         ab_b = AreaBuilder("zone_b")
         ab_b.zone(
-            name="Zone B", tier=1, zone_type="plains",
-            continent="varath", faction_territory="neutral",
+            name="Zone B",
+            tier=1,
+            zone_type="plains",
+            continent="varath",
+            faction_territory="neutral",
         )
         origin = self._make_room(ab_b, "origin_room")
         ab_b.exit(origin, "zone_a:target_room", "south")
@@ -681,6 +706,7 @@ class TestCrossZoneExitResolvedWhenTargetLoaded(AreaBuilderTestBase):
 # File loading tests
 # ------------------------------------------------------------------
 
+
 class TestZoneLoadsFromFile(AreaBuilderTestBase):
     def test_zone_loads_from_file(self):
         """A minimal area file can be imported and build() called."""
@@ -693,10 +719,22 @@ class TestZoneLoadsFromFile(AreaBuilderTestBase):
             continent="varath",
             faction_territory="neutral",
         )
-        r1 = ab.room("room_001", name="Start", desc="Start room.",
-                      room_type="path", indoor=False, terrain="plains")
-        r2 = ab.room("room_002", name="End", desc="End room.",
-                      room_type="path", indoor=False, terrain="plains")
+        r1 = ab.room(
+            "room_001",
+            name="Start",
+            desc="Start room.",
+            room_type="path",
+            indoor=False,
+            terrain="plains",
+        )
+        r2 = ab.room(
+            "room_002",
+            name="End",
+            desc="End room.",
+            room_type="path",
+            indoor=False,
+            terrain="plains",
+        )
         ab.exit(r1, r2, "north")
         ab.exit(r2, r1, "south")
         ab.spawn(r1, "plains_wolf", count_min=1, count_max=2)
@@ -740,6 +778,8 @@ class TestManifestLoadsAreasDir(EvenniaTestMixin, TransactionTestCase):
     def test_manifest_materializes_all_areas(self):
         """Compiled area files materialize exactly without source imports."""
         from pathlib import Path
+        from time import perf_counter
+        from django.db import connection
         from world.content_compiler import compile_world_manifest
         from world.content_materializer import materialize_world_manifest
         from world.content_runtime import verify_runtime_manifest
@@ -748,7 +788,17 @@ class TestManifestLoadsAreasDir(EvenniaTestMixin, TransactionTestCase):
         self.assertIsNotNone(manifest)
         replay = materialize_world_manifest(manifest)
         self.assertEqual(set(replay.zones), {zone.zone_id for zone in manifest.zones})
-        verification = verify_runtime_manifest(manifest)
+        query_count = 0
+
+        def count_query(execute, sql, params, many, context):
+            nonlocal query_count
+            query_count += 1
+            return execute(sql, params, many, context)
+
+        verification_started = perf_counter()
+        with connection.execute_wrapper(count_query):
+            verification = verify_runtime_manifest(manifest)
+        verification_seconds = perf_counter() - verification_started
         self.maxDiff = None
         self.assertEqual(
             [
@@ -757,11 +807,22 @@ class TestManifestLoadsAreasDir(EvenniaTestMixin, TransactionTestCase):
             ],
             [],
         )
+        self.assertLess(
+            query_count,
+            1000,
+            f"Exact runtime verification used {query_count} database queries.",
+        )
+        self.assertLess(
+            verification_seconds,
+            30,
+            f"Exact runtime verification took {verification_seconds:.1f} seconds.",
+        )
 
 
 # ------------------------------------------------------------------
 # Grid coordinate tests (CLI-07)
 # ------------------------------------------------------------------
+
 
 class TestRoomGridCoordsExplicit(AreaBuilderTestBase):
     def test_explicit_grid_coords_stored_on_room(self):
@@ -815,6 +876,7 @@ class TestZoneWorldCoordsDefaults(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 # Auto-layout tests (CLI-07)
 # ------------------------------------------------------------------
+
 
 class TestAutoLayoutAssignsCoords(AreaBuilderTestBase):
     def test_auto_layout_fills_none_coords_after_build(self):
@@ -887,6 +949,7 @@ class TestAutoLayoutNoCollision(AreaBuilderTestBase):
 # Additional coordinate tests (CLI-07, plan 02-04)
 # ------------------------------------------------------------------
 
+
 class TestExplicitCoordsPreserved(AreaBuilderTestBase):
     """Builder-placed coords are preserved exactly after build()."""
 
@@ -940,7 +1003,9 @@ class TestAutoLayoutAllRoomsGetCoords(AreaBuilderTestBase):
         ab.exit(r1, r3, "down")
         ab.build()
         coords = [(r.db.grid_x, r.db.grid_y) for r in (r1, r2, r3)]
-        self.assertEqual(len(coords), len(set(coords)), "Two rooms share the same coordinates")
+        self.assertEqual(
+            len(coords), len(set(coords)), "Two rooms share the same coordinates"
+        )
 
 
 class TestZoneWorldCoordsExtra(AreaBuilderTestBase):
@@ -974,6 +1039,7 @@ class TestZoneWorldCoordsExtra(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 # Unresolved exit registry tests (BLD-06, plan 03-02)
 # ------------------------------------------------------------------
+
 
 class TestUnresolvedExitsTracked(AreaBuilderTestBase):
     """AreaBuilder tracks cross-zone exits that could not be resolved."""
@@ -1019,8 +1085,11 @@ class TestUnresolvedExitsTracked(AreaBuilderTestBase):
         # Build target zone first
         ab_target = AreaBuilder("target_zone_r")
         ab_target.zone(
-            name="Target Zone R", tier=1, zone_type="plains",
-            continent="varath", faction_territory="neutral",
+            name="Target Zone R",
+            tier=1,
+            zone_type="plains",
+            continent="varath",
+            faction_territory="neutral",
         )
         self._make_room(ab_target, "room_tgt")
         ab_target.build()
@@ -1060,6 +1129,7 @@ class TestUnresolvedExitsTracked(AreaBuilderTestBase):
     def test_module_level_registry_populated_on_unresolved(self):
         """Module-level _UNRESOLVED_EXITS_REGISTRY is populated when exits are unresolved."""
         from world.area_builder import clear_unresolved_exits, get_unresolved_exits
+
         clear_unresolved_exits()
 
         ab = self._make_builder("module_reg_zone")
@@ -1074,6 +1144,7 @@ class TestUnresolvedExitsTracked(AreaBuilderTestBase):
     def test_clear_unresolved_exits_empties_registry(self):
         """clear_unresolved_exits() resets the module-level registry to empty."""
         from world.area_builder import clear_unresolved_exits, get_unresolved_exits
+
         # Populate it
         ab = self._make_builder("clear_test_zone")
         r1 = self._make_room(ab, "room_001")
@@ -1088,6 +1159,7 @@ class TestUnresolvedExitsTracked(AreaBuilderTestBase):
 # ------------------------------------------------------------------
 # Item method tests (Phase 03.1 plan 05)
 # ------------------------------------------------------------------
+
 
 class TestAreaBuilderItemMethod(AreaBuilderTestBase):
     """area.item() stores item_definitions on zone_obj and supports chaining."""
@@ -1116,8 +1188,12 @@ class TestAreaBuilderItemMethod(AreaBuilderTestBase):
     def test_item_chaining(self):
         """area.item('a').item('b') stores two entries on zone_obj.db.item_definitions."""
         ab = self._make_builder()
-        ab.item("item_a", key="thing a", item_type="item", weight=0.1, desc="A.", value=1)
-        ab.item("item_b", key="thing b", item_type="item", weight=0.2, desc="B.", value=2)
+        ab.item(
+            "item_a", key="thing a", item_type="item", weight=0.1, desc="A.", value=1
+        )
+        ab.item(
+            "item_b", key="thing b", item_type="item", weight=0.2, desc="B.", value=2
+        )
         defs = ab._zone_obj.db.item_definitions
         self.assertEqual(len(defs), 2)
         item_ids = [d["item_id"] for d in defs]
@@ -1128,7 +1204,14 @@ class TestAreaBuilderItemMethod(AreaBuilderTestBase):
         """Calling area.item() before zone() raises AreaBuilderValidationError."""
         ab = AreaBuilder("no_zone_yet")
         with self.assertRaises(AreaBuilderValidationError):
-            ab.item("orphan_item", key="orphan", item_type="item", weight=0.0, desc="", value=0)
+            ab.item(
+                "orphan_item",
+                key="orphan",
+                item_type="item",
+                weight=0.0,
+                desc="",
+                value=0,
+            )
 
     def test_item_returns_self_for_chaining(self):
         """area.item() returns self so calls can be chained."""
@@ -1209,6 +1292,7 @@ class TestAreaBuilderLootTableOverrides(AreaBuilderTestBase):
 # Named mob refactor tests (Phase 03.1 plan 05)
 # ------------------------------------------------------------------
 
+
 class TestAreaBuilderNamedMobRefactor(AreaBuilderTestBase):
     """area.named_mob() uses spawn_definitions schema (D-13/D-14 refactor)."""
 
@@ -1275,6 +1359,7 @@ class TestAreaBuilderNamedMobRefactor(AreaBuilderTestBase):
 # Reconciliation tests (Phase 17, Plan 03)
 # ------------------------------------------------------------------
 
+
 class TestReconciliation(AreaBuilderTestBase):
     """Tests for _reconcile_stale_objects: hard-deleting orphan DB objects on rebuild."""
 
@@ -1298,6 +1383,7 @@ class TestReconciliation(AreaBuilderTestBase):
 
         # room_003 should be deleted
         from evennia.objects.models import ObjectDB
+
         self.assertTrue(ObjectDB.objects.filter(id=r1_id).exists())
         self.assertTrue(ObjectDB.objects.filter(id=r2_id).exists())
         self.assertFalse(ObjectDB.objects.filter(id=r3_id).exists())
@@ -1314,6 +1400,7 @@ class TestReconciliation(AreaBuilderTestBase):
 
         # Place a character in the doomed room
         from typeclasses.characters import Character
+
         char = create_object(Character, key="test_player", location=r_doomed)
         char.msg = MagicMock()
 
@@ -1352,6 +1439,7 @@ class TestReconciliation(AreaBuilderTestBase):
         report = ab2.build()
 
         from evennia.objects.models import ObjectDB
+
         self.assertFalse(ObjectDB.objects.filter(id=exit_id).exists())
         self.assertEqual(report["reconciled"]["exits_deleted"], 1)
 
@@ -1364,6 +1452,7 @@ class TestReconciliation(AreaBuilderTestBase):
 
         # Find the NPC object
         import evennia as _ev
+
         npcs = _ev.search_tag("old_merchant", category="npc_id")
         self.assertEqual(len(npcs), 1)
         npc_id = npcs[0].id
@@ -1374,6 +1463,7 @@ class TestReconciliation(AreaBuilderTestBase):
         report = ab2.build()
 
         from evennia.objects.models import ObjectDB
+
         self.assertFalse(ObjectDB.objects.filter(id=npc_id).exists())
         self.assertEqual(report["reconciled"]["npcs_deleted"], 1)
 
@@ -1387,6 +1477,7 @@ class TestReconciliation(AreaBuilderTestBase):
         # Find the mob
         from typeclasses.mobs import SoravelonMob
         import evennia as _ev
+
         candidates = _ev.search_object("patrol_guard", typeclass=SoravelonMob)
         mob_obj = None
         for c in candidates:
@@ -1402,6 +1493,7 @@ class TestReconciliation(AreaBuilderTestBase):
         report = ab2.build()
 
         from evennia.objects.models import ObjectDB
+
         self.assertFalse(ObjectDB.objects.filter(id=mob_db_id).exists())
         self.assertEqual(report["reconciled"]["mobs_deleted"], 1)
 
@@ -1428,8 +1520,11 @@ class TestReconciliation(AreaBuilderTestBase):
         report = ab2.build()
 
         from evennia.objects.models import ObjectDB
-        self.assertTrue(ObjectDB.objects.filter(id=runtime_mob_id).exists(),
-                        "Runtime-spawned mob should NOT be deleted by reconciliation")
+
+        self.assertTrue(
+            ObjectDB.objects.filter(id=runtime_mob_id).exists(),
+            "Runtime-spawned mob should NOT be deleted by reconciliation",
+        )
         self.assertEqual(report["reconciled"]["mobs_deleted"], 0)
 
         # Cleanup
@@ -1450,7 +1545,9 @@ class TestReconciliation(AreaBuilderTestBase):
         ab2.build()
 
         # Tag should be gone (D-05: clear-then-readd)
-        self.assertFalse(r1_again.tags.has("crafting_forge", category="crafting_station"))
+        self.assertFalse(
+            r1_again.tags.has("crafting_forge", category="crafting_station")
+        )
 
     def test_exit_attr_reset_on_rebuild(self):
         """Exit requires_ancestry attr is reset to None when removed from spec."""
@@ -1495,9 +1592,13 @@ class TestReconciliation(AreaBuilderTestBase):
         r1 = self._make_room(ab, "room_001")
 
         # Should NOT raise
-        ab.trigger(r1, "on_examine", actions=[
-            {"action_type": "echo", "message": "You notice scratches on the wall."}
-        ])
+        ab.trigger(
+            r1,
+            "on_examine",
+            actions=[
+                {"action_type": "echo", "message": "You notice scratches on the wall."}
+            ],
+        )
 
         # Verify trigger was stored
         triggers = r1.db.triggers
@@ -1534,8 +1635,12 @@ class TestPracticeOpportunity(AreaBuilderTestBase):
         self.assertEqual(len(command_defs), 1)
         self.assertEqual(command_defs[0]["key"], "repair")
         self.assertTrue(command_defs[0]["visible_in_exits"])
-        self.assertEqual(command_defs[0]["action_dict"]["action_type"], "grant_practice")
-        self.assertEqual(command_defs[0]["action_dict"]["opportunity_id"], "workshop_winch_repair")
+        self.assertEqual(
+            command_defs[0]["action_dict"]["action_type"], "grant_practice"
+        )
+        self.assertEqual(
+            command_defs[0]["action_dict"]["opportunity_id"], "workshop_winch_repair"
+        )
         self.assertTrue(command_defs[0]["action_dict"]["once_per_character"])
 
     def test_practice_opportunity_rejects_remnance_domain(self):
