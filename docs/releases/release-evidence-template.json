@@ -22,6 +22,8 @@
       "fresh_content": {
         "database_kind": "fresh",
         "database_name": "",
+        "artifact": "",
+        "sha256": "",
         "initial_state": "",
         "first_state": "",
         "reapply_state": "",
@@ -33,6 +35,8 @@
       "restored_content": {
         "database_kind": "restored",
         "database_name": "",
+        "artifact": "",
+        "sha256": "",
         "initial_state": "",
         "first_state": "",
         "reapply_state": "",
@@ -61,10 +65,13 @@
         "reboot": false,
         "listeners_recovered": false,
         "portal_pid_preserved_on_reload": false,
-        "startup_content_writes": []
+        "startup_content_writes": [],
+        "artifact": "",
+        "sha256": ""
       },
       "candidate": {
         "passed": false,
+        "artifact": "",
         "output_sha256": ""
       }
     },
@@ -73,6 +80,8 @@
       "fresh_content": {
         "database_kind": "fresh",
         "database_name": "",
+        "artifact": "",
+        "sha256": "",
         "initial_state": "",
         "first_state": "",
         "reapply_state": "",
@@ -84,6 +93,8 @@
       "restored_content": {
         "database_kind": "restored",
         "database_name": "",
+        "artifact": "",
+        "sha256": "",
         "initial_state": "",
         "first_state": "",
         "reapply_state": "",
@@ -112,14 +123,24 @@
         "reboot": false,
         "listeners_recovered": false,
         "portal_pid_preserved_on_reload": false,
-        "startup_content_writes": []
+        "startup_content_writes": [],
+        "artifact": "",
+        "sha256": ""
       },
       "candidate": {
         "passed": false,
+        "artifact": "",
         "output_sha256": ""
       }
     }
   ],
+  "builder_release": {
+    "git_commit": "",
+    "content_contract_version": "",
+    "content_contract_artifact": "",
+    "content_contract_sha256": "",
+    "ci_run_url": ""
+  },
   "builder_packages": [
     {
       "platform": "macos-arm64",
@@ -147,9 +168,17 @@
     }
   ],
   "human_acceptance": {
+    "git_commit": "",
     "timed_fresh_player": false,
     "co_op": false,
     "living_world": false,
+    "accessibility": false,
+    "fresh_player_minutes": 0,
+    "clients": [],
+    "started_at_utc": "",
+    "ended_at_utc": "",
+    "transcript_artifact": "",
+    "transcript_sha256": "",
     "observed_by": "",
     "notes": ""
   },
