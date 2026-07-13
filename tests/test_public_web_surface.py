@@ -8,8 +8,13 @@ from django.test import TestCase
 
 
 class TestPublicWebSurface(TestCase):
+    def get_public_page(self, path):
+        """Exercise public pages through production's required HTTPS path."""
+
+        return self.client.get(path, secure=True)
+
     def test_homepage_introduces_the_living_world_instead_of_the_framework(self):
-        response = self.client.get("/")
+        response = self.get_public_page("/")
         html = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
@@ -21,7 +26,7 @@ class TestPublicWebSurface(TestCase):
         self.assertNotIn("Database Stats", html)
 
     def test_homepage_uses_the_public_soravelon_identity(self):
-        response = self.client.get("/")
+        response = self.get_public_page("/")
         html = response.content.decode()
 
         self.assertIn("Soravelon", html)
@@ -30,7 +35,7 @@ class TestPublicWebSurface(TestCase):
         self.assertIn("website/css/custom.css?v=20260713-3", html)
 
     def test_webclient_terminal_controls_have_accessible_names(self):
-        response = self.client.get("/webclient/")
+        response = self.get_public_page("/webclient/")
         html = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
@@ -52,8 +57,8 @@ class TestPublicWebSurface(TestCase):
         self.assertIn("onLayoutChanged: onLayoutChanged", bridge)
 
     def test_public_browser_dependencies_are_local_pinned_and_licensed(self):
-        homepage = self.client.get("/").content.decode()
-        webclient = self.client.get("/webclient/").content.decode()
+        homepage = self.get_public_page("/").content.decode()
+        webclient = self.get_public_page("/webclient/").content.decode()
 
         remote_asset = re.compile(
             r'<(?:script|link)\b[^>]+(?:src|href)=["\']https?://', re.IGNORECASE
@@ -80,7 +85,7 @@ class TestPublicWebSurface(TestCase):
             self.assertRegex(manifest, rf"{re.escape(asset)}.*`{digest}`")
 
     def test_help_index_uses_semantic_scannable_category_sections(self):
-        response = self.client.get("/help/")
+        response = self.get_public_page("/help/")
         html = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
@@ -89,7 +94,7 @@ class TestPublicWebSurface(TestCase):
         self.assertNotIn("The box to the right", html)
 
     def test_help_topic_uses_a_readable_player_facing_heading(self):
-        response = self.client.get("/help/systems/scaling/")
+        response = self.get_public_page("/help/systems/scaling/")
         html = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
@@ -100,7 +105,7 @@ class TestPublicWebSurface(TestCase):
     def test_account_entry_pages_preserve_the_branded_navigation(self):
         for path in ("/auth/login/", "/auth/register", "/auth/password_reset/"):
             with self.subTest(path=path):
-                response = self.client.get(path)
+                response = self.get_public_page(path)
                 html = response.content.decode()
 
                 self.assertEqual(response.status_code, 200)
@@ -109,9 +114,9 @@ class TestPublicWebSurface(TestCase):
                 self.assertIn('class="account-surface"', html)
 
     def test_account_recovery_controls_have_correct_labels_and_destinations(self):
-        login = self.client.get("/auth/login/").content.decode()
-        reset = self.client.get("/auth/password_reset/").content.decode()
-        register = self.client.get("/auth/register").content.decode()
+        login = self.get_public_page("/auth/login/").content.decode()
+        reset = self.get_public_page("/auth/password_reset/").content.decode()
+        register = self.get_public_page("/auth/register").content.decode()
 
         self.assertIn('<label for="id_username">Username:</label>', login)
         self.assertIn('<label for="id_password">Password:</label>', login)
