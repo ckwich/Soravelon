@@ -248,7 +248,8 @@ def verify_websocket(*, host: str, port: int, timeout: float) -> str:
     """Negotiate Evennia's real WebSocket protocol and round-trip ``look``."""
     websocket_key = base64.b64encode(os.urandom(16)).decode("ascii")
     expected_accept = base64.b64encode(
-        hashlib.sha1(
+        # RFC 6455 mandates SHA-1 here; this is not a security hash.
+        hashlib.sha1(  # nosemgrep: python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-sha1
             (websocket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode(
                 "ascii"
             ),
