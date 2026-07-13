@@ -69,7 +69,8 @@ class TestBasicAttackResolution(unittest.TestCase):
         player = _make_player(strength=20)
         mob = _make_mob()
 
-        ok, msg, dmg = resolve_basic_attack(player, mob)
+        with patch("world.skill_engine.get_skill_value", return_value=0):
+            ok, msg, dmg = resolve_basic_attack(player, mob)
         self.assertTrue(ok)
         # Bare hands: randint(3,6) + int(20*0.5) = 3-6 + 10 = 13-16
         self.assertGreaterEqual(dmg, 13)
@@ -87,7 +88,10 @@ class TestBasicAttackResolution(unittest.TestCase):
         with patch(
             "world.zone_scaling.get_player_damage_to_mob",
             side_effect=lambda d, m, c: d,
-        ) as mock_scale:
+        ) as mock_scale, patch(
+            "world.skill_engine.get_skill_value",
+            return_value=0,
+        ):
             resolve_basic_attack(player, mob)
             mock_scale.assert_called_once()
 

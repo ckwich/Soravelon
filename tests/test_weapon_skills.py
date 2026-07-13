@@ -1,7 +1,7 @@
 """Tests for broad weapon-family skill handling."""
 
 import unittest
-from unittest.mock import MagicMock
+from types import SimpleNamespace
 
 
 class TestWeaponFamilyRegistry(unittest.TestCase):
@@ -51,9 +51,10 @@ class TestWeaponFamilyInference(unittest.TestCase):
             weapon_skill_for_item,
         )
 
-        weapon = MagicMock()
-        weapon.key = "Training Sword"
-        weapon.db.weapon_family = "Blades"
+        weapon = SimpleNamespace(
+            key="Training Sword",
+            db=SimpleNamespace(weapon_family="Blades"),
+        )
 
         self.assertEqual(infer_weapon_family_from_item(weapon), "blade")
         self.assertEqual(weapon_skill_for_item(weapon), "weapon_blades")

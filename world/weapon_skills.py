@@ -281,10 +281,6 @@ WEAPON_SKILL_DEFINITIONS = {
 }
 
 
-def _is_mock_value(value):
-    return type(value).__module__.startswith("unittest.mock")
-
-
 def _read_item_value(item, key):
     if item is None:
         return None
@@ -294,11 +290,11 @@ def _read_item_value(item, key):
     db = getattr(item, "db", None)
     if db is not None:
         value = getattr(db, key, None)
-        if value is not None and not _is_mock_value(value):
+        if value is not None:
             return value
 
     value = getattr(item, key, None)
-    if value is not None and not _is_mock_value(value):
+    if value is not None:
         return value
     return None
 
@@ -443,13 +439,7 @@ def weapon_skill_damage_bonus_for_attack(attacker, weapon):
 
     from world.skill_engine import get_skill_value
 
-    try:
-        skill_value = get_skill_value(attacker, skill_id)
-    except (TypeError, ValueError):
-        if _is_mock_value(attacker):
-            skill_value = 0.0
-        else:
-            raise
+    skill_value = get_skill_value(attacker, skill_id)
     return weapon_skill_damage_bonus(skill_value)
 
 

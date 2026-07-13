@@ -424,8 +424,9 @@ class TestTickEffectsDoT(unittest.TestCase):
         tick_effects(target)
         self.assertEqual(source.ndb.hp, 48)
 
+    @patch("world.status_effects._resolve_effect_source")
     @patch("world.combat_engine.resolve_ability_damage", return_value=(True, "hit", 33))
-    def test_sustained_attack_fires_periodic_strikes(self, mock_damage):
+    def test_sustained_attack_fires_periodic_strikes(self, mock_damage, mock_source):
         owner = _make_target(hp=100)
         owner.id = 10
         owner.db.base_stats = {"strength": 10}
@@ -435,6 +436,7 @@ class TestTickEffectsDoT(unittest.TestCase):
         enemy.id = 11
         enemy.key = "Enemy"
         owner.ndb.combat_handler.get_mob_combatants.return_value = [enemy]
+        mock_source.return_value = owner
         apply_effect(
             owner,
             "sustained_attack",

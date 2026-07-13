@@ -445,3 +445,20 @@ class TestShouldSendHelper(unittest.TestCase):
         self.char.ndb.oob_debounce = {"status_update": time.monotonic() - 5.0}
         result = _should_send(self.char, "status_update")
         self.assertTrue(result)
+
+
+class TestPayloadValueBoundary(unittest.TestCase):
+    def test_non_json_native_value_uses_explicit_default(self):
+        from world.oob_publisher import _safe_value
+
+        sentinel = object()
+
+        self.assertIs(_safe_value(sentinel, default=None), None)
+        self.assertEqual(_safe_value({"nested": sentinel}, default={}), {})
+
+    def test_json_native_nested_value_is_preserved(self):
+        from world.oob_publisher import _safe_value
+
+        value = {"effects": [{"type": "wet", "stacks": 2}]}
+
+        self.assertIs(_safe_value(value), value)

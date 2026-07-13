@@ -19,6 +19,7 @@ Wire format (Evennia native):
   → WebSocket frame: ["status_update", [], {"key": "val"}]
 """
 
+import json
 import time
 
 from world.tag_search import search_objects_by_exact_tag
@@ -151,19 +152,19 @@ def _resolve_combatant(cid):
 
 
 def _safe_ndb_value(holder, attr, default=None):
-    """Read an ndb attribute without leaking MagicMock values into payloads."""
+    """Read an ndb attribute only when it is safe for the JSON wire format."""
     try:
         value = getattr(holder.ndb, attr, default)
     except Exception:
         return default
-    if type(value).__module__.startswith("unittest.mock"):
-        return default
-    return value
+    return _safe_value(value, default)
 
 
 def _safe_value(value, default=None):
-    """Collapse MagicMock sentinel values to a default."""
-    if type(value).__module__.startswith("unittest.mock"):
+    """Preserve JSON-native values and replace unsupported objects."""
+    try:
+        json.dumps(value)
+    except (TypeError, ValueError, OverflowError):
         return default
     return value
 

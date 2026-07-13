@@ -205,7 +205,7 @@ def _resolve_effect_source(source_id):
 
 
 def _numeric(value, default=0):
-    """Return numeric values directly and fall back for MagicMock-like objects."""
+    """Return real numeric values and reject booleans or unsupported objects."""
     if isinstance(value, bool):
         return default
     if isinstance(value, (int, float)):
@@ -214,7 +214,7 @@ def _numeric(value, default=0):
 
 
 def _get_max_hp(target):
-    """Best-effort max HP lookup for players, mobs, and test doubles."""
+    """Best-effort max HP lookup for players, mobs, and compatible combatants."""
     if getattr(target.db, "base_stats", None):
         try:
             from world.base_attributes import derive_max_hp
