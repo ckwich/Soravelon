@@ -635,7 +635,10 @@ class AreaBuilder:
 
         # --- 3. Dialogue data on db attributes (NPC-01) -------------------
         dialogue = kwargs.get("dialogue", {})
-        npc_obj.db.dialogue_greeting_tiers = dialogue.get("greeting_tiers", {})
+        greeting_tiers = dict(dialogue.get("greeting_tiers", {}))
+        if dialogue.get("greeting") and "neutral" not in greeting_tiers:
+            greeting_tiers["neutral"] = dialogue["greeting"]
+        npc_obj.db.dialogue_greeting_tiers = greeting_tiers
         npc_obj.db.dialogue_topics = dialogue.get("topics", {})
         npc_obj.db.dialogue_base_hints = dialogue.get("base_hints", [])
         npc_obj.db.dialogue_tier_hints = dialogue.get("tier_hints", {})
@@ -1579,8 +1582,8 @@ class AreaBuilder:
 
         # Store layer 1 overrides on zone obj for future use
         overrides = config.get("layer_1_overrides", {})
-        if overrides:
-            self._zone_obj.db.layer_1_overrides = overrides
+        self._zone_obj.db.layer_1_overrides = overrides
+        self._zone_obj.db.node_lore_fragments = config.get("lore_fragments", [])
 
     # ------------------------------------------------------------------
     # Helpers

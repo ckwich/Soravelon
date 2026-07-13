@@ -549,6 +549,14 @@ def _validate_world_definitions(
                 if len(operation.arguments) > position:
                     stable_id = operation.arguments[position]
                     if isinstance(stable_id, str):
+                        if stable_id != stable_id.casefold():
+                            diagnostics.append(
+                                _diagnostic(
+                                    operation,
+                                    "noncanonical-identifier",
+                                    f"Runtime identity '{stable_id}' must use canonical lowercase.",
+                                )
+                            )
                         owner_key = (operation.method, stable_id)
                         previous_source = stable_id_owners.get(owner_key)
                         if previous_source is not None:
@@ -561,6 +569,16 @@ def _validate_world_definitions(
                             )
                         else:
                             stable_id_owners[owner_key] = operation.source_path
+            if operation.method == "room" and operation.arguments:
+                room_id = operation.arguments[0]
+                if isinstance(room_id, str) and room_id != room_id.casefold():
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "noncanonical-identifier",
+                            f"Runtime identity '{room_id}' must use canonical lowercase.",
+                        )
+                    )
             if operation.method == "npc" and len(operation.arguments) > 1:
                 npc_id = operation.arguments[1]
                 if isinstance(npc_id, str):
@@ -615,7 +633,23 @@ def _validate_world_definitions(
     for definition in definitions:
         room_ids = rooms_by_zone[definition.zone_id]
         exit_destinations: dict[tuple[str, str], object] = {}
+        zone_operation = next(
+            operation
+            for operation in definition.operations
+            if operation.method == "zone"
+        )
+        zone_kwargs = _frozen_map_get(
+            zone_operation.keyword_arguments, "has_node", False
+        )
         for operation in definition.operations:
+            if operation.method == "node" and not zone_kwargs:
+                diagnostics.append(
+                    _diagnostic(
+                        operation,
+                        "inactive-node-operation",
+                        "area.node() requires zone(has_node=True) so runtime materializes it.",
+                    )
+                )
             if operation.method in {"spawn", "named_mob"}:
                 mob_position = 1 if operation.method == "spawn" else 0
                 mob_id = _operation_value(operation, mob_position, "mob")

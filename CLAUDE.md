@@ -33,6 +33,7 @@ python scripts/smoke_start.py
 evennia worldcontent validate
 evennia worldcontent plan
 evennia worldcontent status
+evennia worldcontent bootstrap-check
 
 # Game lifecycle.
 evennia migrate

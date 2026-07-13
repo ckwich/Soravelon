@@ -17,6 +17,8 @@ def build():
         hub_city='korahei',
         faction_territory='kauroran',
         faction_presence=['kauroran', 'warden'],
+        has_node=True,
+        node_type='resonance',
         world_x=80,
         world_y=-1,
         world_radius=140,

@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from world.content_compiler import compile_world_manifest
 from world.content_revisions import get_world_content_status, serialize_change_plan
+from world.content_runtime import verify_runtime_manifest
 
 
 class Command(BaseCommand):
@@ -14,7 +15,9 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser):
-        parser.add_argument("action", choices=("validate", "plan", "status"))
+        parser.add_argument(
+            "action", choices=("validate", "plan", "status", "bootstrap-check")
+        )
         parser.add_argument(
             "--format",
             choices=("human", "json"),
@@ -27,7 +30,7 @@ class Command(BaseCommand):
         output_format = options["output_format"]
         areas_dir = Path(settings.GAME_DIR) / "world" / "areas"
 
-        if action == "validate":
+        if action in {"validate", "bootstrap-check"}:
             result = compile_world_manifest(areas_dir)
             valid = result.manifest is not None
             payload = {
@@ -49,6 +52,27 @@ class Command(BaseCommand):
                     for diagnostic in result.diagnostics
                 ],
             }
+            if action == "bootstrap-check" and result.manifest is not None:
+                verification = verify_runtime_manifest(result.manifest)
+                valid = verification.verified_manifest_hash is not None
+                payload.update(
+                    {
+                        "valid": valid,
+                        "state": "bootstrap-ready" if valid else "runtime-drift",
+                        "runtime_diagnostics": [
+                            {
+                                "source_path": diagnostic.source_path,
+                                "line": diagnostic.line,
+                                "column": diagnostic.column,
+                                "zone_id": diagnostic.zone_id,
+                                "entity_id": str(diagnostic.entity_id),
+                                "code": diagnostic.code,
+                                "message": diagnostic.message,
+                            }
+                            for diagnostic in verification.diagnostics
+                        ],
+                    }
+                )
         else:
             status = get_world_content_status(areas_dir)
             valid = not status.state.startswith("invalid")
@@ -91,6 +115,13 @@ class Command(BaseCommand):
                 self.stdout.write(
                     f"{diagnostic['source_path']}:{diagnostic['line']}:"
                     f"{diagnostic['column']} {diagnostic['code']}: "
+                    f"{diagnostic['message']}"
+                )
+            for diagnostic in payload.get("runtime_diagnostics", []):
+                self.stdout.write(
+                    f"{diagnostic['source_path']}:{diagnostic['line']}:"
+                    f"{diagnostic['column']} {diagnostic['code']} "
+                    f"[{diagnostic['zone_id']}:{diagnostic['entity_id']}]: "
                     f"{diagnostic['message']}"
                 )
         if not payload["valid"]:

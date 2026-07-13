@@ -307,6 +307,21 @@ class TestNpcStoredOnRoom(AreaBuilderTestBase):
         self.assertEqual(npcs[0]["npc_id"], "maren_warden")
         self.assertEqual(npcs[0]["quest"], "wolves_quest")
 
+    def test_plain_authored_greeting_becomes_neutral_runtime_greeting(self):
+        ab = self._make_builder()
+        room = self._make_room(ab, "room_001")
+
+        npc = ab.npc(
+            room,
+            "npc_keeper",
+            dialogue={"greeting": "The keeper waves you inside."},
+        )
+
+        self.assertEqual(
+            npc.db.dialogue_greeting_tiers,
+            {"neutral": "The keeper waves you inside."},
+        )
+
 
 class TestLiteralRuntimeConfiguration(AreaBuilderTestBase):
     def test_room_role_materializes_supported_spawn_point_tag(self):
@@ -723,6 +738,22 @@ class TestServerStartLoadsAreasDir(EvenniaTestMixin, TransactionTestCase):
 
         # Verify registries were cleared and rebuilt (empty is fine)
         self.assertIsInstance(zone_registry.get_all_zones(), list)
+
+        from pathlib import Path
+        from world.content_compiler import compile_world_manifest
+        from world.content_runtime import verify_runtime_manifest
+
+        manifest = compile_world_manifest(Path("world/areas")).manifest
+        self.assertIsNotNone(manifest)
+        verification = verify_runtime_manifest(manifest)
+        self.maxDiff = None
+        self.assertEqual(
+            [
+                (item.zone_id, item.entity_id, item.code, item.message)
+                for item in verification.diagnostics
+            ],
+            [],
+        )
 
 
 # ------------------------------------------------------------------

@@ -342,6 +342,40 @@ def build():
             ],
         )
 
+    def test_runtime_identity_ids_must_use_canonical_lowercase(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("canonical")
+    area.zone(name="Canonical", zone_type="frontier", continent="varath")
+    area.room("Room_Mixed", name="Mixed", desc="A threshold.")
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/canonical.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(result.diagnostics[0].code, "noncanonical-identifier")
+        self.assertEqual(result.diagnostics[0].line, 5)
+
+    def test_node_operation_requires_active_zone_metadata(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("inactive_node")
+    area.zone(name="Inactive", zone_type="node_active", continent="veluana")
+    center = area.room("center", name="Center", desc="A threshold.")
+    area.node(center, 4)
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/inactive_node.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(result.diagnostics[0].code, "inactive-node-operation")
+
     def test_manifest_hash_is_semantic_and_deterministic(self):
         from world.content_compiler import compile_world_sources
 

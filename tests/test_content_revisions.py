@@ -1,10 +1,13 @@
 import io
 import json
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.test import TestCase
+from evennia.utils.test_resources import EvenniaTest
 
 AREAS_DIR = Path(__file__).resolve().parents[1] / "world" / "areas"
 
@@ -131,3 +134,82 @@ class TestWorldContentReadOnlyCommand(TestCase):
             self.assertEqual(payload["valid"], True)
 
         self.assertEqual(WorldContentRevision.objects.count(), 0)
+
+
+class TestRuntimeManifestBootstrapVerification(EvenniaTest):
+    def _build_runtime_and_manifest(self):
+        from world.area_builder import AreaBuilder
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("bootstrap")
+    area.zone(name="Bootstrap", zone_type="frontier", continent="varath")
+    entry = area.room("entry", name="Entry", desc="A threshold.")
+    square = area.room("square", name="Square", desc="An open square.")
+    area.exit(entry, square, "north")
+    area.exit(square, entry, "south")
+    area.npc(entry, "npc_keeper", name="Keeper", faction="wardens")
+    area.item("welcome_note", key="Welcome Note", item_type="item")
+    area.quest("welcome", quest_giver="npc_keeper", objectives=[
+        {"type": "investigate", "target": "square", "count": 1},
+    ])
+    return area.build()
+"""
+        area = AreaBuilder("bootstrap")
+        area.zone(name="Bootstrap", zone_type="frontier", continent="varath")
+        entry = area.room("entry", name="Entry", desc="A threshold.")
+        square = area.room("square", name="Square", desc="An open square.")
+        area.exit(entry, square, "north")
+        area.exit(square, entry, "south")
+        area.npc(entry, "npc_keeper", name="Keeper", faction="wardens")
+        area.item("welcome_note", key="Welcome Note", item_type="item")
+        area.quest(
+            "welcome",
+            quest_giver="npc_keeper",
+            objectives=[{"type": "investigate", "target": "square", "count": 1}],
+        )
+        area.build()
+        manifest = compile_world_sources({"world/areas/bootstrap.py": source}).manifest
+        assert manifest is not None
+        return manifest, entry
+
+    def test_exact_runtime_can_be_verified_without_writing(self):
+        from world.content_runtime import verify_runtime_manifest
+        from world.models import WorldContentRevision
+
+        manifest, _entry = self._build_runtime_and_manifest()
+        result = verify_runtime_manifest(manifest)
+
+        self.assertEqual(result.diagnostics, ())
+        self.assertEqual(result.verified_manifest_hash, manifest.manifest_hash)
+        self.assertEqual(WorldContentRevision.objects.count(), 0)
+
+        output = io.StringIO()
+        with patch(
+            "world.management.commands.worldcontent.compile_world_manifest",
+            return_value=SimpleNamespace(manifest=manifest, diagnostics=()),
+        ):
+            call_command(
+                "worldcontent",
+                "bootstrap-check",
+                "--format",
+                "json",
+                stdout=output,
+            )
+        payload = json.loads(output.getvalue())
+        self.assertEqual(payload["state"], "bootstrap-ready")
+        self.assertEqual(WorldContentRevision.objects.count(), 0)
+
+    def test_runtime_drift_refuses_bootstrap_adoption(self):
+        from world.content_runtime import verify_runtime_manifest
+
+        manifest, entry = self._build_runtime_and_manifest()
+        entry.db.desc = "Runtime drift."
+
+        result = verify_runtime_manifest(manifest)
+
+        self.assertIsNone(result.verified_manifest_hash)
+        self.assertTrue(result.diagnostics)
+        self.assertEqual(result.diagnostics[0].code, "runtime-value-mismatch")
+        self.assertIn("entry.desc", result.diagnostics[0].entity_id)
