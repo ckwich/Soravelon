@@ -208,3 +208,41 @@ class TestHelpEntries(unittest.TestCase):
         self.assertIn("5 stamina", encumbrance["text"].lower())
         self.assertNotIn("reduced movement speed", encumbrance["text"].lower())
         self.assertNotIn("combat effectiveness", encumbrance["text"].lower())
+
+    def test_skill_help_labels_live_and_planned_runtime_behavior(self):
+        from world.help_entries import HELP_ENTRY_DICTS
+        from world.skill_affordances import PRIMARY_SKILL_AFFORDANCES
+        from world.skill_definitions import SKILL_DEFINITIONS
+
+        for skill_id, affordance in PRIMARY_SKILL_AFFORDANCES.items():
+            name = SKILL_DEFINITIONS[skill_id]["name"].lower()
+            entry = next(
+                item
+                for item in HELP_ENTRY_DICTS
+                if item["key"] == name
+                or skill_id in (item.get("aliases") or [])
+            )
+            text = entry["text"]
+            with self.subTest(skill_id=skill_id):
+                if affordance["implementation_status"] == "live":
+                    self.assertIn("|gAvailability:|n Live", text)
+                else:
+                    self.assertIn("|yAvailability:|n Planned", text)
+                    self.assertIn("not live", text.lower())
+
+        beast_training = next(
+            item
+            for item in HELP_ENTRY_DICTS
+            if item["key"] == "beast training"
+        )
+        self.assertIn("companion ownership", beast_training["text"].lower())
+
+    def test_engineering_help_defers_companion_identity_without_hiding_components(self):
+        from world.help_entries import HELP_ENTRY_DICTS
+
+        by_key = {entry["key"]: entry["text"] for entry in HELP_ENTRY_DICTS}
+        combined = by_key["domains"] + by_key["forge"]
+
+        self.assertIn("Components", combined)
+        self.assertIn("not yet live", combined)
+        self.assertIn("companion", combined.lower())

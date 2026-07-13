@@ -127,6 +127,7 @@ class CmdSkills(Command):
         """Show detailed view of a specific skill."""
         from world.skill_definitions import SKILL_DEFINITIONS
         from world.skill_engine import get_skill_value
+        from world.skill_affordances import get_skill_implementation_notice
 
         # Match against SKILL_DEFINITIONS keys: startswith then substring
         match = None
@@ -169,6 +170,9 @@ class CmdSkills(Command):
 
         lines = [f"|w--- {defn['name']} ------|n"]
         lines.append(f"  {defn['description']}")
+        notice = get_skill_implementation_notice(skill_id)
+        lines.append(f"  |wStatus:|n {notice['label']}")
+        lines.append(f"  {notice['summary']}")
         lines.append(f"  Current value: {color}{value:.0f}|n")
         if defn.get("domain_bonus"):
             lines.append(f"  Domain bonus: {defn['domain_bonus']}")
@@ -177,7 +181,10 @@ class CmdSkills(Command):
         thresholds = defn.get("thresholds", {})
         if thresholds:
             lines.append("")
-            lines.append("  |wThresholds:|n")
+            if notice["status"] == "live":
+                lines.append("  |wThresholds:|n")
+            else:
+                lines.append("  |wDesign targets (not live thresholds):|n")
             for threshold, desc in sorted(thresholds.items()):
                 marker = "|g*" if value >= threshold else " "
                 lines.append(f"  {marker} {threshold:3d}: {desc}|n")

@@ -272,3 +272,37 @@ PRIMARY_SKILL_AFFORDANCES = {
 def get_primary_skill_affordance(skill_id):
     """Return the primary repeatable affordance metadata for a skill id."""
     return PRIMARY_SKILL_AFFORDANCES.get(skill_id)
+
+
+def get_skill_implementation_notice(skill_id):
+    """Return one player-facing availability packet from runtime authority."""
+
+    affordance = PRIMARY_SKILL_AFFORDANCES[skill_id]
+    status = affordance["implementation_status"]
+    verb = affordance["primary_verb"]
+    system = affordance["system"]
+    if status == "live":
+        return {
+            "status": status,
+            "label": "Live",
+            "summary": f"The '{verb}' interaction is live through {system}.",
+        }
+    if status == "planned_companions":
+        return {
+            "status": status,
+            "label": "Planned",
+            "summary": (
+                "Companion ownership and training are not live yet. Direct "
+                "practice and trainer progression remain available; the "
+                "companion behaviors and milestones are design targets."
+            ),
+        }
+    return {
+        "status": status,
+        "label": "Planned",
+        "summary": (
+            f"The '{verb}' interaction is not live yet. Direct practice and "
+            "trainer progression remain available; the described behaviors "
+            "and milestones are design targets."
+        ),
+    }

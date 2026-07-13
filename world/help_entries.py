@@ -10,6 +10,7 @@ Each entry in HELP_ENTRY_DICTS is a dict with keys:
 """
 
 from world.remnance_visibility import public_domain_label
+from world.skill_affordances import get_skill_implementation_notice
 from world.skill_definitions import SKILL_DEFINITIONS
 
 HELP_ENTRY_DICTS = [
@@ -203,7 +204,8 @@ HELP_ENTRY_DICTS = [
             "  |wDiplomacy|n -- Relationships as power (Influence)\n"
             "  |wAlchemy|n -- Preparation philosophy (Reagents)\n"
             "  |wTactics|n -- Group synergy (Command)\n"
-            "  |wEngineering|n -- Mechanical companions (Components)\n\n"
+            "  |wEngineering|n -- Components fuel live abilities; mechanical "
+            "companion identities are planned and not yet live\n\n"
             "Each domain has a unique resource that fuels its abilities. "
             "Type |wdomains|n to see the proficiency language your character "
             "would understand."
@@ -332,7 +334,9 @@ HELP_ENTRY_DICTS = [
             "Skill categories include investigation, lockpicking, cooking, "
             "smithing, alchemy, herbalism, and more. Every skill also has "
             "its own direct help topic, so |whelp tracking|n or "
-            "|whelp first aid|n will give you practical guidance."
+            "|whelp first aid|n will give you practical guidance. Direct "
+            "skill topics label whether their contextual world behavior is "
+            "Live or Planned; planned skills can still be practiced or trained."
         ),
     },
     {
@@ -1602,12 +1606,12 @@ HELP_ENTRY_DICTS = [
             "|wGuild of Forge|n\n"
             "|x\"We don't ask the old magic for permission. We figure it out ourselves.\"|n\n\n"
             "|cPrimary Domain:|n Engineering\n"
-            "|cResource:|n Components -- fuel for mechanical companions\n"
+            "|cResource:|n Components -- live Engineering ability fuel\n"
             "|cHub Cities:|n Caldenmere\n\n"
-            "The Forge guild teaches mechanical companion construction as "
-            "combat identity. The companion fights alongside you, fueled "
-            "by Components. Standard for baseline, Enhanced Fuel for "
-            "amplified, Overcharge for risk/reward ceiling.\n\n"
+            "Mechanical companion construction and command are planned Forge "
+            "identities, but companion ownership is not yet live. Current "
+            "Engineering play spends Components through its available abilities "
+            "and practical crafting systems.\n\n"
             "|cSubclasses:|n Ironwright, Gearshade, Rootwright, Resonwright, "
             "Runewright, Forgepact, Alchemist, Warchief, Relicwright"
         ),
@@ -1961,3 +1965,37 @@ for _skill_key, _skill_def in SKILL_DEFINITIONS.items():
     ):
         continue
     HELP_ENTRY_DICTS.append(_build_skill_help_entry(_skill_key, _skill_def))
+
+
+def _skill_help_entry(skill_key, skill_def):
+    """Find the direct help entry selected for one canonical skill."""
+
+    labels = {
+        skill_key,
+        skill_key.replace("_", " "),
+        skill_def.get("name", skill_key).lower(),
+    }
+    return next(
+        entry
+        for entry in HELP_ENTRY_DICTS
+        if entry["key"] in labels
+        or labels.intersection(entry.get("aliases") or [])
+    )
+
+
+for _skill_key, _skill_def in SKILL_DEFINITIONS.items():
+    _entry = _skill_help_entry(_skill_key, _skill_def)
+    _notice = get_skill_implementation_notice(_skill_key)
+    _color = "|g" if _notice["status"] == "live" else "|y"
+    _availability = (
+        f"{_color}Availability:|n {_notice['label']} -- {_notice['summary']}"
+    )
+    _title, _separator, _body = _entry["text"].partition("\n\n")
+    _entry["text"] = f"{_title}\n\n{_availability}"
+    if _separator:
+        _entry["text"] += f"\n\n{_body}"
+    if _notice["status"] != "live":
+        _entry["text"] = _entry["text"].replace(
+            "|cMilestones:|n",
+            "|cDesign Milestones (not live unlocks):|n",
+        )
