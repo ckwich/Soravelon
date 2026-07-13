@@ -305,6 +305,8 @@ def initialize_world_content(
 def _ensure_evennia_runtime_initialized() -> None:
     """Complete Evennia's one-time object foundation for explicit initialization."""
 
+    import evennia
+
     from evennia.accounts.models import AccountDB
     from evennia.objects.models import ObjectDB
     from evennia.server import initial_setup
@@ -314,10 +316,10 @@ def _ensure_evennia_runtime_initialized() -> None:
         raise ApplyPreconditionError(
             "Admin account #1 must exist before world-content initialization."
         )
-    if not ObjectDB.objects.filter(id=2).exists():
-        import evennia
-
+    foundation_exists = ObjectDB.objects.filter(id=2).exists()
+    if not foundation_exists or not callable(evennia.search_object):
         evennia._init()
+    if not foundation_exists:
         initial_setup.create_objects()
         initial_setup.at_initial_setup()
     if not ObjectDB.objects.filter(id=2).exists():

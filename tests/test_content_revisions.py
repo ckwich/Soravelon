@@ -1099,6 +1099,17 @@ def build():
         initial_hook.assert_called_once_with()
         self.assertEqual(ServerConfig.objects.conf("last_initial_setup_step"), "done")
 
+    def test_existing_foundation_still_initializes_process_api(self):
+        from world.content_revisions import _ensure_evennia_runtime_initialized
+
+        with (
+            patch("evennia.search_object", None),
+            patch("evennia._init") as evennia_init,
+        ):
+            _ensure_evennia_runtime_initialized()
+
+        evennia_init.assert_called_once_with()
+
     def test_two_complete_server_starts_leave_content_database_unchanged(self):
         from server.conf.at_server_startstop import at_server_start
         from world.content_compiler import compile_world_sources
