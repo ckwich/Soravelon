@@ -129,39 +129,7 @@ class CmdRepair(Command):
             )
             return
 
-        from world.material_definitions import TOOL_DURABILITY
+        from world.gathering_engine import repair_tool
 
-        max_dur = None
-        for tool_type, tool_data in TOOL_DURABILITY.items():
-            if tool.tags.has(tool_type, category="item_tag"):
-                max_dur = tool_data["max_durability"]
-                break
-
-        if max_dur is None:
-            max_dur = 50  # fallback
-
-        if tool.db.durability >= max_dur:
-            character.msg(f"|y{tool.key} is already in good condition.|n")
-            return
-
-        # Check station (workbench)
-        if not character.location.tags.has(
-            "crafting_workbench", category="crafting_station"
-        ):
-            character.msg("|rYou need a workbench to repair tools.|n")
-            return
-
-        # Check smithing skill
-        from world.skill_engine import get_skill_value, accumulate_skill_use
-
-        smithing = get_skill_value(character, "smithing")
-
-        # Repair amount: 10 + smithing/5 (so skill 0 = 10, skill 100 = 30)
-        repair_amount = int(10 + smithing / 5)
-        tool.db.durability = min(max_dur, tool.db.durability + repair_amount)
-
-        character.msg(
-            f"|gYou repair {tool.key}. "
-            f"Durability: {tool.db.durability}/{max_dur}.|n"
-        )
-        accumulate_skill_use(character, "smithing")
+        _, message = repair_tool(character, tool)
+        character.msg(message)

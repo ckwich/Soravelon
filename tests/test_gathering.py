@@ -11,6 +11,8 @@ Uses unittest.TestCase for pure-computation tests and MagicMock for object simul
 import unittest
 from unittest.mock import MagicMock, patch
 
+from evennia.utils.test_resources import EvenniaTest
+
 
 # ---------------------------------------------------------------------------
 # SC-4: Material Registry Data Integrity
@@ -435,6 +437,166 @@ class TestToolDurability(unittest.TestCase):
         for skill, expected in [(0, 10), (50, 20), (100, 30)]:
             repair_amount = int(10 + skill / 5)
             self.assertEqual(repair_amount, expected, f"skill={skill}")
+
+    def test_catalog_tools_start_at_their_authored_maximum(self):
+        from world.item_catalog import get_item_template
+        from world.material_definitions import TOOL_DURABILITY
+
+        for tool_type, durability in TOOL_DURABILITY.items():
+            with self.subTest(tool_type=tool_type):
+                template = get_item_template(tool_type)
+                self.assertEqual(template["item_type"], "tool")
+                self.assertEqual(template["tool_tag"], tool_type)
+                self.assertEqual(
+                    template.get("durability"),
+                    durability["max_durability"],
+                )
+
+    def test_repair_command_routes_through_the_atomic_service(self):
+        from commands.cmd_prospect import CmdRepair
+
+        character = MagicMock()
+        tool = MagicMock(key="Iron Pickaxe")
+        tool.key = "Iron Pickaxe"
+        tool.db.durability = 2
+        character.contents = [tool]
+        command = CmdRepair()
+        command.caller = character
+        command.args = "pickaxe"
+
+        with patch(
+            "world.gathering_engine.repair_tool",
+            return_value=(True, "repaired"),
+        ) as repair:
+            command.func()
+
+        repair.assert_called_once_with(character, tool)
+        character.msg.assert_called_once_with("repaired")
+
+
+class TestToolDurabilityRuntime(EvenniaTest):
+    def setUp(self):
+        super().setUp()
+        self.char1.location = self.room1
+        self.room1.tags.add(
+            "crafting_workbench",
+            category="crafting_station",
+        )
+        self.char1.db.carried_scales = 20
+
+    def _tool(self, tool_type="pickaxe"):
+        from world.item_spawner import create_item_from_catalog
+
+        return create_item_from_catalog(tool_type, location=self.char1)
+
+    def test_real_catalog_tool_loses_one_durability_on_gather(self):
+        from world.gathering_engine import complete_gather
+        from world.material_definitions import TOOL_DURABILITY
+
+        tool = self._tool()
+        node = MagicMock()
+        node.db.tier = 1
+        gathered_item = MagicMock(key="Iron Ore")
+
+        with patch(
+            "world.gathering_engine.gather_from_node",
+            return_value=(True, "iron_ore"),
+        ), patch(
+            "world.crafting_engine.calculate_craft_quality",
+            return_value="standard",
+        ), patch(
+            "world.item_spawner.create_item_from_template",
+            return_value=gathered_item,
+        ), patch(
+            "world.skill_engine.accumulate_skill_use",
+        ), patch("world.gathering_engine.random.random", return_value=1.0):
+            ok, message, _, broken = complete_gather(
+                self.char1,
+                node,
+                tool,
+                "mining",
+                1,
+            )
+
+        self.assertTrue(ok, message)
+        self.assertFalse(broken)
+        self.assertEqual(
+            tool.db.durability,
+            TOOL_DURABILITY["pickaxe"]["max_durability"] - 1,
+        )
+
+    @patch("world.skill_engine.accumulate_skill_use")
+    @patch("world.skill_engine.get_skill_value", return_value=0)
+    def test_repair_is_persistent_and_charges_the_authored_cost(
+        self,
+        _skill_value,
+        _skill_use,
+    ):
+        from world.gathering_engine import repair_tool
+
+        tool = self._tool()
+        tool.db.durability = 0
+
+        ok, message = repair_tool(self.char1, tool)
+
+        self.assertTrue(ok, message)
+        self.assertEqual(tool.db.durability, 10)
+        self.assertEqual(self.char1.db.carried_scales, 15)
+        tool.attributes.reset_cache()
+        self.char1.attributes.reset_cache()
+        self.assertEqual(tool.db.durability, 10)
+        self.assertEqual(self.char1.db.carried_scales, 15)
+
+    @patch("world.skill_engine.accumulate_skill_use")
+    @patch("world.skill_engine.get_skill_value", return_value=100)
+    def test_insufficient_scales_preserve_durability_and_currency(
+        self,
+        _skill_value,
+        skill_use,
+    ):
+        from world.gathering_engine import repair_tool
+
+        tool = self._tool("fishing_rod")
+        tool.db.durability = 1
+        self.char1.db.carried_scales = 5
+
+        ok, message = repair_tool(self.char1, tool)
+
+        self.assertFalse(ok)
+        self.assertIn("6 Scales", message)
+        self.assertEqual(tool.db.durability, 1)
+        self.assertEqual(self.char1.db.carried_scales, 5)
+        skill_use.assert_not_called()
+
+    @patch("world.skill_engine.accumulate_skill_use")
+    @patch("world.skill_engine.get_skill_value", return_value=0)
+    def test_failure_after_currency_write_rolls_back_database_and_live_cache(
+        self,
+        _skill_value,
+        skill_use,
+    ):
+        from world.gathering_engine import repair_tool
+
+        tool = self._tool()
+        tool.db.durability = 0
+
+        def fail_after_scales(checkpoint):
+            if checkpoint == "scales_debited":
+                raise RuntimeError("injected repair failure")
+
+        with patch(
+            "world.gathering_engine._after_tool_repair_write",
+            side_effect=fail_after_scales,
+        ), self.assertRaisesRegex(RuntimeError, "injected repair failure"):
+            repair_tool(self.char1, tool)
+
+        self.assertEqual(tool.db.durability, 0)
+        self.assertEqual(self.char1.db.carried_scales, 20)
+        tool.attributes.reset_cache()
+        self.char1.attributes.reset_cache()
+        self.assertEqual(tool.db.durability, 0)
+        self.assertEqual(self.char1.db.carried_scales, 20)
+        skill_use.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

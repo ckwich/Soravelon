@@ -509,6 +509,98 @@ def initialize_zone_gathering(zone_obj):
 
 
 # ---------------------------------------------------------------------------
+# Tool repair authority
+# ---------------------------------------------------------------------------
+
+def _tool_durability_spec(tool):
+    """Return the authored durability spec for one canonical tool."""
+    from world.material_definitions import TOOL_DURABILITY
+
+    for tool_type, spec in TOOL_DURABILITY.items():
+        if tool.tags.has(tool_type, category="item_tag"):
+            return tool_type, spec
+    return None, None
+
+
+def _after_tool_repair_write(checkpoint):
+    """Failure-injection seam for atomic tool-repair tests."""
+
+
+def repair_tool(character, tool):
+    """Atomically repair one owned canonical tool and charge carried Scales."""
+    from numbers import Real
+
+    from evennia.objects.models import ObjectDB
+
+    from world.atomic_state import atomic_evennia_state
+    from world.models import InventoryItem
+    from world.skill_engine import accumulate_skill_use, get_skill_value
+
+    with atomic_evennia_state(character, tool) as tracker:
+        locked = ObjectDB.objects.select_for_update().in_bulk(
+            [character.id, tool.id]
+        )
+        if len(locked) != 2:
+            return False, "That repair target no longer exists."
+        locked_character = locked[character.id]
+        locked_tool = locked[tool.id]
+        tracker.track(locked_character, attributes=("carried_scales",))
+        tracker.track(locked_tool, attributes=("durability",))
+
+        owned = InventoryItem.objects.select_for_update().filter(
+            character_id=locked_character.id,
+            item_id=locked_tool.id,
+        ).exists()
+        if not owned or locked_tool.db_location_id != locked_character.id:
+            return False, "You do not own that tool."
+
+        room = locked_character.location
+        if not room or not room.tags.has(
+            "crafting_workbench",
+            category="crafting_station",
+        ):
+            return False, "You need a workbench to repair tools."
+
+        tool_type, durability_spec = _tool_durability_spec(locked_tool)
+        if not durability_spec:
+            return False, "That item is not a repairable tool."
+
+        durability = locked_tool.db.durability
+        if (
+            isinstance(durability, bool)
+            or not isinstance(durability, Real)
+            or durability < 0
+        ):
+            return False, "That tool has invalid durability data."
+
+        maximum = durability_spec["max_durability"]
+        if durability >= maximum:
+            return False, f"{locked_tool.key} is already in good condition."
+
+        cost = durability_spec["repair_cost"]
+        carried = locked_character.db.carried_scales or 0
+        if carried < cost:
+            return False, (
+                f"Repairing {locked_tool.key} costs {cost} Scales; "
+                f"you only carry {carried}."
+            )
+
+        smithing = get_skill_value(locked_character, "smithing")
+        repair_amount = int(10 + smithing / 5)
+        repaired_to = min(maximum, durability + repair_amount)
+        locked_character.db.carried_scales = carried - cost
+        _after_tool_repair_write("scales_debited")
+        locked_tool.db.durability = repaired_to
+        _after_tool_repair_write("durability_restored")
+
+    accumulate_skill_use(character, "smithing")
+    return True, (
+        f"|gYou repair {tool.key} for {cost} Scales. "
+        f"Durability: {repaired_to}/{maximum}.|n"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Gather completion logic (extracted from cmd_gathering.py per D-06)
 # ---------------------------------------------------------------------------
 
