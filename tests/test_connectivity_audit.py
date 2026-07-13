@@ -8,22 +8,13 @@ from world.content_compiler import compile_world_manifest
 
 
 class TestProductionWorldConnectivity(TestCase):
-    def test_reports_flight_clusters_blocked_by_destination_discovery(self):
+    def test_all_launch_zones_are_reachable_through_authored_route_discovery(self):
         compilation = compile_world_manifest(Path("world/areas"))
         self.assertIsNotNone(compilation.manifest)
 
         audit = audit_world_connectivity(compilation.manifest)
 
-        self.assertEqual(
-            audit.unreachable_zones,
-            {
-                "colonist_ruins",
-                "kiai_grounds",
-                "korahei",
-                "veluana_central_isle",
-                "veluana_outer_reefs",
-            },
-        )
+        self.assertEqual(audit.unreachable_zones, set())
         self.assertNotIn(
             "circular-flight-discovery",
             {item.code for item in audit.diagnostics},

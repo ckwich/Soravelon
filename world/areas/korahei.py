@@ -436,5 +436,15 @@ def build():
     area.gathering_pool('wood', ['lt_saltpalm_work_circle', 'ac_palm_welcome_shade'], ['saltpalm_wood'], max_active=3, respawn_minutes=12)
 
     area.flight_point(ac_courier_platform, 'korahei_courier', name='Korahei Courier Platform')
+    area.flight_route(
+        'korahei_courier',
+        'varath_prime_courier',
+        220,
+        leg_duration=120,
+        echoes=[
+            {'delay': 30, 'message': 'Wind hardens over open water. The courier beast settles into a long, practiced rhythm while mainland and islands trade places on the horizon.'},
+            {'delay': 80, 'message': 'Far below, reef rings catch the sun around dark water, and working boats leave brief white seams between them.'},
+        ],
+    )
 
     return area.build()

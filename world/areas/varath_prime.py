@@ -3161,6 +3161,11 @@ def build():
                 "message": "|gHelian copies the Tremen lift line onto your manifest slate. The destination is now available from any connected Courier platform.|n",
             },
             {
+                "action_type": "discover_flight_point",
+                "point_id": "korahei_courier",
+                "message": "|gHelian adds the long-haul Korahei exchange marks to your route slate. Beside them he copies the island note exactly: arrival grants passage, not entitlement.|n",
+            },
+            {
                 "action_type": "echo",
                 "message": "|gHelian checks the seal twice before tucking the manifest away. \"Good. Better it came by hand.\"|n",
             },
