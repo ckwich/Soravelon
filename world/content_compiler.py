@@ -12,6 +12,7 @@ from typing import Mapping
 
 from world.area_validator import VALID_DIRECTIONS
 from world.action_vocabulary import ACTION_HANDLERS
+from world.dialogue_schema import DialogueSchemaError, validate_dialogue_payload
 from world.faction_registry import FactionIdentityError, canonicalize_faction_id
 from world.item_catalog import CATALOG
 from world.material_definitions import MATERIAL_REGISTRY
@@ -573,6 +574,25 @@ def _validate_world_definitions(
         }
         rooms_by_zone[definition.zone_id] = room_ids
         for operation in definition.operations:
+            if operation.method == "npc":
+                dialogue = _thaw(
+                    _frozen_map_get(
+                        operation.keyword_arguments,
+                        "dialogue",
+                        FrozenMap(()),
+                    )
+                )
+                try:
+                    validate_dialogue_payload(dialogue)
+                except DialogueSchemaError as exc:
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "invalid-dialogue-payload",
+                            f"NPC dialogue does not match the authored schema: {exc}",
+                        )
+                    )
+
             stable_id_specs = {
                 "npc": (1, "duplicate-npc-id"),
                 "quest": (0, "duplicate-quest-id"),

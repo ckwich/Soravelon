@@ -137,6 +137,7 @@ from world.area_validator import (
     validate_spawn_condition,
 )
 from world.faction_registry import FactionIdentityError, canonicalize_faction_id
+from world.dialogue_schema import DialogueSchemaError, validate_dialogue_payload
 from world.standing import validate_authored_standing_delta
 
 
@@ -616,6 +617,14 @@ class AreaBuilder:
 
         Backward-compatible: ``room.db.npc_definitions`` is always populated.
         """
+        dialogue = kwargs.get("dialogue", {})
+        try:
+            validate_dialogue_payload(dialogue)
+        except DialogueSchemaError as exc:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' NPC '{npc_id}' has invalid dialogue: {exc}"
+            ) from exc
+
         faction = _canonical_relationship_id(kwargs.get("faction"))
 
         # --- 1. Populate room.db.npc_definitions (backward compat) ---------
@@ -683,11 +692,9 @@ class AreaBuilder:
             npc_obj.tags.add(trainer_id, category="trainer_id")
 
         # --- 3. Dialogue data on db attributes (NPC-01) -------------------
-        dialogue = kwargs.get("dialogue", {})
-        greeting_tiers = dict(dialogue.get("greeting_tiers", {}))
-        if dialogue.get("greeting") and "neutral" not in greeting_tiers:
-            greeting_tiers["neutral"] = dialogue["greeting"]
-        npc_obj.db.dialogue_greeting_tiers = greeting_tiers
+        npc_obj.db.dialogue_greeting_tiers = dict(
+            dialogue.get("greeting_tiers", {})
+        )
         npc_obj.db.dialogue_topics = dialogue.get("topics", {})
         npc_obj.db.dialogue_base_hints = dialogue.get("base_hints", [])
         npc_obj.db.dialogue_tier_hints = dialogue.get("tier_hints", {})

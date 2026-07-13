@@ -131,6 +131,32 @@ def build():
         self.assertEqual(result.diagnostics[0].code, "nonliteral-area-argument")
         self.assertEqual(result.diagnostics[0].line, 9)
 
+    def test_legacy_dialogue_key_blocks_world_compilation(self):
+        from world.content_compiler import compile_world_sources
+
+        source = '''from world.area_builder import AreaBuilder
+
+def build():
+    area = AreaBuilder("dialogue_zone")
+    area.zone(name="Dialogue Zone", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    area.npc(
+        room,
+        "npc_keeper",
+        dialogue={"greeting": "The keeper waves."},
+    )
+    return area.build()
+'''
+
+        result = compile_world_sources({"world/areas/dialogue_zone.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(len(result.diagnostics), 1)
+        diagnostic = result.diagnostics[0]
+        self.assertEqual(diagnostic.code, "invalid-dialogue-payload")
+        self.assertEqual(diagnostic.line, 7)
+        self.assertIn("legacy dialogue keys", diagnostic.message)
+
     def test_missing_literal_zone_id_fails_closed(self):
         from world.content_compiler import compile_area_source
 

@@ -323,14 +323,34 @@ class TestNpcStoredOnRoom(AreaBuilderTestBase):
         self.assertEqual(npcs[0]["npc_id"], "maren_warden")
         self.assertEqual(npcs[0]["quest"], "wolves_quest")
 
-    def test_plain_authored_greeting_becomes_neutral_runtime_greeting(self):
+    def test_legacy_greeting_is_rejected_before_npc_creation(self):
+        ab = self._make_builder()
+        room = self._make_room(ab, "room_001")
+
+        with self.assertRaisesRegex(
+            AreaBuilderValidationError,
+            "legacy dialogue keys",
+        ):
+            ab.npc(
+                room,
+                "npc_keeper",
+                dialogue={"greeting": "The keeper waves you inside."},
+            )
+
+        self.assertEqual(room.db.npc_definitions, [])
+
+    def test_tiered_greeting_materializes_without_translation(self):
         ab = self._make_builder()
         room = self._make_room(ab, "room_001")
 
         npc = ab.npc(
             room,
             "npc_keeper",
-            dialogue={"greeting": "The keeper waves you inside."},
+            dialogue={
+                "greeting_tiers": {
+                    "neutral": "The keeper waves you inside.",
+                }
+            },
         )
 
         self.assertEqual(
