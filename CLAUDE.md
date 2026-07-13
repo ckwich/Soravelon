@@ -29,11 +29,13 @@ python scripts/run_tests.py tests.test_social_web_kernel
 # Startup/import proof after dependency or area changes.
 python scripts/smoke_start.py
 
-# Read-only revision authority; none of these commands mutates world content.
+# Revision authority. The first four are read-only; bootstrap-adopt records
+# initial authority after an exact runtime proof but does not mutate world content.
 evennia worldcontent validate
 evennia worldcontent plan
 evennia worldcontent status
 evennia worldcontent bootstrap-check
+evennia worldcontent bootstrap-adopt --git-commit "$(git rev-parse HEAD)"
 
 # Game lifecycle.
 evennia migrate

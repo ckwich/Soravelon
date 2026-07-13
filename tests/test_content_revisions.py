@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from evennia.utils.test_resources import EvenniaTest
@@ -202,7 +203,9 @@ def build():
         self.assertEqual(WorldContentRevision.objects.count(), 0)
 
     def test_runtime_drift_refuses_bootstrap_adoption(self):
+        from world.content_revisions import BootstrapAdoptionError, adopt_bootstrap
         from world.content_runtime import verify_runtime_manifest
+        from world.models import WorldContentRevision
 
         manifest, entry = self._build_runtime_and_manifest()
         entry.db.desc = "Runtime drift."
@@ -213,3 +216,77 @@ def build():
         self.assertTrue(result.diagnostics)
         self.assertEqual(result.diagnostics[0].code, "runtime-value-mismatch")
         self.assertIn("entry.desc", result.diagnostics[0].entity_id)
+
+        with self.assertRaisesRegex(BootstrapAdoptionError, "runtime drift"):
+            adopt_bootstrap(manifest, git_commit="a" * 40)
+        self.assertEqual(WorldContentRevision.objects.count(), 0)
+
+    def test_bootstrap_adoption_records_verified_runtime_without_mutating_it(self):
+        from world.content_revisions import adopt_bootstrap
+        from world.models import WorldContentRevision
+
+        manifest, entry = self._build_runtime_and_manifest()
+        original_desc = entry.db.desc
+
+        revision = adopt_bootstrap(manifest, git_commit="a" * 40)
+
+        revision.refresh_from_db()
+        entry.refresh_from_db()
+        self.assertEqual(revision.status, "applied")
+        self.assertEqual(revision.manifest_hash, manifest.manifest_hash)
+        self.assertEqual(revision.git_commit, "a" * 40)
+        self.assertEqual(revision.plan["kind"], "bootstrap-adoption")
+        self.assertEqual(revision.plan["runtime_verified"], True)
+        self.assertTrue(revision.plan["changes"])
+        self.assertTrue(
+            all(change["action"] == "create" for change in revision.plan["changes"])
+        )
+        self.assertIsNotNone(revision.applied_at)
+        self.assertIsNotNone(revision.finished_at)
+        self.assertEqual(entry.db.desc, original_desc)
+
+    def test_bootstrap_adoption_refuses_existing_authority(self):
+        from world.content_revisions import BootstrapAdoptionError, adopt_bootstrap
+
+        manifest, _entry = self._build_runtime_and_manifest()
+        adopt_bootstrap(manifest, git_commit="a" * 40)
+
+        with self.assertRaisesRegex(BootstrapAdoptionError, "already initialized"):
+            adopt_bootstrap(manifest, git_commit="b" * 40)
+
+    def test_bootstrap_adoption_requires_git_object_id(self):
+        from world.content_revisions import BootstrapAdoptionError, adopt_bootstrap
+        from world.models import WorldContentRevision
+
+        manifest, _entry = self._build_runtime_and_manifest()
+
+        with self.assertRaisesRegex(BootstrapAdoptionError, "Git object ID"):
+            adopt_bootstrap(manifest, git_commit="not-a-commit")
+        self.assertEqual(WorldContentRevision.objects.count(), 0)
+
+    def test_bootstrap_adopt_command_requires_commit_and_records_revision(self):
+        from world.models import WorldContentRevision
+
+        manifest, _entry = self._build_runtime_and_manifest()
+        with patch(
+            "world.management.commands.worldcontent.compile_world_manifest",
+            return_value=SimpleNamespace(manifest=manifest, diagnostics=()),
+        ):
+            with self.assertRaises(CommandError):
+                call_command("worldcontent", "bootstrap-adopt")
+
+            output = io.StringIO()
+            call_command(
+                "worldcontent",
+                "bootstrap-adopt",
+                "--git-commit",
+                "a" * 40,
+                "--format",
+                "json",
+                stdout=output,
+            )
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(payload["state"], "bootstrap-adopted")
+        self.assertEqual(payload["git_commit"], "a" * 40)
+        self.assertEqual(WorldContentRevision.objects.count(), 1)

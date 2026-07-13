@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
+
+from django.db import transaction
+from django.utils import timezone
 
 from world.content_compiler import (
     CompilationDiagnostic,
@@ -13,7 +17,12 @@ from world.content_compiler import (
     compile_world_sources,
     deserialize_world_manifest,
     plan_world_changes,
+    serialize_world_manifest,
 )
+
+
+class BootstrapAdoptionError(RuntimeError):
+    """Raised when existing runtime cannot safely become revision authority."""
 
 
 @dataclass(frozen=True)
@@ -123,3 +132,50 @@ def serialize_change_plan(plan: WorldChangePlan) -> dict[str, object]:
             for change in plan.changes
         ],
     }
+
+
+@transaction.atomic
+def adopt_bootstrap(manifest, *, git_commit: str):
+    """Record an exact existing runtime as the initial applied revision.
+
+    This operation deliberately performs no world-content mutation. The runtime
+    verifier is repeated inside the transaction so adoption cannot rely on a
+    stale preflight result.
+    """
+
+    from world.content_runtime import verify_runtime_manifest
+    from world.models import WorldContentRevision
+
+    if re.fullmatch(r"[0-9a-f]{7,64}", git_commit or "") is None:
+        raise BootstrapAdoptionError(
+            "Git commit must be a 7-64 character lowercase hexadecimal Git object ID."
+        )
+    if WorldContentRevision.objects.exists():
+        raise BootstrapAdoptionError("World content authority is already initialized.")
+
+    verification = verify_runtime_manifest(manifest)
+    if verification.verified_manifest_hash != manifest.manifest_hash:
+        raise BootstrapAdoptionError(
+            "Bootstrap adoption refused because runtime drift was detected."
+        )
+
+    empty = compile_world_sources({}).manifest
+    assert empty is not None
+    planning = plan_world_changes(empty, manifest)
+    if planning.plan is None:
+        raise BootstrapAdoptionError(
+            "Bootstrap adoption could not produce a valid initial change plan."
+        )
+    plan = serialize_change_plan(planning.plan)
+    plan.update({"kind": "bootstrap-adoption", "runtime_verified": True})
+    now = timezone.now()
+    return WorldContentRevision.objects.create(
+        manifest_hash=manifest.manifest_hash,
+        schema_version=manifest.schema_version,
+        manifest=serialize_world_manifest(manifest),
+        plan=plan,
+        status="applied",
+        git_commit=git_commit,
+        applied_at=now,
+        finished_at=now,
+    )

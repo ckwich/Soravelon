@@ -5,18 +5,28 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from world.content_compiler import compile_world_manifest
-from world.content_revisions import get_world_content_status, serialize_change_plan
+from world.content_revisions import (
+    BootstrapAdoptionError,
+    adopt_bootstrap,
+    get_world_content_status,
+    serialize_change_plan,
+)
 from world.content_runtime import verify_runtime_manifest
 
 
 class Command(BaseCommand):
-    help = (
-        "Validate and inspect revisioned Soravelon world content without applying it."
-    )
+    help = "Validate, inspect, or explicitly adopt revisioned Soravelon world content."
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "action", choices=("validate", "plan", "status", "bootstrap-check")
+            "action",
+            choices=(
+                "validate",
+                "plan",
+                "status",
+                "bootstrap-check",
+                "bootstrap-adopt",
+            ),
         )
         parser.add_argument(
             "--format",
@@ -24,13 +34,14 @@ class Command(BaseCommand):
             default="human",
             dest="output_format",
         )
+        parser.add_argument("--git-commit")
 
     def handle(self, *args, **options):
         action = options["action"]
         output_format = options["output_format"]
         areas_dir = Path(settings.GAME_DIR) / "world" / "areas"
 
-        if action in {"validate", "bootstrap-check"}:
+        if action in {"validate", "bootstrap-check", "bootstrap-adopt"}:
             result = compile_world_manifest(areas_dir)
             valid = result.manifest is not None
             payload = {
@@ -52,7 +63,10 @@ class Command(BaseCommand):
                     for diagnostic in result.diagnostics
                 ],
             }
-            if action == "bootstrap-check" and result.manifest is not None:
+            if (
+                action in {"bootstrap-check", "bootstrap-adopt"}
+                and result.manifest is not None
+            ):
                 verification = verify_runtime_manifest(result.manifest)
                 valid = verification.verified_manifest_hash is not None
                 payload.update(
@@ -73,6 +87,26 @@ class Command(BaseCommand):
                         ],
                     }
                 )
+                if action == "bootstrap-adopt" and valid:
+                    git_commit = options.get("git_commit")
+                    if not git_commit:
+                        raise CommandError(
+                            "bootstrap-adopt requires an explicit --git-commit."
+                        )
+                    try:
+                        revision = adopt_bootstrap(
+                            result.manifest,
+                            git_commit=git_commit,
+                        )
+                    except BootstrapAdoptionError as exc:
+                        raise CommandError(str(exc)) from exc
+                    payload.update(
+                        {
+                            "state": "bootstrap-adopted",
+                            "git_commit": revision.git_commit,
+                            "revision_id": revision.pk,
+                        }
+                    )
         else:
             status = get_world_content_status(areas_dir)
             valid = not status.state.startswith("invalid")
