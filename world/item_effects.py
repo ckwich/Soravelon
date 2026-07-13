@@ -12,7 +12,65 @@ Public API:
     consume_item(character, item) -> (bool, str)
 """
 
+from collections.abc import Mapping
+from copy import deepcopy
+
 from world.base_attributes import derive_max_hp, derive_max_stamina
+
+
+SUPPORTED_EFFECT_TYPES = {
+    "heal_hp",
+    "restore_stamina",
+    "heal_hp_stamina",
+    "heal_over_time",
+    "cure_poison",
+}
+
+
+def _positive_number(value):
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and value > 0
+    )
+
+
+def _validate_effect(effect):
+    if not isinstance(effect, Mapping):
+        return False, "That item cannot be used directly."
+    effect_type = effect.get("type")
+    if effect_type not in SUPPORTED_EFFECT_TYPES:
+        return False, "That item's effect cannot be used safely."
+    if effect_type in {"heal_hp", "restore_stamina"}:
+        if not _positive_number(effect.get("amount")):
+            return False, "That item's effect is invalid."
+    elif effect_type == "heal_hp_stamina":
+        if not any(_positive_number(effect.get(field)) for field in ("hp", "stamina")):
+            return False, "That item's effect is invalid."
+    elif effect_type == "heal_over_time":
+        if not _positive_number(effect.get("amount")) or not (
+            isinstance(effect.get("ticks"), int)
+            and not isinstance(effect.get("ticks"), bool)
+            and effect["ticks"] > 0
+        ):
+            return False, "That item's effect is invalid."
+    return True, ""
+
+
+def _snapshot_volatile_state(character):
+    return {
+        "hp": getattr(character.ndb, "hp", None),
+        "stamina": getattr(character.ndb, "stamina", None),
+        "active_effects": deepcopy(
+            getattr(character.ndb, "active_effects", None)
+        ),
+        "actions_remaining": getattr(character.ndb, "actions_remaining", None),
+    }
+
+
+def _restore_volatile_state(character, snapshot):
+    for field, value in snapshot.items():
+        setattr(character.ndb, field, deepcopy(value))
 
 
 def consume_item(character, item):
@@ -20,7 +78,17 @@ def consume_item(character, item):
     Consume an item, applying its use_effect. Destroys the item on success.
     Returns (bool, str).
     """
-    # Combat action cost check
+    effect = getattr(item.db, "use_effect", None)
+    if not effect:
+        item_name = str(getattr(item, "key", "item"))
+        if "bait" in item_name.lower():
+            return False, "Fishing bait is used through fishing, not by itself."
+        return False, "That item cannot be used directly."
+    valid, validation_message = _validate_effect(effect)
+    if not valid:
+        return False, validation_message
+
+    action_cost = 0
     if getattr(character.ndb, "in_combat", False):
         action_cost = getattr(item.db, "action_cost", 1)
         actions_remaining = getattr(character.ndb, "actions_remaining", 0)
@@ -30,22 +98,21 @@ def consume_item(character, item):
                 f"|rUsing {item.key} requires {action_cost} action(s). "
                 f"You have {actions_remaining} remaining.|n",
             )
-        character.ndb.actions_remaining = actions_remaining - action_cost
 
-    effect = getattr(item.db, "use_effect", None)
-    if not effect:
-        _destroy(character, item)
-        return (True, f"You use {item.key}, but nothing happens.")
-
+    snapshot = _snapshot_volatile_state(character)
     effects_applied = []
-    etype = effect.get("type", "")
+    etype = effect["type"]
 
     if etype == "heal_hp":
         gained = _apply_hp(character, effect.get("amount", 0))
+        if gained <= 0:
+            return False, "You are already at full health."
         effects_applied.append(f"restored {gained} HP")
 
     elif etype == "restore_stamina":
         gained = _apply_stamina(character, effect.get("amount", 0))
+        if gained <= 0:
+            return False, "Your stamina is already full."
         effects_applied.append(f"restored {gained} stamina")
 
     elif etype == "heal_hp_stamina":
@@ -55,29 +122,48 @@ def consume_item(character, item):
             effects_applied.append(f"restored {hp_gained} HP")
         if stam_gained:
             effects_applied.append(f"restored {stam_gained} stamina")
+        if not effects_applied:
+            return False, "Your health and stamina are already full."
 
     elif etype == "heal_over_time":
         amount = effect.get("amount", 5)
         ticks = effect.get("ticks", 6)
+        from world.status_effects import apply_effect
+
+        applied, message = apply_effect(
+            character,
+            "regeneration",
+            duration=ticks,
+            magnitude=amount,
+            source_id=getattr(character, "id", None),
+            data={"heal_per_round": amount},
+        )
+        if not applied:
+            _restore_volatile_state(character, snapshot)
+            return False, message
         effects_applied.append(f"healing {amount} HP over {ticks} ticks")
 
     elif etype == "cure_poison":
-        status_effects = getattr(character.ndb, "status_effects", None)
-        if status_effects:
-            effects = dict(status_effects)
-            for key in list(effects):
-                if "poison" in key.lower():
-                    del effects[key]
-                    effects_applied.append(f"cured {key}")
-            character.ndb.status_effects = effects
-        if not effects_applied:
-            effects_applied.append("no poison to cure")
+        from world.status_effects import has_effect, remove_effect
 
-    _destroy(character, item)
+        if not has_effect(character, "poison"):
+            return False, "You are not poisoned."
+        remove_effect(character, "poison")
+        effects_applied.append("cured poison")
+
+    item_name = item.key
+    try:
+        _destroy(character, item)
+    except Exception as error:
+        _restore_volatile_state(character, snapshot)
+        return False, str(error)
+
+    if action_cost:
+        character.ndb.actions_remaining -= action_cost
 
     if effects_applied:
-        return (True, f"You use {item.key}: {', '.join(effects_applied)}.")
-    return (True, f"You use {item.key}.")
+        return (True, f"You use {item_name}: {', '.join(effects_applied)}.")
+    return (True, f"You use {item_name}.")
 
 
 def _apply_hp(character, amount):
@@ -99,11 +185,21 @@ def _apply_stamina(character, amount):
 
 
 def _destroy(character, item):
-    """Remove a consumed item through the atomic ownership authority."""
-    from world.inventory_engine import destroy_owned_item
+    """Consume one owned quantity through the atomic inventory authority."""
+    from world.inventory_engine import consume_owned_quantities
 
-    destroyed, message = destroy_owned_item(character, item)
-    if not destroyed:
+    consumed, message = consume_owned_quantities(
+        character,
+        [{"item": item, "quantity": 1}],
+    )
+    if not consumed:
         raise RuntimeError(message)
     from world.oob_publisher import push_inventory_update
-    push_inventory_update(character)
+    try:
+        push_inventory_update(character)
+    except Exception:
+        import logging
+
+        logging.getLogger("evennia").exception(
+            "item_effects: inventory OOB update failed after consumption"
+        )
