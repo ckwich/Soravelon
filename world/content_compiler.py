@@ -140,6 +140,10 @@ class WorldChangePlanningResult:
     diagnostics: tuple[CompilationDiagnostic, ...]
 
 
+class ManifestIntegrityError(ValueError):
+    """Raised when durable manifest evidence does not match its semantic hash."""
+
+
 def _frozen_map_get(mapping: FrozenMap, key: str, default: object = None) -> object:
     return dict(mapping.entries).get(key, default)
 
@@ -1173,4 +1177,127 @@ def plan_world_changes(
             changes=tuple(changes),
         ),
         diagnostics=(),
+    )
+
+
+def _encode_stored_value(value: object) -> object:
+    if isinstance(value, SymbolicReference):
+        return {"type": "reference", "kind": value.kind, "key": value.key}
+    if isinstance(value, FrozenMap):
+        return {
+            "type": "map",
+            "entries": [
+                [_encode_stored_value(key), _encode_stored_value(item)]
+                for key, item in value.entries
+            ],
+        }
+    if isinstance(value, tuple):
+        return {
+            "type": "tuple",
+            "items": [_encode_stored_value(item) for item in value],
+        }
+    if value is None or isinstance(value, (bool, float, int, str)):
+        return value
+    raise TypeError(f"Unsupported stored manifest value: {type(value).__name__}")
+
+
+def _decode_stored_value(value: object) -> object:
+    if not isinstance(value, dict):
+        return value
+    value_type = value.get("type")
+    if value_type == "reference":
+        return SymbolicReference(kind=value["kind"], key=value["key"])
+    if value_type == "map":
+        return FrozenMap(
+            tuple(
+                (
+                    _decode_stored_value(entry[0]),
+                    _decode_stored_value(entry[1]),
+                )
+                for entry in value["entries"]
+            )
+        )
+    if value_type == "tuple":
+        return tuple(_decode_stored_value(item) for item in value["items"])
+    raise ManifestIntegrityError("Stored manifest contains an unknown value encoding.")
+
+
+def serialize_world_manifest(manifest: WorldManifest) -> dict[str, object]:
+    """Serialize a manifest losslessly for durable JSON storage."""
+
+    return {
+        "schema_version": manifest.schema_version,
+        "manifest_hash": manifest.manifest_hash,
+        "zones": [
+            {
+                "source_path": definition.source_path,
+                "zone_id": definition.zone_id,
+                "operations": [
+                    {
+                        "source_path": operation.source_path,
+                        "line": operation.line,
+                        "column": operation.column,
+                        "method": operation.method,
+                        "arguments": _encode_stored_value(operation.arguments),
+                        "keyword_arguments": _encode_stored_value(
+                            operation.keyword_arguments
+                        ),
+                    }
+                    for operation in definition.operations
+                ],
+            }
+            for definition in manifest.zones
+        ],
+    }
+
+
+def deserialize_world_manifest(payload: Mapping[str, object]) -> WorldManifest:
+    """Restore durable manifest evidence and verify its semantic integrity."""
+
+    try:
+        definitions = tuple(
+            ZoneSourceDefinition(
+                source_path=zone["source_path"],
+                zone_id=zone["zone_id"],
+                operations=tuple(
+                    AreaOperation(
+                        source_path=operation["source_path"],
+                        line=operation["line"],
+                        column=operation["column"],
+                        method=operation["method"],
+                        arguments=_decode_stored_value(operation["arguments"]),
+                        keyword_arguments=_decode_stored_value(
+                            operation["keyword_arguments"]
+                        ),
+                    )
+                    for operation in zone["operations"]
+                ),
+            )
+            for zone in payload["zones"]
+        )
+        schema_version = payload["schema_version"]
+        stored_hash = payload["manifest_hash"]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ManifestIntegrityError(
+            "Stored manifest has an invalid structure."
+        ) from exc
+    canonical = json.dumps(
+        _semantic_manifest_payload(definitions),
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    calculated_hash = hashlib.sha256(canonical).hexdigest()
+    if calculated_hash != stored_hash:
+        raise ManifestIntegrityError(
+            "Stored manifest integrity hash does not match its semantic content."
+        )
+    if schema_version != "soravelon.world-content.v1":
+        raise ManifestIntegrityError(
+            f"Stored manifest schema '{schema_version}' is not supported."
+        )
+    return WorldManifest(
+        schema_version=schema_version,
+        zones=definitions,
+        manifest_hash=stored_hash,
     )

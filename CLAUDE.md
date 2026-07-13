@@ -29,6 +29,11 @@ python scripts/run_tests.py tests.test_social_web_kernel
 # Startup/import proof after dependency or area changes.
 python scripts/smoke_start.py
 
+# Read-only revision authority; none of these commands mutates world content.
+evennia worldcontent validate
+evennia worldcontent plan
+evennia worldcontent status
+
 # Game lifecycle.
 evennia migrate
 evennia start

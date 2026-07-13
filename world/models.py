@@ -1170,3 +1170,62 @@ class CharacterRecipe(models.Model):
 
     def __str__(self):
         return f"{self.character.db_key}:{self.recipe_id}"
+
+
+class WorldContentRevision(models.Model):
+    """Durable evidence for one reviewed immutable world-content manifest."""
+
+    STATUS_CHOICES = [
+        ("planned", "Planned"),
+        ("applying", "Applying"),
+        ("applied", "Applied"),
+        ("superseded", "Superseded"),
+        ("failed", "Failed"),
+        ("rolled_back", "Rolled Back"),
+    ]
+
+    manifest_hash = models.CharField(max_length=64, unique=True)
+    schema_version = models.CharField(max_length=64)
+    manifest = models.JSONField()
+    plan = models.JSONField(default=dict)
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default="planned",
+        db_index=True,
+    )
+    previous_revision = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="next_revisions",
+    )
+    git_commit = models.CharField(max_length=64)
+    maintenance_approved = models.BooleanField(default=False)
+    error = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    applied_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["status"],
+                condition=models.Q(status="applied"),
+                name="world_content_single_applied_revision",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(manifest_hash__regex=r"^[0-9a-f]{64}$"),
+                name="world_content_manifest_hash_hex",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["status", "-created_at"],
+                name="world_content_status_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.manifest_hash[:12]}:{self.status}"
