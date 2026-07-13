@@ -201,6 +201,14 @@ def _parse_zone(path):
                 npc_vars[target_name] = npc_id
             continue
 
+        if _is_area_call(call, "vendor"):
+            vendor_ref = _value_or_name(call.args[0])
+            npc_id = npc_vars.get(vendor_ref)
+            if npc_id:
+                data["vendor_npcs"].add(npc_id)
+                data["vendor_stock"][npc_id] = _keyword(call, "item_ids", [])
+            continue
+
         if _is_area_call(call, "spawn"):
             room_id = room_vars.get(_value_or_name(call.args[0]), _value_or_name(call.args[0]))
             mob_id = _literal(call.args[1])
