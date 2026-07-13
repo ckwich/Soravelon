@@ -26,6 +26,12 @@ _AWAKENING_ECHOES = [
 # Direct warning threshold (D-13 — ~55% failure before node activates)
 _DIRECT_WARNING_THRESHOLD = 55
 
+# Ambient player/study pressure is capped across a rolling ten-minute window.
+# This prevents a crowd spike from activating a node instantly without turning
+# the old cap into a permanent lifetime ceiling.
+_PRESSURE_WINDOW_TICKS = 20
+_PRESSURE_WINDOW_CAP = 5.0
+
 
 class NodeScript(DefaultScript):
     """
@@ -46,7 +52,7 @@ class NodeScript(DefaultScript):
         self.db.state = "dormant"
         self.db.layer1_room_ids = []
         self.db.layer1_active = False
-        self.db.session_failure_added = 0.0
+        self.db.pressure_window = []
 
         self.tags.add("node_script", category="script_type")
 
@@ -59,9 +65,18 @@ class NodeScript(DefaultScript):
             (player_count * 0.1) + (scholar_count * 0.3)
         )
 
-        remaining_cap = max(0.0, 5.0 - self.db.session_failure_added)
-        capped_contribution = min(raw_player_contribution, remaining_cap)
-        self.db.session_failure_added += capped_contribution
+        pressure_window = list(self.db.pressure_window or [])
+        pressure_window = pressure_window[-(_PRESSURE_WINDOW_TICKS - 1):]
+        remaining_budget = max(
+            0.0,
+            _PRESSURE_WINDOW_CAP - sum(pressure_window),
+        )
+        capped_contribution = min(
+            max(0.0, raw_player_contribution),
+            remaining_budget,
+        )
+        pressure_window.append(capped_contribution)
+        self.db.pressure_window = pressure_window
 
         stabilization = stabilizer_count * 0.5
         delta = capped_contribution - stabilization
@@ -148,7 +163,6 @@ class NodeScript(DefaultScript):
         elif (old_state in ("active", "critical")
               and new_state in ("dormant", "awakening")):
             self._deactivate_layer1()
-            self.db.session_failure_added = 0.0
 
         # Clean stale tags from L0 rooms when leaving a state
         if old_state == "awakening" and new_state != "awakening":

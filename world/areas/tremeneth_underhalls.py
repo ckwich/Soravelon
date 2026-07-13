@@ -16,7 +16,6 @@ def build():
         region='tremeneth_mountains',
         faction_territory='warden',
         faction_presence=['resonance', 'wardens', 'western_arcana', 'verdance'],
-        has_node=True,
         world_x=34,
         world_y=48,
         world_radius=145,

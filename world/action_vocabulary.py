@@ -1036,9 +1036,13 @@ def _handle_record_social_event(action_dict, context, _depth):
 def _handle_modify_node_failure(action_dict, context, _depth):
     """Adjust node failure percentage for a zone."""
     zone_id = action_dict.get("zone_id")
-    delta = action_dict.get("delta", 0)
+    delta = action_dict.get("delta")
     if not zone_id:
         return False, "modify_node_failure: missing zone_id"
+    from world.relationship_effects import is_valid_effect_delta
+
+    if not is_valid_effect_delta(delta):
+        return False, "modify_node_failure: delta must be nonzero and within 100"
     zone_objs = search_objects_by_exact_tag(zone_id, "zone_id")
     if not zone_objs:
         return False, f"modify_node_failure: zone '{zone_id}' not found"

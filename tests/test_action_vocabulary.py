@@ -932,6 +932,34 @@ class TestModifyNodeFailureHandler(unittest.TestCase):
         self.assertTrue(success)
         self.assertEqual(script.db.failure, 100.0)
 
+    def test_invalid_delta_fails_without_mutating_node(self):
+        """Malformed pressure cannot crash or change a live node."""
+        from world.action_vocabulary import execute_action
+
+        zone_obj = MagicMock()
+        script = MagicMock()
+        script.db.failure = 50.0
+        zone_obj.scripts.get.return_value = [script]
+
+        with patch(
+            "world.action_vocabulary.search_objects_by_exact_tag",
+            return_value=[zone_obj],
+        ):
+            for invalid_delta in (None, 0, True, "5", 101):
+                with self.subTest(delta=invalid_delta):
+                    success, message = execute_action(
+                        {
+                            "action_type": "modify_node_failure",
+                            "zone_id": "ashreach",
+                            "delta": invalid_delta,
+                        },
+                        {},
+                    )
+
+                    self.assertFalse(success)
+                    self.assertIn("delta", message)
+                    self.assertEqual(script.db.failure, 50.0)
+
     def test_missing_zone_fails(self):
         """modify_node_failure without zone_id returns failure."""
         from world.action_vocabulary import execute_action

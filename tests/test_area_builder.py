@@ -33,14 +33,6 @@ class AreaBuilderTestBase(EvenniaTest):
         )
         return ab
 
-
-class TestAreaBuilderRuntimeImports(SimpleTestCase):
-    def test_create_object_uses_management_command_safe_evennia_utility(self):
-        from evennia.utils.create import create_object
-        from world import area_builder
-
-        self.assertIs(area_builder.create_object, create_object)
-
     def _make_room(self, ab, room_id="room_001", **kwargs):
         """Create a room via the builder with sensible defaults."""
         defaults = {
@@ -52,6 +44,14 @@ class TestAreaBuilderRuntimeImports(SimpleTestCase):
         }
         defaults.update(kwargs)
         return ab.room(room_id, **defaults)
+
+
+class TestAreaBuilderRuntimeImports(SimpleTestCase):
+    def test_create_object_uses_management_command_safe_evennia_utility(self):
+        from evennia.utils.create import create_object
+        from world import area_builder
+
+        self.assertIs(area_builder.create_object, create_object)
 
 
 # ------------------------------------------------------------------
@@ -470,6 +470,62 @@ class TestNodeCallsInitializeNode(AreaBuilderTestBase):
             self.assertEqual(call_kwargs.kwargs["node_type"], "cognitive")
             self.assertEqual(call_kwargs.kwargs["center_room"], r1)
             self.assertEqual(call_kwargs.kwargs["radius"], 2)
+
+    def test_active_node_metadata_requires_a_node_declaration(self):
+        ab = AreaBuilder("missing_node_declaration")
+        ab.zone(
+            name="Missing Node Declaration",
+            zone_type="ancient_forest",
+            continent="varath",
+            has_node=True,
+            node_type="resonance",
+        )
+        ab.room("center", name="Center", desc="A threshold.")
+
+        with self.assertRaisesRegex(
+            AreaBuilderValidationError,
+            "has_node=True requires exactly one node declaration",
+        ):
+            ab.build()
+
+    def test_node_declaration_requires_active_node_metadata(self):
+        ab = self._make_builder("inactive_node_declaration")
+        center = ab.room("center", name="Center", desc="A threshold.")
+        ab.node(center, radius=2)
+
+        with self.assertRaisesRegex(
+            AreaBuilderValidationError,
+            "node declaration requires zone has_node=True",
+        ):
+            ab.build()
+
+    def test_node_flag_must_be_boolean(self):
+        ab = AreaBuilder("invalid_node_flag")
+
+        with self.assertRaisesRegex(
+            AreaBuilderValidationError,
+            "has_node must be true or false",
+        ):
+            ab.zone(
+                name="Invalid Node Flag",
+                zone_type="ancient_forest",
+                continent="varath",
+                has_node="yes",
+            )
+
+    def test_node_metadata_requires_active_flag(self):
+        ab = AreaBuilder("inactive_node_metadata")
+
+        with self.assertRaisesRegex(
+            AreaBuilderValidationError,
+            "node_type requires has_node=True",
+        ):
+            ab.zone(
+                name="Inactive Node Metadata",
+                zone_type="ancient_forest",
+                continent="varath",
+                node_type="resonance",
+            )
 
 
 # ------------------------------------------------------------------

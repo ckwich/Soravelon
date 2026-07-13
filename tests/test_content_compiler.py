@@ -514,6 +514,85 @@ def build():
         self.assertIsNone(result.manifest)
         self.assertEqual(result.diagnostics[0].code, "inactive-node-operation")
 
+    def test_active_node_metadata_requires_node_operation(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("missing_node")
+    area.zone(name="Missing Node", zone_type="node_active", continent="veluana",
+              has_node=True, node_type="resonance")
+    area.room("center", name="Center", desc="A threshold.")
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/missing_node.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(result.diagnostics[0].code, "missing-node-operation")
+
+    def test_node_pressure_action_requires_an_authored_node_target(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("plain_zone")
+    area.zone(name="Plain Zone", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    area.npc(room, "npc_keeper", faction="wardens")
+    area.quest("pressure", quest_giver="npc_keeper",
+               objectives=[{"type": "visit", "target": "entry"}],
+               rewards=[{"action_type": "modify_node_failure",
+                         "zone_id": "plain_zone", "delta": 5}])
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/plain_zone.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(
+            result.diagnostics[0].code,
+            "invalid-node-pressure-target",
+        )
+
+    def test_node_flag_must_be_boolean(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("invalid_node_flag")
+    area.zone(name="Invalid", zone_type="frontier", continent="varath",
+              has_node="yes")
+    area.room("entry", name="Entry", desc="A threshold.")
+    return area.build()
+"""
+
+        result = compile_world_sources(
+            {"world/areas/invalid_node_flag.py": source}
+        )
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(result.diagnostics[0].code, "invalid-node-flag")
+
+    def test_node_metadata_requires_active_flag(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("inactive_node_metadata")
+    area.zone(name="Inactive", zone_type="frontier", continent="varath",
+              node_type="resonance")
+    area.room("entry", name="Entry", desc="A threshold.")
+    return area.build()
+"""
+
+        result = compile_world_sources(
+            {"world/areas/inactive_node_metadata.py": source}
+        )
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(result.diagnostics[0].code, "inactive-node-metadata")
+
     def test_manifest_hash_is_semantic_and_deterministic(self):
         from world.content_compiler import compile_world_sources
 

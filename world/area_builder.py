@@ -233,11 +233,20 @@ class AreaBuilder:
                 f"zone '{self._zone_id}' — invalid continent '{continent}'. "
                 f"Valid: {', '.join(sorted(VALID_CONTINENTS))}"
             )
+        has_node = kwargs.get("has_node", False)
+        if not isinstance(has_node, bool):
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — has_node must be true or false"
+            )
         node_type = kwargs.get("node_type")
         if node_type and node_type not in VALID_NODE_TYPES:
             raise AreaBuilderValidationError(
                 f"zone '{self._zone_id}' — invalid node_type '{node_type}'. "
                 f"Valid: {', '.join(sorted(VALID_NODE_TYPES))}"
+            )
+        if node_type and not has_node:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — node_type requires has_node=True"
             )
         faction_territory = kwargs.get("faction_territory", "neutral")
         if faction_territory not in VALID_FACTION_TERRITORIES:
@@ -266,7 +275,7 @@ class AreaBuilder:
         zone_obj.db.continent = continent
         zone_obj.db.region = kwargs.get("region")
         zone_obj.db.hub_city = kwargs.get("hub_city")
-        zone_obj.db.has_node = kwargs.get("has_node", False)
+        zone_obj.db.has_node = has_node
         zone_obj.db.node_type = node_type
         zone_obj.db.node_failure_start = kwargs.get("node_failure_start", 0)
         zone_obj.db.faction_territory = faction_territory
@@ -1385,6 +1394,22 @@ class AreaBuilder:
         if not self._zone_obj:
             raise AreaBuilderValidationError(
                 f"zone '{self._zone_id}' — build() called before zone()"
+            )
+
+        has_node = self._zone_data.get("has_node", False)
+        if has_node and not self._node_config:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — has_node=True requires exactly "
+                "one node declaration"
+            )
+        if self._node_config and not has_node:
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — node declaration requires zone "
+                "has_node=True"
+            )
+        if has_node and not self._zone_data.get("node_type"):
+            raise AreaBuilderValidationError(
+                f"zone '{self._zone_id}' — active nodes require node_type"
             )
 
         # 1. Resolve cross-zone exits

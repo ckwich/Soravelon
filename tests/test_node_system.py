@@ -129,37 +129,66 @@ class TestStateTransitions(NodeTestBase):
             )
 
 
-class TestSessionCap(NodeTestBase):
-    """Player contribution capped at +5% per node event session."""
+class TestRollingPressureBudget(NodeTestBase):
+    """Presence pressure is bounded per window without freezing forever."""
 
-    def test_session_cap_applied(self):
+    def test_pressure_budget_recovers_after_one_window(self):
         from world.scripts.node_script import NodeScript
 
         script = create_script(NodeScript, obj=self.zone_obj)
-        script.db.failure = 50.0
-        script.db.session_failure_added = 0.0
+        script.db.failure = 0.0
 
-        # 100 players × 0.1 = 10.0 per tick, but cap is 5.0 total
-        script.receive_tick(player_count=100, scholar_count=0,
-                            stabilizer_count=0)
+        for _ in range(20):
+            script.receive_tick(
+                player_count=100,
+                scholar_count=0,
+                stabilizer_count=0,
+            )
 
-        self.assertLessEqual(script.db.session_failure_added, 5.0)
+        self.assertEqual(script.db.failure, 5.0)
+        self.assertLessEqual(sum(script.db.pressure_window), 5.0)
 
-    def test_session_cap_resets_on_deactivation(self):
+        for _ in range(20):
+            script.receive_tick(
+                player_count=0,
+                scholar_count=0,
+                stabilizer_count=0,
+            )
+        script.receive_tick(
+            player_count=100,
+            scholar_count=0,
+            stabilizer_count=0,
+        )
+
+        self.assertEqual(script.db.failure, 10.0)
+        self.assertLessEqual(sum(script.db.pressure_window), 5.0)
+
+    def test_presence_study_activation_and_stabilization_recovery(self):
         from world.scripts.node_script import NodeScript
 
         script = create_script(NodeScript, obj=self.zone_obj)
-        script.db.failure = 65.0  # active state
-        script.db.state = "active"
-        script.db.session_failure_added = 4.5
-        script.db.layer1_active = False  # no rooms to deactivate
+        script.db.failure = 54.0
+        script.db.state = "awakening"
 
-        # Push below 60 to trigger deactivation
-        script.receive_tick(player_count=0, scholar_count=0,
-                            stabilizer_count=20)  # -10.0
+        with patch.object(script, "_send_awakening_warnings"):
+            for _ in range(24):
+                script.receive_tick(
+                    player_count=1,
+                    scholar_count=1,
+                    stabilizer_count=0,
+                )
 
-        # Should have transitioned out of active → cap reset
-        self.assertEqual(script.db.session_failure_added, 0.0)
+        self.assertGreaterEqual(script.db.failure, 60.0)
+        self.assertEqual(script.db.state, "active")
+
+        script.receive_tick(
+            player_count=0,
+            scholar_count=0,
+            stabilizer_count=12,
+        )
+
+        self.assertLess(script.db.failure, 60.0)
+        self.assertEqual(script.db.state, "awakening")
 
 
 class TestStabilization(NodeTestBase):

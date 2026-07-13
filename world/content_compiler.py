@@ -546,6 +546,7 @@ def _validate_world_definitions(
     quest_ids: set[str] = set()
     authored_item_ids: set[str] = set()
     practice_ids: set[str] = set()
+    authored_node_zone_ids: set[str] = set()
     stable_id_owners: dict[tuple[str, str], str] = {}
     inverse_directions = {
         "north": "south",
@@ -657,6 +658,25 @@ def _validate_world_definitions(
                 social_node_keys.add(f"{node_type}:{identifier}")
 
     all_room_ids = set().union(*rooms_by_zone.values()) if rooms_by_zone else set()
+    for definition in definitions:
+        zone_operation = next(
+            operation
+            for operation in definition.operations
+            if operation.method == "zone"
+        )
+        has_node = _frozen_map_get(
+            zone_operation.keyword_arguments,
+            "has_node",
+            False,
+        )
+        node_operations = tuple(
+            operation
+            for operation in definition.operations
+            if operation.method == "node"
+        )
+        if has_node is True and len(node_operations) == 1:
+            authored_node_zone_ids.add(definition.zone_id)
+
     objective_targets = {
         "kill": set(MOB_TEMPLATES),
         "collect": set(CATALOG) | authored_item_ids | set(MATERIAL_REGISTRY),
@@ -674,9 +694,50 @@ def _validate_world_definitions(
             for operation in definition.operations
             if operation.method == "zone"
         )
-        zone_kwargs = _frozen_map_get(
+        has_node = _frozen_map_get(
             zone_operation.keyword_arguments, "has_node", False
         )
+        node_type = _frozen_map_get(
+            zone_operation.keyword_arguments,
+            "node_type",
+        )
+        node_operations = tuple(
+            operation
+            for operation in definition.operations
+            if operation.method == "node"
+        )
+        if not isinstance(has_node, bool):
+            diagnostics.append(
+                _diagnostic(
+                    zone_operation,
+                    "invalid-node-flag",
+                    "has_node must be authored as true or false.",
+                )
+            )
+        if has_node is not True and node_type is not None:
+            diagnostics.append(
+                _diagnostic(
+                    zone_operation,
+                    "inactive-node-metadata",
+                    "node_type requires zone(has_node=True).",
+                )
+            )
+        if has_node is True and not node_operations:
+            diagnostics.append(
+                _diagnostic(
+                    zone_operation,
+                    "missing-node-operation",
+                    "zone(has_node=True) requires exactly one area.node() declaration.",
+                )
+            )
+        if has_node is True and not node_type:
+            diagnostics.append(
+                _diagnostic(
+                    zone_operation,
+                    "missing-node-type",
+                    "Active node zones require an explicit node_type.",
+                )
+            )
         for operation in definition.operations:
             if operation.method in {"npc", "vendor"}:
                 _validate_relationship_faction(
@@ -685,7 +746,7 @@ def _validate_world_definitions(
                     diagnostics,
                 )
 
-            if operation.method == "node" and not zone_kwargs:
+            if operation.method == "node" and has_node is not True:
                 diagnostics.append(
                     _diagnostic(
                         operation,
@@ -1043,6 +1104,30 @@ def _validate_world_definitions(
                                     "Betrayal effects require a boolean value.",
                                 )
                             )
+                elif action_type == "modify_node_failure":
+                    zone_id = action_dict.get("zone_id")
+                    if zone_id not in authored_node_zone_ids:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "invalid-node-pressure-target",
+                                f"Node pressure target '{zone_id}' has no authored node.",
+                            )
+                        )
+                    delta = action_dict.get("delta")
+                    if (
+                        isinstance(delta, bool)
+                        or not isinstance(delta, Real)
+                        or delta == 0
+                        or abs(delta) > 100
+                    ):
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "invalid-node-pressure-delta",
+                                "Node pressure deltas must be nonzero and within 100.",
+                            )
+                        )
                 elif action_type == "give_skill_xp":
                     if action_dict.get("skill_id") not in SKILL_DEFINITIONS:
                         diagnostics.append(
