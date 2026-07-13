@@ -71,6 +71,36 @@ This executable does not prove TLS certificates, DNS, reverse-proxy behavior,
 or systemd lifecycle behavior. Those checks require the real Linux host and
 remain explicit staging gates.
 
+### Disposable world-content rehearsal
+
+M6 uses `scripts/rehearse_content_release.py` after migrations and creation of
+admin account `#1`. The executable refuses SQLite, refuses the ordinary
+`soravelon` database name, and requires the configured PostgreSQL database to
+exactly match an explicit `soravelon_rehearsal_*` name. It compiles the live
+literal sources, initializes or applies the target revision, verifies the
+materialized runtime, reapplies the same revision as a required no-op, and emits
+the manifest, revision, database, and Git identities as evidence.
+
+Run each path against its own disposable database:
+
+```bash
+python scripts/rehearse_content_release.py \
+  --database-kind fresh \
+  --expected-database-name soravelon_rehearsal_fresh_1 \
+  --git-commit "$(git rev-parse HEAD)" \
+  --format json
+
+python scripts/rehearse_content_release.py \
+  --database-kind restored \
+  --expected-database-name soravelon_rehearsal_restored_1 \
+  --git-commit "$(git rev-parse HEAD)" \
+  --format json
+```
+
+The restored database must come from a verified dump rehearsal and already
+contain world-content revision authority. Never rename or repoint a production
+database merely to satisfy this safety gate.
+
 ## Systemd units
 
 Install the tracked `deploy/systemd/soravelon.service` unit. It runs
