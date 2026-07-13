@@ -1,0 +1,48 @@
+<nav class="navbar navbar-dark navbar-expand-md" aria-label="Primary navigation">
+  <a class="navbar-brand soravelon-brand" href="{% url 'index' %}">
+    <span class="soravelon-wordmark">Soravelon</span>
+    <small>A living dark-fantasy world</small>
+  </a>
+
+  <button
+    class="navbar-toggler"
+    type="button"
+    data-toggle="collapse"
+    data-target="#menu-content"
+    aria-controls="menu-content"
+    aria-expanded="false"
+    aria-label="Toggle navigation"
+  >
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="menu-content">
+    <ul class="navbar-nav ml-md-4">
+      <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Home</a></li>
+      <li class="nav-item"><a class="nav-link" href="{% url 'help' %}">Help</a></li>
+      {% if webclient_enabled %}
+      <li class="nav-item"><a class="nav-link" href="{% url 'webclient:index' %}">Play Online</a></li>
+      {% endif %}
+      {% if user.is_staff %}
+      <li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">Admin</a></li>
+      {% endif %}
+    </ul>
+
+    <ul class="navbar-nav ml-auto">
+      {% if account %}
+      <li class="nav-item"><a class="nav-link" href="{% url 'character-manage' %}">Characters</a></li>
+      <li class="nav-item">
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="nav-link btn btn-link">Log Out</button>
+        </form>
+      </li>
+      {% else %}
+      <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Log In</a></li>
+      {% if register_enabled %}
+      <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
+      {% endif %}
+      {% endif %}
+    </ul>
+  </div>
+</nav>

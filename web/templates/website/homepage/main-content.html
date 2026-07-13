@@ -1,0 +1,36 @@
+<article class="soravelon-hero" aria-labelledby="soravelon-title">
+  <p class="soravelon-eyebrow">The old patterns stir beneath the stone.</p>
+  <h1 id="soravelon-title">A living world remembers what you do.</h1>
+  <p class="soravelon-lead">
+    Cross a vast authored world where danger, trade, guilds, and rumor move
+    through relationships. The people you help remember. So do the people you fail.
+  </p>
+
+  <div class="soravelon-actions" aria-label="Begin playing">
+    {% if webclient_enabled %}
+    <a href="{% url 'webclient:index' %}" class="soravelon-button soravelon-button-primary">
+      Enter Soravelon
+    </a>
+    {% endif %}
+    {% if register_enabled and not account %}
+    <a href="{% url 'register' %}" class="soravelon-button soravelon-button-secondary">
+      Forge a new identity
+    </a>
+    {% endif %}
+  </div>
+
+  <ul class="soravelon-pillars" aria-label="What defines Soravelon">
+    <li>
+      <strong>Open-world exploration</strong>
+      <span>Follow roads, rumors, danger, and your own curiosity.</span>
+    </li>
+    <li>
+      <strong>Growth through action</strong>
+      <span>No class menu or visible level treadmill. Become known for what you do.</span>
+    </li>
+    <li>
+      <strong>Social memory</strong>
+      <span>Standing, trust, betrayal, and local stories shape what opens to you.</span>
+    </li>
+  </ul>
+</article>

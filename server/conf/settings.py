@@ -46,7 +46,8 @@ SOCIAL_RENDERER_ENABLED = _social_renderer_enabled.strip().lower() in {
 ######################################################################
 
 # This is the name of your game. Make it catchy!
-SERVERNAME = "soravelon"
+SERVERNAME = "Soravelon"
+GAME_SLOGAN = "A living dark-fantasy world"
 
 # Soravelon custom Django apps
 INSTALLED_APPS = INSTALLED_APPS + ["world"]

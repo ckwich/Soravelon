@@ -22,6 +22,7 @@
     ]);
 
     const latestState = Object.create(null);
+    let accessibilityPassScheduled = false;
 
     function receive(eventName, args, kwargs) {
         latestState[eventName] = {
@@ -41,5 +42,60 @@
         console.log("Soravelon OOB compatibility bridge initialized.");
     }
 
-    window.plugin_handler.add("soravelon_oob", { init: init });
+    function applyAccessibilityLabels() {
+        document.querySelectorAll(".inputfield").forEach(function (input) {
+            input.setAttribute("aria-label", "Command input");
+            input.setAttribute("autocomplete", "off");
+            input.setAttribute("spellcheck", "false");
+        });
+        document.querySelectorAll(".inputsend").forEach(function (button) {
+            button.setAttribute("aria-label", "Send command");
+            button.setAttribute("title", "Send command");
+        });
+        document.querySelectorAll(".content").forEach(function (output) {
+            output.setAttribute("role", "log");
+            output.setAttribute("aria-live", "polite");
+            if (!output.hasAttribute("aria-label")) {
+                output.setAttribute("aria-label", "Game output");
+            }
+        });
+    }
+
+    function bindAccessibilityToLayout() {
+        const layoutPlugin = window.plugins && window.plugins.goldenlayout;
+        const layout = layoutPlugin && layoutPlugin.getGL();
+        if (!layout || layout.soravelonAccessibilityBound) {
+            return;
+        }
+        layout.soravelonAccessibilityBound = true;
+        layout.on("stateChanged", scheduleAccessibilityPass);
+    }
+
+    function scheduleAccessibilityPass() {
+        if (accessibilityPassScheduled) {
+            return;
+        }
+        accessibilityPassScheduled = true;
+        window.setTimeout(function () {
+            accessibilityPassScheduled = false;
+            bindAccessibilityToLayout();
+            applyAccessibilityLabels();
+        }, 0);
+    }
+
+    function postInit() {
+        bindAccessibilityToLayout();
+        applyAccessibilityLabels();
+    }
+
+    function onLayoutChanged() {
+        bindAccessibilityToLayout();
+        scheduleAccessibilityPass();
+    }
+
+    window.plugin_handler.add("soravelon_oob", {
+        init: init,
+        postInit: postInit,
+        onLayoutChanged: onLayoutChanged,
+    });
 }());
