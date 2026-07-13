@@ -409,7 +409,10 @@ def apply_world_content(
         serialize_world_manifest,
     )
     from world.content_materializer import materialize_world_manifest
-    from world.content_runtime import verify_runtime_manifest
+    from world.content_runtime import (
+        hydrate_runtime_registries,
+        verify_runtime_manifest,
+    )
     from world.models import WorldContentDeploymentLock, WorldContentRevision
 
     _validate_git_object_id(git_commit)
@@ -436,6 +439,12 @@ def apply_world_content(
             raise ApplyPreconditionError(
                 "Applied revision hash disagrees with its manifest payload."
             )
+        try:
+            hydrate_runtime_registries(previous_manifest)
+        except RuntimeError as exc:
+            raise ApplyPreconditionError(
+                f"Applied baseline registries could not be hydrated: {exc}"
+            ) from exc
         baseline = verify_runtime_manifest(previous_manifest)
         if baseline.verified_manifest_hash is None:
             raise ApplyPreconditionError(

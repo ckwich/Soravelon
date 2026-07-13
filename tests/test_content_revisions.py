@@ -514,6 +514,54 @@ def build():
         self.assertEqual(repeated.revision.id, result.revision.id)
         self.assertEqual(WorldContentRevision.objects.count(), 2)
 
+    def test_noop_apply_rehydrates_manifest_registries_after_process_restart(self):
+        from world import zone_registry
+        from world.area_builder import AreaBuilder
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import adopt_bootstrap, apply_world_content
+        from world.content_runtime import verify_runtime_manifest
+        from world.flight_registry import FlightRegistry
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("restart_apply")
+    area.zone(name="Restart Apply", zone_type="frontier", continent="varath")
+    room = area.room("platform", name="Platform", desc="A courier waits here.")
+    area.flight_point(room, "restart_apply_courier", name="Restart Apply Courier")
+    return area.build()
+"""
+        area = AreaBuilder("restart_apply")
+        area.zone(name="Restart Apply", zone_type="frontier", continent="varath")
+        room = area.room(
+            "platform",
+            name="Platform",
+            desc="A courier waits here.",
+        )
+        area.flight_point(
+            room,
+            "restart_apply_courier",
+            name="Restart Apply Courier",
+        )
+        area.build()
+        manifest = compile_world_sources(
+            {"world/areas/restart_apply.py": source}
+        ).manifest
+        assert manifest is not None
+        baseline = adopt_bootstrap(manifest, git_commit="a" * 40)
+
+        zone_registry.clear()
+        FlightRegistry.clear()
+        self.assertIsNone(verify_runtime_manifest(manifest).verified_manifest_hash)
+
+        repeated = apply_world_content(manifest, git_commit="b" * 40)
+
+        self.assertEqual(repeated.state, "no-op")
+        self.assertEqual(repeated.revision.pk, baseline.pk)
+        self.assertEqual(
+            verify_runtime_manifest(manifest).verified_manifest_hash,
+            manifest.manifest_hash,
+        )
+
     def test_injected_failure_rolls_back_runtime_and_persists_failure(self):
         from world.content_revisions import ContentApplyError, apply_world_content
         from world.content_runtime import verify_runtime_manifest
