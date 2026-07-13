@@ -14,6 +14,7 @@ class ContentMaterializationError(RuntimeError):
 @dataclass(frozen=True)
 class ContentMaterializationReport:
     zones: tuple[str, ...]
+    removed_zones: tuple[str, ...]
     reconciled: dict[str, int]
 
     def __getitem__(self, key: str):
@@ -76,8 +77,82 @@ def _finalize_cross_zone_exits() -> None:
         )
 
 
+def _remove_retired_zones(
+    previous_manifest: WorldManifest | None,
+    target_manifest: WorldManifest,
+    *,
+    maintenance_approved: bool,
+) -> tuple[str, ...]:
+    if previous_manifest is None:
+        return ()
+
+    from django.conf import settings
+    from evennia.objects.models import ObjectDB
+    from typeclasses.characters import Character
+    from world.tag_search import search_objects_by_exact_tag
+
+    target_zone_ids = {zone.zone_id for zone in target_manifest.zones}
+    removed_zone_ids = tuple(
+        sorted(
+            zone.zone_id
+            for zone in previous_manifest.zones
+            if zone.zone_id not in target_zone_ids
+        )
+    )
+    for zone_id in removed_zone_ids:
+        objects = list(search_objects_by_exact_tag(zone_id, "zone_id"))
+        rooms = [obj for obj in objects if obj.tags.get(category="room_id")]
+        occupants = [
+            content
+            for room in rooms
+            for content in room.contents
+            if isinstance(content, Character)
+        ]
+        if occupants and not maintenance_approved:
+            raise ContentMaterializationError(
+                f"Retired zone '{zone_id}' contains player characters and requires "
+                "explicit maintenance approval."
+            )
+        if occupants:
+            raw_home = str(getattr(settings, "DEFAULT_HOME", "")).lstrip("#")
+            try:
+                destination = ObjectDB.objects.get(id=int(raw_home))
+            except (ObjectDB.DoesNotExist, TypeError, ValueError) as exc:
+                raise ContentMaterializationError(
+                    f"Retired zone '{zone_id}' has occupants but DEFAULT_HOME is invalid."
+                ) from exc
+            if (destination.db.zone_id or "") == zone_id:
+                raise ContentMaterializationError(
+                    f"Retired zone '{zone_id}' cannot evict occupants into itself."
+                )
+            for character in occupants:
+                character.move_to(destination, quiet=True, move_hooks=False)
+
+        exits = []
+        for obj in objects:
+            if not obj.pk:
+                continue
+            try:
+                if obj.destination is not None:
+                    exits.append(obj)
+            except Exception:
+                continue
+        for obj in exits:
+            obj.delete()
+        for obj in objects:
+            if obj.pk and obj not in rooms and obj not in exits:
+                obj.delete()
+        for room in rooms:
+            if room.pk:
+                room.delete()
+    return removed_zone_ids
+
+
 def materialize_world_manifest(
     manifest: WorldManifest,
+    *,
+    previous_manifest: WorldManifest | None = None,
+    maintenance_approved: bool = False,
 ) -> ContentMaterializationReport:
     """Replay a validated manifest through AreaBuilder without source imports."""
 
@@ -93,6 +168,12 @@ def materialize_world_manifest(
     FlightRegistry.clear()
     clear_unresolved_exits()
     clear_registered_social_topology()
+
+    removed_zones = _remove_retired_zones(
+        previous_manifest,
+        manifest,
+        maintenance_approved=maintenance_approved,
+    )
 
     zone_ids = []
     reconciliation = {
@@ -138,5 +219,6 @@ def materialize_world_manifest(
     _finalize_cross_zone_exits()
     return ContentMaterializationReport(
         zones=tuple(zone_ids),
+        removed_zones=removed_zones,
         reconciled=reconciliation,
     )

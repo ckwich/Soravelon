@@ -391,3 +391,75 @@ def build():
         self.assertEqual(report["reconciled"]["rooms_deleted"], 1)
         self.assertEqual(verification.diagnostics, ())
         self.assertEqual(verification.verified_manifest_hash, manifest.manifest_hash)
+
+    def test_manifest_replay_removes_zone_absent_from_target(self):
+        from world.area_builder import AreaBuilder
+        from world.content_compiler import compile_world_sources
+        from world.content_materializer import materialize_world_manifest
+        from world.content_runtime import verify_runtime_manifest
+        from world.tag_search import search_objects_by_exact_tag
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("retired")
+    area.zone(name="Retired", zone_type="frontier", continent="varath")
+    room = area.room("last_room", name="Last Room", desc="Last room.")
+    area.npc(room, "last_keeper", name="Last Keeper", faction="wardens")
+    return area.build()
+"""
+        area = AreaBuilder("retired")
+        area.zone(name="Retired", zone_type="frontier", continent="varath")
+        room = area.room("last_room", name="Last Room", desc="Last room.")
+        area.npc(room, "last_keeper", name="Last Keeper", faction="wardens")
+        area.build()
+        previous = compile_world_sources({"world/areas/retired.py": source}).manifest
+        target = compile_world_sources({}).manifest
+        assert previous is not None and target is not None
+
+        report = materialize_world_manifest(target, previous_manifest=previous)
+        verification = verify_runtime_manifest(target)
+
+        self.assertEqual(report.removed_zones, ("retired",))
+        self.assertEqual(list(search_objects_by_exact_tag("retired", "zone_id")), [])
+        self.assertEqual(verification.diagnostics, ())
+
+    def test_removed_zone_with_character_requires_maintenance_and_evicts(self):
+        from evennia import create_object
+        from typeclasses.characters import Character
+        from world.area_builder import AreaBuilder
+        from world.content_compiler import compile_world_sources
+        from world.content_materializer import (
+            ContentMaterializationError,
+            materialize_world_manifest,
+        )
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("retired_occupied")
+    area.zone(name="Retired", zone_type="frontier", continent="varath")
+    area.room("last_room", name="Last Room", desc="Last room.")
+    return area.build()
+"""
+        area = AreaBuilder("retired_occupied")
+        area.zone(name="Retired", zone_type="frontier", continent="varath")
+        room = area.room("last_room", name="Last Room", desc="Last room.")
+        area.build()
+        character = create_object(Character, key="occupant", location=room)
+        previous = compile_world_sources({"world/areas/retired.py": source}).manifest
+        target = compile_world_sources({}).manifest
+        assert previous is not None and target is not None
+
+        with self.assertRaisesRegex(
+            ContentMaterializationError, "maintenance approval"
+        ):
+            materialize_world_manifest(target, previous_manifest=previous)
+        self.assertTrue(room.pk)
+
+        materialize_world_manifest(
+            target,
+            previous_manifest=previous,
+            maintenance_approved=True,
+        )
+
+        character.refresh_from_db()
+        self.assertNotEqual(character.location.db.zone_id, "retired_occupied")
