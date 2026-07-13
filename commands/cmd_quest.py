@@ -162,10 +162,16 @@ class CmdQuest(Command):
                 if rtype == "give_scales":
                     lines.append(f"  |y{r.get('amount', 0)} Scales|n")
                 elif rtype == "modify_standing":
-                    faction = r.get("faction_id", "?").replace("_", " ").title()
+                    from world.faction_registry import FACTION_NAMES
+
+                    faction_id = r.get("faction_id", "?")
+                    faction = FACTION_NAMES.get(
+                        faction_id,
+                        faction_id.replace("_", " ").title(),
+                    )
                     delta = r.get("delta", 0)
-                    sign = "+" if delta > 0 else ""
-                    lines.append(f"  |c{sign}{delta} {faction} Standing|n")
+                    direction = "improves" if delta > 0 else "worsens"
+                    lines.append(f"  |c{faction} regard {direction}|n")
                 elif rtype == "give_item":
                     lines.append(f"  |w{r.get('template_id', 'item').replace('_', ' ').title()}|n")
                 elif rtype == "give_skill_xp":

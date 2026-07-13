@@ -13,6 +13,7 @@ from django.db.models import Avg
 from world.domain_definitions import ALL_DOMAINS
 from world.faction_registry import canonicalize_faction_id
 from world.models import FactionStanding, ZoneAttunement
+from world.standing import STANDING_MAX, STANDING_MIN
 
 # --- Constants ---
 
@@ -275,7 +276,7 @@ def calculate_backend_level(character):
 def modify_standing(character, faction_id, amount, reason, _transfer=False):
     """
     Modify Standing for a character with a faction.
-    Clamps to -100,000 / +100,000. Uses F() for atomic update.
+    Clamps to the canonical internal range. Uses F() for atomic update.
     """
     from django.db.models import F
     from django.db.models.functions import Greatest, Least
@@ -289,7 +290,10 @@ def modify_standing(character, faction_id, amount, reason, _transfer=False):
     )
     # Atomic update with clamping via Greatest/Least
     FactionStanding.objects.filter(id=record.id).update(
-        standing=Greatest(-100000, Least(100000, F('standing') + amount))
+        standing=Greatest(
+            STANDING_MIN,
+            Least(STANDING_MAX, F("standing") + amount),
+        )
     )
     record.refresh_from_db()
 

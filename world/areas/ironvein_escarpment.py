@@ -1375,7 +1375,7 @@ def build():
         flagged_drop="stamped_requisition_copy",
         rewards=[
             {"action_type": "give_scales", "amount": 80},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 80},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 8000},
             {"action_type": "echo", "message": "|gMael lowers his voice. \"Good. Numbers rot faster when nobody carries them between offices.\"|n"},
         ],
         next_quest_id="ie_q_stonewake_due",
@@ -1399,7 +1399,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 95},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 55},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 5500},
             {"action_type": "echo", "message": "|gVerin ties off a bandage with brutal care. \"Pain teaches fast when orders finally answer to it.\"|n"},
         ],
         objective_type="kill",
@@ -1434,7 +1434,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 65},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 6500},
             {"action_type": "echo", "message": "|gCast brushes chalk from his fingers. \"A buried name is still a line in the ledger, if someone keeps reading.\"|n"},
         ],
         objective_type="investigate",
@@ -1458,7 +1458,7 @@ def build():
         flagged_drop="runoff_sample_satchel",
         rewards=[
             {"action_type": "give_scales", "amount": 85},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 85},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 8500},
             {"action_type": "echo", "message": "|gNella wipes red water from her wrists. \"Good. Let them test what the camp has been drinking for years.\"|n"},
         ],
         next_quest_id="ie_q_scarred_sanctum",
@@ -1483,7 +1483,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 135},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 110},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 11000},
             {"action_type": "echo", "message": "|gSiven studies the recovered tally slips. \"There it is. The city asked for stone, and he turned people into part of the freight.\"|n"},
         ],
         objective_type="kill",
@@ -1507,7 +1507,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 125},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 95},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 9500},
             {"action_type": "echo", "message": "|gEsa presses a chalk-marked palm to the stone. \"That is better. Witness can breathe again, even here.\"|n"},
         ],
         objective_type="kill",

@@ -302,7 +302,7 @@ def build():
     area.quest("report", quest_giver="npc_keeper",
                objectives=[{"type": "talk_to", "target": "npc_keeper"}],
                rewards=[{"action_type": "modify_standing",
-                         "faction_id": "warden", "delta": 250}])
+                         "faction_id": "warden", "delta": 2_500}])
     return area.build()
 """
 
@@ -317,6 +317,25 @@ def build():
                 "noncanonical-faction-id",
             ],
         )
+
+    def test_standing_actions_reject_tiny_legacy_scale_deltas(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("standing")
+    area.zone(name="Standing", zone_type="frontier", continent="varath")
+    area.room("entry", name="Entry", desc="A threshold.")
+    area.quest("report", objectives=[{"type": "visit", "target": "entry"}],
+               rewards=[{"action_type": "modify_standing",
+                         "faction_id": "wardens", "delta": 25}])
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/standing.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(result.diagnostics[0].code, "invalid-standing-delta")
 
     def test_material_affordances_fail_closed_when_they_cannot_be_consumed(self):
         from world.content_compiler import compile_world_sources

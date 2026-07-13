@@ -1642,7 +1642,7 @@ def build():
         flagged_drop="relay_waybill_roll",
         rewards=[
             {"action_type": "give_scales", "amount": 70},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 80},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 8000},
             {
                 "action_type": "echo",
                 "message": "|gMarro exhales through his nose. \"Good. One less excuse for them to squeeze the yard.\"|n",
@@ -1673,7 +1673,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 95},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 100},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 10000},
             {
                 "action_type": "echo",
                 "message": "|gRhune taps the ruined fee slate. \"They call it order when they can write it down. Keep pushing.\"|n",
@@ -1714,7 +1714,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 85},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 40},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 4000},
             {
                 "action_type": "echo",
                 "message": "|gIben bows his head. \"A named dead soul weighs differently than an omitted one.\"|n",
@@ -1744,7 +1744,7 @@ def build():
         flagged_drop="copied_boundary_slip",
         rewards=[
             {"action_type": "give_scales", "amount": 80},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 85},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 8500},
             {
                 "action_type": "echo",
                 "message": "|gTrest folds his measuring chain away. \"Thank you. Accuracy is often just speed before interference arrives.\"|n",
@@ -1775,7 +1775,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 130},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 120},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 12000},
             {
                 "action_type": "echo",
                 "message": "|gYsolde reads the returned notes twice. \"So he was not lost to delay after all. That explains far too much.\"|n",

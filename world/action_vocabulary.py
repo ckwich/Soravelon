@@ -165,6 +165,9 @@ def _handle_modify_standing(action_dict, context, _depth):
     delta = action_dict.get("delta", 0)
     if not faction_id:
         return False, "modify_standing: missing faction_id"
+    from world.standing import validate_authored_standing_delta
+    if not validate_authored_standing_delta(delta):
+        return False, "modify_standing: delta must use the canonical standing scale"
     from world.world_state import modify_standing
     modify_standing(character, faction_id, delta, "trigger_action")
     return True, ""

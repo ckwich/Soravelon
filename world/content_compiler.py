@@ -16,6 +16,7 @@ from world.faction_registry import FactionIdentityError, canonicalize_faction_id
 from world.item_catalog import CATALOG
 from world.material_definitions import MATERIAL_REGISTRY
 from world.mob_templates import MOB_TEMPLATES
+from world.standing import validate_authored_standing_delta
 from world.quest_engine import OBJECTIVE_TYPES, OBJECTIVE_TYPE_ALIASES
 from world.skill_definitions import SKILL_DEFINITIONS
 from world.social_taxonomy import EDGE_TYPES, NODE_TYPES
@@ -999,6 +1000,16 @@ def _validate_world_definitions(
                         action_dict.get("faction_id"),
                         diagnostics,
                     )
+                    if not validate_authored_standing_delta(
+                        action_dict.get("delta")
+                    ):
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "invalid-standing-delta",
+                                "Standing changes must use meaningful canonical units.",
+                            )
+                        )
 
             if operation.method == "social_edge" and len(operation.arguments) >= 2:
                 source_key, target_key = operation.arguments[:2]

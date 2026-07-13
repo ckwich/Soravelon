@@ -1295,7 +1295,7 @@ def build():
         flagged_drop="sealed_revision_packet",
         rewards=[
             {"action_type": "give_scales", "amount": 75},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 70},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 7000},
             {"action_type": "echo", "message": "|gPela exhales. \"Good. Let the court lose the truth on purpose, not by accident.\"|n"},
         ],
         next_quest_id="oc_q_removed_numbers",
@@ -1320,7 +1320,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 95},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 90},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 9000},
             {"action_type": "echo", "message": "|gMiren runs his thumb over an old cut line. \"If they take enough numbers, the lie wins by vacancy.\"|n"},
         ],
         objective_type="kill",
@@ -1355,7 +1355,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 80},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 8000},
             {"action_type": "echo", "message": "|gSiven nods once. \"A road stays alive by the paths officials cannot tidy.\"|n"},
         ],
         objective_type="investigate",
@@ -1379,7 +1379,7 @@ def build():
         flagged_drop="mineral_residue_packet",
         rewards=[
             {"action_type": "give_scales", "amount": 80},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 85},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 8500},
             {"action_type": "echo", "message": "|gVela brushes white dust from her hands. \"If the residue matches the old sequence, the court was never what the wall says.\"|n"},
         ],
         next_quest_id="oc_q_missing_surveyor",
@@ -1404,7 +1404,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 135},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 120},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 12000},
             {"action_type": "echo", "message": "|gTern studies the returned notes in silence. \"So the court kept him better than the rolls did.\"|n"},
         ],
         objective_type="kill",
@@ -1427,7 +1427,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 120},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 95},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 9500},
             {"action_type": "echo", "message": "|gOdan bows toward the dark works. \"Some counts should end with witness, not abandonment.\"|n"},
         ],
         objective_type="kill",

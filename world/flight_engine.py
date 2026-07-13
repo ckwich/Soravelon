@@ -15,18 +15,10 @@ from world.game_operations import (
     normalize_operation_id,
     record_operation,
 )
+from world.standing import STANDING_DISCOUNT_TIERS
 
 
 logger = logging.getLogger("evennia")
-
-# Consortium Standing discount tiers (D-09).
-# Checked in descending threshold order — first match wins.
-STANDING_DISCOUNT_TIERS = [
-    (75, 0.30),   # Standing 75-100: 30% off
-    (50, 0.20),   # Standing 50-74: 20% off
-    (25, 0.10),   # Standing 25-49: 10% off
-    (0,  0.00),   # Standing 0-24: no discount
-]
 
 CONSORTIUM_FACTION_ID = "consortium"
 

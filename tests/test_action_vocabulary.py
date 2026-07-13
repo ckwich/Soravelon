@@ -306,7 +306,7 @@ class TestModifyStandingAction(EvenniaTest):
         char = MagicMock()
         with patch("world.world_state.modify_standing") as mock_ms:
             success, msg = execute_action(
-                {"action_type": "modify_standing", "faction_id": "empire", "delta": 10},
+                {"action_type": "modify_standing", "faction_id": "empire", "delta": 2_500},
                 {"character": char},
             )
 
@@ -315,6 +315,23 @@ class TestModifyStandingAction(EvenniaTest):
         call_args = mock_ms.call_args
         self.assertEqual(call_args[0][0], char)
         self.assertEqual(call_args[0][1], "empire")
+
+    def test_modify_standing_rejects_tiny_legacy_scale_delta(self):
+        from world.action_vocabulary import execute_action
+
+        with patch("world.world_state.modify_standing") as mock_modify:
+            success, message = execute_action(
+                {
+                    "action_type": "modify_standing",
+                    "faction_id": "empire",
+                    "delta": 25,
+                },
+                {"character": MagicMock()},
+            )
+
+        self.assertFalse(success)
+        self.assertIn("canonical standing scale", message)
+        mock_modify.assert_not_called()
 
 
 class TestModifyAttunementAction(EvenniaTest):

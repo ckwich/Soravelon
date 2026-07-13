@@ -2124,7 +2124,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 80},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 200},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 20000},
             {"action_type": "echo", "message": "|gAshwyn marks your tally with grim satisfaction. \"Good hunting. The Ashway will be safer for it -- but I've another matter, if you're willing.\"|n"},
         ],
         next_quest_id="ashreach_bandit_problem",
@@ -2151,7 +2151,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 100},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 300},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 30000},
             {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 3},
             {"action_type": "echo", "message": "|gAshwyn clasps your arm in the Warden salute. \"The Ashway breathes easier tonight. You've done the Wardens a true service.\"|n"},
         ],
@@ -2207,7 +2207,7 @@ def build():
         flagged_drop="ashreach_relay_satchel",
         rewards=[
             {"action_type": "give_scales", "amount": 75},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 225},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 22500},
             {"action_type": "echo", "message": "|gHarven breaks the return seal and nods once. \"Good. A quiet road report is worth a dozen speeches after the fact. The line holds because people like you keep it stitched.\"|n"},
         ],
         next_quest_id="cantera_bandit_lookout",
@@ -2232,7 +2232,7 @@ def build():
         flagged_drop="coastal_purchase_order",
         rewards=[
             {"action_type": "give_scales", "amount": 70},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 175},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 17500},
             {"action_type": "echo", "message": "|gReva taps the marked order against her palm and grins. \"Perfect. Paper first, cargo second, profit third. That is how the road stays kind to us.\"|n"},
         ],
         next_quest_id="sc_q_deep_cave_rumors",

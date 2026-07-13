@@ -695,7 +695,7 @@ def build():
         flagged_drop="sealed_keeper_billet",
         rewards=[
             {"action_type": "give_scales", "amount": 75},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 70},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 7000},
             {
                 "action_type": "echo",
                 "message": "|gImrel inclines his head. \"Good. If the run is being stolen, I'd rather the proof arrive before the excuses do.\"|n",
@@ -723,7 +723,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 95},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 60},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 6000},
             {
                 "action_type": "echo",
                 "message": "|gVesh checks the torn wires in grim silence. \"Good. Every blind route they lose makes the next lie harder to stage.\"|n",
@@ -751,7 +751,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 130},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 105},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 10500},
             {
                 "action_type": "echo",
                 "message": "|gVesh folds the recovered forged tags into his palm. \"There. Now the preserve will have to lie louder if it wants this buried again.\"|n",
@@ -778,7 +778,7 @@ def build():
         flagged_drop="charter_rubbing_case",
         rewards=[
             {"action_type": "give_scales", "amount": 80},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 80},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 8000},
             {
                 "action_type": "echo",
                 "message": "|gVestri presses ink from his fingertips. \"Good. If the lodge copy changes again, at least one comparison will survive it.\"|n",
@@ -818,7 +818,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 85},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 8500},
             {
                 "action_type": "echo",
                 "message": "|gAlwen lays the rubbings side by side. \"There it is. Enclosure dressed as stewardship, cut onto older consent like it was always theirs.\"|n",
@@ -846,7 +846,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 125},
-            {"action_type": "modify_standing", "faction_id": "circle", "delta": 100},
+            {"action_type": "modify_standing", "faction_id": "circle", "delta": 10000},
             {
                 "action_type": "echo",
                 "message": "|gAlwen bows his head toward the glade. \"Better witness than spectacle. Better an ending than another season of applause.\"|n",

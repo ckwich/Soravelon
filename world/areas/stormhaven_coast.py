@@ -2345,7 +2345,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 100},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 250},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 25000},
             {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 4},
             {"action_type": "echo", "message": "|gAldren crosses the last name off his bounty list. \"Ten less raiders on the water. The fishing fleet can breathe again. Your bounty, well earned.\"|n"},
         ],

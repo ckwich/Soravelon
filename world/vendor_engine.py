@@ -153,9 +153,10 @@ def get_vendor_price(vendor_npc, item_def, character):
     base_price = item_def.get("value", 0)
     faction = vendor_npc.db.vendor_faction
     if faction:
+        from world.standing import standing_benefit_fraction
         from world.world_state import get_standing
         standing = get_standing(character, faction)
-        discount = min(0.20, standing * 0.002)  # max 20% discount at standing 100
+        discount = standing_benefit_fraction(standing) * 0.20
         base_price = max(1, int(base_price * (1 - discount)))
     return base_price
 

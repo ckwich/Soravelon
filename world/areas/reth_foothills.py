@@ -2319,7 +2319,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 200},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 20000},
             {"action_type": "echo", "message": "|gHalvek's weathered face creases with relief. \"Alive, then. Thank the stone. The Consortium will remember this -- and so will I.\"|n"},
         ],
         next_quest_id="rf_q_foundation_survey",
@@ -2345,7 +2345,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 120},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 250},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 25000},
             {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 4},
             {"action_type": "echo", "message": "|gSerra examines the troll-tooth trophies with a soldier's eye. \"Five less to worry about. The foothills won't thank you, but the miners will.\"|n"},
         ],
@@ -2395,7 +2395,7 @@ def build():
         flagged_drop="patrol_tonic_request",
         rewards=[
             {"action_type": "give_scales", "amount": 65},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 125},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 12500},
             {"action_type": "echo", "message": "|gSerra folds Renn's answer into her map case. \"Good. The line keeps men alive because somebody thinks ahead. Today that somebody was you.\"|n"},
         ],
         next_quest_id="rf_q_rare_ingredients",
@@ -2423,7 +2423,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 100},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 150},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 15000},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 4},
             {"action_type": "echo", "message": "|gHalvek studies the copied marks in silence before handing them to Renn. \"That is not mine work,\" he mutters. \"That means the mountain owed us warning before it owed us ore.\"|n"},
         ],

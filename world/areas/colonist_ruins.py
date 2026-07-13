@@ -362,7 +362,7 @@ def build():
         quest_type='delivery',
         quest_giver='npc_archive_caretaker_evi',
         objectives=[{'type': 'investigate', 'target': 'ar_archive_shell', 'count': 1}, {'type': 'deliver', 'target': 'npc_name_keeper_haoa', 'count': 1, 'item_tag': 'ruins_record_packet'}],
-        rewards=[{'action_type': 'give_scales', 'amount': 34}, {'action_type': 'modify_standing', 'faction_id': 'kauroran', 'delta': 35}],
+        rewards=[{'action_type': 'give_scales', 'amount': 34}, {'action_type': 'modify_standing', 'faction_id': 'kauroran', 'delta': 3500}],
         next_quest_id=None,
         prerequisite_quests=['ruins_q_names_in_salt'],
         can_share=True,

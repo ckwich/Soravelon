@@ -3120,7 +3120,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 85},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 100},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 10000},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
             {
                 "action_type": "echo",
@@ -3154,7 +3154,7 @@ def build():
         flagged_drop="courier_manifest_packet",
         rewards=[
             {"action_type": "give_scales", "amount": 70},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 90},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 9000},
             {
                 "action_type": "discover_flight_point",
                 "point_id": "tremen_courier",
@@ -3197,7 +3197,7 @@ def build():
         flagged_drop="stagcrown_petition",
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 75},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 7500},
             {
                 "action_type": "echo",
                 "message": "|gMaelin folds the reply into his sleeve without reading it in public. \"You understand discretion. That matters here.\"|n",
@@ -3260,7 +3260,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 80},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 60},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 6000},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 2},
             {
                 "action_type": "echo",
@@ -3292,7 +3292,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 85},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 8500},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
             {
                 "action_type": "echo",
@@ -3325,7 +3325,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 100},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 95},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 9500},
             {
                 "action_type": "echo",
                 "message": "|gVorun's expression does not change, but his shoulders ease a fraction. \"Good. Better a tunnel problem than a platform scandal.\"|n",
@@ -3387,7 +3387,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 85},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 70},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 7000},
             {
                 "action_type": "echo",
                 "message": "|gTev exhales through his teeth. \"Thought so. The city taxes the road once and the brokers tax it again.\"|n",
@@ -3418,7 +3418,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 95},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 90},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 9000},
             {"action_type": "give_skill_xp", "skill_id": "investigation", "count": 3},
             {
                 "action_type": "echo",
@@ -3452,7 +3452,7 @@ def build():
         flagged_drop="dispatch_correction_note",
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "empire", "delta": 85},
+            {"action_type": "modify_standing", "faction_id": "empire", "delta": 8500},
             {
                 "action_type": "echo",
                 "message": "|gSevain scans Helian's reply and allows herself one tired nod. \"Good. Then the delay remains procedural instead of political.\"|n",

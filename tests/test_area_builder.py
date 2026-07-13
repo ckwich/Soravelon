@@ -540,7 +540,7 @@ class TestQuestStoredOnZone(AreaBuilderTestBase):
                 {
                     "action_type": "modify_standing",
                     "faction_id": "warden",
-                    "delta": 250,
+                    "delta": 2_500,
                 },
             ],
         )

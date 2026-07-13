@@ -92,6 +92,11 @@ class TestCmdQuest(unittest.TestCase):
         ],
         "rewards": [
             {"action_type": "give_scales", "amount": 18},
+            {
+                "action_type": "modify_standing",
+                "faction_id": "wardens",
+                "delta": 2_500,
+            },
             {"action_type": "give_skill_xp", "skill_id": "tracking", "count": 2},
         ],
     })
@@ -117,6 +122,9 @@ class TestCmdQuest(unittest.TestCase):
         self.assertIn("[DONE]", message)
         self.assertIn("[1/2]", message)
         self.assertIn("18 Scales", message)
+        self.assertIn("Wardens regard improves", message)
+        self.assertNotIn("2500", message)
+        self.assertNotIn("+2", message)
         self.assertIn("Skill insight: Tracking", message)
         self.assertNotIn("XP", message)
 

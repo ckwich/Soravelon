@@ -401,7 +401,7 @@ def build():
         quest_type='social',
         quest_giver='npc_vault_grandson_porr',
         objectives=[{'type': 'visit', 'target': 'fv_family_vault_walk', 'count': 1}, {'type': 'deliver', 'target': 'fv_low_name_shelf', 'count': 1, 'item_tag': 'thu_name_cord'}, {'type': 'talk_to', 'target': 'npc_vault_grandson_porr', 'count': 1}],
-        rewards=[{'action_type': 'give_scales', 'amount': 30}, {'action_type': 'modify_standing', 'faction_id': 'resonance', 'delta': 18}],
+        rewards=[{'action_type': 'give_scales', 'amount': 30}, {'action_type': 'modify_standing', 'faction_id': 'resonance', 'delta': 1800}],
         next_quest_id=None,
         prerequisite_quests=['thu_q_first_measure'],
         can_share=True,

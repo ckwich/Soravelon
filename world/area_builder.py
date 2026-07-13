@@ -137,6 +137,7 @@ from world.area_validator import (
     validate_spawn_condition,
 )
 from world.faction_registry import FactionIdentityError, canonicalize_faction_id
+from world.standing import validate_authored_standing_delta
 
 
 def _canonical_relationship_id(faction_id):
@@ -160,6 +161,10 @@ def _canonicalize_reward_factions(rewards):
         reward["faction_id"] = _canonical_relationship_id(
             reward.get("faction_id")
         )
+        if not validate_authored_standing_delta(reward.get("delta")):
+            raise AreaBuilderValidationError(
+                "Faction standing delta must use the canonical standing scale."
+            )
     return normalized
 
 

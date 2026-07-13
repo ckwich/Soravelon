@@ -2395,7 +2395,7 @@ def build():
         flagged_drop="warden_supplies",
         rewards=[
             {"action_type": "give_scales", "amount": 80},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 200},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 20000},
             {"action_type": "echo", "message": "|gVoss checks the crate seal, then the trail behind you. \"Good. One clean run means the line eats tonight and reports tomorrow. Tell Kaelen her route still breathes.\"|n"},
         ],
         # Legacy fields (backward compat)
@@ -2435,7 +2435,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 175},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 17500},
             {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 3},
             {"action_type": "echo", "message": "|gKaelen moves the bandit markers off her map one by one. \"That opens the trail. Good. Now we can carry food instead of bodies.\"|n"},
         ],

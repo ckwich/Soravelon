@@ -141,6 +141,44 @@ class TestGetVendorStock(unittest.TestCase):
         self.assertIn("used_sword", stock)
 
 
+class TestGetVendorPrice(unittest.TestCase):
+    @patch("world.world_state.get_standing", return_value=-100_000)
+    def test_negative_standing_never_becomes_an_unadvertised_markup(self, _standing):
+        from world.vendor_engine import get_vendor_price
+
+        price = get_vendor_price(
+            _make_vendor(vendor_faction="consortium"),
+            {"value": 100},
+            _make_character(),
+        )
+
+        self.assertEqual(price, 100)
+
+    @patch("world.world_state.get_standing", return_value=50_000)
+    def test_half_scale_standing_earns_half_the_maximum_discount(self, _standing):
+        from world.vendor_engine import get_vendor_price
+
+        price = get_vendor_price(
+            _make_vendor(vendor_faction="consortium"),
+            {"value": 100},
+            _make_character(),
+        )
+
+        self.assertEqual(price, 90)
+
+    @patch("world.world_state.get_standing", return_value=100_000)
+    def test_canonical_maximum_standing_earns_twenty_percent_discount(self, _standing):
+        from world.vendor_engine import get_vendor_price
+
+        price = get_vendor_price(
+            _make_vendor(vendor_faction="consortium"),
+            {"value": 100},
+            _make_character(),
+        )
+
+        self.assertEqual(price, 80)
+
+
 class TestAppraiseItem(unittest.TestCase):
     def test_appraise_returns_sell_price(self):
         from world.vendor_engine import appraise_item

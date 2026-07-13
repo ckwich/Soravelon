@@ -11,8 +11,9 @@ PERFORMANCE: get_mob_disposition() makes up to 2 DB reads. The combat
 system should cache get_mob_behavior() per encounter in character.ndb.
 """
 
-from world.world_state import get_standing, get_trust
 from world.faction_registry import canonicalize_faction_id
+from world.standing import standing_fraction
+from world.world_state import get_standing, get_trust
 
 # --- Ancestry × Faction modifier table ---
 
@@ -60,8 +61,7 @@ def get_standing_modifier(character, faction_id):
     """Map Standing (-100,000 to +100,000) → modifier (-0.6 to +0.6)."""
     if not faction_id:
         return 0.0
-    standing = get_standing(character, faction_id)
-    return (standing / 100_000) * 0.6
+    return standing_fraction(get_standing(character, faction_id)) * 0.6
 
 
 def get_reputation_modifier(character):

@@ -415,7 +415,7 @@ def build():
         quest_type='combat',
         quest_giver='npc_safety_captain_rill',
         objectives=[{'type': 'investigate', 'target': 'bc_broken_cart_run', 'count': 1}, {'type': 'kill', 'target': 'claim_jumper', 'count': 4}, {'type': 'talk_to', 'target': 'npc_safety_captain_rill', 'count': 1}],
-        rewards=[{'action_type': 'give_scales', 'amount': 44}, {'action_type': 'modify_standing', 'faction_id': 'wardens', 'delta': 18}],
+        rewards=[{'action_type': 'give_scales', 'amount': 44}, {'action_type': 'modify_standing', 'faction_id': 'wardens', 'delta': 1800}],
         next_quest_id=None,
         prerequisite_quests=[],
         can_share=True,

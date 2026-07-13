@@ -65,44 +65,44 @@ class TestFareForRoute(EvenniaTest):
     def test_no_discount_standing_0(self):
         self.assertEqual(self._call_fare(0, 100), 100)
 
-    def test_no_discount_standing_24(self):
-        self.assertEqual(self._call_fare(24, 200), 200)
+    def test_no_discount_below_canonical_quarter_scale(self):
+        self.assertEqual(self._call_fare(24_999, 200), 200)
 
-    def test_10_percent_discount_standing_25(self):
-        self.assertEqual(self._call_fare(25, 100), 90)
+    def test_10_percent_discount_at_canonical_quarter_scale(self):
+        self.assertEqual(self._call_fare(25_000, 100), 90)
 
-    def test_10_percent_discount_standing_49(self):
-        self.assertEqual(self._call_fare(49, 200), 180)
+    def test_10_percent_discount_below_canonical_half_scale(self):
+        self.assertEqual(self._call_fare(49_999, 200), 180)
 
-    def test_20_percent_discount_standing_50(self):
-        self.assertEqual(self._call_fare(50, 100), 80)
+    def test_20_percent_discount_at_canonical_half_scale(self):
+        self.assertEqual(self._call_fare(50_000, 100), 80)
 
-    def test_20_percent_discount_standing_74(self):
-        self.assertEqual(self._call_fare(74, 1000), 800)
+    def test_20_percent_discount_below_canonical_three_quarter_scale(self):
+        self.assertEqual(self._call_fare(74_999, 1000), 800)
 
-    def test_30_percent_discount_standing_75(self):
-        self.assertEqual(self._call_fare(75, 100), 70)
+    def test_30_percent_discount_at_canonical_three_quarter_scale(self):
+        self.assertEqual(self._call_fare(75_000, 100), 70)
 
-    def test_30_percent_discount_standing_100(self):
-        self.assertEqual(self._call_fare(100, 200), 140)
+    def test_30_percent_discount_at_canonical_maximum(self):
+        self.assertEqual(self._call_fare(100_000, 200), 140)
 
     @patch("world.world_state.get_standing")
     def test_multi_leg_sums_before_discount(self, mock_standing):
-        """3 legs at 100 each = 300 base. Standing 50 -> 20% off -> 240."""
+        """Three legs are summed before the canonical standing discount."""
         from world.flight_engine import fare_for_route
         self._register_multi_routes([100, 100, 100])
         legs = [("stop_0", "stop_1"), ("stop_1", "stop_2"), ("stop_2", "stop_3")]
         char = MagicMock()
-        mock_standing.return_value = 50
+        mock_standing.return_value = 50_000
         result = fare_for_route(char, legs)
         self.assertEqual(result, 240)
 
     def test_fare_never_negative(self):
-        self.assertEqual(self._call_fare(100, 0), 0)
+        self.assertEqual(self._call_fare(100_000, 0), 0)
 
     def test_rounds_down(self):
-        """Standing 25 = 10% off. Base 101 -> 101 * 0.9 = 90.9 -> int = 90."""
-        self.assertEqual(self._call_fare(25, 101), 90)
+        """Quarter-scale standing discounts before flooring the fare."""
+        self.assertEqual(self._call_fare(25_000, 101), 90)
 
 
 class TestBookFlight(EvenniaTest):

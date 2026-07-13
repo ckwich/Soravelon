@@ -2714,7 +2714,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 80},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 150},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 15000},
             {
                 "action_type": "discover_flight_point",
                 "point_id": "varath_prime_courier",
@@ -2740,7 +2740,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 50},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 100},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 10000},
             {"action_type": "echo", "message": "|gMarta slides a pouch of coins across the bar. \"That should keep them out for a while. Drink's on me.\"|n"},
         ],
         # Legacy fields (backward compat)
@@ -2761,7 +2761,7 @@ def build():
         flagged_drop="warden_field_report",
         rewards=[
             {"action_type": "give_scales", "amount": 60},
-            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 200},
+            {"action_type": "modify_standing", "faction_id": "wardens", "delta": 20000},
             {
                 "action_type": "record_social_event",
                 "nodes": [
@@ -2928,7 +2928,7 @@ def build():
         ],
         rewards=[
             {"action_type": "give_scales", "amount": 90},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 100},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 10000},
             {"action_type": "echo", "message": "|gRaith skims the signed pledges and tucks them away. \"Better. Fear spends once. Obligation spends for years. You did this the useful way.\"|n"},
         ],
         # Legacy fields (backward compat)
@@ -2953,7 +2953,7 @@ def build():
         rewards=[
             {"action_type": "give_scales", "amount": 85},
             {"action_type": "give_skill_xp", "skill_id": "smithing", "count": 4},
-            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 100},
+            {"action_type": "modify_standing", "faction_id": "consortium", "delta": 10000},
             {"action_type": "echo", "message": "|gGoram grunts over the slag streaks you found in the shipment notes. \"There. That is the lie in the metal. A forge is honest if the hands feeding it are. You just saved me a bad commission.\"|n"},
         ],
         next_quest_id="rf_q_lost_miners",
