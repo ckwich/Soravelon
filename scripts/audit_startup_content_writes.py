@@ -10,6 +10,8 @@ from pathlib import Path
 import sys
 from typing import Iterable
 
+from psycopg import sql
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -76,28 +78,34 @@ def build_write_report(rows: Iterable[tuple[str, str, int]]) -> dict[str, object
 
 def _install(connection) -> tuple[str, ...]:
     tables = content_table_names(connection.introspection.table_names())
-    quote = connection.ops.quote_name
     with connection.cursor() as cursor:
-        cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {quote(AUDIT_SCHEMA)}")
         cursor.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {quote(AUDIT_SCHEMA)}.{quote(AUDIT_TABLE)} (
+            sql.SQL("CREATE SCHEMA IF NOT EXISTS {}").format(
+                sql.Identifier(AUDIT_SCHEMA)
+            )
+        )
+        cursor.execute(
+            sql.SQL(
+                """
+            CREATE TABLE IF NOT EXISTS {} (
                 id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 table_name text NOT NULL,
                 operation text NOT NULL,
                 recorded_at timestamptz NOT NULL DEFAULT clock_timestamp()
             )
             """
+            ).format(sql.Identifier(AUDIT_SCHEMA, AUDIT_TABLE))
         )
         cursor.execute(
-            f"""
+            sql.SQL(
+                """
             CREATE OR REPLACE FUNCTION
-                {quote(AUDIT_SCHEMA)}.{quote(AUDIT_FUNCTION)}()
+                {}()
             RETURNS trigger
             LANGUAGE plpgsql
             AS $function$
             BEGIN
-                INSERT INTO {quote(AUDIT_SCHEMA)}.{quote(AUDIT_TABLE)}
+                INSERT INTO {}
                     (table_name, operation)
                 VALUES (TG_TABLE_NAME, TG_OP);
                 IF TG_OP = 'DELETE' THEN
@@ -107,52 +115,71 @@ def _install(connection) -> tuple[str, ...]:
             END;
             $function$
             """
+            ).format(
+                sql.Identifier(AUDIT_SCHEMA, AUDIT_FUNCTION),
+                sql.Identifier(AUDIT_SCHEMA, AUDIT_TABLE),
+            )
         )
         for table in tables:
             cursor.execute(
-                f"DROP TRIGGER IF EXISTS {quote(AUDIT_TRIGGER)} "
-                f"ON {quote(table)}"
+                sql.SQL("DROP TRIGGER IF EXISTS {} ON {}").format(
+                    sql.Identifier(AUDIT_TRIGGER),
+                    sql.Identifier(table),
+                )
             )
             cursor.execute(
-                f"""
-                CREATE TRIGGER {quote(AUDIT_TRIGGER)}
-                AFTER INSERT OR UPDATE OR DELETE ON {quote(table)}
+                sql.SQL(
+                    """
+                CREATE TRIGGER {}
+                AFTER INSERT OR UPDATE OR DELETE ON {}
                 FOR EACH ROW EXECUTE FUNCTION
-                    {quote(AUDIT_SCHEMA)}.{quote(AUDIT_FUNCTION)}()
+                    {}()
                 """
+                ).format(
+                    sql.Identifier(AUDIT_TRIGGER),
+                    sql.Identifier(table),
+                    sql.Identifier(AUDIT_SCHEMA, AUDIT_FUNCTION),
+                )
             )
         cursor.execute(
-            f"TRUNCATE TABLE {quote(AUDIT_SCHEMA)}.{quote(AUDIT_TABLE)}"
+            sql.SQL("TRUNCATE TABLE {}").format(
+                sql.Identifier(AUDIT_SCHEMA, AUDIT_TABLE)
+            )
         )
     return tables
 
 
 def _reset(connection) -> None:
-    quote = connection.ops.quote_name
     with connection.cursor() as cursor:
         cursor.execute(
-            f"TRUNCATE TABLE {quote(AUDIT_SCHEMA)}.{quote(AUDIT_TABLE)}"
+            sql.SQL("TRUNCATE TABLE {}").format(
+                sql.Identifier(AUDIT_SCHEMA, AUDIT_TABLE)
+            )
         )
 
 
 def _report(connection) -> dict[str, object]:
-    quote = connection.ops.quote_name
     with connection.cursor() as cursor:
         cursor.execute(
-            f"""
+            sql.SQL(
+                """
             SELECT table_name, operation, count(*)
-            FROM {quote(AUDIT_SCHEMA)}.{quote(AUDIT_TABLE)}
+            FROM {}
             GROUP BY table_name, operation
             ORDER BY table_name, operation
             """
+            ).format(sql.Identifier(AUDIT_SCHEMA, AUDIT_TABLE))
         )
         return build_write_report(cursor.fetchall())
 
 
 def _uninstall(connection) -> None:
-    quote = connection.ops.quote_name
     with connection.cursor() as cursor:
-        cursor.execute(f"DROP SCHEMA IF EXISTS {quote(AUDIT_SCHEMA)} CASCADE")
+        cursor.execute(
+            sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(
+                sql.Identifier(AUDIT_SCHEMA)
+            )
+        )
 
 
 def _load_connection(args: argparse.Namespace):

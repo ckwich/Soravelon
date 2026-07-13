@@ -1,6 +1,9 @@
 """Contracts for PostgreSQL startup content-write instrumentation."""
 
 import unittest
+from unittest.mock import MagicMock
+
+from psycopg import sql
 
 
 class TestStartupContentTableSelection(unittest.TestCase):
@@ -76,6 +79,30 @@ class TestStartupWriteReport(unittest.TestCase):
                 ],
             },
         )
+
+
+class TestStartupWriteSqlComposition(unittest.TestCase):
+    def test_install_composes_every_dynamic_identifier(self):
+        from scripts.audit_startup_content_writes import CORE_CONTENT_TABLES
+        from scripts.audit_startup_content_writes import _install
+
+        hostile_table = "world_events; DROP TABLE players"
+        connection = MagicMock()
+        connection.introspection.table_names.return_value = {
+            *CORE_CONTENT_TABLES,
+            hostile_table,
+        }
+        cursor = connection.cursor.return_value.__enter__.return_value
+
+        _install(connection)
+
+        queries = [call.args[0] for call in cursor.execute.call_args_list]
+        self.assertTrue(queries)
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertIsInstance(query, sql.Composable)
+        rendered = "\n".join(query.as_string(None) for query in queries)
+        self.assertIn(f'"{hostile_table}"', rendered)
 
 
 if __name__ == "__main__":
