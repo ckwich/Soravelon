@@ -311,6 +311,9 @@ def _ensure_evennia_runtime_initialized() -> None:
             "Admin account #1 must exist before world-content initialization."
         )
     if not ObjectDB.objects.filter(id=2).exists():
+        import evennia
+
+        evennia._init()
         initial_setup.create_objects()
         initial_setup.at_initial_setup()
     if not ObjectDB.objects.filter(id=2).exists():

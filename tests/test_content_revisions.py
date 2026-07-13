@@ -803,10 +803,12 @@ def build():
             patch("evennia.objects.models.ObjectDB.objects.filter") as object_filter,
             patch.object(initial_setup, "create_objects") as create_objects,
             patch.object(initial_setup, "at_initial_setup") as initial_hook,
+            patch("evennia._init") as evennia_init,
         ):
             object_filter.return_value.exists.side_effect = [False, True]
             _ensure_evennia_runtime_initialized()
 
+        evennia_init.assert_called_once_with()
         create_objects.assert_called_once_with()
         initial_hook.assert_called_once_with()
         self.assertEqual(ServerConfig.objects.conf("last_initial_setup_step"), "done")
