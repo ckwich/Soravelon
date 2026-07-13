@@ -12,6 +12,7 @@ from world.content_revisions import (
     adopt_bootstrap,
     apply_world_content,
     get_world_content_status,
+    rollback_world_content,
     serialize_change_plan,
 )
 from world.content_runtime import verify_runtime_manifest
@@ -30,6 +31,7 @@ class Command(BaseCommand):
                 "bootstrap-check",
                 "bootstrap-adopt",
                 "apply",
+                "rollback",
             ),
         )
         parser.add_argument(
@@ -40,13 +42,43 @@ class Command(BaseCommand):
         )
         parser.add_argument("--git-commit")
         parser.add_argument("--maintenance-approved", action="store_true")
+        parser.add_argument("--revision-id", type=int)
 
     def handle(self, *args, **options):
         action = options["action"]
         output_format = options["output_format"]
         areas_dir = Path(settings.GAME_DIR) / "world" / "areas"
 
-        if action in {"validate", "bootstrap-check", "bootstrap-adopt", "apply"}:
+        if action == "rollback":
+            revision_id = options.get("revision_id")
+            git_commit = options.get("git_commit")
+            if revision_id is None:
+                raise CommandError("rollback requires an explicit --revision-id.")
+            if not git_commit:
+                raise CommandError("rollback requires an explicit --git-commit.")
+            try:
+                rollback_result = rollback_world_content(
+                    revision_id,
+                    git_commit=git_commit,
+                    maintenance_approved=options["maintenance_approved"],
+                )
+            except (ApplyPreconditionError, ContentApplyError) as exc:
+                raise CommandError(str(exc)) from exc
+            payload = {
+                "command": action,
+                "valid": True,
+                "state": rollback_result.state,
+                "target_manifest_hash": rollback_result.revision.manifest_hash,
+                "git_commit": rollback_result.revision.git_commit,
+                "revision_id": rollback_result.revision.pk,
+                "diagnostics": [],
+            }
+        elif action in {
+            "validate",
+            "bootstrap-check",
+            "bootstrap-adopt",
+            "apply",
+        }:
             result = compile_world_manifest(areas_dir)
             valid = result.manifest is not None
             payload = {

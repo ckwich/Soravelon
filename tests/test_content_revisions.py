@@ -572,3 +572,54 @@ def build():
         self.assertEqual(payload["state"], "applied")
         self.assertEqual(payload["git_commit"], "b" * 40)
         self.assertIsInstance(payload["revision_id"], int)
+
+    def test_rollback_creates_new_applied_attempt_from_historical_manifest(self):
+        from world.content_revisions import apply_world_content, rollback_world_content
+        from world.content_runtime import verify_runtime_manifest
+
+        baseline, old, target, room = self._baseline_and_target()
+        applied = apply_world_content(target, git_commit="b" * 40).revision
+
+        result = rollback_world_content(
+            baseline.id,
+            git_commit="c" * 40,
+        )
+
+        applied.refresh_from_db()
+        result.revision.refresh_from_db()
+        room.refresh_from_db()
+        self.assertEqual(result.state, "rolled-back")
+        self.assertEqual(applied.status, "rolled_back")
+        self.assertEqual(result.revision.status, "applied")
+        self.assertEqual(result.revision.manifest_hash, old.manifest_hash)
+        self.assertEqual(result.revision.previous_revision_id, applied.id)
+        self.assertEqual(result.revision.plan["kind"], "rollback")
+        self.assertEqual(
+            result.revision.plan["rollback_target_revision_id"], baseline.id
+        )
+        self.assertEqual(room.db.desc, "Old description.")
+        self.assertEqual(verify_runtime_manifest(old).diagnostics, ())
+
+    def test_rollback_command_records_json_result(self):
+        from world.content_revisions import apply_world_content
+
+        baseline, _old, target, _room = self._baseline_and_target()
+        apply_world_content(target, git_commit="b" * 40)
+        output = io.StringIO()
+
+        call_command(
+            "worldcontent",
+            "rollback",
+            "--revision-id",
+            str(baseline.id),
+            "--git-commit",
+            "c" * 40,
+            "--format",
+            "json",
+            stdout=output,
+        )
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(payload["state"], "rolled-back")
+        self.assertEqual(payload["command"], "rollback")
+        self.assertEqual(payload["git_commit"], "c" * 40)

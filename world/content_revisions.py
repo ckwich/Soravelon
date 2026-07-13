@@ -273,6 +273,8 @@ def apply_world_content(
     git_commit: str,
     maintenance_approved: bool = False,
     after_materialize=None,
+    operation_kind: str = "apply",
+    rollback_target_revision_id: int | None = None,
 ) -> ContentApplyResult:
     """Apply one manifest under the durable deployment mutex and DB transaction."""
 
@@ -317,6 +319,19 @@ def apply_world_content(
         if target_manifest.manifest_hash == previous_manifest.manifest_hash:
             result = ContentApplyResult(state="no-op", revision=applied_revision)
         else:
+            if operation_kind not in {"apply", "rollback"}:
+                raise ApplyPreconditionError(
+                    f"Unsupported content operation kind '{operation_kind}'."
+                )
+            if operation_kind == "rollback":
+                target_evidence = WorldContentRevision.objects.filter(
+                    pk=rollback_target_revision_id,
+                    manifest_hash=target_manifest.manifest_hash,
+                ).first()
+                if target_evidence is None:
+                    raise ApplyPreconditionError(
+                        "Rollback target evidence changed or no longer exists."
+                    )
             planning = plan_world_changes(previous_manifest, target_manifest)
             if planning.plan is None:
                 raise ApplyPreconditionError(
@@ -327,6 +342,11 @@ def apply_world_content(
                 maintenance_approved=maintenance_approved,
             )
             plan_payload = serialize_change_plan(planning.plan)
+            plan_payload["kind"] = operation_kind
+            if operation_kind == "rollback":
+                plan_payload["rollback_target_revision_id"] = (
+                    rollback_target_revision_id
+                )
             target_revision = WorldContentRevision.objects.create(
                 manifest_hash=target_manifest.manifest_hash,
                 schema_version=target_manifest.schema_version,
@@ -370,7 +390,9 @@ def apply_world_content(
                 failed_revision = target_revision
             else:
                 now = timezone.now()
-                applied_revision.status = "superseded"
+                applied_revision.status = (
+                    "rolled_back" if operation_kind == "rollback" else "superseded"
+                )
                 applied_revision.finished_at = now
                 applied_revision.save(update_fields=("status", "finished_at"))
                 target_revision.status = "applied"
@@ -379,7 +401,12 @@ def apply_world_content(
                 target_revision.save(
                     update_fields=("status", "applied_at", "finished_at")
                 )
-                result = ContentApplyResult(state="applied", revision=target_revision)
+                result = ContentApplyResult(
+                    state=(
+                        "rolled-back" if operation_kind == "rollback" else "applied"
+                    ),
+                    revision=target_revision,
+                )
 
     if failure_message is not None:
         error = ContentApplyError(failure_message)
@@ -387,3 +414,36 @@ def apply_world_content(
         raise error
     assert result is not None
     return result
+
+
+def rollback_world_content(
+    target_revision_id: int,
+    *,
+    git_commit: str,
+    maintenance_approved: bool = False,
+) -> ContentApplyResult:
+    """Apply a historical manifest as a new, durable rollback attempt."""
+
+    from world.models import WorldContentRevision
+
+    try:
+        target_revision = WorldContentRevision.objects.get(pk=target_revision_id)
+    except WorldContentRevision.DoesNotExist as exc:
+        raise ApplyPreconditionError(
+            f"Rollback target revision {target_revision_id} does not exist."
+        ) from exc
+    try:
+        target_manifest = deserialize_world_manifest(target_revision.manifest)
+    except ManifestIntegrityError as exc:
+        raise ApplyPreconditionError(str(exc)) from exc
+    if target_manifest.manifest_hash != target_revision.manifest_hash:
+        raise ApplyPreconditionError(
+            "Rollback target hash disagrees with its manifest payload."
+        )
+    return apply_world_content(
+        target_manifest,
+        git_commit=git_commit,
+        maintenance_approved=maintenance_approved,
+        operation_kind="rollback",
+        rollback_target_revision_id=target_revision.id,
+    )
