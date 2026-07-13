@@ -396,3 +396,133 @@ def build():
         assert result.manifest is not None
         self.assertEqual(len(result.manifest.zones), 20)
         self.assertRegex(result.manifest.manifest_hash, r"^[0-9a-f]{64}$")
+
+
+class TestWorldChangePlanning(unittest.TestCase):
+    def test_live_manifest_has_stable_identity_for_every_mutable_operation(self):
+        from world.content_compiler import compile_world_manifest, plan_world_changes
+
+        areas_dir = Path(__file__).resolve().parents[1] / "world" / "areas"
+        compilation = compile_world_manifest(areas_dir)
+        assert compilation.manifest is not None
+
+        result = plan_world_changes(compilation.manifest, compilation.manifest)
+
+        self.assertEqual(result.diagnostics, ())
+        self.assertIsNotNone(result.plan)
+        assert result.plan is not None
+        self.assertEqual(result.plan.changes, ())
+
+    def test_plan_names_creates_updates_moves_deletes_and_player_impact(self):
+        from world.content_compiler import compile_world_sources, plan_world_changes
+
+        before_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("change")
+    area.zone(name="Change", zone_type="frontier", continent="varath")
+    entry = area.room("entry", name="Entry", desc="Old threshold.")
+    square = area.room("square", name="Square", desc="Open square.")
+    area.npc(entry, "npc_keeper", name="Keeper")
+    area.quest("welcome", quest_giver="npc_keeper", objectives=[
+        {"type": "investigate", "target": "entry", "count": 1},
+    ])
+    return area.build()
+"""
+        after_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("change")
+    area.zone(name="Change", zone_type="frontier", continent="varath")
+    entry = area.room("entry", name="Entry", desc="New threshold.")
+    square = area.room("square", name="Square", desc="Open square.")
+    area.room("tower", name="Tower", desc="A new tower.")
+    area.npc(square, "npc_keeper", name="Keeper")
+    return area.build()
+"""
+        before = compile_world_sources(
+            {"world/areas/change.py": before_source}
+        ).manifest
+        after = compile_world_sources({"world/areas/change.py": after_source}).manifest
+        assert before is not None
+        assert after is not None
+
+        result = plan_world_changes(before, after)
+
+        self.assertEqual(result.diagnostics, ())
+        self.assertIsNotNone(result.plan)
+        assert result.plan is not None
+        self.assertEqual(result.plan.previous_manifest_hash, before.manifest_hash)
+        self.assertEqual(result.plan.target_manifest_hash, after.manifest_hash)
+        self.assertEqual(
+            [
+                (change.action, change.entity_type, change.entity_id)
+                for change in result.plan.changes
+            ],
+            [
+                ("move", "npc", "npc_keeper"),
+                ("delete", "quest", "welcome"),
+                ("update", "room", "entry"),
+                ("create", "room", "tower"),
+            ],
+        )
+        quest_delete = result.plan.changes[1]
+        self.assertTrue(quest_delete.destructive)
+        self.assertEqual(quest_delete.player_impact, ("active-quest-progress",))
+
+    def test_room_delete_is_explicitly_destructive_and_occupancy_sensitive(self):
+        from world.content_compiler import compile_world_sources, plan_world_changes
+
+        before_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("change")
+    area.zone(name="Change", zone_type="frontier", continent="varath")
+    area.room("entry", name="Entry", desc="A threshold.")
+    return area.build()
+"""
+        after_source = before_source.replace(
+            '    area.room("entry", name="Entry", desc="A threshold.")\n', ""
+        )
+        before = compile_world_sources(
+            {"world/areas/change.py": before_source}
+        ).manifest
+        after = compile_world_sources({"world/areas/change.py": after_source}).manifest
+        assert before is not None
+        assert after is not None
+
+        result = plan_world_changes(before, after)
+
+        assert result.plan is not None
+        room_delete = result.plan.changes[0]
+        self.assertEqual(room_delete.action, "delete")
+        self.assertTrue(room_delete.destructive)
+        self.assertEqual(
+            room_delete.player_impact,
+            ("occupied-room", "contained-objects", "connected-navigation"),
+        )
+
+    def test_unmodelled_operation_identity_prevents_a_change_plan(self):
+        from world.content_compiler import (
+            AreaOperation,
+            WorldManifest,
+            ZoneSourceDefinition,
+            plan_world_changes,
+        )
+
+        empty = WorldManifest("soravelon.world-content.v1", (), "before")
+        unmodelled = AreaOperation(
+            source_path="world/areas/future.py",
+            line=7,
+            column=5,
+            method="future_operation",
+        )
+        target = WorldManifest(
+            "soravelon.world-content.v1",
+            (ZoneSourceDefinition("world/areas/future.py", "future", (unmodelled,)),),
+            "after",
+        )
+
+        result = plan_world_changes(empty, target)
+
+        self.assertIsNone(result.plan)
+        self.assertEqual(len(result.diagnostics), 1)
+        self.assertEqual(result.diagnostics[0].code, "unmodelled-change-identity")
+        self.assertEqual(result.diagnostics[0].line, 7)

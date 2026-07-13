@@ -115,6 +115,31 @@ class WorldManifestCompilation:
     diagnostics: tuple[CompilationDiagnostic, ...]
 
 
+@dataclass(frozen=True)
+class WorldContentChange:
+    action: str
+    zone_id: str
+    entity_type: str
+    entity_id: str
+    before: AreaOperation | None
+    after: AreaOperation | None
+    destructive: bool
+    player_impact: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class WorldChangePlan:
+    previous_manifest_hash: str
+    target_manifest_hash: str
+    changes: tuple[WorldContentChange, ...]
+
+
+@dataclass(frozen=True)
+class WorldChangePlanningResult:
+    plan: WorldChangePlan | None
+    diagnostics: tuple[CompilationDiagnostic, ...]
+
+
 def _frozen_map_get(mapping: FrozenMap, key: str, default: object = None) -> object:
     return dict(mapping.entries).get(key, default)
 
@@ -917,3 +942,235 @@ def compile_world_manifest(areas_dir: Path) -> WorldManifestCompilation:
         if not path.name.startswith("_")
     }
     return compile_world_sources(sources)
+
+
+def _reference_key(value: object) -> str | None:
+    if isinstance(value, SymbolicReference):
+        return value.key
+    if isinstance(value, str):
+        return value
+    return None
+
+
+def _operation_identity(operation: AreaOperation) -> tuple[str, str] | None:
+    if operation.method == "build":
+        return ("build", "build")
+    direct_id_positions = {
+        "flight_point": 1,
+        "item": 0,
+        "lore_fragment": 0,
+        "material": 0,
+        "mob": 0,
+        "named_mob": 0,
+        "npc": 1,
+        "practice_opportunity": 0,
+        "quest": 0,
+        "room": 0,
+    }
+    position = direct_id_positions.get(operation.method)
+    if position is not None and len(operation.arguments) > position:
+        value = operation.arguments[position]
+        if isinstance(value, str):
+            return (operation.method, value)
+
+    if operation.method in {"node", "zone"}:
+        return (operation.method, operation.method)
+    if operation.method == "exit" and len(operation.arguments) >= 3:
+        source = _reference_key(operation.arguments[0])
+        direction = operation.arguments[2]
+        if source and isinstance(direction, str):
+            return ("exit", f"{source}:{direction}")
+    if operation.method == "spawn" and len(operation.arguments) >= 2:
+        room = _reference_key(operation.arguments[0])
+        mob = operation.arguments[1]
+        if room and isinstance(mob, str):
+            return ("spawn", f"{room}:{mob}")
+    if operation.method in {"initial_room_state", "medic", "vendor"}:
+        target = _reference_key(_operation_value(operation, 0, "target"))
+        if target:
+            return (operation.method, target)
+    if operation.method == "room_role" and len(operation.arguments) >= 2:
+        room = _reference_key(operation.arguments[0])
+        role = operation.arguments[1]
+        if room and isinstance(role, str):
+            return ("room_role", f"{room}:{role}")
+    if operation.method == "loot_table_override":
+        mob_type = _operation_value(operation, 0, "mob_type")
+        if isinstance(mob_type, str):
+            return ("loot_table_override", mob_type)
+    if operation.method == "patrol":
+        mob_key = _operation_value(operation, 0, "mob_key")
+        if isinstance(mob_key, str):
+            return ("patrol", mob_key)
+    if operation.method == "trigger":
+        trigger_id = _frozen_map_get(operation.keyword_arguments, "trigger_id")
+        if isinstance(trigger_id, str) and trigger_id:
+            return ("trigger", trigger_id)
+    if operation.method == "custom_command" and len(operation.arguments) >= 2:
+        target = _reference_key(operation.arguments[0])
+        key = operation.arguments[1]
+        if target and isinstance(key, str):
+            return ("custom_command", f"{target}:{key}")
+    if operation.method == "gathering_pool":
+        pool_type = _operation_value(operation, 0, "pool_type")
+        if isinstance(pool_type, str):
+            return ("gathering_pool", pool_type)
+    if operation.method == "flight_route" and len(operation.arguments) >= 2:
+        first, second = operation.arguments[:2]
+        if isinstance(first, str) and isinstance(second, str):
+            return ("flight_route", f"{first}:{second}")
+    if operation.method == "social_node" and len(operation.arguments) >= 2:
+        node_type, identifier = operation.arguments[:2]
+        if isinstance(node_type, str) and isinstance(identifier, str):
+            return ("social_node", f"{node_type}:{identifier}")
+    if operation.method == "social_edge" and len(operation.arguments) >= 2:
+        source, target = operation.arguments[:2]
+        edge_type = _frozen_map_get(operation.keyword_arguments, "edge_type")
+        if all(isinstance(value, str) for value in (source, target, edge_type)):
+            return ("social_edge", f"{source}->{target}:{edge_type}")
+    return None
+
+
+def _operation_semantic_value(operation: AreaOperation) -> tuple[object, ...]:
+    return (
+        operation.method,
+        operation.arguments,
+        operation.keyword_arguments,
+    )
+
+
+def _change_impact(entity_type: str, action: str) -> tuple[bool, tuple[str, ...]]:
+    if action == "move":
+        impacts = {
+            "flight_point": ("travel-discovery",),
+            "mob": ("encounter-location",),
+            "named_mob": (
+                "encounter-location",
+                "prestige-target",
+            ),
+            "npc": ("npc-location", "quest-dialogue-routing"),
+        }
+        return False, impacts.get(entity_type, ("authored-location",))
+    if action != "delete":
+        return False, ()
+    impacts = {
+        "exit": ("connected-navigation",),
+        "flight_point": ("travel-discovery",),
+        "item": ("item-source", "inventory-expectations"),
+        "named_mob": ("encounter", "prestige-target"),
+        "npc": ("relationship-memory", "quest-dialogue-routing"),
+        "quest": ("active-quest-progress",),
+        "room": ("occupied-room", "contained-objects", "connected-navigation"),
+        "social_edge": ("rumor-routing",),
+        "social_node": ("relationship-memory", "rumor-routing"),
+        "zone": ("world-region", "all-zone-content"),
+    }
+    return True, impacts.get(entity_type, ("authored-runtime-state",))
+
+
+def _manifest_operation_index(
+    manifest: WorldManifest,
+) -> tuple[
+    dict[tuple[str, str, str], AreaOperation],
+    tuple[CompilationDiagnostic, ...],
+]:
+    index: dict[tuple[str, str, str], AreaOperation] = {}
+    diagnostics: list[CompilationDiagnostic] = []
+    for definition in manifest.zones:
+        for operation in definition.operations:
+            if operation.method == "build":
+                continue
+            identity = _operation_identity(operation)
+            if identity is None:
+                diagnostics.append(
+                    _diagnostic(
+                        operation,
+                        "unmodelled-change-identity",
+                        f"area.{operation.method}() has no stable change identity.",
+                    )
+                )
+                continue
+            entity_type, entity_id = identity
+            key = (definition.zone_id, entity_type, entity_id)
+            if key in index:
+                diagnostics.append(
+                    _diagnostic(
+                        operation,
+                        "duplicate-change-identity",
+                        f"Change identity '{entity_type}:{entity_id}' is duplicated in zone '{definition.zone_id}'.",
+                    )
+                )
+                continue
+            index[key] = operation
+    return index, tuple(
+        sorted(
+            diagnostics,
+            key=lambda item: (item.source_path, item.line, item.column, item.code),
+        )
+    )
+
+
+def plan_world_changes(
+    previous: WorldManifest, target: WorldManifest
+) -> WorldChangePlanningResult:
+    """Build a pure, immutable and fail-closed semantic change plan."""
+
+    previous_index, previous_diagnostics = _manifest_operation_index(previous)
+    target_index, target_diagnostics = _manifest_operation_index(target)
+    diagnostics = tuple(
+        sorted(
+            previous_diagnostics + target_diagnostics,
+            key=lambda item: (item.source_path, item.line, item.column, item.code),
+        )
+    )
+    if diagnostics:
+        return WorldChangePlanningResult(plan=None, diagnostics=diagnostics)
+
+    changes: list[WorldContentChange] = []
+    for key in sorted(set(previous_index) | set(target_index)):
+        zone_id, entity_type, entity_id = key
+        before = previous_index.get(key)
+        after = target_index.get(key)
+        if before is None:
+            action = "create"
+        elif after is None:
+            action = "delete"
+        elif _operation_semantic_value(before) == _operation_semantic_value(after):
+            continue
+        else:
+            move_positions = {
+                "flight_point": 0,
+                "mob": 1,
+                "named_mob": 1,
+                "npc": 0,
+            }
+            move_position = move_positions.get(entity_type)
+            action = "update"
+            if (
+                move_position is not None
+                and len(before.arguments) > move_position
+                and len(after.arguments) > move_position
+                and before.arguments[move_position] != after.arguments[move_position]
+            ):
+                action = "move"
+        destructive, player_impact = _change_impact(entity_type, action)
+        changes.append(
+            WorldContentChange(
+                action=action,
+                zone_id=zone_id,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                before=before,
+                after=after,
+                destructive=destructive,
+                player_impact=player_impact,
+            )
+        )
+    return WorldChangePlanningResult(
+        plan=WorldChangePlan(
+            previous_manifest_hash=previous.manifest_hash,
+            target_manifest_hash=target.manifest_hash,
+            changes=tuple(changes),
+        ),
+        diagnostics=(),
+    )
