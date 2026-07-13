@@ -628,6 +628,12 @@ def build():
 
 
 class TestAppliedContentStartup(EvenniaTest):
+    def setUp(self):
+        super().setUp()
+        from evennia.accounts.models import AccountDB
+
+        AccountDB.objects.filter(id=1).update(is_superuser=True)
+
     def _adopt_runtime(self):
         from world.area_builder import AreaBuilder
         from world.content_compiler import compile_world_sources
@@ -787,6 +793,23 @@ def build():
         payload = json.loads(output.getvalue())
         self.assertEqual(payload["state"], "initialized")
         self.assertEqual(payload["git_commit"], "a" * 40)
+
+    def test_fresh_initialize_runs_evennia_object_foundation_explicitly(self):
+        from evennia.server import initial_setup
+        from evennia.server.models import ServerConfig
+        from world.content_revisions import _ensure_evennia_runtime_initialized
+
+        with (
+            patch("evennia.objects.models.ObjectDB.objects.filter") as object_filter,
+            patch.object(initial_setup, "create_objects") as create_objects,
+            patch.object(initial_setup, "at_initial_setup") as initial_hook,
+        ):
+            object_filter.return_value.exists.side_effect = [False, True]
+            _ensure_evennia_runtime_initialized()
+
+        create_objects.assert_called_once_with()
+        initial_hook.assert_called_once_with()
+        self.assertEqual(ServerConfig.objects.conf("last_initial_setup_step"), "done")
 
     def test_two_complete_server_starts_leave_content_database_unchanged(self):
         from server.conf.at_server_startstop import at_server_start

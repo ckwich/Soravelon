@@ -238,6 +238,7 @@ def initialize_world_content(
             raise ApplyPreconditionError(
                 "World content authority is already initialized."
             )
+        _ensure_evennia_runtime_initialized()
         empty = compile_world_sources({}).manifest
         assert empty is not None
         hydrate_runtime_registries(empty)
@@ -295,6 +296,28 @@ def initialize_world_content(
         raise error
     assert result is not None
     return result
+
+
+def _ensure_evennia_runtime_initialized() -> None:
+    """Complete Evennia's one-time object foundation for explicit initialization."""
+
+    from evennia.accounts.models import AccountDB
+    from evennia.objects.models import ObjectDB
+    from evennia.server import initial_setup
+    from evennia.server.models import ServerConfig
+
+    if not AccountDB.objects.filter(id=1, is_superuser=True).exists():
+        raise ApplyPreconditionError(
+            "Admin account #1 must exist before world-content initialization."
+        )
+    if not ObjectDB.objects.filter(id=2).exists():
+        initial_setup.create_objects()
+        initial_setup.at_initial_setup()
+    if not ObjectDB.objects.filter(id=2).exists():
+        raise ApplyPreconditionError(
+            "Evennia initial setup did not create DEFAULT_HOME object #2."
+        )
+    ServerConfig.objects.conf("last_initial_setup_step", "done")
 
 
 def find_occupied_destructive_rooms(
