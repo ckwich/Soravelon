@@ -16,7 +16,7 @@ def build():
         region='veluana_archipelago',
         hub_city='korahei',
         faction_territory='kauroran',
-        faction_presence=['kauroran', 'warden'],
+        faction_presence=['kauroran', 'wardens'],
         has_node=True,
         node_type='resonance',
         world_x=80,

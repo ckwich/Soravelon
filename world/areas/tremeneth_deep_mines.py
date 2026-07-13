@@ -15,7 +15,7 @@ def build():
         tier=3,
         region='tremeneth_mountains',
         faction_territory='warden',
-        faction_presence=['ironblood', 'warden', 'resonance', 'western_arcana'],
+        faction_presence=['ironblood', 'wardens', 'resonance', 'western_arcana'],
         world_x=34,
         world_y=45,
         world_radius=150,
@@ -374,7 +374,7 @@ def build():
     _mine_steward = area.npc(cg_claim_gate, 'npc_mine_steward_bran', name='Mine Steward Bran', faction='ironblood', dialogue={'greeting': 'Bran checks lamps with a tenderness he does not show people until later.', 'topics': {'claims': 'A claim is a promise to leave a crew alive after the ore is gone.'}, 'base_hints': []})
     _requisitioner = area.npc(ro_requisition_office, 'npc_requisitioner_sava', name='Requisitioner Sava', faction='ironblood', dialogue={'greeting': 'Sava has dust on her sleeves and fury arranged into neat piles.', 'topics': {'records': 'Every missing wage had a stamp. That is what makes it useful now.'}, 'base_hints': []})
     _blackwater_cook = area.npc(bs_blackwater_sump, 'npc_blackwater_cook_doma', name='Blackwater Cook Doma', faction=None, dialogue={'greeting': 'Doma keeps a hook, a kettle, and a sharp opinion about sump fish.', 'topics': {'sump': 'If the water feeds us, we respect it. If it bites us, we respect it more.'}, 'base_hints': []})
-    _safety_captain = area.npc(lh_lower_hoist, 'npc_safety_captain_rill', name='Safety Captain Rill', faction='warden', dialogue={'greeting': 'Rill marks unsafe braces with a calm that makes everyone else quieter.', 'topics': {'safety': 'The mine can be brave after it is braced.'}, 'base_hints': []})
+    _safety_captain = area.npc(lh_lower_hoist, 'npc_safety_captain_rill', name='Safety Captain Rill', faction='wardens', dialogue={'greeting': 'Rill marks unsafe braces with a calm that makes everyone else quieter.', 'topics': {'safety': 'The mine can be brave after it is braced.'}, 'base_hints': []})
     _mapper = area.npc(rs_resonance_seam, 'npc_underhall_mapper_vaun', name='Underhall Mapper Vaun', faction='resonance', dialogue={'greeting': 'Vaun keeps his maps rolled in different directions so the newest one never lies flat.', 'topics': {'seam': 'This line points toward the underhalls, which is not the same as permission.'}, 'base_hints': []})
 
     # Quest item templates
@@ -415,7 +415,7 @@ def build():
         quest_type='combat',
         quest_giver='npc_safety_captain_rill',
         objectives=[{'type': 'investigate', 'target': 'bc_broken_cart_run', 'count': 1}, {'type': 'kill', 'target': 'claim_jumper', 'count': 4}, {'type': 'talk_to', 'target': 'npc_safety_captain_rill', 'count': 1}],
-        rewards=[{'action_type': 'give_scales', 'amount': 44}, {'action_type': 'modify_standing', 'faction_id': 'warden', 'delta': 18}],
+        rewards=[{'action_type': 'give_scales', 'amount': 44}, {'action_type': 'modify_standing', 'faction_id': 'wardens', 'delta': 18}],
         next_quest_id=None,
         prerequisite_quests=[],
         can_share=True,

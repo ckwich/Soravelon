@@ -12,6 +12,7 @@ system should cache get_mob_behavior() per encounter in character.ndb.
 """
 
 from world.world_state import get_standing, get_trust
+from world.faction_registry import canonicalize_faction_id
 
 # --- Ancestry × Faction modifier table ---
 
@@ -49,8 +50,9 @@ def get_ancestry_modifier(ancestry, faction_id):
     """Return ancestry × faction disposition modifier. 0.0 for unlisted."""
     if not ancestry or not faction_id:
         return 0.0
+    faction_id = canonicalize_faction_id(faction_id)
     return ANCESTRY_FACTION_MODIFIERS.get(
-        (ancestry.lower(), faction_id.lower()), 0.0
+        (ancestry.lower(), faction_id), 0.0
     )
 
 

@@ -15,7 +15,7 @@ def build():
         tier=3,
         region='tremeneth_mountains',
         faction_territory='warden',
-        faction_presence=['warden', 'ironblood', 'resonance', 'verdance', 'western_arcana'],
+        faction_presence=['wardens', 'ironblood', 'resonance', 'verdance', 'western_arcana'],
         world_x=35,
         world_y=50,
         world_radius=165,
@@ -369,10 +369,10 @@ def build():
     area.exit(ps_patrol_stair, 'tremen:hl_high_lift', 'down')
 
     # NPCs
-    _high_warden = area.npc(ps_patrol_stair, 'npc_high_warden_thessa', name='High Warden Thessa', faction='warden', dialogue={'greeting': 'Thessa checks your breathing before she asks why you came up.', 'topics': {'patrol': 'Count what moved, what changed, and what you were tempted to ignore.'}, 'base_hints': []})
+    _high_warden = area.npc(ps_patrol_stair, 'npc_high_warden_thessa', name='High Warden Thessa', faction='wardens', dialogue={'greeting': 'Thessa checks your breathing before she asks why you came up.', 'topics': {'patrol': 'Count what moved, what changed, and what you were tempted to ignore.'}, 'base_hints': []})
     _storm_listener = area.npc(sb_storm_bells, 'npc_storm_listener_ava', name='Storm Listener Ava', faction='resonance', dialogue={'greeting': 'Ava times speech between bell notes and thunder mutters.', 'topics': {'bells': 'The bells warn. They do not command. People still choose.'}, 'base_hints': []})
     _druid_guard = area.npc(dg_guarded_stone, 'npc_druid_guard_elun', name='Druid Guard Elun', faction='verdance', dialogue={'greeting': 'Elun stands where root meets frost, polite enough to be heard and firm enough to be believed.', 'topics': {'stone': 'Some places are studied best by not stepping on them first.'}, 'base_hints': []})
-    _sky_runner = area.npc(sk_sky_bridge, 'npc_skybridge_runner_maro', name='Skybridge Runner Maro', faction='warden', dialogue={'greeting': 'Maro grins like fear is a tool he keeps sharp but sheathed.', 'topics': {'bridge': 'The trick is not bravery. The trick is knowing which gusts get a vote.'}, 'base_hints': []})
+    _sky_runner = area.npc(sk_sky_bridge, 'npc_skybridge_runner_maro', name='Skybridge Runner Maro', faction='wardens', dialogue={'greeting': 'Maro grins like fear is a tool he keeps sharp but sheathed.', 'topics': {'bridge': 'The trick is not bravery. The trick is knowing which gusts get a vote.'}, 'base_hints': []})
 
     # Quest item templates
     area.item('thp_patrol_count', key='high-pass patrol count', item_type='item', weight=0.5, rarity='normal', desc='A slate of tracks, bell timings, and stormgoat movements gathered from the high pass.', value=0, is_quest_item=True)
@@ -386,7 +386,7 @@ def build():
         quest_type='patrol',
         quest_giver='npc_high_warden_thessa',
         objectives=[{'type': 'visit', 'target': 'wc_warden_cairn', 'count': 1}, {'type': 'investigate', 'target': 'ir_ice_shear_ridge', 'count': 1}, {'type': 'deliver', 'target': 'npc_watch_captain_maela', 'count': 1, 'item_tag': 'thp_patrol_count'}],
-        rewards=[{'action_type': 'give_scales', 'amount': 38}, {'action_type': 'modify_standing', 'faction_id': 'warden', 'delta': 18}],
+        rewards=[{'action_type': 'give_scales', 'amount': 38}, {'action_type': 'modify_standing', 'faction_id': 'wardens', 'delta': 18}],
         next_quest_id=None,
         prerequisite_quests=['tre_q_bell_weather'],
         can_share=True,

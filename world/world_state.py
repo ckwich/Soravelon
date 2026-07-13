@@ -11,6 +11,7 @@ Backend level derived from domain scores — NEVER exposed to players.
 from django.db.models import Avg
 
 from world.domain_definitions import ALL_DOMAINS
+from world.faction_registry import canonicalize_faction_id
 from world.models import FactionStanding, ZoneAttunement
 
 # --- Constants ---
@@ -279,6 +280,7 @@ def modify_standing(character, faction_id, amount, reason, _transfer=False):
     from django.db.models import F
     from django.db.models.functions import Greatest, Least
 
+    faction_id = canonicalize_faction_id(faction_id)
     record, _ = FactionStanding.objects.get_or_create(
         character=character,
         faction_id=faction_id,
@@ -294,6 +296,7 @@ def modify_standing(character, faction_id, amount, reason, _transfer=False):
 
 def get_standing(character, faction_id):
     """Get Standing value for a character with a faction. 0 if no record."""
+    faction_id = canonicalize_faction_id(faction_id)
     try:
         record = character.faction_standings.get(
             faction_id=faction_id, subfaction_id=None
@@ -305,6 +308,7 @@ def get_standing(character, faction_id):
 
 def get_trust(character, faction_id):
     """Get Trust value for a character with a faction. 50 if no record."""
+    faction_id = canonicalize_faction_id(faction_id)
     try:
         record = character.faction_standings.get(
             faction_id=faction_id, subfaction_id=None
@@ -316,6 +320,7 @@ def get_trust(character, faction_id):
 
 def get_betrayal(character, faction_id):
     """Get betrayal flag for a character with a faction. False if no record."""
+    faction_id = canonicalize_faction_id(faction_id)
     try:
         record = character.faction_standings.get(
             faction_id=faction_id, subfaction_id=None

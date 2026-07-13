@@ -1118,3 +1118,93 @@ class TestSocialVisibilityAndEdgePolicyMigration(TransactionTestCase):
         edge = SocialEdge.objects.get(pk=self.edge_id)
         self.assertEqual(edge.required_tags, ["field_clearance", "warden"])
         self.assertEqual(edge.blocked_tags, [])
+
+
+class TestCanonicalFactionIdentityMigration(TransactionTestCase):
+    """Singular Warden relationship rows merge into canonical Wardens."""
+
+    migrate_from = [("world", "0029_questshareoffer")]
+    migrate_to = [("world", "0030_canonical_faction_identity")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        ObjectDB = old_apps.get_model("objects", "ObjectDB")
+        FactionStanding = old_apps.get_model("world", "FactionStanding")
+
+        character = ObjectDB.objects.create(
+            db_key="Faction Identity Migration Sentinel",
+            db_date_created=timezone.now(),
+            db_lock_storage="",
+        )
+        self.character_id = character.pk
+        self.canonical_id = FactionStanding.objects.create(
+            character_id=character.pk,
+            faction_id="wardens",
+            standing=400,
+            trust=60,
+        ).pk
+        self.alias_id = FactionStanding.objects.create(
+            character_id=character.pk,
+            faction_id="warden",
+            standing=-100,
+            trust=80,
+            betrayal_flag=True,
+        ).pk
+        self.alias_only_id = FactionStanding.objects.create(
+            character_id=character.pk,
+            faction_id="warden",
+            subfaction_id="mountain_watch",
+            standing=75,
+            trust=55,
+        ).pk
+        FactionStanding.objects.create(
+            character_id=character.pk,
+            faction_id="wardens",
+            subfaction_id="ridge_watch",
+            standing=99990,
+            trust=40,
+        )
+        FactionStanding.objects.create(
+            character_id=character.pk,
+            faction_id="warden",
+            subfaction_id="ridge_watch",
+            standing=25,
+            trust=70,
+            betrayal_flag=True,
+        )
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        self.apps = executor.loader.project_state(self.migrate_to).apps
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_merges_alias_rows_without_losing_relationship_state(self):
+        FactionStanding = self.apps.get_model("world", "FactionStanding")
+
+        top = FactionStanding.objects.get(pk=self.canonical_id)
+        self.assertEqual(top.faction_id, "wardens")
+        self.assertEqual(top.standing, 300)
+        self.assertEqual(top.trust, 80)
+        self.assertTrue(top.betrayal_flag)
+        self.assertFalse(FactionStanding.objects.filter(pk=self.alias_id).exists())
+
+        alias_only = FactionStanding.objects.get(pk=self.alias_only_id)
+        self.assertEqual(alias_only.faction_id, "wardens")
+        self.assertEqual(alias_only.standing, 75)
+
+        ridge = FactionStanding.objects.get(
+            character_id=self.character_id,
+            faction_id="wardens",
+            subfaction_id="ridge_watch",
+        )
+        self.assertEqual(ridge.standing, 100000)
+        self.assertEqual(ridge.trust, 70)
+        self.assertTrue(ridge.betrayal_flag)
+        self.assertFalse(FactionStanding.objects.filter(faction_id="warden").exists())

@@ -15,7 +15,7 @@ def build():
         tier=3,
         region='tremeneth_mountains',
         faction_territory='warden',
-        faction_presence=['warden', 'ironblood', 'resonance', 'verdance', 'western_arcana'],
+        faction_presence=['wardens', 'ironblood', 'resonance', 'verdance', 'western_arcana'],
         hub_city='tremen',
         world_x=34,
         world_y=47,
@@ -373,12 +373,12 @@ def build():
     area.exit(ug_underhall_gate, 'tremeneth_underhalls:ug_underhall_gate', 'down')
 
     # NPCs
-    _arrival_captain = area.npc(gt_gate_teeth, 'npc_arrival_captain_hadrim', name='Arrival Captain Hadrim', faction='warden', dialogue={'greeting': 'Hadrim listens for the guest bell before he asks your name.', 'topics': {'guest bell': 'Ring once for arrival, twice for need, and never for impatience.'}, 'base_hints': []})
-    _quartermaster = area.npc(bm_bellcut_market, 'npc_quartermaster_vessa', name='Quartermaster Vessa', faction='warden', dialogue={'greeting': 'Vessa measures your pack by weight and weather, not by bravado.', 'topics': {'trade': 'Road gear is cheap compared with a bad ridge decision.'}, 'base_hints': []})
+    _arrival_captain = area.npc(gt_gate_teeth, 'npc_arrival_captain_hadrim', name='Arrival Captain Hadrim', faction='wardens', dialogue={'greeting': 'Hadrim listens for the guest bell before he asks your name.', 'topics': {'guest bell': 'Ring once for arrival, twice for need, and never for impatience.'}, 'base_hints': []})
+    _quartermaster = area.npc(bm_bellcut_market, 'npc_quartermaster_vessa', name='Quartermaster Vessa', faction='wardens', dialogue={'greeting': 'Vessa measures your pack by weight and weather, not by bravado.', 'topics': {'trade': 'Road gear is cheap compared with a bad ridge decision.'}, 'base_hints': []})
     area.vendor(_quartermaster, item_ids=['trail_rations', 'hearty_stew', 'travelers_cloak', 'leather_boots', 'bandage'])
     _forgemaster = area.npc(fh_advanced_forge, 'npc_forgemaster_orruk', name='Forgemaster Orruk Bellhand', faction='ironblood', dialogue={'greeting': 'Orruk watches the color of the metal before he watches the visitor.', 'topics': {'forge': 'A fine edge remembers the person who kept the fire honest.'}, 'base_hints': []})
     area.vendor(_forgemaster, item_ids=['iron_dagger', 'iron_staff', 'pickaxe', 'hatchet', 'skinning_knife'])
-    _watch_captain = area.npc(wh_watch_muster, 'npc_watch_captain_maela', name='Watch Captain Maela', faction='warden', dialogue={'greeting': 'Maela reads weather boards the way other captains read warrants.', 'topics': {'patrol': 'A patrol that returns with numbers saves more lives than one that returns with trophies.'}, 'base_hints': []})
+    _watch_captain = area.npc(wh_watch_muster, 'npc_watch_captain_maela', name='Watch Captain Maela', faction='wardens', dialogue={'greeting': 'Maela reads weather boards the way other captains read warrants.', 'topics': {'patrol': 'A patrol that returns with numbers saves more lives than one that returns with trophies.'}, 'base_hints': []})
     _listener = area.npc(rh_listening_bells, 'npc_listener_senna', name='Listener Senna', faction='resonance', dialogue={'greeting': 'Senna raises a finger until the bell tremor finishes its thought.', 'topics': {'listening': 'We record what the stone does. We do not promise what we cannot do.'}, 'base_hints': []})
     _archivist = area.npc(ug_oath_lintel, 'npc_archivist_belru', name='Archivist Belru Stonekin', faction='resonance', dialogue={'greeting': 'Belru keeps one palm on the underhall ledger as if it might walk away.', 'topics': {'underhalls': 'Family stone deserves witnesses, not looters with cleaner boots.'}, 'base_hints': []})
     _lift_forewoman = area.npc(hl_high_lift, 'npc_lift_forewoman_kelda', name='Lift Forewoman Kelda', faction='ironblood', dialogue={'greeting': 'Kelda tests every cable with the suspicion of someone who likes living.', 'topics': {'lift': 'The high pass does not care who is in a hurry.'}, 'base_hints': []})
@@ -388,7 +388,7 @@ def build():
     area.vendor(_innkeeper, item_ids=['trail_rations', 'spiced_fish', 'hearty_stew', 'minor_stamina_potion'])
     _bank_clerk = area.npc(bm_scale_weighing_arch, 'npc_bank_clerk_pellen', name='Bank Clerk Pellen', faction=None, dialogue={'greeting': 'Pellen seals ledgers with a hammer tap that sounds like a tiny verdict.', 'topics': {'coin': 'Stone keeps records better than memory when weather gets involved.'}, 'base_hints': []})
     _arcana_scholar = area.npc(rh_measurement_table, 'npc_arcana_scholar_ileth', name='Scholar Ileth of Western Arcana', faction='western_arcana', dialogue={'greeting': 'Ileth has three lenses, four notebooks, and the manners to admit when none are enough.', 'topics': {'measurements': 'The honest phrase is not yet understood.'}, 'base_hints': []})
-    _warden_scout = area.npc(gt_lower_gate, 'npc_warden_scout_rusk', name='Warden Scout Rusk', faction='warden', dialogue={'greeting': 'Rusk smells of road chalk and snowmelt, with marker dust under every nail.', 'topics': {'marks': 'A good marker sends strangers toward help before danger gets a vote.'}, 'base_hints': []})
+    _warden_scout = area.npc(gt_lower_gate, 'npc_warden_scout_rusk', name='Warden Scout Rusk', faction='wardens', dialogue={'greeting': 'Rusk smells of road chalk and snowmelt, with marker dust under every nail.', 'topics': {'marks': 'A good marker sends strangers toward help before danger gets a vote.'}, 'base_hints': []})
     _tool_mender = area.npc(bm_rope_bazaar, 'npc_tool_mender_bressa', name='Tool Mender Bressa', faction='ironblood', dialogue={'greeting': 'Bressa tests tool hafts by ear and refuses to sell pretty nonsense.', 'topics': {'tools': 'If it cannot survive a wet climb, it belongs on a wall, not your belt.'}, 'base_hints': []})
     area.vendor(_tool_mender, item_ids=['fishing_rod', 'bait', 'sickle', 'hatchet', 'skinning_knife', 'pickaxe', 'bandage'])
 
@@ -406,7 +406,7 @@ def build():
         quest_type='social',
         quest_giver='npc_arrival_captain_hadrim',
         objectives=[{'type': 'investigate', 'target': 'gt_guest_bell_arch', 'count': 1}, {'type': 'visit', 'target': 'rh_listening_bells', 'count': 1}, {'type': 'talk_to', 'target': 'npc_listener_senna', 'count': 1}],
-        rewards=[{'action_type': 'give_scales', 'amount': 28}, {'action_type': 'modify_standing', 'faction_id': 'warden', 'delta': 18}],
+        rewards=[{'action_type': 'give_scales', 'amount': 28}, {'action_type': 'modify_standing', 'faction_id': 'wardens', 'delta': 18}],
         next_quest_id='tre_q_waystation_marks',
         prerequisite_quests=[],
         can_share=True,

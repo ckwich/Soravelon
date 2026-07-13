@@ -16,7 +16,7 @@ def build():
         region='veluana_archipelago',
         hub_city='korahei',
         faction_territory='kauroran',
-        faction_presence=['kauroran', 'warden'],
+        faction_presence=['kauroran', 'wardens'],
         world_x=72,
         world_y=2,
         world_radius=135,

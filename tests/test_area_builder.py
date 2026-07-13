@@ -532,6 +532,52 @@ class TestQuestStoredOnZone(AreaBuilderTestBase):
         self.assertEqual(quest["quest_archetype"], "trace_evidence_chain")
         self.assertEqual(quest["social_quest_context"], social_context)
 
+    def test_quest_canonicalizes_faction_reward_alias(self):
+        ab = self._make_builder()
+        ab.quest(
+            "warden_report",
+            rewards=[
+                {
+                    "action_type": "modify_standing",
+                    "faction_id": "warden",
+                    "delta": 250,
+                },
+            ],
+        )
+
+        reward = ab._zone_obj.db.quest_definitions[0]["rewards"][0]
+        self.assertEqual(reward["faction_id"], "wardens")
+
+
+class TestNpcFactionIdentity(AreaBuilderTestBase):
+    def test_npc_canonicalizes_declared_faction_alias(self):
+        ab = self._make_builder()
+        room = ab.room(
+            "watch_post",
+            name="Watch Post",
+            desc="A test watch post.",
+            room_type="building",
+        )
+
+        npc = ab.npc(room, "npc_watch_keeper", faction="warden")
+
+        self.assertEqual(npc.db.faction, "wardens")
+        self.assertEqual(room.db.npc_definitions[0]["faction"], "wardens")
+
+    def test_npc_rejects_unknown_relationship_faction(self):
+        from world.area_builder import AreaBuilderValidationError
+
+        ab = self._make_builder()
+        room = ab.room(
+            "watch_post",
+            name="Watch Post",
+            desc="A test watch post.",
+            room_type="building",
+        )
+
+        with self.assertRaisesRegex(AreaBuilderValidationError, "Unknown faction"):
+            ab.npc(room, "npc_watch_keeper", faction="typo_wardenz")
+
 
 # ------------------------------------------------------------------
 # Material tests

@@ -289,6 +289,35 @@ def build():
             ],
         )
 
+    def test_relationship_factions_must_be_canonical_and_registered(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("factions")
+    area.zone(name="Factions", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    npc = area.npc(room, "npc_keeper", name="Keeper", faction="warden")
+    area.vendor(npc, faction="typo_wardenz")
+    area.quest("report", quest_giver="npc_keeper",
+               objectives=[{"type": "talk_to", "target": "npc_keeper"}],
+               rewards=[{"action_type": "modify_standing",
+                         "faction_id": "warden", "delta": 250}])
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/factions.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(
+            [diagnostic.code for diagnostic in result.diagnostics],
+            [
+                "noncanonical-faction-id",
+                "unknown-faction-id",
+                "noncanonical-faction-id",
+            ],
+        )
+
     def test_material_affordances_fail_closed_when_they_cannot_be_consumed(self):
         from world.content_compiler import compile_world_sources
 

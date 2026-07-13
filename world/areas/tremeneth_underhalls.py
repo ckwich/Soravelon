@@ -15,7 +15,7 @@ def build():
         tier=3,
         region='tremeneth_mountains',
         faction_territory='warden',
-        faction_presence=['resonance', 'warden', 'western_arcana', 'verdance'],
+        faction_presence=['resonance', 'wardens', 'western_arcana', 'verdance'],
         has_node=True,
         world_x=34,
         world_y=48,
@@ -374,7 +374,7 @@ def build():
     _vault_grandson = area.npc(fv_family_vault_walk, 'npc_vault_grandson_porr', name='Porr Of The Low Shelf', faction=None, dialogue={'greeting': 'Porr has a water cup in both hands and a stubborn set to his jaw.', 'topics': {'names': 'Grandmother said a name is thirsty if no one speaks it kindly.'}, 'base_hints': []})
     _cistern_fisher = area.npc(dc_dry_cistern, 'npc_cistern_fisher_ren', name='Cistern Fisher Ren', faction=None, dialogue={'greeting': 'Ren fishes by sound and claims surface anglers are too loud to learn anything.', 'topics': {'fish': 'Whitefish feed families. That makes them more important than rumors.'}, 'base_hints': []})
     _pattern_listener = area.npc(sp_pattern_threshold, 'npc_pattern_listener_ysol', name='Pattern Listener Ysol', faction='western_arcana', dialogue={'greeting': 'Ysol keeps ink off the old inlay and her curiosity on a short leash.', 'topics': {'pattern': 'The first duty is not making the room answer. The first duty is not damaging the question.'}, 'base_hints': []})
-    _quiet_guard = area.npc(ej_eightfold_junction, 'npc_quiet_guard_vedra', name='Quiet Guard Vedra', faction='warden', dialogue={'greeting': 'Vedra points with two fingers and never raises her voice in the junction.', 'topics': {'junction': 'If you get lost here, stop moving. The wrong turn is louder than waiting.'}, 'base_hints': []})
+    _quiet_guard = area.npc(ej_eightfold_junction, 'npc_quiet_guard_vedra', name='Quiet Guard Vedra', faction='wardens', dialogue={'greeting': 'Vedra points with two fingers and never raises her voice in the junction.', 'topics': {'junction': 'If you get lost here, stop moving. The wrong turn is louder than waiting.'}, 'base_hints': []})
 
     # Quest item templates
     area.item('thu_name_cord', key='name cord', item_type='item', weight=0.5, rarity='normal', desc='A soft cord knotted with family marks, meant to be carried through vault rooms without touching the shelves.', value=0, is_quest_item=True)

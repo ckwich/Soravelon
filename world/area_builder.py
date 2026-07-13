@@ -136,6 +136,31 @@ from world.area_validator import (
     AreaBuilderValidationError,
     validate_spawn_condition,
 )
+from world.faction_registry import FactionIdentityError, canonicalize_faction_id
+
+
+def _canonical_relationship_id(faction_id):
+    """Normalize one authored relationship ID or raise a builder error."""
+    if faction_id in (None, ""):
+        return faction_id
+    try:
+        return canonicalize_faction_id(faction_id)
+    except FactionIdentityError as exc:
+        raise AreaBuilderValidationError(str(exc)) from exc
+
+
+def _canonicalize_reward_factions(rewards):
+    """Return a defensive reward copy with canonical faction actions."""
+    normalized = copy.deepcopy(rewards or [])
+    for reward in normalized:
+        if not isinstance(reward, dict):
+            continue
+        if reward.get("action_type") != "modify_standing":
+            continue
+        reward["faction_id"] = _canonical_relationship_id(
+            reward.get("faction_id")
+        )
+    return normalized
 
 
 class AreaBuilder:
@@ -569,12 +594,14 @@ class AreaBuilder:
 
         Backward-compatible: ``room.db.npc_definitions`` is always populated.
         """
+        faction = _canonical_relationship_id(kwargs.get("faction"))
+
         # --- 1. Populate room.db.npc_definitions (backward compat) ---------
         npc_def = {
             "npc_id": npc_id,
             "wander": kwargs.get("wander", False),
             "quest": kwargs.get("quest"),
-            "faction": kwargs.get("faction"),
+            "faction": faction,
             "standing_required": kwargs.get("standing_required"),
             "social_profile": kwargs.get("social_profile", {}),
             "social_edges": kwargs.get("social_edges", []),
@@ -617,7 +644,7 @@ class AreaBuilder:
         npc_obj.db.is_npc = True
         npc_obj.db.combat_enabled = False
         npc_obj.db.zone_id = self._zone_id
-        npc_obj.db.faction = kwargs.get("faction")
+        npc_obj.db.faction = faction
         npc_obj.db.npc_id = npc_id
 
         # Tags for queryset filtering
@@ -693,7 +720,7 @@ class AreaBuilder:
             npc.db.vendor_item_ids = list(item_ids)
         if exclude_item_ids is not None:
             npc.db.vendor_exclude_item_ids = list(exclude_item_ids)
-        npc.db.vendor_faction = faction
+        npc.db.vendor_faction = _canonical_relationship_id(faction)
         if npc.db.player_stock is None:
             npc.db.player_stock = {}
         return npc
@@ -1198,7 +1225,7 @@ class AreaBuilder:
             "quest_type": kwargs.get("quest_type"),
             "quest_giver": kwargs.get("quest_giver"),
             "objectives": kwargs.get("objectives", []),
-            "rewards": kwargs.get("rewards", []),
+            "rewards": _canonicalize_reward_factions(kwargs.get("rewards", [])),
             "next_quest_id": kwargs.get("next_quest_id"),
             "prerequisite_quests": kwargs.get("prerequisite_quests", []),
             "one_chance": kwargs.get("one_chance", False),

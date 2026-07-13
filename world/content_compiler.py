@@ -12,6 +12,7 @@ from typing import Mapping
 
 from world.area_validator import VALID_DIRECTIONS
 from world.action_vocabulary import ACTION_HANDLERS
+from world.faction_registry import FactionIdentityError, canonicalize_faction_id
 from world.item_catalog import CATALOG
 from world.material_definitions import MATERIAL_REGISTRY
 from world.mob_templates import MOB_TEMPLATES
@@ -178,6 +179,31 @@ def _diagnostic(
         code=code,
         message=message,
     )
+
+
+def _validate_relationship_faction(
+    operation: AreaOperation,
+    faction_id: object,
+    diagnostics: list[CompilationDiagnostic],
+) -> None:
+    """Require canonical, registered IDs in relationship-bearing source."""
+    if faction_id in (None, ""):
+        return
+    try:
+        canonical = canonicalize_faction_id(faction_id)
+    except FactionIdentityError as exc:
+        diagnostics.append(
+            _diagnostic(operation, "unknown-faction-id", str(exc))
+        )
+        return
+    if canonical != faction_id:
+        diagnostics.append(
+            _diagnostic(
+                operation,
+                "noncanonical-faction-id",
+                f"Faction relationship ID '{faction_id}' must be '{canonical}'.",
+            )
+        )
 
 
 def _attribute_chain(node: ast.AST) -> tuple[str, ...]:
@@ -643,6 +669,13 @@ def _validate_world_definitions(
             zone_operation.keyword_arguments, "has_node", False
         )
         for operation in definition.operations:
+            if operation.method in {"npc", "vendor"}:
+                _validate_relationship_faction(
+                    operation,
+                    _frozen_map_get(operation.keyword_arguments, "faction"),
+                    diagnostics,
+                )
+
             if operation.method == "node" and not zone_kwargs:
                 diagnostics.append(
                     _diagnostic(
@@ -960,6 +993,12 @@ def _validate_world_definitions(
                                 "Quest skill award count must be a positive integer.",
                             )
                         )
+                elif action_type == "modify_standing":
+                    _validate_relationship_faction(
+                        operation,
+                        action_dict.get("faction_id"),
+                        diagnostics,
+                    )
 
             if operation.method == "social_edge" and len(operation.arguments) >= 2:
                 source_key, target_key = operation.arguments[:2]
