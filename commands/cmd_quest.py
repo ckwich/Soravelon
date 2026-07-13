@@ -44,7 +44,7 @@ class CmdQuest(Command):
 
     def _list_quests(self, character):
         """List all active quests (D-15, D-16)."""
-        from world.quest_engine import get_active_quests, _get_quest_spec, _normalize_quest_spec
+        from world.quest_engine import get_active_quests, get_character_quest_spec
         quests = get_active_quests(character)
 
         if not quests:
@@ -53,9 +53,8 @@ class CmdQuest(Command):
 
         lines = ["|w=== Active Quests ===|n"]
         for cq in quests:
-            spec = _get_quest_spec(cq.quest_id)
+            spec = get_character_quest_spec(cq)
             if spec:
-                spec = _normalize_quest_spec(spec)
                 name = spec.get("name", cq.quest_id)
                 giver = spec.get("quest_giver", "unknown")
                 # Build progress bar
@@ -90,15 +89,14 @@ class CmdQuest(Command):
 
     def _detail(self, character, quest_name):
         """Show detailed quest info (D-16)."""
-        from world.quest_engine import get_active_quests, _get_quest_spec, _normalize_quest_spec
+        from world.quest_engine import get_active_quests, get_character_quest_spec
 
         quests = get_active_quests(character)
         # Match by name (case-insensitive partial)
         match = None
         for cq in quests:
-            spec = _get_quest_spec(cq.quest_id)
+            spec = get_character_quest_spec(cq)
             if spec:
-                spec = _normalize_quest_spec(spec)
                 name = spec.get("name", cq.quest_id)
                 if quest_name.lower() in name.lower() or quest_name.lower() in cq.quest_id.lower():
                     match = (cq, spec)
@@ -171,14 +169,13 @@ class CmdQuest(Command):
 
     def _abandon(self, character, quest_name):
         """Abandon a quest (D-04, D-15)."""
-        from world.quest_engine import get_active_quests, _get_quest_spec, _normalize_quest_spec, abandon_quest
+        from world.quest_engine import abandon_quest, get_active_quests, get_character_quest_spec
 
         quests = get_active_quests(character)
         match_id = None
         for cq in quests:
-            spec = _get_quest_spec(cq.quest_id)
+            spec = get_character_quest_spec(cq)
             if spec:
-                spec = _normalize_quest_spec(spec)
                 name = spec.get("name", cq.quest_id)
                 if quest_name.lower() in name.lower() or quest_name.lower() in cq.quest_id.lower():
                     match_id = cq.quest_id

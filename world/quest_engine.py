@@ -12,6 +12,8 @@ manages quest state via the CharacterQuest Django model.
 Lazy imports throughout to avoid circular dependencies (project convention).
 """
 
+from copy import deepcopy
+
 from world.tag_search import search_objects_by_exact_tag
 
 # ---------------------------------------------------------------------------
@@ -134,6 +136,19 @@ def _normalize_quest_spec(quest_spec):
 
     spec["objectives"] = [obj]
     return spec
+
+
+def get_character_quest_spec(character_quest):
+    """Return the immutable spec accepted for this quest run.
+
+    Rows created before the accepted-spec migration retain a live-definition
+    fallback so an upgrade does not strand active player quests. Every new
+    acceptance stores the normalized snapshot and never uses this fallback.
+    """
+    accepted_spec = getattr(character_quest, "accepted_spec", None)
+    if isinstance(accepted_spec, dict) and accepted_spec:
+        return _normalize_quest_spec(deepcopy(accepted_spec))
+    return _get_quest_spec(character_quest.quest_id)
 
 
 def _get_prerequisite_quest_ids(quest_spec):
@@ -278,7 +293,7 @@ def accept_quest(character, quest_id, quest_spec):
             return False, "Complete the earlier quests in this chain first."
 
     # Initialize progress dict with zero values for all objectives
-    spec = _normalize_quest_spec(quest_spec)
+    spec = deepcopy(_normalize_quest_spec(quest_spec))
     progress = {}
     for obj in (spec.get("objectives") or []):
         key = _objective_progress_key(obj)
@@ -289,6 +304,7 @@ def accept_quest(character, quest_id, quest_spec):
         quest_id=quest_id,
         status="active",
         progress=progress,
+        accepted_spec=spec,
     )
 
     granted, grant_msg = _grant_delivery_items_on_accept(character, spec)
@@ -364,7 +380,7 @@ def check_kill_objectives(character, mob):
         return
 
     for cq in CharacterQuest.objects.filter(character=character, status="active"):
-        quest_spec = _get_quest_spec(cq.quest_id)
+        quest_spec = get_character_quest_spec(cq)
         if not quest_spec:
             continue
         updates = _matching_objective_updates(quest_spec, "kill", identifiers)
@@ -390,7 +406,7 @@ def check_collect_objectives(character, item):
         return
 
     for cq in CharacterQuest.objects.filter(character=character, status="active"):
-        quest_spec = _get_quest_spec(cq.quest_id)
+        quest_spec = get_character_quest_spec(cq)
         if not quest_spec:
             continue
         updates = _matching_objective_updates(quest_spec, "collect", identifiers)
@@ -412,7 +428,7 @@ def check_investigate_objectives(character, room):
         return
 
     for cq in CharacterQuest.objects.filter(character=character, status="active"):
-        quest_spec = _get_quest_spec(cq.quest_id)
+        quest_spec = get_character_quest_spec(cq)
         if not quest_spec:
             continue
         updates = _matching_objective_updates(
@@ -434,7 +450,7 @@ def check_practice_objectives(character, opportunity_id):
     _ensure_model()
 
     for cq in CharacterQuest.objects.filter(character=character, status="active"):
-        quest_spec = _get_quest_spec(cq.quest_id)
+        quest_spec = get_character_quest_spec(cq)
         if not quest_spec:
             continue
         updates = _matching_objective_updates(
@@ -464,7 +480,7 @@ def check_deliver_objectives(character, destination):
         return
 
     for cq in CharacterQuest.objects.filter(character=character, status="active"):
-        quest_spec = _get_quest_spec(cq.quest_id)
+        quest_spec = get_character_quest_spec(cq)
         if not quest_spec:
             continue
         updates = []
@@ -515,7 +531,7 @@ def check_talk_to_objectives(character, npc):
         return
 
     for cq in CharacterQuest.objects.filter(character=character, status="active"):
-        quest_spec = _get_quest_spec(cq.quest_id)
+        quest_spec = get_character_quest_spec(cq)
         if not quest_spec:
             continue
         updates = _matching_objective_updates(quest_spec, "talk_to", {npc_id})
@@ -570,7 +586,7 @@ def check_social_interaction_objectives(
 
     matched = False
     for cq in CharacterQuest.objects.filter(character=character, status="active"):
-        quest_spec = _get_quest_spec(cq.quest_id)
+        quest_spec = get_character_quest_spec(cq)
         if not quest_spec:
             continue
         progress = dict(cq.progress or {})
@@ -1122,7 +1138,7 @@ def get_quest_detail(character, quest_id):
     if not cq:
         return None
 
-    quest_spec = _get_quest_spec(quest_id)
+    quest_spec = get_character_quest_spec(cq)
     if not quest_spec:
         return None
 

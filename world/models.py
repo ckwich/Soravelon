@@ -714,6 +714,7 @@ class CharacterQuest(models.Model):
         max_length=16, choices=STATUS_CHOICES, default="active"
     )
     progress = models.JSONField(default=dict)
+    accepted_spec = models.JSONField(default=dict)
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     outcome_operation_id = models.CharField(
