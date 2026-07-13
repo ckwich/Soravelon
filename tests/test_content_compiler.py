@@ -254,6 +254,94 @@ def build():
             ["unresolved-social-node", "unsupported-social-edge-type"],
         )
 
+    def test_runtime_registry_and_action_references_fail_closed(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("registry")
+    area.zone(name="Registry", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    npc = area.npc(room, "npc_keeper", name="Keeper")
+    area.spawn(room, "missing_mob")
+    area.vendor(npc, item_ids=["missing_item"])
+    area.gathering_pool("ore", rooms=["entry"], materials=["missing_material"])
+    area.quest("first", quest_giver="npc_missing", next_quest_id="missing_quest",
+               objectives=[{"type": "investigate", "target": "entry", "count": 1}],
+               rewards=[{"action_type": "invented_action"},
+                        {"action_type": "give_skill_xp", "skill_id": "missing_skill"}])
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/registry.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(
+            [diagnostic.code for diagnostic in result.diagnostics],
+            [
+                "unknown-mob-template",
+                "unknown-item-id",
+                "unknown-material-id",
+                "unknown-action-type",
+                "unknown-skill-id",
+                "unresolved-quest-giver",
+                "unresolved-quest-id",
+            ],
+        )
+
+    def test_globally_stable_entity_ids_cannot_be_redefined(self):
+        from world.content_compiler import compile_world_sources
+
+        template = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("{zone}")
+    area.zone(name="{zone}", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    area.npc(room, "npc_shared", name="Shared")
+    return area.build()
+"""
+
+        result = compile_world_sources(
+            {
+                "world/areas/one.py": template.format(zone="one"),
+                "world/areas/two.py": template.format(zone="two"),
+            }
+        )
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(len(result.diagnostics), 1)
+        self.assertEqual(result.diagnostics[0].code, "duplicate-npc-id")
+        self.assertEqual(result.diagnostics[0].source_path, "world/areas/two.py")
+
+    def test_quest_objective_types_and_targets_resolve_to_runtime_authority(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("objectives")
+    area.zone(name="Objectives", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    area.npc(room, "npc_keeper", name="Keeper")
+    area.quest("broken", quest_giver="npc_keeper", objectives=[
+        {"type": "dance_forever", "target": "entry", "count": 1},
+        {"type": "kill", "target": "missing_mob", "count": 1},
+        {"type": "visit", "target": "missing_room", "count": 1},
+    ])
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/objectives.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(
+            [diagnostic.code for diagnostic in result.diagnostics],
+            [
+                "unknown-objective-type",
+                "unresolved-objective-target",
+                "unresolved-objective-target",
+            ],
+        )
+
     def test_manifest_hash_is_semantic_and_deterministic(self):
         from world.content_compiler import compile_world_sources
 

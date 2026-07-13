@@ -129,9 +129,13 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
                 point = FlightRegistry.get_point(flight_point_id)
                 point_name = point["name"] if point else flight_point_id
                 obj.msg(f"|yYou have discovered the {point_name} Dragon Courier stop.|n")
-        # Quest progress: investigate objectives (D-09, D-19)
-        from world.quest_engine import check_investigate_objectives
+        # Quest progress: room-entry investigate and delivery objectives.
+        from world.quest_engine import (
+            check_deliver_objectives,
+            check_investigate_objectives,
+        )
         check_investigate_objectives(obj, self)
+        check_deliver_objectives(obj, self)
 
         # D-02: Check disposition against any patrol mobs already in this room
         for mob in list(self.contents):

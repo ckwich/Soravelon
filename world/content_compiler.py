@@ -10,6 +10,12 @@ from pathlib import Path
 from typing import Mapping
 
 from world.area_validator import VALID_DIRECTIONS
+from world.action_vocabulary import ACTION_HANDLERS
+from world.item_catalog import CATALOG
+from world.material_definitions import MATERIAL_REGISTRY
+from world.mob_templates import MOB_TEMPLATES
+from world.quest_engine import OBJECTIVE_TYPES, OBJECTIVE_TYPE_ALIASES
+from world.skill_definitions import SKILL_DEFINITIONS
 from world.social_taxonomy import EDGE_TYPES, NODE_TYPES
 
 SUPPORTED_AREA_OPERATIONS = frozenset(
@@ -111,6 +117,25 @@ class WorldManifestCompilation:
 
 def _frozen_map_get(mapping: FrozenMap, key: str, default: object = None) -> object:
     return dict(mapping.entries).get(key, default)
+
+
+def _thaw(value: object) -> object:
+    if isinstance(value, FrozenMap):
+        return {key: _thaw(item) for key, item in value.entries}
+    if isinstance(value, tuple):
+        return [_thaw(item) for item in value]
+    return value
+
+
+def _operation_value(
+    operation: AreaOperation,
+    position: int,
+    keyword: str,
+    default: object = None,
+) -> object:
+    if len(operation.arguments) > position:
+        return operation.arguments[position]
+    return _frozen_map_get(operation.keyword_arguments, keyword, default)
 
 
 def _diagnostic(
@@ -452,6 +477,11 @@ def _validate_world_definitions(
     rooms_by_zone: dict[str, set[str]] = {}
     social_node_keys: set[str] = set()
     authored_exits: set[tuple[str, str, str]] = set()
+    npc_ids: set[str] = set()
+    quest_ids: set[str] = set()
+    authored_item_ids: set[str] = set()
+    practice_ids: set[str] = set()
+    stable_id_owners: dict[tuple[str, str], str] = {}
     inverse_directions = {
         "north": "south",
         "south": "north",
@@ -477,6 +507,47 @@ def _validate_world_definitions(
         }
         rooms_by_zone[definition.zone_id] = room_ids
         for operation in definition.operations:
+            stable_id_specs = {
+                "npc": (1, "duplicate-npc-id"),
+                "quest": (0, "duplicate-quest-id"),
+                "item": (0, "duplicate-item-id"),
+                "named_mob": (0, "duplicate-named-mob-id"),
+                "flight_point": (1, "duplicate-flight-point-id"),
+            }
+            stable_spec = stable_id_specs.get(operation.method)
+            if stable_spec is not None:
+                position, duplicate_code = stable_spec
+                if len(operation.arguments) > position:
+                    stable_id = operation.arguments[position]
+                    if isinstance(stable_id, str):
+                        owner_key = (operation.method, stable_id)
+                        previous_source = stable_id_owners.get(owner_key)
+                        if previous_source is not None:
+                            diagnostics.append(
+                                _diagnostic(
+                                    operation,
+                                    duplicate_code,
+                                    f"{operation.method} ID '{stable_id}' is already authored by {previous_source}.",
+                                )
+                            )
+                        else:
+                            stable_id_owners[owner_key] = operation.source_path
+            if operation.method == "npc" and len(operation.arguments) > 1:
+                npc_id = operation.arguments[1]
+                if isinstance(npc_id, str):
+                    npc_ids.add(npc_id)
+            elif operation.method == "quest" and operation.arguments:
+                quest_id = operation.arguments[0]
+                if isinstance(quest_id, str):
+                    quest_ids.add(quest_id)
+            elif operation.method == "item" and operation.arguments:
+                item_id = operation.arguments[0]
+                if isinstance(item_id, str):
+                    authored_item_ids.add(item_id)
+            elif operation.method == "practice_opportunity" and operation.arguments:
+                practice_id = operation.arguments[0]
+                if isinstance(practice_id, str):
+                    practice_ids.add(practice_id)
             if operation.method == "exit" and len(operation.arguments) >= 3:
                 source, destination, direction = operation.arguments[:3]
                 if isinstance(source, SymbolicReference) and isinstance(direction, str):
@@ -502,10 +573,58 @@ def _validate_world_definitions(
             if isinstance(node_type, str) and isinstance(identifier, str):
                 social_node_keys.add(f"{node_type}:{identifier}")
 
+    all_room_ids = set().union(*rooms_by_zone.values()) if rooms_by_zone else set()
+    objective_targets = {
+        "kill": set(MOB_TEMPLATES),
+        "collect": set(CATALOG) | authored_item_ids | set(MATERIAL_REGISTRY),
+        "investigate": all_room_ids,
+        "deliver": npc_ids | all_room_ids,
+        "talk_to": npc_ids,
+        "practice": practice_ids,
+    }
+
     for definition in definitions:
         room_ids = rooms_by_zone[definition.zone_id]
         exit_destinations: dict[tuple[str, str], object] = {}
         for operation in definition.operations:
+            if operation.method in {"spawn", "named_mob"}:
+                mob_position = 1 if operation.method == "spawn" else 0
+                mob_id = _operation_value(operation, mob_position, "mob")
+                if mob_id not in MOB_TEMPLATES:
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "unknown-mob-template",
+                            f"Mob template '{mob_id}' is not registered.",
+                        )
+                    )
+
+            if operation.method == "vendor":
+                for field_name in ("item_ids", "exclude_item_ids"):
+                    item_ids = _frozen_map_get(
+                        operation.keyword_arguments, field_name, ()
+                    )
+                    for item_id in item_ids if isinstance(item_ids, tuple) else ():
+                        if item_id not in CATALOG:
+                            diagnostics.append(
+                                _diagnostic(
+                                    operation,
+                                    "unknown-item-id",
+                                    f"Vendor item '{item_id}' is not in the canonical catalog.",
+                                )
+                            )
+
+            if operation.method == "material" and operation.arguments:
+                material_id = operation.arguments[0]
+                if material_id not in MATERIAL_REGISTRY:
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "unknown-material-id",
+                            f"Material '{material_id}' is not registered.",
+                        )
+                    )
+
             if operation.method == "exit" and len(operation.arguments) >= 3:
                 source, destination, direction = operation.arguments[:3]
                 if direction not in VALID_DIRECTIONS:
@@ -584,6 +703,121 @@ def _validate_world_definitions(
                                 f"Room '{room_id}' is not authored in zone '{definition.zone_id}'.",
                             )
                         )
+                materials = _operation_value(operation, 2, "materials", ())
+                for material_id in materials if isinstance(materials, tuple) else ():
+                    if material_id not in MATERIAL_REGISTRY:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "unknown-material-id",
+                                f"Gathering material '{material_id}' is not registered.",
+                            )
+                        )
+
+            if operation.method == "quest":
+                quest_giver = _frozen_map_get(
+                    operation.keyword_arguments, "quest_giver"
+                )
+                if quest_giver not in npc_ids:
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "unresolved-quest-giver",
+                            f"Quest giver '{quest_giver}' is not authored in this manifest.",
+                        )
+                    )
+                referenced_quests = list(
+                    _frozen_map_get(
+                        operation.keyword_arguments, "prerequisite_quests", ()
+                    )
+                )
+                next_quest_id = _frozen_map_get(
+                    operation.keyword_arguments, "next_quest_id"
+                )
+                if next_quest_id:
+                    referenced_quests.append(next_quest_id)
+                for quest_id in referenced_quests:
+                    if quest_id not in quest_ids:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "unresolved-quest-id",
+                                f"Quest reference '{quest_id}' is not authored in this manifest.",
+                            )
+                        )
+                objectives = _thaw(
+                    _frozen_map_get(operation.keyword_arguments, "objectives", ())
+                )
+                if not objectives:
+                    objectives = [
+                        {
+                            "type": _frozen_map_get(
+                                operation.keyword_arguments, "objective_type"
+                            ),
+                            "target": _frozen_map_get(
+                                operation.keyword_arguments, "objective_target"
+                            ),
+                        }
+                    ]
+                for objective in objectives if isinstance(objectives, list) else ():
+                    if not isinstance(objective, dict):
+                        continue
+                    authored_type = objective.get("type")
+                    objective_type = OBJECTIVE_TYPE_ALIASES.get(
+                        authored_type, authored_type
+                    )
+                    if objective_type not in OBJECTIVE_TYPES | {"practice"}:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "unknown-objective-type",
+                                f"Objective type '{authored_type}' has no runtime progress path.",
+                            )
+                        )
+                        continue
+                    allowed_targets = objective_targets.get(objective_type)
+                    target = objective.get("target")
+                    if allowed_targets is not None and target not in allowed_targets:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "unresolved-objective-target",
+                                f"Objective target '{target}' does not resolve for type '{authored_type}'.",
+                            )
+                        )
+
+            actions: object = ()
+            if operation.method == "quest":
+                actions = _frozen_map_get(operation.keyword_arguments, "rewards", ())
+            elif operation.method == "trigger":
+                actions = _operation_value(operation, 2, "actions", ())
+            elif operation.method == "custom_command":
+                action = _operation_value(operation, 2, "action_dict")
+                actions = (action,) if action is not None else ()
+            for action in actions if isinstance(actions, tuple) else ():
+                action_dict = _thaw(action)
+                if not isinstance(action_dict, dict):
+                    continue
+                action_type = action_dict.get("action_type")
+                if action_type not in ACTION_HANDLERS:
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "unknown-action-type",
+                            f"Action type '{action_type}' is not registered.",
+                        )
+                    )
+                elif (
+                    action_type == "give_skill_xp"
+                    and action_dict.get("skill_id") not in SKILL_DEFINITIONS
+                ):
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "unknown-skill-id",
+                            f"Skill '{action_dict.get('skill_id')}' is not registered.",
+                        )
+                    )
 
             if operation.method == "social_edge" and len(operation.arguments) >= 2:
                 source_key, target_key = operation.arguments[:2]

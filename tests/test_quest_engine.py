@@ -401,6 +401,20 @@ class TestAbandonQuest(unittest.TestCase):
 class TestNormalizeQuestSpec(unittest.TestCase):
     """Tests for _normalize_quest_spec internal function."""
 
+    def test_visit_objective_normalizes_to_room_entry_investigation(self):
+        from world.quest_engine import _normalize_quest_spec
+
+        result = _normalize_quest_spec(
+            {
+                "quest_id": "walk_the_bells",
+                "objectives": [
+                    {"type": "visit", "target": "high_lift", "count": 1}
+                ],
+            }
+        )
+
+        self.assertEqual(result["objectives"][0]["type"], "investigate")
+
     def test_already_has_objectives(self):
         """Spec with objectives list is returned as-is."""
         from world.quest_engine import _normalize_quest_spec
@@ -914,6 +928,52 @@ class TestCheckPracticeObjectives(unittest.TestCase):
 
 class TestCheckDeliverObjectives(unittest.TestCase):
     """Tests for check_deliver_objectives."""
+
+    @patch("world.quest_engine._advance_quest_objectives")
+    @patch("world.quest_engine._get_quest_spec")
+    @patch("world.quest_engine.CharacterQuest")
+    def test_deliver_completes_with_item_on_target_room_entry(
+        self, MockCQ, mock_get_spec, mock_check
+    ):
+        from world.quest_engine import check_deliver_objectives
+
+        char = MagicMock()
+        room = MagicMock()
+        room.tags.get.side_effect = (
+            lambda category=None, **kw: "low_name_shelf"
+            if category == "room_id"
+            else None
+        )
+        item = MagicMock()
+        item.tags.get.side_effect = (
+            lambda category=None, **kw: "name_cord"
+            if category == "item_tag"
+            else None
+        )
+        char.contents = [item]
+        cq = _make_cq("name_quest", progress={})
+        MockCQ.objects.filter.return_value = [cq]
+        mock_get_spec.return_value = {
+            "quest_id": "name_quest",
+            "objectives": [
+                {
+                    "type": "deliver",
+                    "target": "low_name_shelf",
+                    "item_tag": "name_cord",
+                    "count": 1,
+                }
+            ],
+        }
+
+        check_deliver_objectives(char, room)
+
+        mock_check.assert_called_once_with(
+            char,
+            101,
+            mock_get_spec.return_value,
+            [{"key": "deliver_low_name_shelf", "amount": 1, "cap": 1}],
+            delivery_items=[item],
+        )
 
     @patch("world.quest_engine._advance_quest_objectives")
     @patch("world.quest_engine._get_quest_spec")

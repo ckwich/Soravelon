@@ -45,11 +45,12 @@ OBJECTIVE_TYPES = {
 }
 
 # Map non-MVP objective types to their MVP equivalents
-_OBJECTIVE_TYPE_ALIASES = {
+OBJECTIVE_TYPE_ALIASES = {
     "gather": "collect",
     "recover": "collect",
     "craft": "collect",       # crafting objectives treated as collect for MVP
     "discover": "investigate",
+    "visit": "investigate",
     "escort": "deliver",      # escort → deliver for MVP simplicity
 }
 
@@ -111,7 +112,7 @@ def _normalize_quest_spec(quest_spec):
         for obj in spec["objectives"]:
             obj = dict(obj)
             obj_type = obj.get("type", "")
-            obj["type"] = _OBJECTIVE_TYPE_ALIASES.get(obj_type, obj_type)
+            obj["type"] = OBJECTIVE_TYPE_ALIASES.get(obj_type, obj_type)
             if obj["type"] == "deliver" and not obj.get("item_tag") and flagged_drop:
                 obj["item_tag"] = flagged_drop
             normalized.append(obj)
@@ -120,7 +121,7 @@ def _normalize_quest_spec(quest_spec):
 
     # Convert flat format to objectives list
     obj_type = spec.get("objective_type", "")
-    obj_type = _OBJECTIVE_TYPE_ALIASES.get(obj_type, obj_type)
+    obj_type = OBJECTIVE_TYPE_ALIASES.get(obj_type, obj_type)
     target = spec.get("objective_target", "")
     count = spec.get("objective_count", 1)
 
@@ -445,18 +446,21 @@ def check_practice_objectives(character, opportunity_id):
             _advance_quest_objectives(character, cq.pk, quest_spec, updates)
 
 
-def check_deliver_objectives(character, npc):
+def check_deliver_objectives(character, destination):
     """
-    Check active quests for deliver objectives matching this NPC (D-10).
+    Check active quests for deliver objectives matching an NPC or room (D-10).
 
     Delivery requires: character carries item with matching item_tag AND
-    talks to target NPC. Called from talk command.
+    talks to the target NPC or enters the target room.
     """
     _ensure_model()
 
-    npc_id = npc.tags.get(category="npc_id") if hasattr(npc, "tags") else ""
-    npc_id = npc_id or ""
-    if not npc_id:
+    target_id = ""
+    if hasattr(destination, "tags"):
+        target_id = destination.tags.get(category="npc_id") or ""
+        if not target_id:
+            target_id = destination.tags.get(category="room_id") or ""
+    if not target_id:
         return
 
     for cq in CharacterQuest.objects.filter(character=character, status="active"):
@@ -469,7 +473,7 @@ def check_deliver_objectives(character, npc):
         for objective in quest_spec.get("objectives") or []:
             if (
                 objective.get("type") != "deliver"
-                or objective.get("target", "") != npc_id
+                or objective.get("target", "") != target_id
             ):
                 continue
             item_tag = objective.get("item_tag", "")
@@ -481,7 +485,7 @@ def check_deliver_objectives(character, npc):
             claimed_item_ids.add(delivery_item.id)
             updates.append(
                 {
-                    "key": _make_obj_key("deliver", npc_id),
+                    "key": _make_obj_key("deliver", target_id),
                     "amount": 1,
                     "cap": objective.get("count", 1),
                 }
