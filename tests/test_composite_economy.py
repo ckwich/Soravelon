@@ -260,6 +260,32 @@ class TestAtomicCrafting(CompositeEconomyTestBase):
         )
         self.assertFalse(GameOperation.objects.exists())
 
+    def test_failure_after_progression_restores_items_and_event_ledger(self):
+        from world.crafting_engine import craft_item
+        from world.models import ProgressionEvent
+
+        original_ids = set(ObjectDB.objects.values_list("id", flat=True))
+        with patch(
+            "world.crafting_engine._after_write",
+            side_effect=self.fail_at("craft_progression_recorded"),
+        ), self.assertRaisesRegex(RuntimeError, "craft_progression_recorded"):
+            craft_item(
+                self.char1,
+                "iron_dagger",
+                operation_id="craft:progression-rollback",
+            )
+
+        self.assertEqual(
+            InventoryItem.objects.get(item_id=self.ingredient_id).quantity,
+            2,
+        )
+        self.assertEqual(
+            set(ObjectDB.objects.values_list("id", flat=True)),
+            original_ids,
+        )
+        self.assertFalse(ProgressionEvent.objects.exists())
+        self.assertFalse(GameOperation.objects.exists())
+
     def test_same_craft_operation_consumes_and_creates_once(self):
         from world.crafting_engine import craft_item
 

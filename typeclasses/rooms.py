@@ -129,6 +129,19 @@ class SoravelonRoom(ObjectParent, DefaultRoom):
                 point = FlightRegistry.get_point(flight_point_id)
                 point_name = point["name"] if point else flight_point_id
                 obj.msg(f"|yYou have discovered the {point_name} Dragon Courier stop.|n")
+                from world.progression_engine import record_exploration_outcome
+
+                progressed, progression_message = record_exploration_outcome(
+                    obj,
+                    flight_point_id,
+                )
+                if not progressed:
+                    import evennia
+
+                    evennia.logger.log_err(
+                        "Exploration progression rejected for "
+                        f"{flight_point_id}: {progression_message}"
+                    )
         # Quest progress: room-entry investigate and delivery objectives.
         from world.quest_engine import (
             check_deliver_objectives,

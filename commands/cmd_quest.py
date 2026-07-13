@@ -155,7 +155,7 @@ class CmdQuest(Command):
                     lines.append(f"  |w{r.get('template_id', 'item').replace('_', ' ').title()}|n")
                 elif rtype == "give_skill_xp":
                     skill = r.get("skill_id", "?").replace("_", " ").title()
-                    lines.append(f"  |g+{r.get('count', 1)} {skill} XP|n")
+                    lines.append(f"  |gSkill insight: {skill}|n")
                 elif rtype == "grant_practice":
                     skills = sorted((r.get("skill_awards") or r.get("skills") or {}).keys())
                     if skills:

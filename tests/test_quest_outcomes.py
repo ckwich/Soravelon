@@ -6,7 +6,12 @@ from evennia import create_object
 from evennia.objects.models import ObjectDB
 from evennia.utils.test_resources import EvenniaTest
 
-from world.models import CharacterQuest, GameOperation, InventoryItem
+from world.models import (
+    CharacterQuest,
+    GameOperation,
+    InventoryItem,
+    ProgressionEvent,
+)
 
 
 class TestAtomicQuestOutcomes(EvenniaTest):
@@ -111,6 +116,55 @@ class TestAtomicQuestOutcomes(EvenniaTest):
         )
         self.assertEqual(sum("+10 Scales" in message for message in messages), 1)
 
+    def test_authored_skill_reward_records_one_typed_qualitative_outcome(self):
+        from world.quest_engine import _check_quest_completion
+        from world.world_state import commit_session_xp, init_session_accumulators
+
+        self.char1.db.domain_scores = {}
+        init_session_accumulators(self.char1)
+        quest = self._quest(quest_id="forging_truth")
+        spec = self._spec(
+            quest_id="forging_truth",
+            rewards=[
+                {
+                    "action_type": "give_skill_xp",
+                    "skill_id": "smithing",
+                    "count": 4,
+                }
+            ],
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            first = _check_quest_completion(self.char1, quest, spec)
+        with self.captureOnCommitCallbacks(execute=True):
+            replay = _check_quest_completion(self.char1, quest, spec)
+
+        self.assertTrue(first)
+        self.assertTrue(replay)
+        event = ProgressionEvent.objects.get(character=self.char1)
+        self.assertEqual(event.event_type, "quest_outcome")
+        self.assertEqual(event.source_id, "forging_truth")
+        self.assertEqual(event.domain_awards, {"engineering": 20})
+        self.assertEqual(event.skill_awards, {"smithing": 4})
+        self.assertIsNone(event.applied_at)
+        messages = [
+            str(call.args[0])
+            for call in self.char1.msg.call_args_list
+            if call.args
+        ]
+        self.assertTrue(
+            any(
+                "Smithing understanding deepens" in text
+                for text in messages
+            )
+        )
+        self.assertFalse(any("XP" in text for text in messages))
+
+        commit_session_xp(self.char1)
+        self.assertEqual(self.char1.db.domain_scores, {"engineering": 2.0})
+        event.refresh_from_db()
+        self.assertIsNotNone(event.applied_at)
+
     def test_failure_after_outcome_writes_rolls_back_every_effect(self):
         from world.quest_engine import _check_quest_completion
 
@@ -139,7 +193,7 @@ class TestAtomicQuestOutcomes(EvenniaTest):
         self.assertFalse(any("Quest Complete" in message for message in messages))
         self.assertFalse(any("+10 Scales" in message for message in messages))
 
-    def test_session_skill_reward_is_reverted_when_outcome_rolls_back(self):
+    def test_progression_event_is_reverted_when_outcome_rolls_back(self):
         from world.quest_engine import _check_quest_completion
 
         quest = self._quest()
@@ -159,9 +213,8 @@ class TestAtomicQuestOutcomes(EvenniaTest):
         ), self.assertRaisesRegex(RuntimeError, "injected outcome failure"):
             _check_quest_completion(self.char1, quest, spec)
 
-        self.assertEqual(
-            getattr(self.char1.ndb, "skill_use_investigation", 0) or 0,
-            0,
+        self.assertFalse(
+            ProgressionEvent.objects.filter(character=self.char1).exists()
         )
 
     def test_delivery_consumption_and_progress_roll_back_with_failed_reward(self):

@@ -117,7 +117,8 @@ class TestCmdQuest(unittest.TestCase):
         self.assertIn("[DONE]", message)
         self.assertIn("[1/2]", message)
         self.assertIn("18 Scales", message)
-        self.assertIn("+2 Tracking XP", message)
+        self.assertIn("Skill insight: Tracking", message)
+        self.assertNotIn("XP", message)
 
     @patch("world.quest_engine._normalize_quest_spec", side_effect=lambda spec: spec)
     @patch("world.quest_engine._get_quest_spec", return_value={

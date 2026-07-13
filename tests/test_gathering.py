@@ -569,6 +569,9 @@ class TestGatheredMaterialAffordances(unittest.TestCase):
             return_value=(True, "learned"),
         ) as learn, patch(
             "world.skill_engine.accumulate_skill_use",
+        ), patch(
+            "world.progression_engine.record_gathering_outcome",
+            return_value=(True, ""),
         ), patch("world.gathering_engine.random.random", return_value=1.0):
             ok, message, _, _ = complete_gather(
                 character,
@@ -622,6 +625,9 @@ class TestGatheredMaterialAffordances(unittest.TestCase):
             return_value=40,
         ), patch(
             "world.skill_engine.accumulate_skill_use",
+        ), patch(
+            "world.progression_engine.record_gathering_outcome",
+            return_value=(True, ""),
         ):
             ok, message, _, _, _ = catch_fish(
                 character,
@@ -773,7 +779,7 @@ class TestRegionalMaterialProcessingRuntime(EvenniaTest):
         from world.crafting_definitions import PROCESSING_RECIPE_BY_MATERIAL
         from world.crafting_engine import craft_item
         from world.gathering_engine import complete_gather
-        from world.models import CharacterRecipe, InventoryItem
+        from world.models import CharacterRecipe, InventoryItem, ProgressionEvent
 
         self.char1.location = self.room1
         self.room1.tags.add("crafting_forge", category="crafting_station")
@@ -832,6 +838,19 @@ class TestRegionalMaterialProcessingRuntime(EvenniaTest):
         self.assertEqual(output.db.source_materials, ["greyteeth_iron"])
         self.assertEqual(output.db.profession_bonus["smithing"], 0.10)
         self.assertEqual(output.db.value_scales, 53)
+        progression = {
+            event.event_type: event
+            for event in ProgressionEvent.objects.filter(character=self.char1)
+        }
+        self.assertEqual(set(progression), {"gathering", "crafting"})
+        self.assertEqual(
+            progression["gathering"].domain_awards,
+            {"combat": 10},
+        )
+        self.assertEqual(
+            progression["crafting"].domain_awards,
+            {"engineering": 15},
+        )
 
 
 # ---------------------------------------------------------------------------

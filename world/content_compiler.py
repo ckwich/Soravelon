@@ -6,7 +6,7 @@ import ast
 from dataclasses import dataclass
 import hashlib
 import json
-from numbers import Real
+from numbers import Integral, Real
 from pathlib import Path
 from typing import Mapping
 
@@ -938,17 +938,28 @@ def _validate_world_definitions(
                             f"Action type '{action_type}' is not registered.",
                         )
                     )
-                elif (
-                    action_type == "give_skill_xp"
-                    and action_dict.get("skill_id") not in SKILL_DEFINITIONS
-                ):
-                    diagnostics.append(
-                        _diagnostic(
-                            operation,
-                            "unknown-skill-id",
-                            f"Skill '{action_dict.get('skill_id')}' is not registered.",
+                elif action_type == "give_skill_xp":
+                    if action_dict.get("skill_id") not in SKILL_DEFINITIONS:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "unknown-skill-id",
+                                f"Skill '{action_dict.get('skill_id')}' is not registered.",
+                            )
                         )
-                    )
+                    count = action_dict.get("count", 1)
+                    if (
+                        isinstance(count, bool)
+                        or not isinstance(count, Integral)
+                        or count <= 0
+                    ):
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "invalid-skill-award-count",
+                                "Quest skill award count must be a positive integer.",
+                            )
+                        )
 
             if operation.method == "social_edge" and len(operation.arguments) >= 2:
                 source_key, target_key = operation.arguments[:2]

@@ -737,6 +737,18 @@ def complete_gather(character, node, tool, skill_name, skill_val):
     # Skill progression
     accumulate_skill_use(character, skill_name)
 
+    from world.progression_engine import record_gathering_outcome
+
+    progressed, progression_message = record_gathering_outcome(
+        character,
+        material_id,
+    )
+    if not progressed:
+        evennia.logger.log_err(
+            "Gathering progression rejected for "
+            f"{material_id}: {progression_message}"
+        )
+
     learning_message = _learn_material_processing(character, material_id)
     if learning_message:
         msg += f"\n{learning_message}"
@@ -879,6 +891,15 @@ def _catch_fish_locked(
             tool_broken = True
 
     accumulate_skill_use(character, "fishing")
+
+    from world.progression_engine import record_gathering_outcome
+
+    progressed, progression_message = record_gathering_outcome(
+        character,
+        material_id,
+    )
+    if not progressed:
+        raise _FishingRejected(progression_message)
 
     learning_message = _learn_material_processing(character, material_id)
     if learning_message:

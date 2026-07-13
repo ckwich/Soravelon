@@ -447,29 +447,55 @@ class TestGiveScalesHandler(unittest.TestCase):
 class TestGiveSkillXpHandler(unittest.TestCase):
     """Test _handle_give_skill_xp action handler (D-14)."""
 
-    def test_calls_accumulate_skill_use(self):
-        """give_skill_xp calls accumulate_skill_use with correct args."""
+    def test_records_a_typed_authored_quest_outcome(self):
+        """give_skill_xp records durable quest progression with stable identity."""
         from world.action_vocabulary import execute_action
 
         char = MagicMock()
-        context = {"character": char}
+        context = {
+            "character": char,
+            "_progression_source_id": "vc_q_forging_commission",
+            "_progression_reward_index": 1,
+        }
         action = {"action_type": "give_skill_xp", "skill_id": "reflexes", "count": 5}
-        with patch("world.skill_engine.accumulate_skill_use") as mock_acc:
+        with patch(
+            "world.progression_engine.record_quest_outcome",
+            return_value=(True, ""),
+        ) as record:
             success, msg = execute_action(action, context)
         self.assertTrue(success)
-        mock_acc.assert_called_once_with(char, "reflexes", 5)
+        record.assert_called_once_with(
+            char,
+            "vc_q_forging_commission",
+            1,
+            "reflexes",
+            5,
+        )
 
     def test_default_count_is_1(self):
         """give_skill_xp defaults to count=1 when not specified."""
         from world.action_vocabulary import execute_action
 
         char = MagicMock()
-        context = {"character": char}
+        context = {
+            "character": char,
+            "_progression_source_id": "ashreach_herbs",
+            "_progression_reward_index": 2,
+        }
         action = {"action_type": "give_skill_xp", "skill_id": "herbalism"}
-        with patch("world.skill_engine.accumulate_skill_use") as mock_acc:
+        with patch(
+            "world.progression_engine.record_quest_outcome",
+            return_value=(True, ""),
+        ) as record:
             success, msg = execute_action(action, context)
         self.assertTrue(success)
-        mock_acc.assert_called_once_with(char, "herbalism", 1)
+        record.assert_called_once_with(
+            char,
+            "ashreach_herbs",
+            2,
+            "herbalism",
+            1,
+        )
 
     def test_missing_skill_id_fails(self):
         """give_skill_xp without skill_id returns failure."""
@@ -482,18 +508,29 @@ class TestGiveSkillXpHandler(unittest.TestCase):
         self.assertFalse(success)
         self.assertIn("skill_id", msg.lower())
 
-    def test_unknown_skill_id_fails_without_accumulating(self):
+    def test_unknown_skill_id_fails_without_recording(self):
         """give_skill_xp rejects stale or misspelled skill ids."""
         from world.action_vocabulary import execute_action
 
         char = MagicMock()
         context = {"character": char}
         action = {"action_type": "give_skill_xp", "skill_id": "not_a_skill", "count": 5}
-        with patch("world.skill_engine.accumulate_skill_use") as mock_acc:
+        with patch("world.progression_engine.record_quest_outcome") as record:
             success, msg = execute_action(action, context)
         self.assertFalse(success)
         self.assertIn("unknown skill_id", msg)
-        mock_acc.assert_not_called()
+        record.assert_not_called()
+
+    def test_missing_authored_event_identity_fails_closed(self):
+        from world.action_vocabulary import execute_action
+
+        success, message = execute_action(
+            {"action_type": "give_skill_xp", "skill_id": "herbalism"},
+            {"character": MagicMock()},
+        )
+
+        self.assertFalse(success)
+        self.assertIn("event identity", message)
 
     def test_no_character_fails(self):
         """give_skill_xp with no character in context fails gracefully."""
@@ -504,19 +541,27 @@ class TestGiveSkillXpHandler(unittest.TestCase):
         self.assertFalse(success)
         self.assertIn("no character", msg.lower())
 
-    def test_sends_notification_message(self):
-        """give_skill_xp sends a [+N Skill XP] message to the character."""
+    def test_sends_qualitative_notification_without_numeric_xp(self):
+        """Progression prose remains qualitative and never prints XP numbers."""
         from world.action_vocabulary import execute_action
 
         char = MagicMock()
-        context = {"character": char}
+        context = {
+            "character": char,
+            "_progression_source_id": "ashreach_herbs",
+            "_progression_reward_index": 2,
+        }
         action = {"action_type": "give_skill_xp", "skill_id": "herbalism", "count": 3}
-        with patch("world.skill_engine.accumulate_skill_use"):
+        with patch(
+            "world.progression_engine.record_quest_outcome",
+            return_value=(True, ""),
+        ):
             execute_action(action, context)
         char.msg.assert_called_once()
         msg_text = char.msg.call_args[0][0]
-        self.assertIn("3", msg_text)
         self.assertIn("Herbalism", msg_text)
+        self.assertNotIn("XP", msg_text)
+        self.assertNotIn("3", msg_text)
 
 
 class TestGrantPracticeHandler(unittest.TestCase):

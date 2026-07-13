@@ -911,6 +911,7 @@ def _pay_rewards_exactly_once(
         "_created_items": [],
         "_deferred_messages": deferred_messages,
         "_rollback_callbacks": rollback_callbacks,
+        "_progression_source_id": quest_id,
     }
     try:
         with atomic_evennia_state(character) as tracker:
@@ -930,6 +931,7 @@ def _pay_rewards_exactly_once(
                 return []
 
             for index, reward in enumerate(quest_spec.get("rewards") or []):
+                context["_progression_reward_index"] = index
                 success, message = execute_action(reward, context)
                 for item in context["_created_items"]:
                     tracker.track(item)
@@ -997,11 +999,17 @@ def _pay_rewards(
 
     from world.action_vocabulary import execute_action
 
-    context = {"character": character, "room": character.location}
+    quest_id = quest_spec.get("quest_id") or quest_spec.get("name") or "anonymous"
+    context = {
+        "character": character,
+        "room": character.location,
+        "_progression_source_id": quest_id,
+    }
     rewards = quest_spec.get("rewards") or []
     failures = []
 
     for index, reward in enumerate(rewards):
+        context["_progression_reward_index"] = index
         success, msg = execute_action(reward, context)
         if success:
             continue

@@ -116,12 +116,38 @@ def claim_personal_rewards(character, *, corpse_id=None):
 
 
 def grant_kill_credit(recipients, mob):
-    """Advance eligible players' personal kill objectives exactly once each."""
+    """Advance objectives and one-time named/boss progression for recipients."""
     from world.quest_engine import check_kill_objectives
+    from world.mob_spawner import MOB_INSTANCE_TAG_CATEGORY
+    from world.progression_engine import record_combat_outcome
+
+    named_tag = mob.tags.get(category=MOB_INSTANCE_TAG_CATEGORY)
+    is_named = bool(named_tag)
+    is_legendary = getattr(mob.db, "rarity", None) == "legendary"
+    source_id = (
+        getattr(mob.db, "named_id", None)
+        or named_tag
+        or _mob_reward_key(mob)
+    )
 
     for recipient in recipients:
         if _is_player(recipient):
             check_kill_objectives(recipient, mob)
+            if not isinstance(getattr(recipient, "pk", None), int):
+                continue
+            progressed, progression_message = record_combat_outcome(
+                recipient,
+                str(source_id),
+                is_named=is_named,
+                is_legendary=is_legendary,
+            )
+            if not progressed:
+                import evennia
+
+                evennia.logger.log_err(
+                    "Combat progression rejected for "
+                    f"{source_id}: {progression_message}"
+                )
 
 
 def _is_personal_drop(item_def):

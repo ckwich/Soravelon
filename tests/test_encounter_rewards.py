@@ -168,3 +168,50 @@ class TestGroupKillCredit(unittest.TestCase):
 
         grant_credit.assert_called_once_with([killer, ally], mob)
         ally.msg.assert_called_once_with("|cYou receive nearby group credit for Ash Wolf.|n")
+
+
+class TestNamedCombatProgression(EvenniaTest):
+    @patch("world.quest_engine.check_kill_objectives")
+    def test_named_kill_records_one_outcome_for_each_present_recipient(
+        self,
+        check_objectives,
+    ):
+        from world.encounter_rewards import grant_kill_credit
+        from world.models import ProgressionEvent
+
+        mob = MagicMock()
+        mob.key = "The Ash Harrow"
+        mob.db.named_id = "the_ash_harrow"
+        mob.db.mob_template_key = "ash_harrow"
+        mob.db.rarity = "rare"
+        mob.tags.get.return_value = "the_ash_harrow"
+
+        grant_kill_credit([self.char1, self.char2], mob)
+        grant_kill_credit([self.char1, self.char2], mob)
+
+        self.assertEqual(check_objectives.call_count, 4)
+        events = ProgressionEvent.objects.filter(event_type="combat_outcome")
+        self.assertEqual(events.count(), 2)
+        for character in (self.char1, self.char2):
+            event = events.get(character=character)
+            self.assertEqual(event.source_id, "the_ash_harrow")
+            self.assertEqual(event.domain_awards, {"combat": 25})
+
+    @patch("world.quest_engine.check_kill_objectives")
+    def test_ordinary_repeatable_kill_is_not_a_domain_progression_event(
+        self,
+        _check_objectives,
+    ):
+        from world.encounter_rewards import grant_kill_credit
+        from world.models import ProgressionEvent
+
+        mob = MagicMock()
+        mob.key = "Ash Wolf"
+        mob.db.named_id = None
+        mob.db.mob_template_key = "ash_wolf"
+        mob.db.rarity = "normal"
+        mob.tags.get.return_value = None
+
+        grant_kill_credit([self.char1], mob)
+
+        self.assertFalse(ProgressionEvent.objects.exists())

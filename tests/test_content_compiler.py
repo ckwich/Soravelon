@@ -314,6 +314,30 @@ def build():
             ],
         )
 
+    def test_quest_skill_progression_count_must_be_a_positive_integer(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("progression")
+    area.zone(name="Progression", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    npc = area.npc(room, "npc_keeper", name="Keeper")
+    area.quest("first", quest_giver="npc_keeper",
+               objectives=[{"type": "talk_to", "target": "npc_keeper"}],
+               rewards=[{"action_type": "give_skill_xp",
+                         "skill_id": "tracking", "count": 0}])
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/progression.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(
+            [diagnostic.code for diagnostic in result.diagnostics],
+            ["invalid-skill-award-count"],
+        )
+
     def test_globally_stable_entity_ids_cannot_be_redefined(self):
         from world.content_compiler import compile_world_sources
 

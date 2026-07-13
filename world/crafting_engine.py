@@ -660,6 +660,16 @@ def craft_item(character, recipe_id, *, operation_id=None):
                 raise _CraftRejected(consume_message)
             _after_write("craft_ingredients_consumed")
 
+            from world.progression_engine import record_crafting_outcome
+
+            progressed, progression_message = record_crafting_outcome(
+                locked_character,
+                recipe_id,
+            )
+            if not progressed:
+                raise _CraftRejected(progression_message)
+            _after_write("craft_progression_recorded")
+
             record_operation(
                 character=locked_character,
                 operation_id=operation_id,

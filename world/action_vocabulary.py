@@ -283,7 +283,7 @@ def _handle_give_scales(action_dict, context, _depth):
 
 
 def _handle_give_skill_xp(action_dict, context, _depth):
-    """Award skill XP via the ndb accumulator pattern."""
+    """Record one authored quest outcome through the durable progression ledger."""
     character = context.get("character")
     if not character:
         return False, "give_skill_xp: no character in context"
@@ -294,17 +294,27 @@ def _handle_give_skill_xp(action_dict, context, _depth):
     from world.skill_definitions import SKILL_DEFINITIONS
     if skill_id not in SKILL_DEFINITIONS:
         return False, f"give_skill_xp: unknown skill_id '{skill_id}'"
-    from world.skill_engine import accumulate_skill_use
-    accumulator_key = f"skill_use_{skill_id}"
-    old_accumulator = getattr(character.ndb, accumulator_key, 0) or 0
-    _register_rollback(
-        context,
-        lambda: setattr(character.ndb, accumulator_key, old_accumulator),
+    if isinstance(count, bool) or not isinstance(count, int) or count <= 0:
+        return False, "give_skill_xp: count must be a positive integer"
+    source_id = context.get("_progression_source_id")
+    reward_index = context.get("_progression_reward_index")
+    if not source_id or reward_index is None:
+        return False, "give_skill_xp: authored event identity is required"
+
+    from world.progression_engine import record_quest_outcome
+
+    recorded, message = record_quest_outcome(
+        character,
+        source_id,
+        reward_index,
+        skill_id,
+        count,
     )
-    accumulate_skill_use(character, skill_id, count)
+    if not recorded:
+        return False, f"give_skill_xp: {message}"
     _emit_action_message(
         context,
-        f"|g[+{count} {skill_id.replace('_', ' ').title()} XP]|n",
+        f"|gYour {skill_id.replace('_', ' ').title()} understanding deepens.|n",
     )
     return True, ""
 
@@ -327,6 +337,14 @@ def _handle_discover_flight_point(action_dict, context, _depth):
 
     previous = set(character.db.discovered_flight_points or set())
     if point_id in previous:
+        from world.progression_engine import record_exploration_outcome
+
+        progressed, progression_message = record_exploration_outcome(
+            character,
+            point_id,
+        )
+        if not progressed:
+            return False, f"discover_flight_point: {progression_message}"
         return True, f"Already knew flight point {point_id}"
 
     discovered = set(previous)
@@ -336,6 +354,14 @@ def _handle_discover_flight_point(action_dict, context, _depth):
         context,
         lambda: setattr(character.db, "discovered_flight_points", previous),
     )
+    from world.progression_engine import record_exploration_outcome
+
+    progressed, progression_message = record_exploration_outcome(
+        character,
+        point_id,
+    )
+    if not progressed:
+        return False, f"discover_flight_point: {progression_message}"
     message = action_dict.get("message")
     if message:
         _emit_action_message(context, message)

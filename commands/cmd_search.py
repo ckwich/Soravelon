@@ -75,7 +75,7 @@ class CmdSearch(Command):
             default=20,
         )
 
-        from world.skill_engine import get_skill_value, accumulate_skill_use
+        from world.skill_engine import get_skill_value
 
         skill = get_skill_value(char, "investigation")
         roll = skill + random.randint(1, 20)
@@ -91,9 +91,6 @@ class CmdSearch(Command):
             ]
             char.msg(random.choice(fail_msgs))
             return
-
-        # D-11: Success -- accumulate skill use
-        accumulate_skill_use(char, "investigation")
 
         found_something = False
 
@@ -126,3 +123,19 @@ class CmdSearch(Command):
 
         if not found_something:
             char.msg("Your thorough search reveals nothing new.")
+            return
+
+        room_id = room.tags.get(category="room_id") or f"room-{room.id}"
+        from world.progression_engine import record_investigation_outcome
+
+        progressed, progression_message = record_investigation_outcome(
+            char,
+            room_id,
+        )
+        if not progressed:
+            import evennia
+
+            evennia.logger.log_err(
+                "Investigation progression rejected for "
+                f"{room_id}: {progression_message}"
+            )
