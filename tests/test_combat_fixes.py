@@ -306,7 +306,20 @@ class TestAbilityHandlerReturns(unittest.TestCase):
 class TestUseAbilityUnpacks(unittest.TestCase):
     """Verify use_ability correctly unpacks (ok, msg) from handler."""
 
-    @patch("world.ability_engine._check_ability_access",
+    def test_ability_access_is_a_public_engine_contract(self):
+        from world.ability_engine import check_ability_access
+
+        char = _make_character()
+        char.db.abilities = ["slash"]
+        fake_registry = types.ModuleType("world.ability_registry")
+        fake_registry.ABILITIES = {
+            "slash": {"name": "Slash", "effect_type": "damage"},
+        }
+
+        with patch.dict(sys.modules, {"world.ability_registry": fake_registry}):
+            self.assertEqual(check_ability_access(char, "slash"), (True, ""))
+
+    @patch("world.ability_engine.check_ability_access",
            return_value=(True, ""))
     @patch("world.ability_engine._check_and_spend_resource",
            return_value=(True, ""))

@@ -111,7 +111,7 @@ class CmdLoadout(Command):
 
     def _add_ability(self, char, query):
         """Add an ability to the active loadout."""
-        from world.ability_engine import _check_ability_access
+        from world.ability_engine import check_ability_access
 
         if not query:
             char.msg("Usage: loadout add <ability name>")
@@ -125,7 +125,7 @@ class CmdLoadout(Command):
         ability_id, ability = result
 
         # Check access
-        ok, reason = _check_ability_access(char, ability_id)
+        ok, reason = check_ability_access(char, ability_id)
         if not ok:
             char.msg(reason)
             return

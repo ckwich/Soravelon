@@ -1403,7 +1403,7 @@ def sync_character_ability_unlocks(character):
 # Access check
 # ---------------------------------------------------------------------------
 
-def _check_ability_access(character, ability_id):
+def check_ability_access(character, ability_id):
     """Check if character knows and can use this ability. Returns (bool, str)."""
     from world.ability_registry import ABILITIES
     ability = ABILITIES.get(ability_id)
@@ -1500,7 +1500,7 @@ def use_ability(character, ability_id, target=None):
         return False, f"{ability['name']} fails because you are silenced."
 
     # Check character has unlocked this ability
-    ok, msg = _check_ability_access(character, ability_id)
+    ok, msg = check_ability_access(character, ability_id)
     if not ok:
         return False, msg
 
