@@ -97,9 +97,9 @@ class TestCurrentEraRemnanceBlackout(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("world.guild_engine.check_guild_eligibility", return_value=["vaelborn"])
-    def test_joinguild_hides_vaelborn_even_with_legacy_discovery_flag(
-        self, _mock_eligibility
+    @patch("world.guild_engine.get_open_guild_recruitments")
+    def test_joinguild_hides_legacy_vaelborn_invitation(
+        self, mock_recruitments
     ):
         from commands.cmd_guild import CmdJoinGuild
 
@@ -115,6 +115,14 @@ class TestCurrentEraRemnanceBlackout(unittest.TestCase):
         cmd = CmdJoinGuild()
         cmd.caller = character
         cmd.args = ""
+        mock_recruitments.return_value = [
+            SimpleNamespace(
+                guild_id="vaelborn",
+                contact_npc_id="npc_sealed",
+                location_room_id="gq_sealed_hall",
+                location_zone_id="sealed_zone",
+            )
+        ]
 
         cmd.func()
 

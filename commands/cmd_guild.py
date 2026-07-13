@@ -43,8 +43,17 @@ class CmdJoinGuild(Command):
             return
 
         from world.guild_engine import GUILDS, get_open_guild_recruitments
+        from world.remnance_visibility import guild_is_player_visible
 
-        invitations = get_open_guild_recruitments(character)
+        invitations = [
+            invitation
+            for invitation in get_open_guild_recruitments(character)
+            if guild_is_player_visible(
+                invitation.guild_id,
+                GUILDS.get(invitation.guild_id, {}),
+                character,
+            )
+        ]
         if not invitations:
             character.msg(
                 "No guild has sent you an invitation yet. Keep learning through "
