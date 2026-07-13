@@ -22,7 +22,7 @@ Usage::
 import copy
 
 import evennia
-from evennia import create_object
+from evennia.utils.create import create_object
 
 from world import zone_registry
 from world.tag_search import search_objects_by_exact_tag

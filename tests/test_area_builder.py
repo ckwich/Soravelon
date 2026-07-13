@@ -3,7 +3,7 @@ Tests for the AreaBuilder class (Build Order Step 12).
 """
 
 from unittest.mock import patch, MagicMock
-from django.test import TransactionTestCase
+from django.test import SimpleTestCase, TransactionTestCase
 from evennia.utils.test_resources import EvenniaTest, EvenniaTestMixin
 from evennia import create_object
 
@@ -32,6 +32,14 @@ class AreaBuilderTestBase(EvenniaTest):
             faction_territory="neutral",
         )
         return ab
+
+
+class TestAreaBuilderRuntimeImports(SimpleTestCase):
+    def test_create_object_uses_management_command_safe_evennia_utility(self):
+        from evennia.utils.create import create_object
+        from world import area_builder
+
+        self.assertIs(area_builder.create_object, create_object)
 
     def _make_room(self, ab, room_id="room_001", **kwargs):
         """Create a room via the builder with sensible defaults."""
