@@ -1,5 +1,6 @@
 """Accepted quest specifications remain authoritative for the whole run."""
 
+from collections import UserDict, UserList
 from unittest.mock import MagicMock, patch
 
 from evennia.utils.test_resources import EvenniaTest
@@ -64,3 +65,43 @@ class TestAcceptedQuestSnapshots(EvenniaTest):
         self.assertEqual(quest.status, "complete")
         self.assertEqual(quest.progress, {"kill_trail_wolf": 1})
         self.assertEqual(self.char1.db.carried_scales, 7)
+
+    def test_acceptance_converts_attribute_wrappers_to_plain_json_values(self):
+        from world.quest_engine import accept_quest
+
+        wrapped_spec = UserDict(
+            {
+                "quest_id": "wrapped_offer",
+                "name": "Wrapped Offer",
+                "objectives": UserList(
+                    [
+                        UserDict(
+                            {
+                                "type": "investigate",
+                                "target": "old_marker",
+                                "count": 1,
+                            }
+                        )
+                    ]
+                ),
+                "rewards": UserList(
+                    [UserDict({"action_type": "give_scales", "amount": 3})]
+                ),
+            }
+        )
+
+        accepted, message = accept_quest(
+            self.char1,
+            "wrapped_offer",
+            wrapped_spec,
+        )
+
+        self.assertTrue(accepted, message)
+        snapshot = CharacterQuest.objects.get(
+            character=self.char1,
+            quest_id="wrapped_offer",
+        ).accepted_spec
+        self.assertIs(type(snapshot["objectives"]), list)
+        self.assertIs(type(snapshot["objectives"][0]), dict)
+        self.assertIs(type(snapshot["rewards"]), list)
+        self.assertIs(type(snapshot["rewards"][0]), dict)

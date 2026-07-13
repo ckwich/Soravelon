@@ -118,9 +118,11 @@ def attempt_stabilization(character, zone_id):
     script = get_node_script(zone_id)
     if not script:
         return False
-    if not hasattr(character.ndb, "stabilizing_zones"):
-        character.ndb.stabilizing_zones = set()
-    character.ndb.stabilizing_zones.add(zone_id)
+    stabilizing_zones = set(
+        getattr(character.ndb, "stabilizing_zones", None) or ()
+    )
+    stabilizing_zones.add(zone_id)
+    character.ndb.stabilizing_zones = stabilizing_zones
     character.msg(
         "You focus on the patterns in the stone, working against "
         "the instability."
@@ -130,8 +132,11 @@ def attempt_stabilization(character, zone_id):
 
 def stop_stabilization(character, zone_id):
     """Called when a character stops stabilizing."""
-    if hasattr(character.ndb, "stabilizing_zones"):
-        character.ndb.stabilizing_zones.discard(zone_id)
+    stabilizing_zones = set(
+        getattr(character.ndb, "stabilizing_zones", None) or ()
+    )
+    stabilizing_zones.discard(zone_id)
+    character.ndb.stabilizing_zones = stabilizing_zones
 
 
 def stabilization_tick(character, zone_id):

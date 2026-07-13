@@ -764,6 +764,19 @@ class TestTemporalNodeEffect(EvenniaTest):
 class TestStabilizationLimits(NodeTestBase):
     """Test stabilization stamina drain and break conditions."""
 
+    def test_fresh_character_can_start_stabilizing_real_node(self):
+        from evennia import create_script
+
+        from world.node_helpers import attempt_stabilization
+        from world.scripts.node_script import NodeScript
+
+        create_script(NodeScript, obj=self.zone_obj)
+        self.char1.ndb.stamina = 20
+        self.char1.ndb.stabilizing_zones = None
+
+        self.assertTrue(attempt_stabilization(self.char1, "test_zone"))
+        self.assertEqual(self.char1.ndb.stabilizing_zones, {"test_zone"})
+
     def test_stamina_drain(self):
         """stabilization_tick drains 5 stamina."""
         from world.node_helpers import stabilization_tick

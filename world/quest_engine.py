@@ -12,6 +12,7 @@ manages quest state via the CharacterQuest Django model.
 Lazy imports throughout to avoid circular dependencies (project convention).
 """
 
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 
 from world.tag_search import search_objects_by_exact_tag
@@ -95,6 +96,21 @@ def _get_all_quest_specs():
     return specs
 
 
+def _plain_json_value(value):
+    """Recursively detach attribute wrappers before JSON persistence."""
+    if isinstance(value, Mapping):
+        return {
+            _plain_json_value(key): _plain_json_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, Sequence) and not isinstance(
+        value,
+        (str, bytes, bytearray),
+    ):
+        return [_plain_json_value(item) for item in value]
+    return value
+
+
 def _normalize_quest_spec(quest_spec):
     """
     Convert flat quest format to objectives-list format.
@@ -105,7 +121,7 @@ def _normalize_quest_spec(quest_spec):
     If spec already has 'objectives' key, returns as-is.
     Non-MVP types (gather, discover, escort, etc.) are mapped to MVP types.
     """
-    spec = dict(quest_spec)  # shallow copy
+    spec = _plain_json_value(quest_spec)
 
     if "objectives" in spec and spec["objectives"]:
         # Already in new format — just normalize objective types
