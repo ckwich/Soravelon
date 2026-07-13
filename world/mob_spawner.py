@@ -6,7 +6,7 @@ Two spawn paths coexist here:
 - Legacy room bootstrap helpers used by area loading and older tests:
   spawn_zone() / spawn_room_mobs() / spawn_single_mob() / spawn_named_mob()
 - Authoritative runtime respawn flow:
-  initialize_spawn_records() / spawn_tick() / schedule_respawn_from_death()
+  reconcile_spawn_records() / spawn_tick() / schedule_respawn_from_death()
 
 The runtime path uses SpawnRecord rows as the single source of truth for
 live slot state. room.db.spawn_definitions remains the authored content
@@ -438,43 +438,143 @@ def spawn_tick():
             continue
 
 
-def initialize_spawn_records():
-    """
-    Ensure every authored spawn definition has a SpawnRecord.
+def _retire_spawn_record(record):
+    """Delete only live mobs that prove ownership by a retired spawn slot."""
 
-    Newly created records are scheduled for immediate population. Existing
-    records preserve their active and respawn state across reloads.
+    from evennia.objects.models import ObjectDB
+    from typeclasses.mobs import SoravelonMob
+    from world.world_state import _as_typeclass
+
+    active_ids = set(record.active_mob_ids or [])
+    active_objects = ObjectDB.objects.in_bulk(active_ids)
+    for mob_id, database_object in active_objects.items():
+        mob = _as_typeclass(database_object)
+        if not isinstance(mob, SoravelonMob) or (
+            getattr(mob.db, "spawn_record_id", None) != record.pk
+        ):
+            raise RuntimeError(
+                f"SpawnRecord {record.pk} cannot retire object #{mob_id}; "
+                "the object does not prove slot ownership."
+            )
+        mob.delete()
+    record.delete()
+
+
+def reconcile_spawn_records(rooms):
+    """Materialize exact persistent slots for authored room spawn definitions.
+
+    This is content deployment work, not startup work. Existing records are
+    matched by their stable room/template identity so source reordering keeps
+    live and respawn state. Removed slots retire only mobs that point back to
+    the record being removed. Records for live non-authored rooms are left
+    alone; records whose room no longer exists are cleaned up.
     """
     from world.models import SpawnRecord
 
-    all_rooms = list(search_objects_by_exact_tag("soravelon_room", "room_type"))
-    if not all_rooms:
-        try:
-            from evennia.objects.models import ObjectDB
-            all_rooms = [
-                obj for obj in ObjectDB.objects.filter(db_typeclass_path__contains="rooms.")
-            ]
-        except Exception:
-            all_rooms = []
-    for room in all_rooms:
-        if room.tags.get("zone_object", category="object_type"):
-            continue
+    rooms = list(rooms)
+
+    authored_rooms = [
+        room
+        for room in rooms
+        if not room.tags.get("zone_object", category="object_type")
+    ]
+    room_ids = {room.id for room in authored_rooms}
+    existing_records = list(SpawnRecord.objects.filter(room_id__in=room_ids))
+    records_by_identity = {}
+    for record in existing_records:
+        identity = (record.room_id, record.mob_template_key)
+        if identity in records_by_identity:
+            raise RuntimeError(
+                "SpawnRecord reconciliation found duplicate stable identity "
+                f"room={record.room_id} mob={record.mob_template_key!r}."
+            )
+        records_by_identity[identity] = record
+
+    desired = []
+    desired_identities = set()
+    for room in authored_rooms:
         spawn_defs = list(getattr(room.db, "spawn_definitions", None) or [])
         for idx, spawn_def in enumerate(spawn_defs):
-            record, created = SpawnRecord.objects.get_or_create(
+            identity = (room.id, spawn_def.get("mob", ""))
+            if identity in desired_identities:
+                raise RuntimeError(
+                    "Authored spawn definitions duplicate stable identity "
+                    f"room={room.id} mob={identity[1]!r}."
+                )
+            desired_identities.add(identity)
+            desired.append((room, idx, spawn_def, identity))
+
+    rooms_needing_reindex = {
+        room.id
+        for room in authored_rooms
+        if any(
+            records_by_identity.get(identity) is not None
+            and records_by_identity[identity].spawn_index != idx
+            for candidate, idx, _spawn_def, identity in desired
+            if candidate.id == room.id
+        )
+    }
+    rooms_needing_reindex.update(
+        record.room_id
+        for identity, record in records_by_identity.items()
+        if identity not in desired_identities
+    )
+    for record in existing_records:
+        if record.room_id in rooms_needing_reindex:
+            record.spawn_index = -record.pk
+            record.save(update_fields=("spawn_index",))
+
+    report = {"created": 0, "updated": 0, "deleted": 0}
+    now = timezone.now()
+    for room, idx, spawn_def, identity in desired:
+        record = records_by_identity.pop(identity, None)
+        values = {
+            "spawn_index": idx,
+            "mob_template_key": spawn_def.get("mob", ""),
+            "is_named": spawn_def.get("is_named", False),
+            "named_id": spawn_def.get("named_id") or spawn_def.get("mob", ""),
+        }
+        if record is None:
+            SpawnRecord.objects.create(
                 room_id=room.id,
                 spawn_index=idx,
-                defaults={
-                    "mob_template_key": spawn_def.get("mob", ""),
-                    "active_mob_ids": [],
-                    "respawn_at": None,
-                    "is_named": spawn_def.get("is_named", False),
-                    "named_id": spawn_def.get("named_id") or spawn_def.get("mob", ""),
-                },
+                mob_template_key=values["mob_template_key"],
+                active_mob_ids=[],
+                respawn_at=now,
+                is_named=values["is_named"],
+                named_id=values["named_id"],
             )
-            if created:
-                record.respawn_at = timezone.now()
-                record.save()
+            report["created"] += 1
+            continue
+
+        changed_fields = []
+        for field, value in values.items():
+            if getattr(record, field) != value:
+                setattr(record, field, value)
+                changed_fields.append(field)
+        if changed_fields:
+            record.save(update_fields=tuple(changed_fields))
+            report["updated"] += 1
+
+    for record in records_by_identity.values():
+        _retire_spawn_record(record)
+        report["deleted"] += 1
+
+    from evennia.objects.models import ObjectDB
+
+    record_room_ids = set(
+        SpawnRecord.objects.values_list("room_id", flat=True).distinct()
+    )
+    live_room_ids = set(
+        ObjectDB.objects.filter(id__in=record_room_ids).values_list("id", flat=True)
+    )
+    orphaned_records = list(
+        SpawnRecord.objects.filter(room_id__in=record_room_ids - live_room_ids)
+    )
+    for record in orphaned_records:
+        _retire_spawn_record(record)
+        report["deleted"] += 1
+    return report
 
 
 def schedule_respawn_from_death(mob):

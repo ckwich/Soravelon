@@ -16,10 +16,11 @@ class TestServerStartup(unittest.TestCase):
             patch("evennia.TICKER_HANDLER", ticker),
             patch("world.content_revisions.load_applied_world_content"),
             patch("world.node_helpers.initialize_node_pool"),
-            patch("world.mob_spawner.initialize_spawn_records"),
+            patch("world.mob_spawner.reconcile_spawn_records") as spawn_reconcile,
         ):
             at_server_startstop.at_server_start()
 
+        spawn_reconcile.assert_not_called()
         callbacks = [call.kwargs["callback"] for call in ticker.add.call_args_list]
         self.assertEqual(len(callbacks), 8)
         self.assertTrue(all(callable(callback) for callback in callbacks))

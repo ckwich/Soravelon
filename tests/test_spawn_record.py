@@ -1,8 +1,9 @@
 """
 Tests for SpawnRecord lifecycle (world/mob_spawner.py).
 
-Covers SpawnRecord creation, spawn_tick processing, death hook scheduling,
-initialize_spawn_records idempotency, and named mob WorldEventLog integration.
+Covers spawn_tick processing, death hook scheduling, model contracts, and named
+mob WorldEventLog integration. Database-backed content lifecycle tests cover
+exact SpawnRecord materialization and reconciliation.
 Uses unittest.TestCase + MagicMock (no Evennia DB required).
 
 Django setup required for model introspection tests (TestSpawnRecordModel).
@@ -251,57 +252,6 @@ class TestProcessSpawnRecord(unittest.TestCase):
         _process_spawn_record(record)
 
         record.delete.assert_called_once()
-
-
-class TestInitializeSpawnRecords(unittest.TestCase):
-    """initialize_spawn_records creates entries for rooms with spawn_definitions."""
-
-    @patch("world.models.SpawnRecord.objects")
-    @patch("world.mob_spawner.timezone")
-    @patch("world.mob_spawner.search_objects_by_exact_tag")
-    def test_creates_records_per_definition(self, mock_search, mock_tz, mock_sr_objects):
-        """Each spawn_definition gets a SpawnRecord via get_or_create."""
-        from world.mob_spawner import initialize_spawn_records
-
-        now = datetime(2026, 1, 1, 12, 0, 0)
-        mock_tz.now.return_value = now
-
-        room = _make_room(
-            room_id=100,
-            spawn_defs=[
-                {"mob": "Wolf", "is_named": False},
-                {"mob": "Bear", "is_named": True},
-            ],
-        )
-        room.tags.get.return_value = None  # not a zone_object
-        mock_search.return_value = [room]
-
-        mock_sr_objects.get_or_create.return_value = (MagicMock(), True)
-
-        initialize_spawn_records()
-
-        self.assertEqual(mock_sr_objects.get_or_create.call_count, 2)
-
-    @patch("world.models.SpawnRecord.objects")
-    @patch("world.mob_spawner.timezone")
-    @patch("world.mob_spawner.search_objects_by_exact_tag")
-    def test_existing_records_preserved(self, mock_search, mock_tz, mock_sr_objects):
-        """Existing records are not overwritten (idempotent)."""
-        from world.mob_spawner import initialize_spawn_records
-
-        mock_tz.now.return_value = MagicMock()
-
-        room = _make_room(spawn_defs=[{"mob": "Wolf"}])
-        room.tags.get.return_value = None
-        mock_search.return_value = [room]
-
-        # Existing record
-        mock_sr_objects.get_or_create.return_value = (MagicMock(), False)
-
-        initialize_spawn_records()
-
-        # Still called, but was_created=False means no new record
-        mock_sr_objects.get_or_create.assert_called_once()
 
 
 class TestNamedMobDeath(unittest.TestCase):

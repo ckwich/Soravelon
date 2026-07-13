@@ -468,6 +468,12 @@ def build():
 
 
 class TestWorldContentApplyLifecycle(EvenniaTest):
+    def setUp(self):
+        super().setUp()
+        from evennia.accounts.models import AccountDB
+
+        AccountDB.objects.filter(id=1).update(is_superuser=True)
+
     def _baseline_and_target(self):
         from world.area_builder import AreaBuilder
         from world.content_compiler import compile_world_sources
@@ -513,6 +519,163 @@ def build():
         self.assertEqual(repeated.state, "no-op")
         self.assertEqual(repeated.revision.id, result.revision.id)
         self.assertEqual(WorldContentRevision.objects.count(), 2)
+
+    def test_apply_and_rollback_reindex_spawn_slots_without_losing_identity(self):
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import (
+            apply_world_content,
+            initialize_world_content,
+            rollback_world_content,
+        )
+        from world.models import SpawnRecord
+
+        old_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("spawn_reindex")
+    area.zone(name="Spawn Reindex", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A living place.")
+    area.spawn(room, "rat")
+    area.spawn(room, "wolf")
+    return area.build()
+"""
+        target_source = old_source.replace(
+            '    area.spawn(room, "rat")\n    area.spawn(room, "wolf")',
+            '    area.spawn(room, "wolf")\n    area.spawn(room, "rat")',
+        )
+        old = compile_world_sources({"world/areas/spawns.py": old_source}).manifest
+        target = compile_world_sources(
+            {"world/areas/spawns.py": target_source}
+        ).manifest
+        assert old is not None and target is not None
+        baseline = initialize_world_content(old, git_commit="a" * 40).revision
+        original_ids = {
+            record.mob_template_key: record.pk
+            for record in SpawnRecord.objects.order_by("spawn_index")
+        }
+
+        apply_world_content(target, git_commit="b" * 40)
+
+        applied = list(SpawnRecord.objects.order_by("spawn_index"))
+        self.assertEqual(
+            [(record.mob_template_key, record.pk) for record in applied],
+            [("wolf", original_ids["wolf"]), ("rat", original_ids["rat"])],
+        )
+
+        rollback_world_content(baseline.pk, git_commit="c" * 40)
+
+        rolled_back = list(SpawnRecord.objects.order_by("spawn_index"))
+        self.assertEqual(
+            [(record.mob_template_key, record.pk) for record in rolled_back],
+            [("rat", original_ids["rat"]), ("wolf", original_ids["wolf"])],
+        )
+
+    def test_apply_removes_retired_empty_spawn_slot(self):
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import apply_world_content, initialize_world_content
+        from world.models import SpawnRecord
+
+        old_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("spawn_retire")
+    area.zone(name="Spawn Retire", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A living place.")
+    area.spawn(room, "rat")
+    area.spawn(room, "wolf")
+    return area.build()
+"""
+        target_source = old_source.replace('    area.spawn(room, "rat")\n', "")
+        old = compile_world_sources({"world/areas/spawns.py": old_source}).manifest
+        target = compile_world_sources(
+            {"world/areas/spawns.py": target_source}
+        ).manifest
+        assert old is not None and target is not None
+        initialize_world_content(old, git_commit="a" * 40)
+
+        apply_world_content(target, git_commit="b" * 40)
+
+        self.assertEqual(
+            list(
+                SpawnRecord.objects.values_list(
+                    "mob_template_key", "spawn_index"
+                )
+            ),
+            [("wolf", 0)],
+        )
+
+    def test_apply_retires_only_live_mob_owned_by_removed_spawn_slot(self):
+        from evennia import create_object
+        from evennia.objects.models import ObjectDB
+        from typeclasses.mobs import SoravelonMob
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import apply_world_content, initialize_world_content
+        from world.models import SpawnRecord
+        from world.world_state import _as_typeclass
+
+        old_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("spawn_owned_retire")
+    area.zone(name="Spawn Retire", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A living place.")
+    area.spawn(room, "rat")
+    return area.build()
+"""
+        target_source = old_source.replace('    area.spawn(room, "rat")\n', "")
+        old = compile_world_sources({"world/areas/spawns.py": old_source}).manifest
+        target = compile_world_sources(
+            {"world/areas/spawns.py": target_source}
+        ).manifest
+        assert old is not None and target is not None
+        initialize_world_content(old, git_commit="a" * 40)
+        record = SpawnRecord.objects.get()
+        room = _as_typeclass(ObjectDB.objects.get(pk=record.room_id))
+        mob = create_object(SoravelonMob, key="rat", location=room)
+        mob.db.spawn_record_id = record.pk
+        mob_id = mob.pk
+        record.active_mob_ids = [mob_id]
+        record.save(update_fields=("active_mob_ids",))
+
+        apply_world_content(target, git_commit="b" * 40)
+
+        self.assertFalse(ObjectDB.objects.filter(pk=mob_id).exists())
+        self.assertFalse(SpawnRecord.objects.exists())
+
+    def test_apply_refuses_to_retire_object_without_spawn_slot_ownership(self):
+        from evennia import create_object
+        from evennia.objects.models import ObjectDB
+        from typeclasses.objects import Object
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import (
+            ContentApplyError,
+            apply_world_content,
+            initialize_world_content,
+        )
+        from world.models import SpawnRecord
+
+        old_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("spawn_foreign_retire")
+    area.zone(name="Spawn Retire", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A living place.")
+    area.spawn(room, "rat")
+    return area.build()
+"""
+        target_source = old_source.replace('    area.spawn(room, "rat")\n', "")
+        old = compile_world_sources({"world/areas/spawns.py": old_source}).manifest
+        target = compile_world_sources(
+            {"world/areas/spawns.py": target_source}
+        ).manifest
+        assert old is not None and target is not None
+        initialize_world_content(old, git_commit="a" * 40)
+        record = SpawnRecord.objects.get()
+        unrelated = create_object(Object, key="not slot owned")
+        record.active_mob_ids = [unrelated.pk]
+        record.save(update_fields=("active_mob_ids",))
+
+        with self.assertRaisesRegex(ContentApplyError, "does not prove slot ownership"):
+            apply_world_content(target, git_commit="b" * 40)
+
+        self.assertTrue(ObjectDB.objects.filter(pk=unrelated.pk).exists())
+        self.assertTrue(SpawnRecord.objects.filter(pk=record.pk).exists())
 
     def test_noop_apply_rehydrates_manifest_registries_after_process_restart(self):
         from world import zone_registry
@@ -758,12 +921,13 @@ def build():
         with (
             patch("world.content_revisions.load_applied_world_content") as load_applied,
             patch("world.node_helpers.initialize_node_pool"),
-            patch("world.mob_spawner.initialize_spawn_records"),
+            patch("world.mob_spawner.reconcile_spawn_records") as spawn_reconcile,
             patch("evennia.TICKER_HANDLER.add"),
         ):
             at_server_start()
 
         load_applied.assert_called_once()
+        spawn_reconcile.assert_not_called()
         module = __import__(
             "server.conf.at_server_startstop", fromlist=["_load_all_zones"]
         )
@@ -809,6 +973,54 @@ def build():
             ],
             [],
         )
+
+    def test_fresh_initialization_materializes_spawn_slots_before_startup(self):
+        from server.conf.at_server_startstop import at_server_start
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import initialize_world_content
+        from world.models import SpawnRecord
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("fresh_spawns")
+    area.zone(name="Fresh Spawns", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A living place.")
+    area.spawn(room, "ash_wolf", count_min=1, count_max=2)
+    return area.build()
+"""
+        manifest = compile_world_sources(
+            {"world/areas/fresh_spawns.py": source}
+        ).manifest
+        assert manifest is not None
+
+        initialize_world_content(manifest, git_commit="a" * 40)
+
+        record = SpawnRecord.objects.get()
+        self.assertEqual(record.mob_template_key, "ash_wolf")
+        self.assertEqual(record.spawn_index, 0)
+        self.assertEqual(record.active_mob_ids, [])
+        self.assertIsNotNone(record.respawn_at)
+
+        with (
+            patch(
+                "world.content_revisions.compile_world_manifest",
+                return_value=SimpleNamespace(manifest=manifest, diagnostics=()),
+            ),
+            patch("evennia.TICKER_HANDLER.add"),
+            patch("world.node_helpers.initialize_node_pool"),
+            CaptureQueriesContext(connection) as queries,
+        ):
+            at_server_start()
+
+        writes = [
+            query["sql"]
+            for query in queries.captured_queries
+            if query["sql"]
+            .lstrip()
+            .upper()
+            .startswith(("INSERT", "UPDATE", "DELETE", "REPLACE"))
+        ]
+        self.assertEqual(writes, [])
 
     def test_fresh_initialization_prepares_evennia_before_atomic_content_apply(self):
         from world.content_compiler import compile_world_sources

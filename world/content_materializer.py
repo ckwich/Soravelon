@@ -176,6 +176,7 @@ def materialize_world_manifest(
     )
 
     zone_ids = []
+    authored_rooms = []
     reconciliation = {
         "rooms_deleted": 0,
         "exits_deleted": 0,
@@ -195,6 +196,8 @@ def materialize_world_manifest(
             result = getattr(builder, operation.method)(*arguments, **keyword_arguments)
             if operation.method in {"room", "mob"}:
                 references[(operation.method, operation.arguments[0])] = result
+                if operation.method == "room":
+                    authored_rooms.append(result)
             elif operation.method == "npc":
                 references[("npc", operation.arguments[1])] = result
             elif operation.method == "build":
@@ -217,6 +220,15 @@ def materialize_world_manifest(
             "Social topology edges remain unresolved: " + ", ".join(identifiers)
         )
     _finalize_cross_zone_exits()
+    from world.mob_spawner import reconcile_spawn_records
+
+    spawn_report = reconcile_spawn_records(authored_rooms)
+    reconciliation.update(
+        {
+            f"spawn_records_{action}": count
+            for action, count in spawn_report.items()
+        }
+    )
     return ContentMaterializationReport(
         zones=tuple(zone_ids),
         removed_zones=removed_zones,

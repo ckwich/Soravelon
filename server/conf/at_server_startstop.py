@@ -118,11 +118,6 @@ def at_server_start():
     from world.node_helpers import initialize_node_pool
     initialize_node_pool()
 
-    # Create SpawnRecord entries for all spawn_definitions (idempotent, D-07)
-    from world.mob_spawner import initialize_spawn_records
-    initialize_spawn_records()
-
-
 def at_server_stop():
     """
     This is called just before the server is shut down, regardless
