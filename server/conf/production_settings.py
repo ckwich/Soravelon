@@ -108,11 +108,41 @@ if DEBUG:
 ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS", required=True)
 if "*" in ALLOWED_HOSTS:
     raise RuntimeError("ALLOWED_HOSTS may not use a wildcard in production.")
-CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS", required=True)
 if any(
-    urlsplit(origin).scheme != "https" or not urlsplit(origin).netloc
-    for origin in CSRF_TRUSTED_ORIGINS
+    "://" in host
+    or "@" in host
+    or "/" in host
+    or "?" in host
+    or "#" in host
+    or any(character.isspace() for character in host)
+    for host in ALLOWED_HOSTS
 ):
+    raise RuntimeError(
+        "ALLOWED_HOSTS must contain host names, not URLs or credentials."
+    )
+CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS", required=True)
+
+
+def _is_absolute_https_origin(origin: str) -> bool:
+    try:
+        parsed = urlsplit(origin)
+        parsed.port
+    except ValueError:
+        return False
+    return all(
+        (
+            parsed.scheme == "https",
+            parsed.hostname is not None,
+            parsed.username is None,
+            parsed.password is None,
+            parsed.path in {"", "/"},
+            not parsed.query,
+            not parsed.fragment,
+        )
+    )
+
+
+if any(not _is_absolute_https_origin(origin) for origin in CSRF_TRUSTED_ORIGINS):
     raise RuntimeError(
         "CSRF_TRUSTED_ORIGINS must contain only absolute HTTPS origins."
     )
@@ -209,7 +239,7 @@ DATABASES = {
         "USER": _env("DATABASE_USER", required=True),
         "PASSWORD": _production_database_password(),
         "HOST": _env("DATABASE_HOST", "127.0.0.1"),
-        "PORT": _env("DATABASE_PORT", "5432"),
+        "PORT": str(_env_port("DATABASE_PORT", 5432)),
     }
 }
 

@@ -185,6 +185,28 @@ class TestProductionEnvironmentValidation(unittest.TestCase):
                 "HTTPS",
             ),
             (
+                "url-shaped allowed host",
+                {"ALLOWED_HOSTS": "https://game.example.test"},
+                (),
+                "host names",
+            ),
+            (
+                "csrf origin with credentials",
+                {"CSRF_TRUSTED_ORIGINS": "https://user@game.example.test"},
+                (),
+                "HTTPS origins",
+            ),
+            (
+                "csrf origin with path and query",
+                {
+                    "CSRF_TRUSTED_ORIGINS": (
+                        "https://game.example.test/login?continue=admin"
+                    )
+                },
+                (),
+                "HTTPS origins",
+            ),
+            (
                 "sqlite production database",
                 {"DATABASE_ENGINE": "sqlite3"},
                 (),
@@ -195,6 +217,12 @@ class TestProductionEnvironmentValidation(unittest.TestCase):
                 {"DATABASE_PASSWORD": "replace-me"},
                 (),
                 "DATABASE_PASSWORD",
+            ),
+            (
+                "out-of-range database port",
+                {"DATABASE_PORT": "70000"},
+                (),
+                "DATABASE_PORT",
             ),
             (
                 "unsafe test database",
