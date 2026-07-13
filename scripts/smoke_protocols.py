@@ -251,7 +251,8 @@ def verify_websocket(*, host: str, port: int, timeout: float) -> str:
         hashlib.sha1(
             (websocket_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode(
                 "ascii"
-            )
+            ),
+            usedforsecurity=False,
         ).digest()
     ).decode("ascii")
     request = (
