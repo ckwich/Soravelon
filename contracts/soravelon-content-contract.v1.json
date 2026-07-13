@@ -1,0 +1,1060 @@
+{
+  "contract_version": "1.0.0",
+  "enums": {
+    "action_types": [
+      "add_room_flag",
+      "despawn_self",
+      "echo",
+      "give_item",
+      "give_scales",
+      "give_skill_xp",
+      "grant_access",
+      "grant_practice",
+      "learn_recipe",
+      "log_world_event",
+      "modify_attunement",
+      "modify_node_failure",
+      "modify_standing",
+      "open_dialogue",
+      "record_social_event",
+      "release_social_claim",
+      "set_quest_flag",
+      "spawn_mob",
+      "take_item",
+      "teleport",
+      "teleport_to_mob"
+    ],
+    "continents": [
+      "sorath",
+      "varath",
+      "veluana"
+    ],
+    "directions": [
+      "down",
+      "east",
+      "in",
+      "north",
+      "northeast",
+      "northwest",
+      "out",
+      "south",
+      "southeast",
+      "southwest",
+      "up",
+      "west"
+    ],
+    "faction_territories": [
+      "contested",
+      "hidden",
+      "imperial",
+      "kauroran",
+      "neutral",
+      "warden"
+    ],
+    "node_types": [
+      "cognitive",
+      "gravity",
+      "resonance",
+      "temporal",
+      "thermal"
+    ],
+    "objective_type_aliases": {
+      "craft": "collect",
+      "discover": "investigate",
+      "escort": "deliver",
+      "gather": "collect",
+      "recover": "collect",
+      "visit": "investigate"
+    },
+    "objective_types": [
+      "collect",
+      "deliver",
+      "investigate",
+      "kill",
+      "social_interaction",
+      "talk_to"
+    ],
+    "room_types": [
+      "building",
+      "cave",
+      "clearing",
+      "generic",
+      "node_center",
+      "path",
+      "ruins",
+      "underground"
+    ],
+    "social_edge_types": [
+      "archive_copy",
+      "criminal_whisper",
+      "direct_witness",
+      "family_letter",
+      "guild_courier",
+      "inn_traveler",
+      "market_route",
+      "node_response",
+      "official_report",
+      "pilgrimage",
+      "warden_report"
+    ],
+    "social_node_types": [
+      "archive",
+      "caravan",
+      "crew",
+      "faction",
+      "gathering",
+      "guild",
+      "household",
+      "institution",
+      "npc",
+      "player",
+      "route",
+      "settlement",
+      "shop",
+      "zone"
+    ],
+    "zone_types": [
+      "ancient_forest",
+      "coastal",
+      "frontier",
+      "imperial_city",
+      "mountain",
+      "node_active",
+      "plains",
+      "underground"
+    ]
+  },
+  "grammar": {
+    "builder_class": "world.area_builder.AreaBuilder",
+    "forbidden_runtime_handlers": [
+      "attributes",
+      "db",
+      "scripts",
+      "tags"
+    ],
+    "literal_value_schema": {
+      "keyword_unpacking": false,
+      "maps_require_literal_keys": true,
+      "one_of": [
+        "null",
+        "boolean",
+        "number",
+        "string",
+        "literal-list",
+        "literal-map",
+        "symbolic-reference"
+      ]
+    },
+    "source_call_schema": {
+      "additional_properties": false,
+      "required": [
+        "method",
+        "arguments",
+        "keyword_arguments",
+        "source_path",
+        "line",
+        "column"
+      ]
+    },
+    "supported_operations": {
+      "build": {
+        "parameters": []
+      },
+      "custom_command": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "target_obj_or_id",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "key",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "action_dict",
+            "required": true
+          },
+          {
+            "default": false,
+            "kind": "positional_or_keyword",
+            "name": "visible_in_exits",
+            "required": false
+          },
+          {
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "aliases",
+            "required": false
+          },
+          {
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "desc",
+            "required": false
+          }
+        ]
+      },
+      "exit": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "from_room",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "to_room",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "direction",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "flight_point": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "room_or_id",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "point_id",
+            "required": true
+          },
+          {
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "name",
+            "required": false
+          }
+        ]
+      },
+      "flight_route": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "point_a_id",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "point_b_id",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "base_fare",
+            "required": true
+          },
+          {
+            "default": 30,
+            "kind": "positional_or_keyword",
+            "name": "leg_duration",
+            "required": false
+          },
+          {
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "echoes",
+            "required": false
+          }
+        ]
+      },
+      "gathering_pool": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "pool_type",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "rooms",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "materials",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "initial_room_state": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "room",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "flags",
+            "required": true
+          }
+        ]
+      },
+      "item": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "item_id",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "loot_table_override": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "mob_type",
+            "required": true
+          },
+          {
+            "default": "combat",
+            "kind": "keyword_only",
+            "name": "relevant_skill",
+            "required": false
+          },
+          {
+            "default": 0.7,
+            "kind": "keyword_only",
+            "name": "base_drop_chance",
+            "required": false
+          },
+          {
+            "default": null,
+            "kind": "keyword_only",
+            "name": "drops",
+            "required": false
+          }
+        ]
+      },
+      "lore_fragment": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "fragment_id",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "room",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "material": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "material",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "medic": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "npc",
+            "required": true
+          }
+        ]
+      },
+      "mob": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "mob_key",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "room",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "named_mob": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "mob_instance_id",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "room",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "node": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "center_room",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "radius",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "npc": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "room",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "npc_id",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "patrol": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "mob_key",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "route_room_ids",
+            "required": true
+          },
+          {
+            "default": "resume",
+            "kind": "positional_or_keyword",
+            "name": "interrupt_mode",
+            "required": false
+          },
+          {
+            "default": 0,
+            "kind": "positional_or_keyword",
+            "name": "encounter_delay",
+            "required": false
+          },
+          {
+            "default": 0,
+            "kind": "positional_or_keyword",
+            "name": "echo_radius",
+            "required": false
+          },
+          {
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "move_echo",
+            "required": false
+          },
+          {
+            "default": true,
+            "kind": "positional_or_keyword",
+            "name": "combat_enabled",
+            "required": false
+          }
+        ]
+      },
+      "practice_opportunity": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "opportunity_id",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "room",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "quest": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "quest_id",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "room": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "room_id",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "room_role": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "room",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "role",
+            "required": true
+          }
+        ]
+      },
+      "social_edge": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "source_node_key",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "target_node_key",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "social_node": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "node_type",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "identifier",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "spawn": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "room",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "mob",
+            "required": true
+          },
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      },
+      "trigger": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "source_obj_or_id",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "event",
+            "required": true
+          },
+          {
+            "kind": "positional_or_keyword",
+            "name": "actions",
+            "required": true
+          },
+          {
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "trigger_id",
+            "required": false
+          },
+          {
+            "default": false,
+            "kind": "positional_or_keyword",
+            "name": "once_per_character",
+            "required": false
+          },
+          {
+            "default": 0,
+            "kind": "positional_or_keyword",
+            "name": "cooldown_seconds",
+            "required": false
+          }
+        ]
+      },
+      "vendor": {
+        "parameters": [
+          {
+            "kind": "positional_or_keyword",
+            "name": "npc",
+            "required": true
+          },
+          {
+            "default": null,
+            "kind": "keyword_only",
+            "name": "accepts",
+            "required": false
+          },
+          {
+            "default": null,
+            "kind": "keyword_only",
+            "name": "item_ids",
+            "required": false
+          },
+          {
+            "default": null,
+            "kind": "keyword_only",
+            "name": "exclude_item_ids",
+            "required": false
+          },
+          {
+            "default": null,
+            "kind": "keyword_only",
+            "name": "faction",
+            "required": false
+          }
+        ]
+      },
+      "zone": {
+        "parameters": [
+          {
+            "kind": "var_keyword",
+            "name": "kwargs",
+            "required": false
+          }
+        ]
+      }
+    },
+    "symbolic_reference_kinds": [
+      "mob",
+      "npc",
+      "room"
+    ]
+  },
+  "schema": "soravelon.area-content-contract.v1",
+  "stable_ids": {
+    "items": [
+      "amulet_of_warding",
+      "antidote_potion",
+      "ashreach_relay_satchel",
+      "bait",
+      "bandage",
+      "basic_healing_draught",
+      "bone_talisman",
+      "cloak_of_shadows",
+      "cloth_robes",
+      "coastal_purchase_order",
+      "commissioned_blade",
+      "contraband_package",
+      "cooked_meat",
+      "fishing_rod",
+      "hardened_leather_boots",
+      "hardened_leather_cap",
+      "hardened_leather_gloves",
+      "hardened_leather_leggings",
+      "hardened_leather_vest",
+      "hatchet",
+      "healing_draught",
+      "hearty_stew",
+      "herb_poultice",
+      "hide_armor",
+      "iron_band",
+      "iron_bow",
+      "iron_breastplate",
+      "iron_buckler",
+      "iron_chainmail",
+      "iron_dagger",
+      "iron_gauntlets",
+      "iron_greataxe",
+      "iron_greatsword",
+      "iron_greaves",
+      "iron_helm",
+      "iron_kite_shield",
+      "iron_mace",
+      "iron_sabatons",
+      "iron_spear",
+      "iron_staff",
+      "iron_sword",
+      "leather_boots",
+      "leather_bracers",
+      "leather_cap",
+      "leather_gloves",
+      "leather_leggings",
+      "leather_mask",
+      "leather_vest",
+      "lighthouse_oil_crate",
+      "lockpick",
+      "minor_healing_potion",
+      "minor_stamina_potion",
+      "mithril_bow",
+      "mithril_bracers",
+      "mithril_breastplate",
+      "mithril_buckler",
+      "mithril_dagger",
+      "mithril_faceguard",
+      "mithril_gauntlets",
+      "mithril_greataxe",
+      "mithril_greatsword",
+      "mithril_greaves",
+      "mithril_helm",
+      "mithril_kite_shield",
+      "mithril_mace",
+      "mithril_ring",
+      "mithril_sabatons",
+      "mithril_staff",
+      "mithril_sword",
+      "mountain_tonic",
+      "outstanding_debt_token",
+      "patrol_tonic_request",
+      "pickaxe",
+      "rangers_cloak",
+      "rare_alpine_ingredient",
+      "rare_herb_bundle",
+      "resonance_sample",
+      "ring_of_acuity",
+      "shadowsilk_boots",
+      "shadowsilk_gloves",
+      "shadowsilk_hood",
+      "shadowsilk_leggings",
+      "shadowsilk_tunic",
+      "sickle",
+      "signet_ring",
+      "silver_pendant",
+      "skinning_knife",
+      "spiced_fish",
+      "stamina_tonic",
+      "steel_bow",
+      "steel_bracers",
+      "steel_breastplate",
+      "steel_buckler",
+      "steel_dagger",
+      "steel_gauntlets",
+      "steel_greataxe",
+      "steel_greatsword",
+      "steel_greaves",
+      "steel_helm",
+      "steel_kite_shield",
+      "steel_mace",
+      "steel_sabatons",
+      "steel_staff",
+      "steel_sword",
+      "steel_visor",
+      "stolen_artifact",
+      "trail_rations",
+      "travelers_cloak",
+      "warden_field_report",
+      "warden_supplies"
+    ],
+    "materials": [
+      "archmoss",
+      "ash_wolf_pelt",
+      "ashgrass_fiber",
+      "bellcap_mushroom",
+      "bench_slate",
+      "blackglass_shard",
+      "blackwater_char",
+      "boar_hide",
+      "bone_lure",
+      "braided_scale_shed",
+      "bramble_berry",
+      "cantera_amber",
+      "cantera_timber",
+      "causeway_shard",
+      "cave_eel",
+      "cave_moss",
+      "cave_mushroom",
+      "cavern_whitefish",
+      "charter_bark",
+      "charter_reed",
+      "circle_bamboo",
+      "cistern_salt",
+      "coldvein_stone",
+      "common_herb",
+      "copper_ore",
+      "coral_fragment",
+      "drake_scale",
+      "driftwood",
+      "dust_hound_hide",
+      "flint_shard",
+      "greyteeth_iron",
+      "haul_chain_link",
+      "haul_rope_fiber",
+      "hearthroot",
+      "horncap_moss",
+      "iron_ore",
+      "ironvein_ore",
+      "ironwood_log",
+      "keeper_reed",
+      "kiai_blossom",
+      "memorial_chalk",
+      "mileglass_lichen",
+      "milestone_iron",
+      "minevermin_hide",
+      "mithril_ore",
+      "moonpetal",
+      "mountain_herb",
+      "nightcap_mushroom",
+      "oak_log",
+      "old_ring_basalt",
+      "pala_bark",
+      "pala_sap",
+      "pine_log",
+      "pressure_quartz",
+      "reef_kelp",
+      "reef_silverjack",
+      "reefcrawler_shell",
+      "reefstone",
+      "relay_scrap",
+      "reservoir_calcite",
+      "resonance_crystal",
+      "resonance_shard",
+      "ridgecat_pelt",
+      "river_trout",
+      "roadsage",
+      "rough_leather",
+      "runoff_cress",
+      "salt",
+      "saltfruit",
+      "saltpalm_wood",
+      "sea_glass",
+      "shadow_bass",
+      "shelf_fungus",
+      "shellbean",
+      "shore_drake_hide",
+      "shrine_silt",
+      "silverfin_trout",
+      "slag_hound_hide",
+      "snowmelt_trout",
+      "spider_silk",
+      "stagcrown_hide",
+      "starbloom",
+      "steel_ore",
+      "sunleaf",
+      "sunscale_snapper",
+      "survey_bronze",
+      "thornroot",
+      "tide_eel",
+      "tide_mint",
+      "wild_herb",
+      "wild_mushroom",
+      "windroot",
+      "wolfsbane"
+    ],
+    "mob_templates": [
+      "alpha_ash_wolf",
+      "ash_wolf",
+      "ashreach_bandit",
+      "bandit",
+      "basalt_tortoise",
+      "bell_echo",
+      "blackwater_eel",
+      "blighted_stag",
+      "camp_overseer",
+      "cantera_wolf",
+      "captain_helvik_drenn",
+      "captain_wrack",
+      "causeway_scavenger",
+      "cave_spider",
+      "charter_looter",
+      "checkpoint_enforcer",
+      "claim_jumper",
+      "cliff_harpy",
+      "coastal_raider",
+      "corrupted_treant",
+      "culvert_lurker",
+      "cutface_burrower",
+      "deadcamp_raider",
+      "dust_beetle",
+      "dust_hound",
+      "forest_bandit",
+      "forest_spider",
+      "grandmother_spider",
+      "greyteeth_scavenger",
+      "haul_construct",
+      "heartwood_ancient",
+      "loose_oreling",
+      "marker_bandit",
+      "minevermin",
+      "mountain_cat",
+      "ninth_reservoir_warden",
+      "padded_practice_dummy",
+      "pattern_guardian",
+      "pickpocket",
+      "plains_viper",
+      "poacher_trapper",
+      "poachmaster_hadrik_vey",
+      "quarry_thug",
+      "rat",
+      "reef_raider",
+      "reefcrawler",
+      "registrar_oric_vane",
+      "relic_raider",
+      "reth_eagle",
+      "ridgecat",
+      "ring_moth_swarm",
+      "rock_troll",
+      "ruin_jackal",
+      "salt_lurker",
+      "salvager_cutthroat",
+      "scarwarden_saelen_dross",
+      "scree_harrier",
+      "sea_serpent",
+      "sewer_rat",
+      "shard_swarm",
+      "shore_crab",
+      "shore_drake",
+      "slag_hound",
+      "smuggler",
+      "steppe_hawk",
+      "stone_golem_fragment",
+      "stone_listening_frame",
+      "stonewake_bailiff_torren",
+      "stormgoat",
+      "surveyor_maelik_dross",
+      "thug",
+      "tideback_lizard",
+      "trophy_hound",
+      "twelve_tine_hart",
+      "underhall_skitter",
+      "vine_creeper",
+      "void_wisp",
+      "weighted_sparring_frame",
+      "wild_boar",
+      "windcut_eagle",
+      "wolf"
+    ],
+    "skills": [
+      "alchemy",
+      "animal_handling",
+      "appraisal",
+      "beast_training",
+      "climbing",
+      "cooking",
+      "engineering",
+      "first_aid",
+      "fishing",
+      "foraging",
+      "herbalism",
+      "intimidation",
+      "investigation",
+      "leatherworking",
+      "lockpicking",
+      "mining",
+      "navigation",
+      "node_reading",
+      "persuasion",
+      "reflexes",
+      "scholarship",
+      "skinning",
+      "smithing",
+      "stealth",
+      "survival",
+      "swimming",
+      "tracking",
+      "weapon_axes",
+      "weapon_blades",
+      "weapon_bows",
+      "weapon_hafted",
+      "weapon_polearms",
+      "weapon_shields",
+      "weapon_staves",
+      "weapon_thrown",
+      "weapon_unarmed",
+      "woodcutting"
+    ]
+  },
+  "validation_rules": {
+    "cross_zone_room_reference_pattern": "^[a-z0-9][a-z0-9_]*:[a-z0-9][a-z0-9_]*$",
+    "model_mutation_authority": "none",
+    "network_required": false,
+    "runtime_identifier_pattern": "^[a-z0-9][a-z0-9_]*$",
+    "unknown_identifier_policy": "reject-with-source-location",
+    "unknown_operation_policy": "reject-file-read-only"
+  }
+}
