@@ -741,10 +741,13 @@ class TestServerStartLoadsAreasDir(EvenniaTestMixin, TransactionTestCase):
 
         from pathlib import Path
         from world.content_compiler import compile_world_manifest
+        from world.content_materializer import materialize_world_manifest
         from world.content_runtime import verify_runtime_manifest
 
         manifest = compile_world_manifest(Path("world/areas")).manifest
         self.assertIsNotNone(manifest)
+        replay = materialize_world_manifest(manifest)
+        self.assertEqual(set(replay.zones), {zone.zone_id for zone in manifest.zones})
         verification = verify_runtime_manifest(manifest)
         self.maxDiff = None
         self.assertEqual(

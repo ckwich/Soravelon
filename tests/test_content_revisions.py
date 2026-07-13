@@ -356,3 +356,38 @@ def build():
         self.assertEqual(
             ensure_apply_occupancy_allowed(plan, maintenance_approved=False), ()
         )
+
+
+class TestWorldContentManifestMaterializer(EvenniaTest):
+    def test_manifest_replay_updates_and_reconciles_without_importing_source(self):
+        from world.area_builder import AreaBuilder
+        from world.content_compiler import compile_world_sources
+        from world.content_materializer import materialize_world_manifest
+        from world.content_runtime import verify_runtime_manifest
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("replay")
+    area.zone(name="Replay", zone_type="frontier", continent="varath")
+    entry = area.room("entry", name="Entry", desc="Updated threshold.")
+    area.npc(entry, "keeper", name="Keeper", faction="wardens")
+    return area.build()
+"""
+        area = AreaBuilder("replay")
+        area.zone(name="Replay", zone_type="frontier", continent="varath")
+        entry = area.room("entry", name="Entry", desc="Old threshold.")
+        area.room("removed", name="Removed", desc="Removed room.")
+        area.npc(entry, "keeper", name="Keeper", faction="wardens")
+        area.build()
+        manifest = compile_world_sources({"world/areas/replay.py": source}).manifest
+        assert manifest is not None
+
+        report = materialize_world_manifest(manifest)
+        verification = verify_runtime_manifest(manifest)
+
+        entry.refresh_from_db()
+        self.assertEqual(entry.db.desc, "Updated threshold.")
+        self.assertEqual(report["zones"], ("replay",))
+        self.assertEqual(report["reconciled"]["rooms_deleted"], 1)
+        self.assertEqual(verification.diagnostics, ())
+        self.assertEqual(verification.verified_manifest_hash, manifest.manifest_hash)
