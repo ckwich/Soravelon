@@ -1258,6 +1258,7 @@ class AreaBuilder:
             "next_quest_id": kwargs.get("next_quest_id"),
             "prerequisite_quests": kwargs.get("prerequisite_quests", []),
             "one_chance": kwargs.get("one_chance", False),
+            "repeatable": kwargs.get("repeatable", False),
             # Social Web quest grammar metadata
             "incident_seed": kwargs.get("incident_seed"),
             "quest_archetype": kwargs.get("quest_archetype"),

@@ -570,6 +570,13 @@ class TestQuestStoredOnZone(AreaBuilderTestBase):
         self.assertEqual(len(quests), 1)
         self.assertEqual(quests[0]["quest_id"], "wolf_hunt")
         self.assertEqual(quests[0]["objective_count"], 30)
+        self.assertFalse(quests[0]["repeatable"])
+
+    def test_quest_repeatability_requires_explicit_authorship(self):
+        ab = self._make_builder()
+        ab.quest("faction_contract", repeatable=True)
+
+        self.assertTrue(ab._zone_obj.db.quest_definitions[0]["repeatable"])
 
     def test_quest_stores_prerequisite_quests(self):
         """Quest chains can be prerequisite-locked by authored quest IDs."""

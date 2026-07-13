@@ -207,6 +207,7 @@ class TestSocialQuestGrammarRegistry(unittest.TestCase):
         json.dumps(first)
         self.assertEqual(first["quest_id"], "sq_market_robbery_sella")
         self.assertEqual(first["quest_giver"], "npc_market_vendor_sella")
+        self.assertFalse(first["repeatable"])
         self.assertEqual(first["incident_seed"], "market_square_robbery")
         self.assertEqual(first["quest_archetype"], "trace_evidence_chain")
         self.assertIn("social_quest_context", first)

@@ -142,6 +142,64 @@ class TestAcceptQuest(unittest.TestCase):
         MockCQ.objects.create.assert_not_called()
 
     @patch("world.quest_engine.CharacterQuest")
+    def test_accept_rejects_completed_authored_quest_by_default(self, MockCQ):
+        """Authored stories do not become reward loops unless opted in."""
+        from world.quest_engine import accept_quest
+
+        char = MagicMock()
+        count_filter = MagicMock()
+        count_filter.count.return_value = 0
+
+        def filter_side_effect(**kwargs):
+            mock = MagicMock()
+            if kwargs.get("status") == "active" and "quest_id" not in kwargs:
+                return count_filter
+            mock.exists.return_value = kwargs.get("status") == "complete"
+            return mock
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+
+        ok, msg = accept_quest(
+            char,
+            "authored_story",
+            {"quest_id": "authored_story", "name": "An Authored Story"},
+        )
+
+        self.assertFalse(ok)
+        self.assertIn("already completed", msg)
+        MockCQ.objects.create.assert_not_called()
+
+    @patch("world.quest_engine.CharacterQuest")
+    def test_accept_allows_explicit_repeatable_quest_after_completion(self, MockCQ):
+        from world.quest_engine import accept_quest
+
+        char = MagicMock()
+        count_filter = MagicMock()
+        count_filter.count.return_value = 0
+
+        def filter_side_effect(**kwargs):
+            mock = MagicMock()
+            if kwargs.get("status") == "active" and "quest_id" not in kwargs:
+                return count_filter
+            mock.exists.return_value = kwargs.get("status") == "complete"
+            return mock
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+
+        ok, _ = accept_quest(
+            char,
+            "faction_contract",
+            {
+                "quest_id": "faction_contract",
+                "name": "Faction Contract",
+                "repeatable": True,
+            },
+        )
+
+        self.assertTrue(ok)
+        MockCQ.objects.create.assert_called_once()
+
+    @patch("world.quest_engine.CharacterQuest")
     def test_accept_rejects_already_active(self, MockCQ):
         """accept_quest rejects quest that is already active."""
         from world.quest_engine import accept_quest
@@ -294,6 +352,7 @@ class TestAcceptQuest(unittest.TestCase):
         already_active_qs = MagicMock()
         already_active_qs.exists.return_value = False
         complete_qs = MagicMock()
+        complete_qs.exists.return_value = False
         complete_qs.values_list.return_value = []
 
         def filter_side_effect(**kwargs):
@@ -332,6 +391,7 @@ class TestAcceptQuest(unittest.TestCase):
         already_active_qs = MagicMock()
         already_active_qs.exists.return_value = False
         complete_qs = MagicMock()
+        complete_qs.exists.return_value = False
         complete_qs.values_list.return_value = ["chain_step_one"]
 
         def filter_side_effect(**kwargs):
@@ -1391,7 +1451,7 @@ class TestGetAvailableQuestForNpc(unittest.TestCase):
     @patch("world.quest_engine.CharacterQuest")
     @patch("world.quest_engine._get_all_quest_specs")
     def test_repeatable_quest_re_offered_after_completion(self, mock_all_specs, MockCQ):
-        """Repeatable (non-one_chance) quest is offered again after completion."""
+        """An explicitly repeatable quest is offered again after completion."""
         from world.quest_engine import get_available_quest_for_npc
 
         npc = MagicMock()
@@ -1399,7 +1459,11 @@ class TestGetAvailableQuestForNpc(unittest.TestCase):
         char = MagicMock()
 
         mock_all_specs.return_value = [
-            {"quest_id": "q1", "quest_giver": "npc_barkeep"},
+            {
+                "quest_id": "q1",
+                "quest_giver": "npc_barkeep",
+                "repeatable": True,
+            },
         ]
 
         existing_qs = MagicMock()
@@ -1428,6 +1492,42 @@ class TestGetAvailableQuestForNpc(unittest.TestCase):
 
         self.assertIsNotNone(result)
         self.assertEqual(result["quest_id"], "q1")
+
+    @patch("world.quest_engine.CharacterQuest")
+    @patch("world.quest_engine._get_all_quest_specs")
+    def test_completed_authored_quest_is_not_reoffered_by_default(
+        self, mock_all_specs, MockCQ
+    ):
+        from world.quest_engine import get_available_quest_for_npc
+
+        npc = MagicMock()
+        npc.db.npc_id = "npc_barkeep"
+        char = MagicMock()
+        mock_all_specs.return_value = [
+            {"quest_id": "q1", "quest_giver": "npc_barkeep"},
+        ]
+
+        existing_qs = MagicMock()
+        active_qs = MagicMock()
+        active_qs.values_list.return_value = []
+        complete_qs = MagicMock()
+        complete_qs.values_list.return_value = ["q1"]
+        failed_qs = MagicMock()
+        failed_qs.values_list.return_value = []
+
+        def filter_side_effect(**kwargs):
+            if "status" not in kwargs:
+                return existing_qs
+            return {
+                "active": active_qs,
+                "complete": complete_qs,
+                "failed": failed_qs,
+            }.get(kwargs.get("status"), MagicMock())
+
+        MockCQ.objects.filter.side_effect = filter_side_effect
+        existing_qs.filter.side_effect = filter_side_effect
+
+        self.assertIsNone(get_available_quest_for_npc(npc, char))
 
     @patch("world.quest_engine.CharacterQuest")
     @patch("world.quest_engine._get_all_quest_specs")

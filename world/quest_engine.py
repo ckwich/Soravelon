@@ -280,12 +280,16 @@ def _quest_acceptance_error(character, quest_id, quest_spec):
             status="failed",
         ).exists():
             return "This quest is no longer available to you."
-        if CharacterQuest.objects.filter(
-            character=character,
-            quest_id=quest_id,
-            status="complete",
-        ).exists():
-            return "You have already completed this quest."
+
+    completed = CharacterQuest.objects.filter(
+        character=character,
+        quest_id=quest_id,
+        status="complete",
+    ).exists()
+    if completed and (
+        quest_spec.get("one_chance") or not quest_spec.get("repeatable", False)
+    ):
+        return "You have already completed this quest."
 
     if CharacterQuest.objects.filter(
         character=character,
@@ -314,7 +318,9 @@ def accept_quest(character, quest_id, quest_spec):
 
     Per D-01: stores character, quest_id, status=active, progress={}.
     Per D-02: rejects if 5 active quests exist.
-    Per D-03: rejects one_chance quest already failed or completed.
+    Per D-03: rejects one_chance quests already failed or completed.
+    Authored quests are nonrepeatable after completion unless explicitly marked
+    repeatable.
 
     Returns (bool, str).
     """
@@ -1334,8 +1340,11 @@ def get_available_quest_offers_for_npc(npc, character):
         if qid in active_ids:
             continue
 
-        # Skip if already complete AND one_chance (non-repeatable)
-        if qid in complete_ids and spec.get("one_chance"):
+        # Authored quests stay completed unless repeatability is explicit.
+        # one_chance is stricter and always wins if a malformed spec sets both.
+        if qid in complete_ids and (
+            spec.get("one_chance") or not spec.get("repeatable", False)
+        ):
             continue
 
         # Skip if one_chance and failed
