@@ -7,6 +7,26 @@ Wants=network-online.target postgresql.service
 Type=simple
 User=soravelon
 Group=soravelon
+CapabilityBoundingSet=
+LockPersonality=true
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectProc=invisible
+ProtectSystem=full
+RemoveIPC=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
 WorkingDirectory=/srv/soravelon
 EnvironmentFile=/etc/soravelon/soravelon.env
 Environment=PYTHONUNBUFFERED=1
@@ -24,7 +44,7 @@ KillMode=control-group
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=soravelon
-UMask=0027
+UMask=0077
 
 [Install]
 WantedBy=multi-user.target

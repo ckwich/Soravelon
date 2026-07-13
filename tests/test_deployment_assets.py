@@ -12,6 +12,36 @@ SERVICE_PATH = ROOT / "deploy" / "systemd" / "soravelon.service"
 
 
 class TestSystemdService(unittest.TestCase):
+    def test_systemd_sandboxes_the_network_service(self):
+        service = SERVICE_PATH.read_text()
+
+        required_directives = (
+            "CapabilityBoundingSet=",
+            "LockPersonality=true",
+            "NoNewPrivileges=true",
+            "PrivateDevices=true",
+            "PrivateTmp=true",
+            "ProtectClock=true",
+            "ProtectControlGroups=true",
+            "ProtectHome=true",
+            "ProtectHostname=true",
+            "ProtectKernelLogs=true",
+            "ProtectKernelModules=true",
+            "ProtectKernelTunables=true",
+            "ProtectProc=invisible",
+            "ProtectSystem=full",
+            "RemoveIPC=true",
+            "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6",
+            "RestrictNamespaces=true",
+            "RestrictRealtime=true",
+            "RestrictSUIDSGID=true",
+            "SystemCallArchitectures=native",
+            "UMask=0077",
+        )
+        for directive in required_directives:
+            with self.subTest(directive=directive):
+                self.assertIn(directive, service)
+
     def test_systemd_supervises_the_foreground_portal(self):
         service = SERVICE_PATH.read_text()
 
