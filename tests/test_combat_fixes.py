@@ -501,7 +501,13 @@ class TestTookDamageFlag(unittest.TestCase):
         target.ndb.took_damage_this_round = False
         target.ndb.active_effects = []
 
-        with patch("world.combat_engine.roll_crit", return_value=(False, 1.0)):
+        with (
+            patch("world.combat_engine.roll_crit", return_value=(False, 1.0)),
+            patch(
+                "world.weapon_skills.weapon_skill_damage_bonus_for_attack",
+                return_value=0.0,
+            ),
+        ):
             resolve_basic_attack(attacker, target)
 
         self.assertTrue(target.ndb.took_damage_this_round)

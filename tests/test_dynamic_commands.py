@@ -54,22 +54,33 @@ def _practice_dependencies():
     world_state.accumulate_domain_xp = MagicMock()
     quest_engine = types.ModuleType("world.quest_engine")
     quest_engine.check_practice_objectives = MagicMock()
+    progression_engine = types.ModuleType("world.progression_engine")
+    progression_engine.record_progression_event = MagicMock(
+        return_value=(True, "")
+    )
 
     modules = {
         "world.skill_engine": skill_engine,
         "world.world_state": world_state,
         "world.quest_engine": quest_engine,
+        "world.progression_engine": progression_engine,
     }
     old_attrs = {
         name: getattr(world, name, None)
-        for name in ("skill_engine", "world_state", "quest_engine")
+        for name in (
+            "skill_engine",
+            "world_state",
+            "quest_engine",
+            "progression_engine",
+        )
     }
     try:
         with patch.dict(sys.modules, modules):
             world.skill_engine = skill_engine
             world.world_state = world_state
             world.quest_engine = quest_engine
-            yield skill_engine, world_state, quest_engine
+            world.progression_engine = progression_engine
+            yield skill_engine, world_state, quest_engine, progression_engine
     finally:
         for name, value in old_attrs.items():
             if value is None:
@@ -121,10 +132,18 @@ class TestDynamicAreaCommand(unittest.TestCase):
         }
 
         with _practice_dependencies() as deps:
-            skill_engine, world_state, _quest_engine = deps
+            skill_engine, world_state, _quest_engine, progression_engine = deps
             command.func()
             command.func()
 
-        skill_engine.accumulate_skill_use.assert_called_once_with(command.caller, "navigation", 3)
-        world_state.accumulate_domain_xp.assert_called_once_with(command.caller, "tactics", 75)
+        progression_engine.record_progression_event.assert_called_once_with(
+            command.caller,
+            event_id="practice:road_marker_survey",
+            event_type="practice",
+            source_id="road_marker_survey",
+            domain_awards={"tactics": 75},
+            skill_awards={"navigation": 3},
+        )
+        skill_engine.accumulate_skill_use.assert_not_called()
+        world_state.accumulate_domain_xp.assert_not_called()
         command.caller.msg.assert_any_call("You have already learned what you can from that.")
