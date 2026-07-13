@@ -290,3 +290,69 @@ def build():
         self.assertEqual(payload["state"], "bootstrap-adopted")
         self.assertEqual(payload["git_commit"], "a" * 40)
         self.assertEqual(WorldContentRevision.objects.count(), 1)
+
+
+class TestWorldContentApplyOccupancy(EvenniaTest):
+    def _room_deletion_plan(self):
+        from world.area_builder import AreaBuilder
+        from world.content_compiler import compile_world_sources, plan_world_changes
+
+        old_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("occupied")
+    area.zone(name="Occupied", zone_type="frontier", continent="varath")
+    safe = area.room("safe", name="Safe", desc="Safe.")
+    doomed = area.room("doomed", name="Doomed", desc="Doomed.")
+    return area.build()
+"""
+        new_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("occupied")
+    area.zone(name="Occupied", zone_type="frontier", continent="varath")
+    safe = area.room("safe", name="Safe", desc="Safe.")
+    return area.build()
+"""
+        area = AreaBuilder("occupied")
+        area.zone(name="Occupied", zone_type="frontier", continent="varath")
+        area.room("safe", name="Safe", desc="Safe.")
+        doomed = area.room("doomed", name="Doomed", desc="Doomed.")
+        area.build()
+        old = compile_world_sources({"world/areas/occupied.py": old_source}).manifest
+        new = compile_world_sources({"world/areas/occupied.py": new_source}).manifest
+        assert old is not None and new is not None
+        planning = plan_world_changes(old, new)
+        assert planning.plan is not None
+        return planning.plan, doomed
+
+    def test_occupied_destructive_room_requires_maintenance_approval(self):
+        from evennia import create_object
+        from typeclasses.characters import Character
+        from world.content_revisions import (
+            ApplyPreconditionError,
+            ensure_apply_occupancy_allowed,
+            find_occupied_destructive_rooms,
+        )
+
+        plan, doomed = self._room_deletion_plan()
+        character = create_object(Character, key="occupant", location=doomed)
+
+        occupied = find_occupied_destructive_rooms(plan)
+
+        self.assertEqual(len(occupied), 1)
+        self.assertEqual(occupied[0].zone_id, "occupied")
+        self.assertEqual(occupied[0].room_id, "doomed")
+        self.assertEqual(occupied[0].character_ids, (character.id,))
+        with self.assertRaisesRegex(ApplyPreconditionError, "maintenance approval"):
+            ensure_apply_occupancy_allowed(plan, maintenance_approved=False)
+        self.assertEqual(
+            ensure_apply_occupancy_allowed(plan, maintenance_approved=True), occupied
+        )
+
+    def test_unoccupied_destructive_room_does_not_require_maintenance_approval(self):
+        from world.content_revisions import ensure_apply_occupancy_allowed
+
+        plan, _doomed = self._room_deletion_plan()
+
+        self.assertEqual(
+            ensure_apply_occupancy_allowed(plan, maintenance_approved=False), ()
+        )

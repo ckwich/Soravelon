@@ -25,6 +25,17 @@ class BootstrapAdoptionError(RuntimeError):
     """Raised when existing runtime cannot safely become revision authority."""
 
 
+class ApplyPreconditionError(RuntimeError):
+    """Raised when a content apply is unsafe in current runtime state."""
+
+
+@dataclass(frozen=True)
+class OccupiedDestructiveRoom:
+    zone_id: str
+    room_id: str
+    character_ids: tuple[int, ...]
+
+
 @dataclass(frozen=True)
 class WorldContentStatus:
     state: str
@@ -179,3 +190,61 @@ def adopt_bootstrap(manifest, *, git_commit: str):
         applied_at=now,
         finished_at=now,
     )
+
+
+def find_occupied_destructive_rooms(
+    plan: WorldChangePlan,
+) -> tuple[OccupiedDestructiveRoom, ...]:
+    """Return exact occupied rooms that a semantic plan will delete."""
+
+    from typeclasses.characters import Character
+    from world.tag_search import search_objects_by_exact_tag
+
+    occupied: list[OccupiedDestructiveRoom] = []
+    deleted_rooms = {
+        (change.zone_id, change.entity_id)
+        for change in plan.changes
+        if change.action == "delete" and change.entity_type == "room"
+    }
+    for zone_id, room_id in sorted(deleted_rooms):
+        room = next(
+            (
+                candidate
+                for candidate in search_objects_by_exact_tag(room_id, "room_id")
+                if (candidate.db.zone_id or "") == zone_id
+            ),
+            None,
+        )
+        if room is None:
+            continue
+        character_ids = tuple(
+            sorted(
+                content.id
+                for content in room.contents
+                if isinstance(content, Character) and content.id is not None
+            )
+        )
+        if character_ids:
+            occupied.append(
+                OccupiedDestructiveRoom(
+                    zone_id=zone_id,
+                    room_id=room_id,
+                    character_ids=character_ids,
+                )
+            )
+    return tuple(occupied)
+
+
+def ensure_apply_occupancy_allowed(
+    plan: WorldChangePlan, *, maintenance_approved: bool
+) -> tuple[OccupiedDestructiveRoom, ...]:
+    """Refuse occupied room deletion unless maintenance approval is explicit."""
+
+    occupied = find_occupied_destructive_rooms(plan)
+    if occupied and not maintenance_approved:
+        room_list = ", ".join(f"{item.zone_id}:{item.room_id}" for item in occupied)
+        raise ApplyPreconditionError(
+            "Destructive content apply requires explicit maintenance approval "
+            f"because player characters occupy: {room_list}."
+        )
+    return occupied
