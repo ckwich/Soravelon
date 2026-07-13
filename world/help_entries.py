@@ -1854,7 +1854,7 @@ HELP_ENTRY_DICTS = [
             "  |rHeavy|n -- Reduced speed and combat effectiveness\n"
             "  |xOverloaded|n -- Cannot move\n\n"
             "Containers with weight reduction can help manage your load. "
-            "Deposit excess items at a bank vault or drop them."
+            "Pack excess items into those containers or drop them."
         ),
     },
     {

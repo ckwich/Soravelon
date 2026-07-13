@@ -194,3 +194,13 @@ class TestHelpEntries(unittest.TestCase):
         self.assertIn("tell <player> <message>", tell["text"])
         self.assertIn("NPC", tell["text"])
         self.assertIn("online player", tell["text"])
+
+    def test_encumbrance_help_does_not_promise_item_banking(self):
+        from world.help_entries import HELP_ENTRY_DICTS
+
+        encumbrance = next(
+            entry for entry in HELP_ENTRY_DICTS if entry["key"] == "encumbrance"
+        )
+
+        self.assertNotIn("bank vault", encumbrance["text"].lower())
+        self.assertIn("weight reduction", encumbrance["text"].lower())
