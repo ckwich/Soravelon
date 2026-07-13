@@ -143,10 +143,13 @@ def _test_step(
     shard: str | None = None,
     *,
     keepdb: bool = False,
+    reset_kept_db: bool = False,
 ) -> ReleaseStep:
     command = list(_python_command("scripts/run_tests.py"))
     if keepdb:
         command.append("--keepdb")
+    if reset_kept_db:
+        command.append("--reset-kept-db")
     if shard:
         command.extend(_test_labels_for_shard(shard))
     return ReleaseStep("Canonical tests", tuple(command))
@@ -201,6 +204,7 @@ def _candidate_steps(candidate: ReleaseCandidateInputs) -> list[ReleaseStep]:
             _python_command(
                 "scripts/run_tests.py",
                 "--keepdb",
+                "--reset-kept-db",
                 "tests.test_content_revisions.TestWorldContentApplyLifecycle.test_injected_failure_rolls_back_runtime_and_persists_failure",
                 "tests.test_economy_transactions.TestAtomicCashAndBankOperations.test_deposit_rolls_back_after_every_write",
                 "tests.test_inventory_transactions.TestAtomicPickup.test_pickup_rolls_back_location_and_ownership_after_every_write",
@@ -212,13 +216,14 @@ def _candidate_steps(candidate: ReleaseCandidateInputs) -> list[ReleaseStep]:
             _python_command(
                 "scripts/run_tests.py",
                 "--keepdb",
+                "--reset-kept-db",
                 "tests.test_m3_golden_path",
                 "tests.test_m4_living_world_vertical",
                 "tests.test_social_web_warden_route",
                 "tests.test_cooperative_combat_vertical",
             ),
         ),
-        _test_step(keepdb=True),
+        _test_step(keepdb=True, reset_kept_db=True),
         ReleaseStep("Live player protocols", tuple(protocol_command)),
     ]
 

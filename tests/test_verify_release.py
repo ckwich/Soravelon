@@ -7,7 +7,7 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from scripts import verify_release
 
@@ -95,6 +95,7 @@ raise SystemExit(0 if repo_root in sys.path else 29)
         self.assertIn("--database-kind prepared", result.stdout)
         self.assertIn("soravelon_rehearsal_candidate_1", result.stdout)
         self.assertIn("--keepdb", result.stdout)
+        self.assertIn("--reset-kept-db", result.stdout)
         self.assertIn("Authored content prose", result.stdout)
         self.assertIn("Live player protocols", result.stdout)
 
@@ -235,10 +236,16 @@ class TestReleasePlan(unittest.TestCase):
             self.assertIn(label, verticals)
         self.assertEqual(
             commands["Canonical tests"],
-            (sys.executable, "scripts/run_tests.py", "--keepdb"),
+            (
+                sys.executable,
+                "scripts/run_tests.py",
+                "--keepdb",
+                "--reset-kept-db",
+            ),
         )
         rollback = commands["Transactional failure injection"]
         self.assertIn("--keepdb", rollback)
+        self.assertIn("--reset-kept-db", rollback)
         for label in (
             "tests.test_content_revisions.TestWorldContentApplyLifecycle.test_injected_failure_rolls_back_runtime_and_persists_failure",
             "tests.test_economy_transactions.TestAtomicCashAndBankOperations.test_deposit_rolls_back_after_every_write",
@@ -322,6 +329,120 @@ class TestCanonicalTestRunner(unittest.TestCase):
             "tests.test_example",
             verbosity=1,
             keepdb=True,
+        )
+
+    def test_reset_kept_db_is_a_runner_option_and_runs_before_tests(self):
+        from scripts import run_tests
+
+        database = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "soravelon_rehearsal_candidate_1",
+            "TEST": {"NAME": "test_soravelon_rehearsal_candidate_1"},
+        }
+        with (
+            patch("django.setup"),
+            patch("django.conf.settings", SimpleNamespace(DATABASES={"default": database})),
+            patch("scripts.run_tests.reset_precreated_test_database") as reset,
+            patch("django.core.management.call_command") as call_command,
+        ):
+            result = run_tests.main(
+                ["--keepdb", "--reset-kept-db", "tests.test_example"]
+            )
+
+        self.assertEqual(result, 0)
+        reset.assert_called_once_with(database)
+        call_command.assert_called_once_with(
+            "test",
+            "tests.test_example",
+            verbosity=1,
+            keepdb=True,
+        )
+
+    def test_reset_kept_db_requires_keepdb(self):
+        from scripts import run_tests
+
+        with self.assertRaises(SystemExit):
+            run_tests.main(["--reset-kept-db", "tests.test_example"])
+
+
+class TestPrecreatedTestDatabaseReset(unittest.TestCase):
+    @staticmethod
+    def _database(**overrides):
+        database = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "soravelon_rehearsal_candidate_1",
+            "USER": "soravelon",
+            "PASSWORD": "secret",
+            "HOST": "127.0.0.1",
+            "PORT": "5432",
+            "TEST": {"NAME": "test_soravelon_rehearsal_candidate_1"},
+        }
+        database.update(overrides)
+        return database
+
+    def test_valid_disposable_database_resets_public_schema(self):
+        from scripts.run_tests import reset_precreated_test_database
+
+        cursor = MagicMock()
+        cursor.fetchone.return_value = ("test_soravelon_rehearsal_candidate_1",)
+        connection = MagicMock()
+        connection.__enter__.return_value.cursor.return_value.__enter__.return_value = (
+            cursor
+        )
+        connect = MagicMock(return_value=connection)
+
+        reset_precreated_test_database(self._database(), connect=connect)
+
+        connect.assert_called_once_with(
+            dbname="test_soravelon_rehearsal_candidate_1",
+            user="soravelon",
+            password="secret",
+            host="127.0.0.1",
+            port="5432",
+            autocommit=True,
+        )
+        self.assertEqual(
+            [call.args[0] for call in cursor.execute.call_args_list],
+            [
+                "SELECT current_database()",
+                "DROP SCHEMA public CASCADE",
+                "CREATE SCHEMA public",
+            ],
+        )
+
+    def test_unsafe_names_refuse_before_connecting(self):
+        from scripts.run_tests import reset_precreated_test_database
+
+        cases = (
+            self._database(NAME="soravelon"),
+            self._database(TEST={"NAME": "soravelon"}),
+        )
+        for database in cases:
+            with self.subTest(database=database):
+                connect = MagicMock()
+                with self.assertRaisesRegex(RuntimeError, "disposable"):
+                    reset_precreated_test_database(database, connect=connect)
+                connect.assert_not_called()
+
+    def test_live_database_identity_mismatch_refuses_before_drop(self):
+        from scripts.run_tests import reset_precreated_test_database
+
+        cursor = MagicMock()
+        cursor.fetchone.return_value = ("soravelon",)
+        connection = MagicMock()
+        connection.__enter__.return_value.cursor.return_value.__enter__.return_value = (
+            cursor
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "identity"):
+            reset_precreated_test_database(
+                self._database(),
+                connect=MagicMock(return_value=connection),
+            )
+
+        self.assertEqual(
+            [call.args[0] for call in cursor.execute.call_args_list],
+            ["SELECT current_database()"],
         )
 
 
