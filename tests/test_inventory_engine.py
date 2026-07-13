@@ -5,6 +5,8 @@ Tests written FIRST per TDD.
 
 from evennia.utils.test_resources import EvenniaTest
 from evennia import create_object
+from unittest.mock import patch
+
 from world.models import InventoryItem
 
 
@@ -423,7 +425,8 @@ class TestOverloadedBlocksMovement(InvTestBase):
 
 
 class TestEncumberedAllowsMovement(InvTestBase):
-    def test_encumbered_allows_movement(self):
+    @patch("world.recovery_engine.push_stat_update")
+    def test_encumbered_movement_costs_two_stamina(self, _push_update):
         from typeclasses.rooms import SoravelonRoom
         dest = create_object(SoravelonRoom, key="Dest Room")
         # Add 70 kg (capacity 60, 117% = encumbered, not overloaded)
@@ -431,8 +434,44 @@ class TestEncumberedAllowsMovement(InvTestBase):
         InventoryItem.objects.create(
             character_id=self.char1.id, item_id=heavy.id
         )
+        self.char1.ndb.stamina = 10
+
         result = self.char1.at_before_move(dest)
+
         self.assertTrue(result)
+        self.assertEqual(self.char1.ndb.stamina, 8)
+
+    @patch("world.recovery_engine.push_stat_update")
+    def test_heavy_movement_costs_five_stamina(self, _push_update):
+        from typeclasses.rooms import SoravelonRoom
+
+        dest = create_object(SoravelonRoom, key="Dest Room")
+        pack = self._make_item("loaded pack", location=self.char1, weight=90.0)
+        InventoryItem.objects.create(
+            character_id=self.char1.id, item_id=pack.id
+        )
+        self.char1.ndb.stamina = 10
+
+        result = self.char1.at_before_move(dest)
+
+        self.assertTrue(result)
+        self.assertEqual(self.char1.ndb.stamina, 5)
+
+    @patch("world.recovery_engine.push_stat_update")
+    def test_encumbered_movement_requires_enough_stamina(self, _push_update):
+        from typeclasses.rooms import SoravelonRoom
+
+        dest = create_object(SoravelonRoom, key="Dest Room")
+        pack = self._make_item("pack", location=self.char1, weight=70.0)
+        InventoryItem.objects.create(
+            character_id=self.char1.id, item_id=pack.id
+        )
+        self.char1.ndb.stamina = 1
+
+        result = self.char1.at_before_move(dest)
+
+        self.assertFalse(result)
+        self.assertEqual(self.char1.ndb.stamina, 1)
 
 
 # --- Query helpers ---

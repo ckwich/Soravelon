@@ -3,6 +3,18 @@ Inventory weight calculation helpers.
 """
 
 
+ENCUMBRANCE_MOVEMENT_STAMINA_COSTS = {
+    "encumbered": 2,
+    "heavy": 5,
+}
+
+
+def get_movement_stamina_cost(carry_state):
+    """Return the per-room stamina cost for a computed carry state."""
+
+    return ENCUMBRANCE_MOVEMENT_STAMINA_COSTS.get(carry_state, 0)
+
+
 def get_carry_state(character, effective_stats=None):
     """
     Compute character's current carry state.

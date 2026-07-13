@@ -169,7 +169,11 @@ class Character(ObjectParent, DefaultCharacter):
         if self.ndb.in_flight:
             self.msg("You cannot move while aboard the Dragon Courier.")
             return False
-        from world.inventory_helpers import get_carry_state
+        from world.inventory_helpers import (
+            get_carry_state,
+            get_movement_stamina_cost,
+        )
+
         state = get_carry_state(self)
         if state == "overloaded":
             self.msg(
@@ -177,7 +181,28 @@ class Character(ObjectParent, DefaultCharacter):
                 "Drop something first."
             )
             return False
-        return super().at_before_move(destination, **kwargs)
+
+        allowed = super().at_before_move(destination, **kwargs)
+        if allowed is False:
+            return False
+
+        stamina_cost = get_movement_stamina_cost(state)
+        if stamina_cost:
+            if self.ndb.stamina is None:
+                from world.base_attributes import derive_max_stamina
+
+                self.ndb.stamina = derive_max_stamina(self)
+            from world.recovery_engine import spend_stamina
+
+            paid, reason = spend_stamina(self, stamina_cost)
+            if not paid:
+                self.msg(
+                    f"{reason} Lighten your load or catch your breath "
+                    "before moving on."
+                )
+                return False
+
+        return allowed
 
     def execute_cmd(self, raw_string, session=None, **kwargs):
         """Pre-process input for prefix expansion and alias substitution (CMD-01 through CMD-05)."""

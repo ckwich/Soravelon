@@ -204,3 +204,7 @@ class TestHelpEntries(unittest.TestCase):
 
         self.assertNotIn("bank vault", encumbrance["text"].lower())
         self.assertIn("weight reduction", encumbrance["text"].lower())
+        self.assertIn("2 stamina", encumbrance["text"].lower())
+        self.assertIn("5 stamina", encumbrance["text"].lower())
+        self.assertNotIn("reduced movement speed", encumbrance["text"].lower())
+        self.assertNotIn("combat effectiveness", encumbrance["text"].lower())
