@@ -28,7 +28,7 @@ DECAY_RATES = {
 
 # Domain XP conversion rate: raw XP accumulated → score points gained.
 # Diminishing returns are applied separately.
-XP_CONVERSION_RATE = 0.001  # 1000 raw XP = 1.0 score point at full rate
+XP_CONVERSION_RATE = 0.1  # 10 authored raw XP = 1.0 score point at full rate
 
 # Diminishing returns brackets for domain XP gain
 DIMINISHING_BRACKETS = [

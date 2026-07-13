@@ -3081,7 +3081,7 @@ def build():
         verb="cut",
         target="repair strap",
         skill_awards={"leatherworking": 3},
-        domain_awards={"naturalism": 60},
+        domain_awards={"naturalism": 75},
         success_text="You cut the strap along the grain instead of across it, then stitch the stress point where the tanner taps the bench.",
         once_per_character=True,
         visible_in_exits=True,
