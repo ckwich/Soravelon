@@ -2,7 +2,7 @@ import ast
 import pathlib
 import unittest
 
-from world.areas.equipment_catalog import CATALOG
+from world.item_catalog import CATALOG
 
 
 ZONE_PATH = pathlib.Path(__file__).resolve().parents[1] / "world" / "areas" / "old_causeway.py"
@@ -71,6 +71,25 @@ def _parse_old_causeway_contract():
         room_ids.add(room_id)
 
     for node in ast.walk(tree):
+        if isinstance(node, ast.Expr) and _is_area_method(node.value, "vendor"):
+            npc_ref = node.value.args[0]
+            npc_id = (
+                vendor_var_to_npc_id.get(npc_ref.id)
+                if isinstance(npc_ref, ast.Name)
+                else None
+            )
+            if npc_id:
+                config = vendor_configs.setdefault(npc_id, {"is_vendor": True})
+                keyword_names = {
+                    "accepts": "vendor_accepts",
+                    "item_ids": "vendor_item_ids",
+                    "exclude_item_ids": "vendor_exclude_item_ids",
+                    "faction": "vendor_faction",
+                }
+                for keyword in node.value.keywords:
+                    config[keyword_names[keyword.arg]] = _literal(keyword.value)
+            continue
+
         if isinstance(node, ast.Expr) and _is_area_method(node.value, "npc"):
             npc_id = _literal(node.value.args[1])
             npc_ids.add(npc_id)

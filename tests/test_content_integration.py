@@ -106,10 +106,6 @@ class TestZoneImports(unittest.TestCase):
         from world.areas import tremeneth_underhalls
         self.assertTrue(hasattr(tremeneth_underhalls, "build"))
 
-    def test_equipment_catalog_imports(self):
-        from world.areas import equipment_catalog
-        self.assertTrue(hasattr(equipment_catalog, "build"))
-
     def test_all_zones_have_callable_build(self):
         """Every authored zone spec's build() must be callable."""
         from world.areas import (
@@ -118,7 +114,7 @@ class TestZoneImports(unittest.TestCase):
             ironvein_escarpment, stagcrown_preserve, korahei, veluana_outer_reefs,
             kiai_grounds, veluana_central_isle, colonist_ruins, tremen,
             greyteeth_lower_passes, tremeneth_high_passes, tremeneth_deep_mines,
-            tremeneth_underhalls, equipment_catalog,
+            tremeneth_underhalls,
         )
         for module in [
             vaels_crossing, ashreach_plains, reth_foothills,
@@ -126,7 +122,7 @@ class TestZoneImports(unittest.TestCase):
             ironvein_escarpment, stagcrown_preserve, korahei, veluana_outer_reefs,
             kiai_grounds, veluana_central_isle, colonist_ruins, tremen,
             greyteeth_lower_passes, tremeneth_high_passes, tremeneth_deep_mines,
-            tremeneth_underhalls, equipment_catalog,
+            tremeneth_underhalls,
         ]:
             self.assertTrue(
                 callable(getattr(module, "build", None)),
@@ -171,7 +167,7 @@ class TestCmdStabilize(unittest.TestCase):
         mock_zone_obj.tags.has.return_value = True
         mock_zone_obj.scripts.get.return_value = [mock_script]
 
-        with patch("world.node_commands.search_tag") as mock_search, \
+        with patch("world.node_commands.search_objects_by_exact_tag") as mock_search, \
              patch("world.node_helpers.attempt_stabilization") as mock_stab:
             mock_search.return_value = [mock_zone_obj]
             mock_stab.return_value = True
@@ -269,28 +265,19 @@ class TestSpawnPointTags(unittest.TestCase):
         """Vael's Crossing should tag a room as greeter_room in spawn_point category."""
         tree = ast.parse(pathlib.Path("world/areas/vaels_crossing.py").read_text())
 
-        found_tag = False
+        found_role = False
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
-            if not isinstance(node.func, ast.Attribute) or node.func.attr != "add":
+            if not isinstance(node.func, ast.Attribute) or node.func.attr != "room_role":
                 continue
-            if not node.args:
+            if len(node.args) < 2:
                 continue
-            if not isinstance(node.args[0], ast.Constant) or node.args[0].value != "greeter_room":
-                continue
-            for keyword in node.keywords:
-                if (
-                    keyword.arg == "category"
-                    and isinstance(keyword.value, ast.Constant)
-                    and keyword.value.value == "spawn_point"
-                ):
-                    found_tag = True
-                    break
-            if found_tag:
+            if isinstance(node.args[1], ast.Constant) and node.args[1].value == "greeter":
+                found_role = True
                 break
 
-        self.assertTrue(found_tag, "Expected a greeter_room spawn_point tag in vaels_crossing.py")
+        self.assertTrue(found_role, "Expected a literal greeter room role in vaels_crossing.py")
 
     def test_respawn_falls_back_to_global_respawn_tag_search(self):
         """Respawn should use globally tagged respawn rooms when no local route exists."""
@@ -305,7 +292,10 @@ class TestSpawnPointTags(unittest.TestCase):
         character.db.visited_room_ids = set()
         character.ndb.oob_debounce = {"map_update": 1.0}
 
-        with patch("evennia.utils.search.search_tag", return_value=[global_respawn]), \
+        with patch(
+            "world.combat_engine.search_objects_by_exact_tag",
+            return_value=[global_respawn],
+        ), \
              patch("world.base_attributes.derive_max_hp", return_value=120), \
              patch("world.base_attributes.derive_max_stamina", return_value=80), \
              patch("world.oob_publisher.push_status_update"), \

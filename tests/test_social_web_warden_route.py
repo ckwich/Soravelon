@@ -110,7 +110,7 @@ class TestVaelWardenSocialRoute(EvenniaTest):
 
     def _make_zone_object_with_items(self, *, zone_id, item_ids, quest_definitions=None):
         from evennia.objects.objects import DefaultObject
-        from world.areas.equipment_catalog import CATALOG
+        from world.item_catalog import CATALOG
 
         zone = create_object(DefaultObject, key=f"test_zone_{zone_id}_{self.char1.id}")
         zone.tags.add("zone_object", category="object_type")

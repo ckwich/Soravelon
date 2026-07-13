@@ -59,7 +59,7 @@ class TestWeaponFamilyInference(unittest.TestCase):
         self.assertEqual(weapon_skill_for_item(weapon), "weapon_blades")
 
     def test_static_catalog_weapons_infer_from_authored_names(self):
-        from world.areas.equipment_catalog import CATALOG
+        from world.item_catalog import CATALOG
         from world.weapon_skills import infer_weapon_family_from_item
 
         cases = {

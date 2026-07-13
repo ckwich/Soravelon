@@ -67,13 +67,13 @@ def _item_ids(relpath):
 
 
 class TestEquipmentCatalog(unittest.TestCase):
-    """Verify equipment_catalog.py contains required item definitions."""
+    """Verify the canonical item catalog contains required definitions."""
 
     @classmethod
     def setUpClass(cls):
-        from world.areas.equipment_catalog import CATALOG
+        from world.item_catalog import CATALOG
         cls.catalog = CATALOG
-        cls.content = _read_file("world/areas/equipment_catalog.py")
+        cls.content = _read_file("world/item_catalog.py")
 
     def test_gathering_tools_defined(self):
         """5 gathering tools with tool_slot and tool_tag fields."""

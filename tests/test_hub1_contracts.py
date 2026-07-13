@@ -2,7 +2,7 @@ import ast
 import pathlib
 import unittest
 
-from world.areas.equipment_catalog import CATALOG
+from world.item_catalog import CATALOG
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]

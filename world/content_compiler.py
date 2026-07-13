@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
+import hashlib
+import json
 from pathlib import Path
+from typing import Mapping
 
 SUPPORTED_AREA_OPERATIONS = frozenset(
     {
@@ -48,8 +51,21 @@ class SourceLocation:
 
 
 @dataclass(frozen=True)
+class SymbolicReference:
+    kind: str
+    key: str
+
+
+@dataclass(frozen=True)
+class FrozenMap:
+    entries: tuple[tuple[object, object], ...]
+
+
+@dataclass(frozen=True)
 class AreaOperation(SourceLocation):
     method: str
+    arguments: tuple[object, ...] = ()
+    keyword_arguments: FrozenMap = FrozenMap(())
 
 
 @dataclass(frozen=True)
@@ -61,6 +77,7 @@ class CompilationDiagnostic(SourceLocation):
 @dataclass(frozen=True)
 class ZoneSourceDefinition:
     source_path: str
+    zone_id: str
     operations: tuple[AreaOperation, ...]
 
 
@@ -76,6 +93,19 @@ class AreaSourceAudit:
     diagnostics: tuple[CompilationDiagnostic, ...]
 
 
+@dataclass(frozen=True)
+class WorldManifest:
+    schema_version: str
+    zones: tuple[ZoneSourceDefinition, ...]
+    manifest_hash: str
+
+
+@dataclass(frozen=True)
+class WorldManifestCompilation:
+    manifest: WorldManifest | None
+    diagnostics: tuple[CompilationDiagnostic, ...]
+
+
 def _attribute_chain(node: ast.AST) -> tuple[str, ...]:
     parts: list[str] = []
     while isinstance(node, ast.Attribute):
@@ -86,10 +116,18 @@ def _attribute_chain(node: ast.AST) -> tuple[str, ...]:
     return tuple(reversed(parts))
 
 
+class _NonLiteralAreaValue(ValueError):
+    pass
+
+
 class _AreaAuthorityVisitor(ast.NodeVisitor):
     def __init__(self, source_path: str):
         self.source_path = source_path
         self.builder_names: set[str] = set()
+        self.builder_nodes: list[ast.Call] = []
+        self.zone_ids: list[str] = []
+        self.literal_bindings: dict[str, object] = {}
+        self.symbolic_bindings: dict[str, SymbolicReference] = {}
         self.operations: list[AreaOperation] = []
         self.diagnostics: list[CompilationDiagnostic] = []
         self._reported_nodes: set[int] = set()
@@ -122,15 +160,96 @@ class _AreaAuthorityVisitor(ast.NodeVisitor):
         if FORBIDDEN_RUNTIME_HANDLERS.intersection(chain):
             self._report_forbidden(node, chain)
 
+    def _freeze_literal(self, value: object) -> object:
+        if isinstance(value, dict):
+            return FrozenMap(
+                tuple(
+                    (self._freeze_literal(key), self._freeze_literal(item))
+                    for key, item in value.items()
+                )
+            )
+        if isinstance(value, (list, tuple)):
+            return tuple(self._freeze_literal(item) for item in value)
+        if isinstance(value, (set, frozenset)):
+            return tuple(
+                sorted(
+                    (self._freeze_literal(item) for item in value),
+                    key=repr,
+                )
+            )
+        if value is None or isinstance(value, (bool, float, int, str)):
+            return value
+        raise _NonLiteralAreaValue(f"unsupported literal value {type(value).__name__}")
+
+    def _compile_value(self, node: ast.AST) -> object:
+        if isinstance(node, ast.Name):
+            if node.id in self.symbolic_bindings:
+                return self.symbolic_bindings[node.id]
+            if node.id in self.literal_bindings:
+                return self.literal_bindings[node.id]
+            raise _NonLiteralAreaValue(f"unresolved name '{node.id}'")
+        try:
+            return self._freeze_literal(ast.literal_eval(node))
+        except (ValueError, TypeError) as exc:
+            raise _NonLiteralAreaValue(
+                f"{type(node).__name__} is not a literal or symbolic reference"
+            ) from exc
+
+    def _builder_method(self, node: ast.AST) -> str | None:
+        if not isinstance(node, ast.Call):
+            return None
+        chain = _attribute_chain(node.func)
+        if len(chain) == 2 and chain[0] in self.builder_names:
+            return chain[1]
+        return None
+
+    def _register_builder_result(self, node: ast.Assign) -> None:
+        method = self._builder_method(node.value)
+        if method not in {"mob", "npc", "room"} or not isinstance(node.value, ast.Call):
+            return
+        target = next(
+            (target for target in node.targets if isinstance(target, ast.Name)),
+            None,
+        )
+        if target is None:
+            return
+        key_index = 1 if method == "npc" else 0
+        if len(node.value.args) <= key_index:
+            return
+        try:
+            key = self._compile_value(node.value.args[key_index])
+        except _NonLiteralAreaValue:
+            return
+        if isinstance(key, str) and key:
+            self.symbolic_bindings[target.id] = SymbolicReference(method, key)
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if (
             isinstance(node.value, ast.Call)
             and isinstance(node.value.func, ast.Name)
             and node.value.func.id == "AreaBuilder"
         ):
+            self.builder_nodes.append(node.value)
             for target in node.targets:
                 if isinstance(target, ast.Name):
                     self.builder_names.add(target.id)
+            if node.value.args:
+                try:
+                    zone_id = self._compile_value(node.value.args[0])
+                except _NonLiteralAreaValue:
+                    zone_id = None
+                if isinstance(zone_id, str) and zone_id:
+                    self.zone_ids.append(zone_id)
+        elif len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            try:
+                literal = ast.literal_eval(node.value)
+            except (ValueError, TypeError):
+                literal = None
+            if literal is not None:
+                self.literal_bindings[node.targets[0].id] = self._freeze_literal(
+                    literal
+                )
+            self._register_builder_result(node)
         for target in node.targets:
             self._check_mutation_target(target)
         self.generic_visit(node)
@@ -163,12 +282,39 @@ class _AreaAuthorityVisitor(ast.NodeVisitor):
                     )
                 )
             else:
-                self.operations.append(
-                    AreaOperation(
-                        **self._location(node),
-                        method=method,
+                try:
+                    arguments = tuple(self._compile_value(arg) for arg in node.args)
+                    if any(keyword.arg is None for keyword in node.keywords):
+                        raise _NonLiteralAreaValue("keyword unpacking is not supported")
+                    keyword_arguments = FrozenMap(
+                        tuple(
+                            sorted(
+                                (
+                                    (keyword.arg, self._compile_value(keyword.value))
+                                    for keyword in node.keywords
+                                    if keyword.arg is not None
+                                ),
+                                key=lambda item: item[0],
+                            )
+                        )
                     )
-                )
+                except _NonLiteralAreaValue as exc:
+                    self.diagnostics.append(
+                        CompilationDiagnostic(
+                            **self._location(node),
+                            code="nonliteral-area-argument",
+                            message=f"area.{method}() cannot compile: {exc}.",
+                        )
+                    )
+                else:
+                    self.operations.append(
+                        AreaOperation(
+                            **self._location(node),
+                            method=method,
+                            arguments=arguments,
+                            keyword_arguments=keyword_arguments,
+                        )
+                    )
         self.generic_visit(node)
 
 
@@ -189,6 +335,17 @@ def compile_area_source(source: str, *, source_path: str) -> AreaCompilationResu
 
     visitor = _AreaAuthorityVisitor(source_path)
     visitor.visit(tree)
+    if not visitor.zone_ids:
+        builder_node = visitor.builder_nodes[0] if visitor.builder_nodes else tree
+        visitor.diagnostics.append(
+            CompilationDiagnostic(
+                source_path=source_path,
+                line=getattr(builder_node, "lineno", 1),
+                column=getattr(builder_node, "col_offset", 0) + 1,
+                code="missing-zone-id",
+                message="AreaBuilder requires one non-empty literal zone_id.",
+            )
+        )
     diagnostics = tuple(
         sorted(
             visitor.diagnostics, key=lambda item: (item.line, item.column, item.code)
@@ -198,6 +355,7 @@ def compile_area_source(source: str, *, source_path: str) -> AreaCompilationResu
     if not diagnostics:
         definition = ZoneSourceDefinition(
             source_path=source_path,
+            zone_id=visitor.zone_ids[0],
             operations=tuple(visitor.operations),
         )
     return AreaCompilationResult(definition=definition, diagnostics=diagnostics)
@@ -221,3 +379,116 @@ def audit_area_sources(areas_dir: Path) -> AreaSourceAudit:
         definitions=tuple(definitions),
         diagnostics=tuple(diagnostics),
     )
+
+
+def _canonical_manifest_value(value: object) -> object:
+    if isinstance(value, SymbolicReference):
+        return {"$ref": {"kind": value.kind, "key": value.key}}
+    if isinstance(value, FrozenMap):
+        return {
+            str(key): _canonical_manifest_value(item) for key, item in value.entries
+        }
+    if isinstance(value, tuple):
+        return [_canonical_manifest_value(item) for item in value]
+    if value is None or isinstance(value, (bool, float, int, str)):
+        return value
+    raise TypeError(f"Unsupported manifest value: {type(value).__name__}")
+
+
+def _semantic_manifest_payload(
+    definitions: tuple[ZoneSourceDefinition, ...],
+) -> dict[str, object]:
+    zones: list[dict[str, object]] = []
+    for definition in definitions:
+        operations = []
+        for operation in definition.operations:
+            if operation.method == "build":
+                continue
+            operations.append(
+                {
+                    "method": operation.method,
+                    "arguments": _canonical_manifest_value(operation.arguments),
+                    "keyword_arguments": _canonical_manifest_value(
+                        operation.keyword_arguments
+                    ),
+                }
+            )
+        zones.append(
+            {
+                "source_path": definition.source_path,
+                "zone_id": definition.zone_id,
+                "operations": operations,
+            }
+        )
+    return {
+        "schema_version": "soravelon.world-content.v1",
+        "zones": zones,
+    }
+
+
+def compile_world_sources(
+    sources: Mapping[str, str],
+) -> WorldManifestCompilation:
+    """Compile deterministic source text into one immutable semantic manifest."""
+
+    definitions: list[ZoneSourceDefinition] = []
+    diagnostics: list[CompilationDiagnostic] = []
+    zone_sources: dict[str, str] = {}
+    for source_path, source in sorted(sources.items()):
+        result = compile_area_source(source, source_path=source_path)
+        diagnostics.extend(result.diagnostics)
+        if result.definition is None:
+            continue
+        previous_source = zone_sources.get(result.definition.zone_id)
+        if previous_source is not None:
+            diagnostics.append(
+                CompilationDiagnostic(
+                    source_path=source_path,
+                    line=1,
+                    column=1,
+                    code="duplicate-zone-id",
+                    message=(
+                        f"zone_id '{result.definition.zone_id}' is already owned by "
+                        f"{previous_source}."
+                    ),
+                )
+            )
+            continue
+        zone_sources[result.definition.zone_id] = source_path
+        definitions.append(result.definition)
+
+    ordered_diagnostics = tuple(
+        sorted(
+            diagnostics,
+            key=lambda item: (item.source_path, item.line, item.column, item.code),
+        )
+    )
+    if ordered_diagnostics:
+        return WorldManifestCompilation(manifest=None, diagnostics=ordered_diagnostics)
+
+    frozen_definitions = tuple(definitions)
+    payload = _semantic_manifest_payload(frozen_definitions)
+    canonical = json.dumps(
+        payload,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    manifest = WorldManifest(
+        schema_version="soravelon.world-content.v1",
+        zones=frozen_definitions,
+        manifest_hash=hashlib.sha256(canonical).hexdigest(),
+    )
+    return WorldManifestCompilation(manifest=manifest, diagnostics=())
+
+
+def compile_world_manifest(areas_dir: Path) -> WorldManifestCompilation:
+    """Compile every literal Python zone source under one directory."""
+
+    project_root = areas_dir.parents[1]
+    sources = {
+        path.relative_to(project_root).as_posix(): path.read_text()
+        for path in sorted(areas_dir.glob("*.py"))
+        if not path.name.startswith("_")
+    }
+    return compile_world_sources(sources)
