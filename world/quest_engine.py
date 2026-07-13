@@ -1020,6 +1020,14 @@ def _advance_quest_objectives(
                 pk=character.id
             )
             tracker.track(locked_character, attributes=("carried_scales",))
+            from world.relationship_effects import tracked_relationship_attributes
+
+            tracker.track(
+                locked_character,
+                attributes=tracked_relationship_attributes(
+                    quest_spec.get("rewards") or []
+                ),
+            )
             cq = CharacterQuest.objects.select_for_update().get(
                 pk=quest_pk,
                 character_id=locked_character.id,
@@ -1162,6 +1170,14 @@ def _pay_rewards_exactly_once(
                 pk=character.id
             )
             tracker.track(locked_character, attributes=("carried_scales",))
+            from world.relationship_effects import tracked_relationship_attributes
+
+            tracker.track(
+                locked_character,
+                attributes=tracked_relationship_attributes(
+                    quest_spec.get("rewards") or []
+                ),
+            )
             context["character"] = locked_character
             context["room"] = locked_character.location
             replay = get_operation_replay(

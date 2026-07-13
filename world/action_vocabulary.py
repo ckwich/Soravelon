@@ -4,9 +4,10 @@ Action Vocabulary for Soravelon.
 Shared dispatch module for all trigger-driven and command-driven game events.
 Every action type in the game routes through execute_action().
 
-22 action types (D-07, D-24):
+25 action types (D-07, D-24):
   Implemented: teleport, teleport_to_mob, echo, give_item, take_item,
-               modify_standing, modify_attunement, log_world_event, despawn_self,
+               modify_standing, modify_dimension, modify_attunement,
+               modify_trust, set_betrayal, log_world_event, despawn_self,
                spawn_mob, add_room_flag, give_scales, give_skill_xp,
                grant_practice, modify_node_failure, set_quest_flag,
                open_dialogue, learn_recipe, record_social_event, grant_access,
@@ -173,18 +174,165 @@ def _handle_modify_standing(action_dict, context, _depth):
     return True, ""
 
 
-def _handle_modify_attunement(action_dict, context, _depth):
-    """Adjust zone attunement for the character."""
+def _apply_relationship_effect(
+    action_dict,
+    context,
+    *,
+    mutation,
+    tracked_attributes=(),
+):
+    """Apply one character effect exactly once using its authored identity."""
     character = context.get("character")
     if not character:
         return False, "No character in context"
-    zone_id = action_dict.get("zone_id")
-    delta = action_dict.get("delta", 0)
-    if not zone_id:
-        return False, "modify_attunement: missing zone_id"
-    from world.world_state import update_zone_attunement
-    update_zone_attunement(character, zone_id, delta)
+
+    from world.relationship_effects import is_valid_effect_id
+
+    effect_id = action_dict.get("effect_id")
+    if not is_valid_effect_id(effect_id):
+        return False, "relationship effect requires a canonical effect_id"
+
+    from evennia.objects.models import ObjectDB
+    from world.atomic_state import atomic_evennia_state
+    from world.game_operations import get_operation_replay, record_operation
+
+    action_type = action_dict["action_type"]
+    operation_id = f"relationship:{character.id}:{effect_id}"
+    related_id = f"{action_type}:{effect_id}"
+    with atomic_evennia_state(character) as tracker:
+        locked_character = ObjectDB.objects.select_for_update().get(
+            pk=character.id
+        )
+        tracker.track(
+            locked_character,
+            attributes=tracked_attributes,
+        )
+        replay = get_operation_replay(
+            character=locked_character,
+            operation_id=operation_id,
+            operation_type="relationship_effect",
+            related_id=related_id,
+        )
+        if replay:
+            return True, ""
+
+        result = mutation(locked_character)
+        record_operation(
+            character=locked_character,
+            operation_id=operation_id,
+            operation_type="relationship_effect",
+            related_id=related_id,
+            result=result,
+        )
+
+    message = action_dict.get("message")
+    if message:
+        _emit_action_message(context, message)
     return True, ""
+
+
+def _handle_modify_dimension(action_dict, context, _depth):
+    """Adjust one authored aggregate dimension exactly once."""
+    from world.relationship_effects import (
+        AUTHORED_DIMENSIONS,
+        is_valid_effect_delta,
+    )
+
+    dimension = action_dict.get("dimension")
+    delta = action_dict.get("delta")
+    if dimension not in AUTHORED_DIMENSIONS:
+        return False, "modify_dimension: unknown authored dimension"
+    if not is_valid_effect_delta(delta):
+        return False, "modify_dimension: delta must be nonzero and within 100"
+
+    def mutate(character):
+        from world.world_state import modify_dimension_score
+
+        value = modify_dimension_score(character, dimension, delta)
+        return {"dimension": dimension, "value": value}
+
+    return _apply_relationship_effect(
+        action_dict,
+        context,
+        mutation=mutate,
+        tracked_attributes=(f"{dimension}_score",),
+    )
+
+
+def _handle_modify_attunement(action_dict, context, _depth):
+    """Adjust one zone Attunement track exactly once."""
+    from world.relationship_effects import is_valid_effect_delta, is_valid_zone_id
+
+    zone_id = action_dict.get("zone_id")
+    delta = action_dict.get("delta")
+    if not is_valid_zone_id(zone_id):
+        return False, "modify_attunement: invalid zone_id"
+    if not is_valid_effect_delta(delta):
+        return False, "modify_attunement: delta must be nonzero and within 100"
+
+    def mutate(character):
+        from world.world_state import update_zone_attunement
+
+        score = update_zone_attunement(character, zone_id, delta)
+        return {"zone_id": zone_id, "score": score}
+
+    return _apply_relationship_effect(
+        action_dict,
+        context,
+        mutation=mutate,
+        tracked_attributes=("attunement_score",),
+    )
+
+
+def _handle_modify_trust(action_dict, context, _depth):
+    """Adjust Trust with one canonical faction exactly once."""
+    from world.faction_registry import FactionIdentityError, canonicalize_faction_id
+    from world.relationship_effects import is_valid_trust_delta
+
+    try:
+        faction_id = canonicalize_faction_id(action_dict.get("faction_id"))
+    except FactionIdentityError as exc:
+        return False, f"modify_trust: {exc}"
+    delta = action_dict.get("delta")
+    if not is_valid_trust_delta(delta):
+        return False, "modify_trust: delta must be an integer within 100"
+
+    def mutate(character):
+        from world.world_state import modify_trust
+
+        trust = modify_trust(character, faction_id, delta)
+        return {"faction_id": faction_id, "trust": trust}
+
+    return _apply_relationship_effect(
+        action_dict,
+        context,
+        mutation=mutate,
+    )
+
+
+def _handle_set_betrayal(action_dict, context, _depth):
+    """Set Betrayal with one canonical faction exactly once."""
+    from world.faction_registry import FactionIdentityError, canonicalize_faction_id
+
+    try:
+        faction_id = canonicalize_faction_id(action_dict.get("faction_id"))
+    except FactionIdentityError as exc:
+        return False, f"set_betrayal: {exc}"
+    betrayed = action_dict.get("betrayed")
+    if not isinstance(betrayed, bool):
+        return False, "set_betrayal: betrayed must be true or false"
+
+    def mutate(character):
+        from world.world_state import set_betrayal
+
+        value = set_betrayal(character, faction_id, betrayed)
+        return {"faction_id": faction_id, "betrayed": value}
+
+    return _apply_relationship_effect(
+        action_dict,
+        context,
+        mutation=mutate,
+    )
 
 
 def _handle_log_world_event(action_dict, context, _depth):
@@ -1044,7 +1192,10 @@ ACTION_HANDLERS = {
     "give_item": _handle_give_item,
     "take_item": _handle_take_item,
     "modify_standing": _handle_modify_standing,
+    "modify_dimension": _handle_modify_dimension,
     "modify_attunement": _handle_modify_attunement,
+    "modify_trust": _handle_modify_trust,
+    "set_betrayal": _handle_set_betrayal,
     "log_world_event": _handle_log_world_event,
     "despawn_self": _handle_despawn_self,
     "set_quest_flag": _handle_set_quest_flag,

@@ -51,13 +51,24 @@ def _as_typeclass(obj):
 
 def set_dimension_score(character, dimension, value):
     """Set a dimension aggregate score, clamped to 0-100."""
+    if dimension not in ALL_DIMENSIONS:
+        raise ValueError(f"Unknown world-state dimension: {dimension!r}")
     clamped = max(0.0, min(100.0, float(value)))
     setattr(character.db, f"{dimension}_score", clamped)
 
 
 def get_dimension_score(character, dimension):
     """Read a dimension aggregate score."""
+    if dimension not in ALL_DIMENSIONS:
+        raise ValueError(f"Unknown world-state dimension: {dimension!r}")
     return float(getattr(character.db, f"{dimension}_score", 0.0) or 0.0)
+
+
+def modify_dimension_score(character, dimension, delta):
+    """Apply one bounded delta to a validated aggregate dimension."""
+    current = get_dimension_score(character, dimension)
+    set_dimension_score(character, dimension, current + float(delta))
+    return get_dimension_score(character, dimension)
 
 
 # --- Decay ---
@@ -100,17 +111,21 @@ def decay_tick_all():
 
 def update_zone_attunement(character, zone_id, delta):
     """Add delta to a per-zone attunement score, clamped to 0-100."""
+    from django.db import transaction
     from django.utils import timezone
 
-    record, _ = ZoneAttunement.objects.get_or_create(
-        character=character,
-        zone_id=zone_id,
-        defaults={"score": 0.0},
-    )
-    new_score = max(0.0, min(100.0, record.score + float(delta)))
-    record.score = new_score
-    record.last_visited = timezone.now()
-    record.save()
+    with transaction.atomic():
+        record, _ = ZoneAttunement.objects.select_for_update().get_or_create(
+            character=character,
+            zone_id=zone_id,
+            defaults={"score": 0.0},
+        )
+        new_score = max(0.0, min(100.0, record.score + float(delta)))
+        record.score = new_score
+        record.last_visited = timezone.now()
+        record.save()
+        recalculate_attunement_aggregate(character)
+    return record.score
 
 
 def recalculate_attunement_aggregate(character):
@@ -322,6 +337,25 @@ def get_trust(character, faction_id):
         return 50
 
 
+def modify_trust(character, faction_id, amount):
+    """Adjust faction Trust on its 0-100 scale and return the new value."""
+    from django.db.models import F
+    from django.db.models.functions import Greatest, Least
+
+    faction_id = canonicalize_faction_id(faction_id)
+    record, _ = FactionStanding.objects.get_or_create(
+        character=character,
+        faction_id=faction_id,
+        subfaction_id=None,
+        defaults={"standing": 0, "trust": 50},
+    )
+    FactionStanding.objects.filter(id=record.id).update(
+        trust=Greatest(0, Least(100, F("trust") + amount))
+    )
+    record.refresh_from_db()
+    return record.trust
+
+
 def get_betrayal(character, faction_id):
     """Get betrayal flag for a character with a faction. False if no record."""
     faction_id = canonicalize_faction_id(faction_id)
@@ -332,6 +366,20 @@ def get_betrayal(character, faction_id):
         return record.betrayal_flag
     except FactionStanding.DoesNotExist:
         return False
+
+
+def set_betrayal(character, faction_id, betrayed):
+    """Set a faction Betrayal flag explicitly and return its new value."""
+    faction_id = canonicalize_faction_id(faction_id)
+    record, _ = FactionStanding.objects.get_or_create(
+        character=character,
+        faction_id=faction_id,
+        subfaction_id=None,
+        defaults={"standing": 0, "trust": 50},
+    )
+    record.betrayal_flag = betrayed
+    record.save(update_fields=["betrayal_flag", "last_updated"])
+    return record.betrayal_flag
 
 
 def get_zone_attunement(character, zone):

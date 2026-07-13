@@ -77,13 +77,13 @@ class TestActionHandlersRegistry(EvenniaTest):
     """ACTION_HANDLERS dict contains all registered action types."""
 
     def test_handler_count(self):
-        """ACTION_HANDLERS has exactly 22 keys."""
+        """ACTION_HANDLERS has exactly 25 keys."""
         from world.action_vocabulary import ACTION_HANDLERS
 
-        self.assertEqual(len(ACTION_HANDLERS), 22)
+        self.assertEqual(len(ACTION_HANDLERS), 25)
 
     def test_all_expected_action_types_present(self):
-        """All 21 required action types are registered."""
+        """All 25 required action types are registered."""
         from world.action_vocabulary import ACTION_HANDLERS
 
         expected = {
@@ -94,6 +94,9 @@ class TestActionHandlersRegistry(EvenniaTest):
             "take_item",
             "set_quest_flag",
             "modify_standing",
+            "modify_dimension",
+            "modify_trust",
+            "set_betrayal",
             "spawn_mob",
             "despawn_self",
             "discover_flight_point",
@@ -341,10 +344,16 @@ class TestModifyAttunementAction(EvenniaTest):
         """modify_attunement dispatches to world_state.update_zone_attunement."""
         from world.action_vocabulary import execute_action
 
-        char = MagicMock()
+        char = self.char1
         with patch("world.world_state.update_zone_attunement") as mock_ua:
+            mock_ua.return_value = 5.0
             success, msg = execute_action(
-                {"action_type": "modify_attunement", "zone_id": "zone_01", "delta": 5},
+                {
+                    "action_type": "modify_attunement",
+                    "zone_id": "zone_01",
+                    "delta": 5,
+                    "effect_id": "test:zone_01:attunement",
+                },
                 {"character": char},
             )
 

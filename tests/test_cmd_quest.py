@@ -97,6 +97,26 @@ class TestCmdQuest(unittest.TestCase):
                 "faction_id": "wardens",
                 "delta": 2_500,
             },
+            {
+                "action_type": "modify_dimension",
+                "dimension": "network",
+                "delta": 8,
+            },
+            {
+                "action_type": "modify_attunement",
+                "zone_id": "kiai_grounds",
+                "delta": 12,
+            },
+            {
+                "action_type": "modify_trust",
+                "faction_id": "wardens",
+                "delta": 30,
+            },
+            {
+                "action_type": "set_betrayal",
+                "faction_id": "empire",
+                "betrayed": True,
+            },
             {"action_type": "give_skill_xp", "skill_id": "tracking", "count": 2},
         ],
     })
@@ -125,6 +145,12 @@ class TestCmdQuest(unittest.TestCase):
         self.assertIn("Wardens regard improves", message)
         self.assertNotIn("2500", message)
         self.assertNotIn("+2", message)
+        self.assertIn("Your network deepens", message)
+        self.assertIn("Understanding of Kiai Grounds deepens", message)
+        self.assertIn("Wardens trust grows", message)
+        self.assertIn("The Empire will remember this betrayal", message)
+        for hidden_number in (" 8 ", " 12 ", " 30 "):
+            self.assertNotIn(hidden_number, message)
         self.assertIn("Skill insight: Tracking", message)
         self.assertNotIn("XP", message)
 

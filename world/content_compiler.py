@@ -16,6 +16,14 @@ from world.faction_registry import FactionIdentityError, canonicalize_faction_id
 from world.item_catalog import CATALOG
 from world.material_definitions import MATERIAL_REGISTRY
 from world.mob_templates import MOB_TEMPLATES
+from world.relationship_effects import (
+    AUTHORED_DIMENSIONS,
+    RELATIONSHIP_EFFECT_ACTIONS,
+    is_valid_effect_delta,
+    is_valid_effect_id,
+    is_valid_trust_delta,
+    is_valid_zone_id,
+)
 from world.standing import validate_authored_standing_delta
 from world.quest_engine import OBJECTIVE_TYPES, OBJECTIVE_TYPE_ALIASES
 from world.skill_definitions import SKILL_DEFINITIONS
@@ -972,6 +980,69 @@ def _validate_world_definitions(
                             f"Action type '{action_type}' is not registered.",
                         )
                     )
+                elif action_type in RELATIONSHIP_EFFECT_ACTIONS:
+                    if not is_valid_effect_id(action_dict.get("effect_id")):
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "invalid-relationship-effect-id",
+                                "Relationship effects require a canonical effect_id.",
+                            )
+                        )
+                    delta = action_dict.get("delta")
+                    delta_is_valid = (
+                        is_valid_trust_delta(delta)
+                        if action_type == "modify_trust"
+                        else is_valid_effect_delta(delta)
+                    )
+                    if action_type != "set_betrayal" and not delta_is_valid:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "invalid-relationship-delta",
+                                "Relationship deltas must be nonzero and within 100.",
+                            )
+                        )
+
+                    if action_type == "modify_dimension":
+                        if action_dict.get("dimension") not in AUTHORED_DIMENSIONS:
+                            diagnostics.append(
+                                _diagnostic(
+                                    operation,
+                                    "invalid-relationship-dimension",
+                                    "Attunement is zone-owned; use modify_attunement.",
+                                )
+                            )
+                    elif action_type == "modify_attunement":
+                        zone_id = action_dict.get("zone_id")
+                        if (
+                            not is_valid_zone_id(zone_id)
+                            or zone_id not in rooms_by_zone
+                        ):
+                            diagnostics.append(
+                                _diagnostic(
+                                    operation,
+                                    "unknown-zone-id",
+                                    f"Attunement zone '{zone_id}' is not authored.",
+                                )
+                            )
+                    elif action_type in {"modify_trust", "set_betrayal"}:
+                        _validate_relationship_faction(
+                            operation,
+                            action_dict.get("faction_id"),
+                            diagnostics,
+                        )
+                        if (
+                            action_type == "set_betrayal"
+                            and not isinstance(action_dict.get("betrayed"), bool)
+                        ):
+                            diagnostics.append(
+                                _diagnostic(
+                                    operation,
+                                    "invalid-betrayal-value",
+                                    "Betrayal effects require a boolean value.",
+                                )
+                            )
                 elif action_type == "give_skill_xp":
                     if action_dict.get("skill_id") not in SKILL_DEFINITIONS:
                         diagnostics.append(

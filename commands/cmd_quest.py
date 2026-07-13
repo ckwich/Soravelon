@@ -172,6 +172,38 @@ class CmdQuest(Command):
                     delta = r.get("delta", 0)
                     direction = "improves" if delta > 0 else "worsens"
                     lines.append(f"  |c{faction} regard {direction}|n")
+                elif rtype == "modify_dimension":
+                    dimension = r.get("dimension", "world").replace("_", " ")
+                    direction = "deepens" if r.get("delta", 0) > 0 else "fades"
+                    lines.append(f"  |cYour {dimension} {direction}|n")
+                elif rtype == "modify_attunement":
+                    zone = r.get("zone_id", "this place").replace("_", " ").title()
+                    direction = "deepens" if r.get("delta", 0) > 0 else "fades"
+                    lines.append(f"  |cUnderstanding of {zone} {direction}|n")
+                elif rtype == "modify_trust":
+                    from world.faction_registry import FACTION_NAMES
+
+                    faction_id = r.get("faction_id", "?")
+                    faction = FACTION_NAMES.get(
+                        faction_id,
+                        faction_id.replace("_", " ").title(),
+                    )
+                    direction = "grows" if r.get("delta", 0) > 0 else "erodes"
+                    lines.append(f"  |c{faction} trust {direction}|n")
+                elif rtype == "set_betrayal":
+                    from world.faction_registry import FACTION_NAMES
+
+                    faction_id = r.get("faction_id", "?")
+                    faction = FACTION_NAMES.get(
+                        faction_id,
+                        faction_id.replace("_", " ").title(),
+                    )
+                    if r.get("betrayed"):
+                        lines.append(
+                            f"  |rThe {faction} will remember this betrayal|n"
+                        )
+                    else:
+                        lines.append(f"  |cA breach with the {faction} may heal|n")
                 elif rtype == "give_item":
                     lines.append(f"  |w{r.get('template_id', 'item').replace('_', ' ').title()}|n")
                 elif rtype == "give_skill_xp":

@@ -349,7 +349,7 @@ def build():
         quest_type='exploration',
         quest_giver='npc_ruin_listener_ao',
         objectives=[{'type': 'investigate', 'target': 'gr_grief_square', 'count': 1}, {'type': 'investigate', 'target': 'bn_burnt_names', 'count': 1}, {'type': 'talk_to', 'target': 'npc_archive_caretaker_evi', 'count': 1}],
-        rewards=[{'action_type': 'give_scales', 'amount': 30}, {'action_type': 'give_skill_xp', 'skill_id': 'scholarship', 'count': 10}],
+        rewards=[{'action_type': 'give_scales', 'amount': 30}, {'action_type': 'give_skill_xp', 'skill_id': 'scholarship', 'count': 10}, {'action_type': 'modify_dimension', 'dimension': 'legacy', 'delta': 5, 'effect_id': 'ruins_q_names_in_salt:legacy', 'message': '|cThe names you witnessed become part of what you carry forward.|n'}],
         next_quest_id='ruins_q_unburned_records',
         prerequisite_quests=['kor_q_quiet_bowl'],
         can_share=True,

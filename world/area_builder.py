@@ -156,12 +156,20 @@ def _canonicalize_reward_factions(rewards):
     for reward in normalized:
         if not isinstance(reward, dict):
             continue
-        if reward.get("action_type") != "modify_standing":
+        action_type = reward.get("action_type")
+        if action_type not in {
+            "modify_standing",
+            "modify_trust",
+            "set_betrayal",
+        }:
             continue
         reward["faction_id"] = _canonical_relationship_id(
             reward.get("faction_id")
         )
-        if not validate_authored_standing_delta(reward.get("delta")):
+        if (
+            action_type == "modify_standing"
+            and not validate_authored_standing_delta(reward.get("delta"))
+        ):
             raise AreaBuilderValidationError(
                 "Faction standing delta must use the canonical standing scale."
             )

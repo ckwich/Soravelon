@@ -348,7 +348,7 @@ def build():
         quest_type='exploration',
         quest_giver='npc_kiai_caretaker_maluhia',
         objectives=[{'type': 'investigate', 'target': 'wr_silence_ring', 'count': 1}, {'type': 'investigate', 'target': 'or_outer_waiting', 'count': 1}, {'type': 'talk_to', 'target': 'npc_circle_witness_lio', 'count': 1}],
-        rewards=[{'action_type': 'give_scales', 'amount': 28}, {'action_type': 'modify_standing', 'faction_id': 'kauroran', 'delta': 3500}],
+        rewards=[{'action_type': 'give_scales', 'amount': 28}, {'action_type': 'modify_standing', 'faction_id': 'kauroran', 'delta': 3500}, {'action_type': 'modify_attunement', 'zone_id': 'kiai_grounds', 'delta': 12, 'effect_id': 'kiai_q_witness_silence:attunement', 'message': '|cThe waiting road settles into your sense of the grounds.|n'}],
         next_quest_id='kiai_q_clean_bowls',
         prerequisite_quests=['kor_q_warden_guest'],
         can_share=True,

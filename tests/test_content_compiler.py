@@ -325,8 +325,10 @@ def build():
 def build():
     area = AreaBuilder("standing")
     area.zone(name="Standing", zone_type="frontier", continent="varath")
-    area.room("entry", name="Entry", desc="A threshold.")
-    area.quest("report", objectives=[{"type": "visit", "target": "entry"}],
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    area.npc(room, "npc_keeper", faction="wardens")
+    area.quest("report", quest_giver="npc_keeper",
+               objectives=[{"type": "visit", "target": "entry"}],
                rewards=[{"action_type": "modify_standing",
                          "faction_id": "wardens", "delta": 25}])
     return area.build()
@@ -336,6 +338,45 @@ def build():
 
         self.assertIsNone(result.manifest)
         self.assertEqual(result.diagnostics[0].code, "invalid-standing-delta")
+
+    def test_relationship_effects_require_valid_ids_targets_and_values(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("effects")
+    area.zone(name="Effects", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    area.npc(room, "npc_keeper", faction="wardens")
+    area.quest("report", quest_giver="npc_keeper",
+               objectives=[{"type": "visit", "target": "entry"}],
+               rewards=[
+                   {"action_type": "modify_dimension", "dimension": "attunement",
+                    "delta": 5, "effect_id": "effects:bad_dimension"},
+                   {"action_type": "modify_attunement", "zone_id": "missing_zone",
+                    "delta": 5, "effect_id": "effects:bad_zone"},
+                   {"action_type": "modify_trust", "faction_id": "typo_wardenz",
+                    "delta": 10, "effect_id": "effects:bad_trust"},
+                   {"action_type": "set_betrayal", "faction_id": "wardens",
+                    "betrayed": "yes", "effect_id": "effects:bad_betrayal"},
+                   {"action_type": "modify_dimension", "dimension": "network",
+                    "delta": 5},
+               ])
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/effects.py": source})
+
+        self.assertIsNone(result.manifest)
+        codes = [diagnostic.code for diagnostic in result.diagnostics]
+        for expected in (
+            "invalid-relationship-dimension",
+            "unknown-zone-id",
+            "unknown-faction-id",
+            "invalid-betrayal-value",
+            "invalid-relationship-effect-id",
+        ):
+            self.assertIn(expected, codes)
 
     def test_material_affordances_fail_closed_when_they_cannot_be_consumed(self):
         from world.content_compiler import compile_world_sources
