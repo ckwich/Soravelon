@@ -191,6 +191,31 @@ reload; stop and confirm all listeners/PIDs are gone; start again; reboot the
 host; and confirm the service and player reconnection recover. Record the
 commands, timestamps, exit states, and journal excerpts in the release record.
 
+For each disposable M6 candidate database, instrument authored storage before
+the lifecycle and require zero writes after each start/reload/restart boundary:
+
+```bash
+python scripts/audit_startup_content_writes.py install \
+  --expected-database-name soravelon_rehearsal_run1_candidate \
+  --git-commit "$(git rev-parse HEAD)"
+
+python scripts/audit_startup_content_writes.py reset \
+  --expected-database-name soravelon_rehearsal_run1_candidate \
+  --git-commit "$(git rev-parse HEAD)"
+
+# Perform exactly one lifecycle action, then require a zero-write report.
+python scripts/audit_startup_content_writes.py report \
+  --expected-database-name soravelon_rehearsal_run1_candidate \
+  --git-commit "$(git rev-parse HEAD)"
+```
+
+The rehearsal-only audit creates PostgreSQL triggers on every `world_*` table
+and the authored object/tag/attribute storage tables. A nonzero report exits 1
+and names the exact table, operation, and row count. Reset between lifecycle
+actions; uninstall after evidence capture. The script refuses non-PostgreSQL,
+ordinary production database names, mismatched database identity, a mismatched
+Git SHA, or a dirty checkout.
+
 ## Release procedure
 
 1. Deploy from a clean tagged commit.
