@@ -12,6 +12,7 @@ from world.content_revisions import (
     adopt_bootstrap,
     apply_world_content,
     get_world_content_status,
+    initialize_world_content,
     rollback_world_content,
     serialize_change_plan,
 )
@@ -32,6 +33,7 @@ class Command(BaseCommand):
                 "bootstrap-adopt",
                 "apply",
                 "rollback",
+                "initialize",
             ),
         )
         parser.add_argument(
@@ -78,6 +80,7 @@ class Command(BaseCommand):
             "bootstrap-check",
             "bootstrap-adopt",
             "apply",
+            "initialize",
         }:
             result = compile_world_manifest(areas_dir)
             valid = result.manifest is not None
@@ -161,6 +164,24 @@ class Command(BaseCommand):
                         "state": apply_result.state,
                         "git_commit": apply_result.revision.git_commit,
                         "revision_id": apply_result.revision.pk,
+                    }
+                )
+            elif action == "initialize" and result.manifest is not None:
+                git_commit = options.get("git_commit")
+                if not git_commit:
+                    raise CommandError("initialize requires an explicit --git-commit.")
+                try:
+                    initialize_result = initialize_world_content(
+                        result.manifest,
+                        git_commit=git_commit,
+                    )
+                except (ApplyPreconditionError, ContentApplyError) as exc:
+                    raise CommandError(str(exc)) from exc
+                payload.update(
+                    {
+                        "state": initialize_result.state,
+                        "git_commit": initialize_result.revision.git_commit,
+                        "revision_id": initialize_result.revision.pk,
                     }
                 )
         else:

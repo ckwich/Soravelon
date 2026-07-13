@@ -1519,8 +1519,8 @@ class AreaBuilder:
         """Resolve deferred cross-zone exits by tag lookup.
 
         Unresolved exits are saved to both self._unresolved_exits and the
-        module-level _UNRESOLVED_EXITS_REGISTRY for second-pass retry by
-        _load_all_zones() (BLD-06).
+        module-level _UNRESOLVED_EXITS_REGISTRY for manifest materialization's
+        fail-closed cross-zone finalization pass.
         """
         for exit_data in self._deferred_exits:
             target_str = exit_data["to"]  # peek, don't pop
@@ -1556,7 +1556,7 @@ class AreaBuilder:
         Return unresolved cross-zone exits from the last build() call.
         Each item: {"from_room": room_obj, "to": "zone_id:room_id",
                      "direction": str, ...kwargs}
-        Used by _load_all_zones() for second-pass retry.
+        Used by manifest materialization for second-pass retry.
         """
         return list(self._unresolved_exits)
 

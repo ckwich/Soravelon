@@ -7,7 +7,9 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from evennia.utils.test_resources import EvenniaTest
 
 AREAS_DIR = Path(__file__).resolve().parents[1] / "world" / "areas"
@@ -623,3 +625,202 @@ def build():
         self.assertEqual(payload["state"], "rolled-back")
         self.assertEqual(payload["command"], "rollback")
         self.assertEqual(payload["git_commit"], "c" * 40)
+
+
+class TestAppliedContentStartup(EvenniaTest):
+    def _adopt_runtime(self):
+        from world.area_builder import AreaBuilder
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import adopt_bootstrap
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("startup")
+    area.zone(name="Startup", zone_type="frontier", continent="varath")
+    area.room("entry", name="Entry", desc="Stable.")
+    return area.build()
+"""
+        area = AreaBuilder("startup")
+        area.zone(name="Startup", zone_type="frontier", continent="varath")
+        room = area.room("entry", name="Entry", desc="Stable.")
+        area.build()
+        manifest = compile_world_sources({"world/areas/startup.py": source}).manifest
+        assert manifest is not None
+        revision = adopt_bootstrap(manifest, git_commit="a" * 40)
+        return revision, manifest, room
+
+    def test_startup_hydrates_and_verifies_without_database_mutation(self):
+        from evennia.objects.models import ObjectDB
+        from world.content_revisions import load_applied_world_content
+        from world.models import WorldContentRevision
+
+        revision, manifest, _room = self._adopt_runtime()
+        before = (ObjectDB.objects.count(), WorldContentRevision.objects.count())
+
+        with (
+            patch(
+                "world.content_revisions.compile_world_manifest",
+                return_value=SimpleNamespace(manifest=manifest, diagnostics=()),
+            ),
+            CaptureQueriesContext(connection) as queries,
+        ):
+            first = load_applied_world_content(AREAS_DIR)
+            second = load_applied_world_content(AREAS_DIR)
+
+        self.assertEqual(first.revision_id, revision.id)
+        self.assertEqual(second.manifest_hash, manifest.manifest_hash)
+        self.assertEqual(
+            (ObjectDB.objects.count(), WorldContentRevision.objects.count()), before
+        )
+        writes = [
+            query["sql"]
+            for query in queries.captured_queries
+            if query["sql"]
+            .lstrip()
+            .upper()
+            .startswith(("INSERT", "UPDATE", "DELETE", "REPLACE"))
+        ]
+        self.assertEqual(writes, [])
+
+    def test_startup_refuses_runtime_drift(self):
+        from world.content_revisions import (
+            WorldContentStartupError,
+            load_applied_world_content,
+        )
+
+        _revision, manifest, room = self._adopt_runtime()
+        room.db.desc = "Drifted."
+
+        with patch(
+            "world.content_revisions.compile_world_manifest",
+            return_value=SimpleNamespace(manifest=manifest, diagnostics=()),
+        ):
+            with self.assertRaisesRegex(WorldContentStartupError, "runtime"):
+                load_applied_world_content(AREAS_DIR)
+
+    def test_server_start_uses_revision_verification_not_area_rebuild(self):
+        from server.conf.at_server_startstop import at_server_start
+
+        with (
+            patch("world.content_revisions.load_applied_world_content") as load_applied,
+            patch("world.node_helpers.initialize_node_pool"),
+            patch("world.mob_spawner.initialize_spawn_records"),
+            patch("evennia.TICKER_HANDLER.add"),
+        ):
+            at_server_start()
+
+        load_applied.assert_called_once()
+        module = __import__(
+            "server.conf.at_server_startstop", fromlist=["_load_all_zones"]
+        )
+        self.assertFalse(hasattr(module, "_load_all_zones"))
+
+    def test_fresh_database_initializes_explicitly_then_starts_read_only(self):
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import (
+            initialize_world_content,
+            load_applied_world_content,
+        )
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("fresh")
+    area.zone(name="Fresh", zone_type="frontier", continent="varath")
+    area.room("entry", name="Entry", desc="Freshly initialized.")
+    return area.build()
+"""
+        manifest = compile_world_sources({"world/areas/fresh.py": source}).manifest
+        assert manifest is not None
+
+        initialized = initialize_world_content(manifest, git_commit="a" * 40)
+
+        self.assertEqual(initialized.state, "initialized")
+        with (
+            patch(
+                "world.content_revisions.compile_world_manifest",
+                return_value=SimpleNamespace(manifest=manifest, diagnostics=()),
+            ),
+            CaptureQueriesContext(connection) as queries,
+        ):
+            startup = load_applied_world_content(AREAS_DIR)
+        self.assertEqual(startup.revision_id, initialized.revision.id)
+        self.assertEqual(
+            [
+                query["sql"]
+                for query in queries.captured_queries
+                if query["sql"]
+                .lstrip()
+                .upper()
+                .startswith(("INSERT", "UPDATE", "DELETE", "REPLACE"))
+            ],
+            [],
+        )
+
+    def test_initialize_command_records_json_result(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("fresh_command")
+    area.zone(name="Fresh", zone_type="frontier", continent="varath")
+    area.room("entry", name="Entry", desc="Freshly initialized.")
+    return area.build()
+"""
+        manifest = compile_world_sources({"world/areas/fresh.py": source}).manifest
+        assert manifest is not None
+        output = io.StringIO()
+
+        with patch(
+            "world.management.commands.worldcontent.compile_world_manifest",
+            return_value=SimpleNamespace(manifest=manifest, diagnostics=()),
+        ):
+            call_command(
+                "worldcontent",
+                "initialize",
+                "--git-commit",
+                "a" * 40,
+                "--format",
+                "json",
+                stdout=output,
+            )
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(payload["state"], "initialized")
+        self.assertEqual(payload["git_commit"], "a" * 40)
+
+    def test_two_complete_server_starts_leave_content_database_unchanged(self):
+        from server.conf.at_server_startstop import at_server_start
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import initialize_world_content
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("restart")
+    area.zone(name="Restart", zone_type="frontier", continent="varath")
+    area.room("entry", name="Entry", desc="Stable across starts.")
+    return area.build()
+"""
+        manifest = compile_world_sources({"world/areas/restart.py": source}).manifest
+        assert manifest is not None
+        initialize_world_content(manifest, git_commit="a" * 40)
+
+        with (
+            patch(
+                "world.content_revisions.compile_world_manifest",
+                return_value=SimpleNamespace(manifest=manifest, diagnostics=()),
+            ),
+            patch("evennia.TICKER_HANDLER.add"),
+            CaptureQueriesContext(connection) as queries,
+        ):
+            at_server_start()
+            at_server_start()
+
+        writes = [
+            query["sql"]
+            for query in queries.captured_queries
+            if query["sql"]
+            .lstrip()
+            .upper()
+            .startswith(("INSERT", "UPDATE", "DELETE", "REPLACE"))
+        ]
+        self.assertEqual(writes, [])

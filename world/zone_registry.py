@@ -3,7 +3,7 @@ Global zone registry. Updated by AreaBuilder.build().
 Maps zone_id -> ZoneObject dbref for fast zone lookups.
 
 IMPORTANT: Module-level dict, resets on server restart.
-Rebuilt every restart by _load_all_zones(). Do not persist.
+Hydrated read-only from the applied manifest and existing ZoneObjects. Do not persist.
 """
 
 _registry = {}  # zone_id -> zone_obj.id (dbref int)

@@ -33,6 +33,10 @@ class ContentApplyError(RuntimeError):
     """Raised after a failed apply has rolled back and recorded evidence."""
 
 
+class WorldContentStartupError(RuntimeError):
+    """Raised when startup cannot prove applied content authority."""
+
+
 @dataclass(frozen=True)
 class OccupiedDestructiveRoom:
     zone_id: str
@@ -44,6 +48,12 @@ class OccupiedDestructiveRoom:
 class ContentApplyResult:
     state: str
     revision: object
+
+
+@dataclass(frozen=True)
+class AppliedContentStartupResult:
+    revision_id: int
+    manifest_hash: str
 
 
 @dataclass(frozen=True)
@@ -200,6 +210,91 @@ def adopt_bootstrap(manifest, *, git_commit: str):
         applied_at=now,
         finished_at=now,
     )
+
+
+def initialize_world_content(
+    target_manifest,
+    *,
+    git_commit: str,
+    after_materialize=None,
+) -> ContentApplyResult:
+    """Explicitly materialize the first revision into a content-empty database."""
+
+    from world.content_compiler import serialize_world_manifest
+    from world.content_materializer import materialize_world_manifest
+    from world.content_runtime import (
+        hydrate_runtime_registries,
+        verify_runtime_manifest,
+    )
+    from world.models import WorldContentDeploymentLock, WorldContentRevision
+
+    _validate_git_object_id(git_commit)
+    failure_message = None
+    failed_revision = None
+    result = None
+    with transaction.atomic():
+        WorldContentDeploymentLock.objects.select_for_update().get(pk=1)
+        if WorldContentRevision.objects.exclude(status="failed").exists():
+            raise ApplyPreconditionError(
+                "World content authority is already initialized."
+            )
+        empty = compile_world_sources({}).manifest
+        assert empty is not None
+        hydrate_runtime_registries(empty)
+        if verify_runtime_manifest(empty).verified_manifest_hash is None:
+            raise ApplyPreconditionError(
+                "Database contains authored runtime content; use bootstrap-adopt instead."
+            )
+        planning = plan_world_changes(empty, target_manifest)
+        if planning.plan is None:
+            raise ApplyPreconditionError(
+                "Initial manifest cannot produce a safe semantic change plan."
+            )
+        plan_payload = serialize_change_plan(planning.plan)
+        plan_payload["kind"] = "initialize"
+        revision = WorldContentRevision.objects.create(
+            manifest_hash=target_manifest.manifest_hash,
+            schema_version=target_manifest.schema_version,
+            manifest=serialize_world_manifest(target_manifest),
+            plan=plan_payload,
+            status="applying",
+            git_commit=git_commit,
+        )
+        try:
+            with transaction.atomic():
+                materialize_world_manifest(
+                    target_manifest,
+                    previous_manifest=empty,
+                )
+                if after_materialize is not None:
+                    after_materialize()
+                verification = verify_runtime_manifest(target_manifest)
+                if verification.verified_manifest_hash is None:
+                    raise RuntimeError(
+                        "Initialized runtime did not exactly match target manifest."
+                    )
+        except Exception as exc:
+            failure_message = str(exc) or type(exc).__name__
+            hydrate_runtime_registries(empty)
+            revision.status = "failed"
+            revision.error = failure_message
+            revision.finished_at = timezone.now()
+            revision.save(update_fields=("status", "error", "finished_at"))
+            failed_revision = revision
+        else:
+            now = timezone.now()
+            revision.status = "applied"
+            revision.applied_at = now
+            revision.finished_at = now
+            revision.save(update_fields=("status", "applied_at", "finished_at"))
+            result = ContentApplyResult(state="initialized", revision=revision)
+
+    if failure_message is not None:
+        error = ContentApplyError(failure_message)
+        error.revision_id = failed_revision.pk
+        raise error
+    assert result is not None
+    return result
 
 
 def find_occupied_destructive_rooms(
@@ -446,4 +541,52 @@ def rollback_world_content(
         maintenance_approved=maintenance_approved,
         operation_kind="rollback",
         rollback_target_revision_id=target_revision.id,
+    )
+
+
+def load_applied_world_content(areas_dir: Path) -> AppliedContentStartupResult:
+    """Verify applied source/runtime truth and hydrate only in-memory registries."""
+
+    from world.content_runtime import (
+        hydrate_runtime_registries,
+        verify_runtime_manifest,
+    )
+    from world.models import WorldContentRevision
+
+    applied = (
+        WorldContentRevision.objects.filter(status="applied")
+        .order_by("-applied_at", "-created_at")
+        .first()
+    )
+    if applied is None:
+        raise WorldContentStartupError(
+            "No applied world-content revision exists; explicit initialization is required."
+        )
+    try:
+        manifest = deserialize_world_manifest(applied.manifest)
+    except ManifestIntegrityError as exc:
+        raise WorldContentStartupError(str(exc)) from exc
+    if manifest.manifest_hash != applied.manifest_hash:
+        raise WorldContentStartupError(
+            "Applied revision hash disagrees with its manifest payload."
+        )
+    source = compile_world_manifest(areas_dir)
+    if source.manifest is None:
+        raise WorldContentStartupError("Current authored source is invalid.")
+    if source.manifest.manifest_hash != manifest.manifest_hash:
+        raise WorldContentStartupError(
+            "Current authored source does not match the applied revision."
+        )
+    try:
+        hydrate_runtime_registries(manifest)
+    except RuntimeError as exc:
+        raise WorldContentStartupError(str(exc)) from exc
+    verification = verify_runtime_manifest(manifest)
+    if verification.verified_manifest_hash is None:
+        raise WorldContentStartupError(
+            "Current runtime does not exactly match the applied revision."
+        )
+    return AppliedContentStartupResult(
+        revision_id=applied.id,
+        manifest_hash=manifest.manifest_hash,
     )

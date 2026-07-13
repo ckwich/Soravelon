@@ -36,6 +36,7 @@ evennia worldcontent plan
 evennia worldcontent status
 evennia worldcontent bootstrap-check
 evennia worldcontent bootstrap-adopt --git-commit "$(git rev-parse HEAD)"
+evennia worldcontent initialize --git-commit "$(git rev-parse HEAD)"
 evennia worldcontent apply --git-commit "$(git rev-parse HEAD)"
 evennia worldcontent rollback --revision-id REVISION_ID --git-commit "$(git rev-parse HEAD)"
 

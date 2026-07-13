@@ -498,8 +498,7 @@ def initialize_zone_gathering(zone_obj):
     Initialize all gathering pools defined on a zone object.
 
     Reads zone_obj.db.gathering_pools list, calls spawn_gathering_pool
-    for each definition. Called from AreaBuilder.build() and
-    _load_all_zones().
+    for each definition. Called during explicit world-content materialization.
 
     Args:
         zone_obj: Zone Evennia object with db.gathering_pools list

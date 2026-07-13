@@ -33,6 +33,60 @@ class RuntimeManifestVerification:
     diagnostics: tuple[RuntimeManifestDiagnostic, ...]
 
 
+def hydrate_runtime_registries(manifest: WorldManifest) -> None:
+    """Rebuild process-local lookup registries from existing verified objects."""
+
+    from world import zone_registry
+    from world.flight_registry import FlightRegistry
+
+    zone_registry.clear()
+    FlightRegistry.clear()
+    for definition in manifest.zones:
+        zone_obj = next(
+            (
+                obj
+                for obj in search_objects_by_exact_tag("zone_object", "object_type")
+                if (obj.db.zone_id or "") == definition.zone_id
+            ),
+            None,
+        )
+        if zone_obj is None:
+            raise RuntimeError(
+                f"Cannot hydrate missing runtime zone '{definition.zone_id}'."
+            )
+        zone_registry.register_zone(definition.zone_id, zone_obj)
+        for operation in definition.operations:
+            if operation.method == "flight_point":
+                room_id = _ref_key(operation.arguments[0])
+                point_id = operation.arguments[1]
+                room = next(
+                    (
+                        candidate
+                        for candidate in search_objects_by_exact_tag(room_id, "room_id")
+                        if (candidate.db.zone_id or "") == definition.zone_id
+                    ),
+                    None,
+                )
+                if room is None:
+                    raise RuntimeError(
+                        f"Cannot hydrate flight point '{point_id}': room missing."
+                    )
+                FlightRegistry.register_point(
+                    point_id,
+                    room,
+                    name=_operation_value(operation, 2, "name"),
+                )
+            elif operation.method == "flight_route":
+                first, second, fare = operation.arguments[:3]
+                FlightRegistry.register_route(
+                    first,
+                    second,
+                    fare,
+                    _operation_value(operation, 3, "leg_duration", 30),
+                    _operation_value(operation, 4, "echoes", ()) or [],
+                )
+
+
 def _plain(value):
     if isinstance(value, FrozenMap):
         return {str(key): _plain(item) for key, item in value.entries}

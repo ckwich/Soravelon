@@ -106,178 +106,21 @@ def at_server_start():
         persistent=True,
     )
 
-    # Recover any orphaned Layer 1 rooms from crash/restart
+    # Authored content is applied explicitly through `worldcontent`; startup
+    # only proves source/runtime authority and hydrates process-local registries.
+    from pathlib import Path
+    from django.conf import settings
+    from world.content_revisions import load_applied_world_content
+
+    load_applied_world_content(Path(settings.GAME_DIR) / "world" / "areas")
+
+    # Recover dynamic Layer 1 rooms only after immutable content is verified.
     from world.node_helpers import initialize_node_pool
     initialize_node_pool()
-
-    # Load all area files from world/areas/ — rebuilds zone registry
-    # and room spawn definitions fresh each restart (idempotent)
-    _load_all_zones()
 
     # Create SpawnRecord entries for all spawn_definitions (idempotent, D-07)
     from world.mob_spawner import initialize_spawn_records
     initialize_spawn_records()
-
-
-def _load_all_zones():
-    """
-    Load all area files from world/areas/ on server start.
-    Idempotent — safe to call on restart.
-
-    Two-pass loading (BLD-06):
-      Pass 1 — all zones build normally; cross-zone exits may fail if
-               the target zone hasn't loaded yet.
-      Pass 2 — retry all unresolved cross-zone exits now that all zones
-               are in DB.
-    """
-    import os
-    import importlib
-    import json
-    from django.conf import settings
-    from world import zone_registry
-    from world.area_builder import (
-        clear_unresolved_exits,
-        get_unresolved_exits,
-    )
-    from world.tag_search import search_objects_by_exact_tag
-    from world.flight_registry import FlightRegistry
-    from world.social_topology import (
-        clear_registered_social_topology,
-        materialize_registered_social_topology,
-    )
-
-    # Clear registries before rebuild
-    zone_registry.clear()
-    FlightRegistry.clear()
-    clear_unresolved_exits()
-    clear_registered_social_topology()
-
-    areas_dir = os.path.join(settings.GAME_DIR, "world", "areas")
-    if not os.path.exists(areas_dir):
-        return
-
-    # --- Pass 1: load all zone files (.py and .zone.json) ---
-    for filename in sorted(os.listdir(areas_dir)):
-        if filename.endswith(".py") and not filename.startswith("_"):
-            module_name = f"world.areas.{filename[:-3]}"
-            try:
-                if module_name in importlib.sys.modules:
-                    importlib.reload(importlib.sys.modules[module_name])
-                else:
-                    importlib.import_module(module_name)
-                module = importlib.sys.modules[module_name]
-                if hasattr(module, "build"):
-                    report = module.build()
-                    if report is None:
-                        print(
-                            f"Zone [{filename}] returned no build report; "
-                            f"skipping warning/unresolved processing"
-                        )
-                        continue
-                    warnings = report.get("warnings", [])
-                    for w in warnings:
-                        if "target zone may not be loaded yet" not in w:
-                            print(f"Zone warning [{filename}]: {w}")
-                    unresolved = report.get("unresolved_exits", [])
-                    if unresolved:
-                        print(
-                            f"Zone [{filename}]: {len(unresolved)} "
-                            f"cross-zone exit(s) deferred to second pass"
-                        )
-            except Exception as e:
-                import traceback
-                print(f"Error loading zone {filename}: {e}")
-                traceback.print_exc()
-        elif filename.endswith(".zone.json"):
-            filepath = os.path.join(areas_dir, filename)
-            try:
-                from world.zone_serializer import load_zone_from_json
-                with open(filepath, "r") as f:
-                    zone_data = json.load(f)
-                report = load_zone_from_json(zone_data)
-                if report is None:
-                    print(
-                        f"Zone [{filename}] returned no build report; "
-                        f"skipping warning/unresolved processing"
-                    )
-                    continue
-                warnings = report.get("warnings", [])
-                for w in warnings:
-                    if "target zone may not be loaded yet" not in w:
-                        print(f"Zone warning [{filename}]: {w}")
-                unresolved = report.get("unresolved_exits", [])
-                if unresolved:
-                    print(
-                        f"Zone [{filename}]: {len(unresolved)} "
-                        f"cross-zone exit(s) deferred to second pass"
-                    )
-            except ImportError:
-                print(
-                    f"Skipping {filename}: zone_serializer not available"
-                )
-            except Exception as e:
-                import traceback
-                print(f"Error loading zone {filename}: {e}")
-                traceback.print_exc()
-
-    # --- Pass 2: resolve cross-zone Social Web topology after every area ---
-    social_report = materialize_registered_social_topology(finalize=True)
-    for edge in social_report["unresolved_edges"]:
-        print(
-            "Social topology edge unresolved after second pass: "
-            f"{edge['source_node_key']} -> {edge['target_node_key']} "
-            f"({edge['message']})"
-        )
-
-    # --- Pass 2: retry all unresolved cross-zone exits (BLD-06) ---
-    all_unresolved = get_unresolved_exits()
-    if not all_unresolved:
-        return
-
-    resolved_count = 0
-    still_unresolved = 0
-    for exit_data in all_unresolved:
-        target_str = exit_data["to"]
-        target_zone_id, target_room_id = target_str.split(":", 1)
-
-        candidates = search_objects_by_exact_tag(target_room_id, "room_id")
-        target = None
-        for room in candidates:
-            if (room.db.zone_id or "") == target_zone_id:
-                target = room
-                break
-
-        if not target:
-            print(
-                f"Cross-zone exit STILL unresolved after second pass: "
-                f"{target_str} (zone not loaded)"
-            )
-            still_unresolved += 1
-            continue
-
-        from_room = exit_data["from_room"]
-        direction = exit_data["direction"]
-        kwargs = {
-            k: v for k, v in exit_data.items()
-            if k not in ("from_room", "to", "direction")
-        }
-        try:
-            from world.area_builder import AreaBuilder
-            _retry_builder = AreaBuilder.__new__(AreaBuilder)
-            _retry_builder._zone_id = from_room.db.zone_id or "unknown"
-            _retry_builder._exits_created = 0
-            _retry_builder._create_exit_object(
-                from_room, target, direction, **kwargs
-            )
-            resolved_count += 1
-        except Exception as e:
-            print(f"Error resolving cross-zone exit {target_str}: {e}")
-            still_unresolved += 1
-
-    print(
-        f"Second pass: resolved {resolved_count} cross-zone exit(s), "
-        f"{still_unresolved} still unresolved"
-    )
 
 
 def at_server_stop():

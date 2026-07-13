@@ -14,16 +14,13 @@ class TestServerStartup(unittest.TestCase):
 
         with (
             patch("evennia.TICKER_HANDLER", ticker),
+            patch("world.content_revisions.load_applied_world_content"),
             patch("world.node_helpers.initialize_node_pool"),
             patch("world.mob_spawner.initialize_spawn_records"),
-            patch.object(at_server_startstop, "_load_all_zones"),
         ):
             at_server_startstop.at_server_start()
 
-        callbacks = [
-            call.kwargs["callback"]
-            for call in ticker.add.call_args_list
-        ]
+        callbacks = [call.kwargs["callback"] for call in ticker.add.call_args_list]
         self.assertEqual(len(callbacks), 8)
         self.assertTrue(all(callable(callback) for callback in callbacks))
         self.assertFalse(any(isinstance(callback, str) for callback in callbacks))
@@ -42,8 +39,7 @@ class TestServerStartup(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         env = {
             "SECRET_KEY": (
-                "soravelon-production-test-key-"
-                "0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "soravelon-production-test-key-" "0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             ),
             "ALLOWED_HOSTS": "game.example.test",
             "CSRF_TRUSTED_ORIGINS": "https://game.example.test",

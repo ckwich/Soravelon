@@ -722,23 +722,15 @@ class TestSpawnWarnings(AreaBuilderTestBase):
         self.assertIn("definitely_missing_template", ab._build_warnings[0])
 
 
-class TestServerStartLoadsAreasDir(EvenniaTestMixin, TransactionTestCase):
-    """Exercise the production-style autocommit world-load boundary."""
+class TestManifestLoadsAreasDir(EvenniaTestMixin, TransactionTestCase):
+    """Exercise the production manifest materialization boundary."""
 
     def setUp(self):
         super().setUp()
         zone_registry.clear()
 
-    def test_server_start_loads_areas_dir(self):
-        """_load_all_zones() processes .py files in world/areas/ without error."""
-        from server.conf.at_server_startstop import _load_all_zones
-
-        # Should not raise even with empty areas directory
-        _load_all_zones()
-
-        # Verify registries were cleared and rebuilt (empty is fine)
-        self.assertIsInstance(zone_registry.get_all_zones(), list)
-
+    def test_manifest_materializes_all_areas(self):
+        """Compiled area files materialize exactly without source imports."""
         from pathlib import Path
         from world.content_compiler import compile_world_manifest
         from world.content_materializer import materialize_world_manifest
@@ -1083,106 +1075,6 @@ class TestUnresolvedExitsTracked(AreaBuilderTestBase):
         # Now clear
         clear_unresolved_exits()
         self.assertEqual(get_unresolved_exits(), [])
-
-
-# ------------------------------------------------------------------
-# Two-pass _load_all_zones tests (BLD-06, plan 03-02)
-# ------------------------------------------------------------------
-
-class TestTwoPassLoadAllZones(AreaBuilderTestBase):
-    """_load_all_zones() uses two-pass strategy for cross-zone exits."""
-
-    def test_load_all_zones_calls_clear_unresolved_exits(self):
-        """_load_all_zones() clears the unresolved exit registry before pass 1."""
-        from server.conf.at_server_startstop import _load_all_zones
-        from world.area_builder import clear_unresolved_exits, get_unresolved_exits
-
-        with (
-            patch("os.listdir", return_value=[]),
-            patch("world.area_builder.clear_unresolved_exits") as mock_clear,
-        ):
-            _load_all_zones()
-            mock_clear.assert_called_once()
-
-    def test_load_all_zones_calls_get_unresolved_exits(self):
-        """_load_all_zones() calls get_unresolved_exits() after pass 1."""
-        from server.conf.at_server_startstop import _load_all_zones
-
-        with (
-            patch("os.listdir", return_value=[]),
-            patch(
-                "world.area_builder.get_unresolved_exits",
-                return_value=[],
-            ) as mock_get,
-        ):
-            _load_all_zones()
-            mock_get.assert_called_once()
-
-    def test_second_pass_resolves_cross_zone_exit(self):
-        """
-        Exit that was unresolved in pass 1 (target not yet loaded) gets
-        resolved in pass 2 once all zones are available.
-        This is a full integration test simulating two-zone load order problem.
-        """
-        from world.area_builder import clear_unresolved_exits
-
-        # Build zone A (destination) and zone B (source with exit to A)
-        # Zone B is loaded BEFORE zone A — simulates the BLD-06 failure case
-        clear_unresolved_exits()
-
-        # Build zone_b first with an exit pointing to zone_a (not yet built)
-        ab_b = AreaBuilder("bld06_zone_b")
-        ab_b.zone(
-            name="Zone B BLD06", tier=1, zone_type="plains",
-            continent="varath", faction_territory="neutral",
-        )
-        origin_room = self._make_room(ab_b, "origin_room_b")
-        ab_b.exit(origin_room, "bld06_zone_a:entry_room_a", "north")
-        ab_b.build()
-
-        # Exit is unresolved (zone_a not built yet)
-        unresolved_after_b = ab_b.expose_unresolved_exits()
-        self.assertEqual(len(unresolved_after_b), 1)
-
-        # Now build zone_a (target)
-        ab_a = AreaBuilder("bld06_zone_a")
-        ab_a.zone(
-            name="Zone A BLD06", tier=1, zone_type="plains",
-            continent="varath", faction_territory="neutral",
-        )
-        self._make_room(ab_a, "entry_room_a")
-        ab_a.build()
-
-        # Manually simulate the second pass retry
-        from world.area_builder import get_unresolved_exits
-        import evennia as _ev
-
-        all_unresolved = get_unresolved_exits()
-        self.assertGreater(len(all_unresolved), 0,
-                           "Module registry must have the unresolved exit from zone_b")
-
-        # Second pass: try to resolve each unresolved exit
-        for exit_data in all_unresolved:
-            target_str = exit_data["to"]
-            target_zone_id, target_room_id = target_str.split(":", 1)
-            candidates = _ev.search_tag(target_room_id, category="room_id")
-            target = None
-            for room in candidates:
-                if (room.db.zone_id or "") == target_zone_id:
-                    target = room
-                    break
-            if target:
-                from_room = exit_data["from_room"]
-                direction = exit_data["direction"]
-                from world.area_builder import AreaBuilder as _AB
-                retry_builder = _AB.__new__(_AB)
-                retry_builder._zone_id = from_room.db.zone_id or "unknown"
-                retry_builder._exits_created = 0
-                retry_builder._create_exit_object(from_room, target, direction)
-
-        # Verify the exit now exists
-        exits = [ex for ex in origin_room.exits if ex.key == "north"]
-        self.assertEqual(len(exits), 1, "Second-pass retry must have created the exit")
 
 
 # ------------------------------------------------------------------
