@@ -206,6 +206,153 @@ button:focus-visible {
   color: var(--sora-text);
 }
 
+.help-surface {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.help-header {
+  margin-bottom: 1.5rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid var(--sora-line);
+  border-top: 3px solid var(--sora-ember);
+  background: var(--sora-panel);
+}
+
+.help-header h1,
+.help-surface .card-title {
+  color: #fffaf0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-weight: 800;
+}
+
+.help-header > p:last-child {
+  max-width: 66ch;
+  margin-bottom: 0;
+  color: var(--sora-muted);
+  line-height: 1.65;
+}
+
+.help-category-jump {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--sora-line);
+  background: #0c0e11;
+}
+
+.help-category-jump > span {
+  color: var(--sora-muted);
+  font-weight: 700;
+}
+
+.help-category-jump ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.help-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.help-category-section {
+  padding: 1.25rem;
+  border: 1px solid var(--sora-line);
+  background: var(--sora-panel);
+}
+
+.help-category-section-wide {
+  grid-column: 1 / -1;
+}
+
+.help-category-title {
+  margin-bottom: 0.9rem;
+  color: var(--sora-cyan);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.help-topic-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.75;
+}
+
+.help-category-section-wide .help-topic-list {
+  column-width: 11rem;
+  column-gap: 2rem;
+}
+
+.help-edit-link {
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+}
+
+.breadcrumb {
+  border: 1px solid var(--sora-line);
+  background: #0c0e11;
+}
+
+.breadcrumb-item.active,
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--sora-muted);
+}
+
+.help-entry-text {
+  margin-bottom: 1.5rem;
+  border-left: 3px solid var(--sora-cyan);
+  background: #0c0e11;
+}
+
+.help-entry-text pre {
+  margin: 0;
+  padding: 1.25rem;
+  overflow-wrap: anywhere;
+  color: var(--sora-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.help-related-topics .list-group-item.active {
+  border-color: var(--sora-ember);
+  background: var(--sora-ember);
+  color: #100b0d;
+}
+
+.help-related-topics a {
+  display: block;
+}
+
+.page-link {
+  border-color: var(--sora-line);
+  background: var(--sora-panel-raised);
+  color: var(--sora-cyan);
+}
+
+.page-link:hover,
+.page-link:focus {
+  border-color: var(--sora-cyan);
+  background: #0c0e11;
+  color: #9ce9e5;
+}
+
+.help-empty {
+  padding: 2rem;
+  border: 1px solid var(--sora-line);
+  background: var(--sora-panel);
+}
+
 .footer {
   height: 60px;
   border-top: 1px solid var(--sora-line);
@@ -235,5 +382,22 @@ button:focus-visible {
 
   .soravelon-pillars li {
     min-height: auto;
+  }
+
+  .help-category-jump {
+    display: block;
+  }
+
+  .help-category-jump > span {
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+
+  .help-category-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .help-category-section-wide {
+    grid-column: auto;
   }
 }

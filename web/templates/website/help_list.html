@@ -1,0 +1,56 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}Help Index{% endblock %}
+
+{% block content %}
+{% regroup object_list by web_help_category as category_list %}
+
+<div class="help-surface">
+  <header class="help-header">
+    <p class="soravelon-eyebrow">Knowledge carried by travelers</p>
+    <h1>Help Index</h1>
+    <p>
+      Browse the systems, commands, and lore that shape Soravelon. In-game
+      help uses the same entries, so guidance stays consistent wherever you play.
+    </p>
+  </header>
+
+  {% if category_list %}
+  <nav class="help-category-jump" aria-label="Help categories">
+    <span>Jump to:</span>
+    <ul>
+      {% for category in category_list %}
+      <li><a href="#{{ category.grouper }}">{{ category.grouper|title }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  <div class="help-category-grid">
+    {% for web_help_category in category_list %}
+    <section
+      class="help-category-section{% if web_help_category.list|length > 20 %} help-category-section-wide{% endif %}"
+      id="{{ web_help_category.grouper }}"
+    >
+      <h2 class="help-category-title">{{ web_help_category.grouper|title }}</h2>
+      <ul class="help-topic-list">
+        {% for object in web_help_category.list %}
+        <li>
+          <a href="{{ object.web_get_detail_url }}">{{ object|title }}</a>
+          {% if object.web_get_admin_url and user.is_staff %}
+          <a class="help-edit-link" href="{{ object.web_get_admin_url }}">Edit</a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="help-empty" role="status">
+    <h2>The archive is still being assembled.</h2>
+    <p>Return soon, or enter the world and ask its people what they know.</p>
+    <a href="{% url 'index' %}" class="soravelon-button soravelon-button-secondary">Return home</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}{{ object|title }} — Help{% endblock %}
+
+{% block content %}
+<article class="help-surface">
+  <div class="card mb-3">
+    <div class="card-body">
+      <h1 class="card-title">{{ object|title }}</h1>
+
+      <nav aria-label="Help breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'help' %}">Help Index</a></li>
+          <li class="breadcrumb-item">
+            <a href="{% url 'help' %}#{{ object.web_help_category }}">{{ object.help_category|title }}</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">{{ object.web_help_key|title }}</li>
+        </ol>
+      </nav>
+
+      <div class="row">
+        <div class="col-lg-9 col-sm-12">
+          <div class="help-entry-text" aria-label="Help content for {{ object|title }}">
+            <pre>{{ entry_text }}</pre>
+          </div>
+
+          {% if topic_previous or topic_next %}
+          <nav aria-label="Topic navigation">
+            <ul class="pagination help-topic-navigation justify-content-center">
+              {% if topic_previous %}
+              <li class="page-item">
+                <a class="page-link" href="{{ topic_previous.web_get_detail_url }}">Previous: {{ topic_previous|title }}</a>
+              </li>
+              {% endif %}
+              {% if topic_next %}
+              <li class="page-item">
+                <a class="page-link" href="{{ topic_next.web_get_detail_url }}">Next: {{ topic_next|title }}</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+          {% endif %}
+        </div>
+
+        <aside class="col-lg-3 col-sm-12" aria-label="More {{ object.web_help_category|title }} topics">
+          {% if request.user.is_staff %}
+          <a class="soravelon-button soravelon-button-secondary mb-3" href="{{ object.web_get_admin_url }}">Edit topic</a>
+          {% endif %}
+
+          <div class="card mb-3">
+            <div class="card-header">{{ object.web_help_category|title }}</div>
+            <ul class="list-group list-group-flush help-related-topics">
+              {% for topic in topic_list %}
+              <li class="list-group-item{% if topic == object %} active{% endif %}">
+                {% if topic == object %}
+                <span aria-current="page">{{ topic|title }}</span>
+                {% else %}
+                <a href="{{ topic.web_get_detail_url }}">{{ topic|title }}</a>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</article>
+{% endblock %}

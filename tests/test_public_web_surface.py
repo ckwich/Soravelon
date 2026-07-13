@@ -27,6 +27,7 @@ class TestPublicWebSurface(TestCase):
         self.assertIn("Soravelon", html)
         self.assertIn("A living dark-fantasy world", html)
         self.assertNotIn("evennia_logo.png", html)
+        self.assertIn("website/css/custom.css?v=20260713-2", html)
 
     def test_webclient_terminal_controls_have_accessible_names(self):
         response = self.client.get("/webclient/")
@@ -77,3 +78,21 @@ class TestPublicWebSurface(TestCase):
             self.assertTrue(asset_path.is_file())
             digest = hashlib.sha256(asset_path.read_bytes()).hexdigest()
             self.assertRegex(manifest, rf"{re.escape(asset)}.*`{digest}`")
+
+    def test_help_index_uses_semantic_scannable_category_sections(self):
+        response = self.client.get("/help/")
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="help-category-grid"', html)
+        self.assertIn('<h2 class="help-category-title">Ancestries</h2>', html)
+        self.assertNotIn("The box to the right", html)
+
+    def test_help_topic_uses_a_readable_player_facing_heading(self):
+        response = self.client.get("/help/systems/scaling/")
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('<h1 class="card-title">Scaling</h1>', html)
+        self.assertIn('class="help-entry-text"', html)
+        self.assertNotIn("scaling detail", html.lower())
