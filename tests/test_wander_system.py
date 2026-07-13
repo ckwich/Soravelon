@@ -5,6 +5,8 @@ Uses unittest.TestCase + MagicMock — pure-logic module with no Evennia DB need
 """
 
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 
@@ -16,8 +18,9 @@ class TestWanderMob(unittest.TestCase):
         mob = MagicMock()
         mob.db.wander = wander
         mob.db.is_dead = is_dead
+        mob.ndb = SimpleNamespace()
         if in_combat:
-            mob.ndb.combat_handler = MagicMock()
+            mob.ndb.combat_handler = object()
 
         # Patrol script check
         if has_patrol:
@@ -104,19 +107,22 @@ class TestWanderMob(unittest.TestCase):
         self.assertNotEqual(mob.location, dest_room)
         mob.move_to.assert_not_called()
 
-    def test_combat_handler_guard_handles_none_internal_dict(self):
-        """Evennia ndb handlers can expose a non-dict vars() result."""
+    def test_missing_combat_handler_is_none(self):
+        """A faithful attribute holder returns no handler when unset."""
         from world.wander_system import _get_combat_handler
 
-        class NdbWithNoneDict:
-            @property
-            def __dict__(self):
-                return None
-
         mob = MagicMock()
-        mob.ndb = NdbWithNoneDict()
+        mob.ndb = SimpleNamespace()
 
         self.assertIsNone(_get_combat_handler(mob))
+
+    def test_production_module_does_not_depend_on_unittest_mock(self):
+        """Test-double behavior belongs in this test, not production code."""
+        source = (
+            Path(__file__).resolve().parents[1] / "world" / "wander_system.py"
+        ).read_text()
+
+        self.assertNotIn("unittest.mock", source)
 
     def test_combat_handler_guard_reads_dynamic_ndb_attribute(self):
         """Evennia ndb holders can resolve combat_handler outside __dict__."""

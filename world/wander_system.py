@@ -13,7 +13,6 @@ Decision refs: D-27 in 07-CONTEXT.md
 """
 
 import random
-from unittest.mock import Mock
 
 from world.tag_search import search_objects_by_exact_tag
 
@@ -36,12 +35,10 @@ WANDER_CHANCE = 0.4  # 40% chance per tick to actually move
 
 
 def _get_combat_handler(mob):
-    """Return the current combat handler without triggering MagicMock autovivification."""
+    """Return the current transient combat handler, if one is attached."""
     ndb = getattr(mob, "ndb", None)
     if ndb is None:
         return None
-    if isinstance(ndb, Mock):
-        return vars(ndb).get("combat_handler")
     return getattr(ndb, "combat_handler", None)
 
 
