@@ -463,3 +463,112 @@ def build():
 
         character.refresh_from_db()
         self.assertNotEqual(character.location.db.zone_id, "retired_occupied")
+
+
+class TestWorldContentApplyLifecycle(EvenniaTest):
+    def _baseline_and_target(self):
+        from world.area_builder import AreaBuilder
+        from world.content_compiler import compile_world_sources
+        from world.content_revisions import adopt_bootstrap
+
+        old_source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("apply_zone")
+    area.zone(name="Apply", zone_type="frontier", continent="varath")
+    area.room("entry", name="Entry", desc="Old description.")
+    return area.build()
+"""
+        new_source = old_source.replace("Old description.", "New description.")
+        area = AreaBuilder("apply_zone")
+        area.zone(name="Apply", zone_type="frontier", continent="varath")
+        room = area.room("entry", name="Entry", desc="Old description.")
+        area.build()
+        old = compile_world_sources({"world/areas/apply.py": old_source}).manifest
+        target = compile_world_sources({"world/areas/apply.py": new_source}).manifest
+        assert old is not None and target is not None
+        baseline = adopt_bootstrap(old, git_commit="a" * 40)
+        return baseline, old, target, room
+
+    def test_apply_transitions_authority_and_reapply_is_noop(self):
+        from world.content_revisions import apply_world_content
+        from world.models import WorldContentRevision
+
+        baseline, _old, target, room = self._baseline_and_target()
+
+        result = apply_world_content(target, git_commit="b" * 40)
+
+        baseline.refresh_from_db()
+        result.revision.refresh_from_db()
+        room.refresh_from_db()
+        self.assertEqual(result.state, "applied")
+        self.assertEqual(baseline.status, "superseded")
+        self.assertEqual(result.revision.status, "applied")
+        self.assertEqual(result.revision.previous_revision_id, baseline.id)
+        self.assertEqual(room.db.desc, "New description.")
+
+        repeated = apply_world_content(target, git_commit="b" * 40)
+
+        self.assertEqual(repeated.state, "no-op")
+        self.assertEqual(repeated.revision.id, result.revision.id)
+        self.assertEqual(WorldContentRevision.objects.count(), 2)
+
+    def test_injected_failure_rolls_back_runtime_and_persists_failure(self):
+        from world.content_revisions import ContentApplyError, apply_world_content
+        from world.content_runtime import verify_runtime_manifest
+        from world.models import WorldContentRevision
+
+        baseline, old, target, room = self._baseline_and_target()
+
+        def fail_after_materialization():
+            raise RuntimeError("injected apply failure")
+
+        with self.assertRaisesRegex(ContentApplyError, "injected apply failure"):
+            apply_world_content(
+                target,
+                git_commit="b" * 40,
+                after_materialize=fail_after_materialization,
+            )
+
+        baseline.refresh_from_db()
+        room.refresh_from_db()
+        failed = WorldContentRevision.objects.get(manifest_hash=target.manifest_hash)
+        self.assertEqual(baseline.status, "applied")
+        self.assertEqual(failed.status, "failed")
+        self.assertIn("injected apply failure", failed.error)
+        self.assertEqual(room.db.desc, "Old description.")
+        self.assertEqual(verify_runtime_manifest(old).diagnostics, ())
+
+        retried = apply_world_content(target, git_commit="c" * 40)
+
+        self.assertEqual(retried.state, "applied")
+        self.assertEqual(
+            WorldContentRevision.objects.filter(
+                manifest_hash=target.manifest_hash
+            ).count(),
+            2,
+        )
+        failed.refresh_from_db()
+        self.assertEqual(failed.status, "failed")
+
+    def test_apply_command_records_json_result(self):
+        _baseline, _old, target, _room = self._baseline_and_target()
+        output = io.StringIO()
+
+        with patch(
+            "world.management.commands.worldcontent.compile_world_manifest",
+            return_value=SimpleNamespace(manifest=target, diagnostics=()),
+        ):
+            call_command(
+                "worldcontent",
+                "apply",
+                "--git-commit",
+                "b" * 40,
+                "--format",
+                "json",
+                stdout=output,
+            )
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(payload["state"], "applied")
+        self.assertEqual(payload["git_commit"], "b" * 40)
+        self.assertIsInstance(payload["revision_id"], int)

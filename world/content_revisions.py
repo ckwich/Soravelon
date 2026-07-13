@@ -29,11 +29,21 @@ class ApplyPreconditionError(RuntimeError):
     """Raised when a content apply is unsafe in current runtime state."""
 
 
+class ContentApplyError(RuntimeError):
+    """Raised after a failed apply has rolled back and recorded evidence."""
+
+
 @dataclass(frozen=True)
 class OccupiedDestructiveRoom:
     zone_id: str
     room_id: str
     character_ids: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class ContentApplyResult:
+    state: str
+    revision: object
 
 
 @dataclass(frozen=True)
@@ -248,3 +258,132 @@ def ensure_apply_occupancy_allowed(
             f"because player characters occupy: {room_list}."
         )
     return occupied
+
+
+def _validate_git_object_id(git_commit: str) -> None:
+    if re.fullmatch(r"[0-9a-f]{7,64}", git_commit or "") is None:
+        raise ApplyPreconditionError(
+            "Git commit must be a 7-64 character lowercase hexadecimal Git object ID."
+        )
+
+
+def apply_world_content(
+    target_manifest,
+    *,
+    git_commit: str,
+    maintenance_approved: bool = False,
+    after_materialize=None,
+) -> ContentApplyResult:
+    """Apply one manifest under the durable deployment mutex and DB transaction."""
+
+    from world.content_compiler import (
+        deserialize_world_manifest,
+        plan_world_changes,
+        serialize_world_manifest,
+    )
+    from world.content_materializer import materialize_world_manifest
+    from world.content_runtime import verify_runtime_manifest
+    from world.models import WorldContentDeploymentLock, WorldContentRevision
+
+    _validate_git_object_id(git_commit)
+    failure_message = None
+    failed_revision = None
+    result = None
+    with transaction.atomic():
+        WorldContentDeploymentLock.objects.select_for_update().get(pk=1)
+        applied_revision = (
+            WorldContentRevision.objects.select_for_update()
+            .filter(status="applied")
+            .order_by("-applied_at", "-created_at")
+            .first()
+        )
+        if applied_revision is None:
+            raise ApplyPreconditionError(
+                "World content has no applied baseline; run bootstrap-adopt first."
+            )
+        try:
+            previous_manifest = deserialize_world_manifest(applied_revision.manifest)
+        except ManifestIntegrityError as exc:
+            raise ApplyPreconditionError(str(exc)) from exc
+        if previous_manifest.manifest_hash != applied_revision.manifest_hash:
+            raise ApplyPreconditionError(
+                "Applied revision hash disagrees with its manifest payload."
+            )
+        baseline = verify_runtime_manifest(previous_manifest)
+        if baseline.verified_manifest_hash is None:
+            raise ApplyPreconditionError(
+                "Current runtime does not exactly match the applied baseline."
+            )
+        if target_manifest.manifest_hash == previous_manifest.manifest_hash:
+            result = ContentApplyResult(state="no-op", revision=applied_revision)
+        else:
+            planning = plan_world_changes(previous_manifest, target_manifest)
+            if planning.plan is None:
+                raise ApplyPreconditionError(
+                    "Target manifest cannot produce a safe semantic change plan."
+                )
+            ensure_apply_occupancy_allowed(
+                planning.plan,
+                maintenance_approved=maintenance_approved,
+            )
+            plan_payload = serialize_change_plan(planning.plan)
+            target_revision = WorldContentRevision.objects.create(
+                manifest_hash=target_manifest.manifest_hash,
+                schema_version=target_manifest.schema_version,
+                manifest=serialize_world_manifest(target_manifest),
+                plan=plan_payload,
+                status="applying",
+                previous_revision=applied_revision,
+                git_commit=git_commit,
+                maintenance_approved=maintenance_approved,
+            )
+            try:
+                with transaction.atomic():
+                    materialize_world_manifest(
+                        target_manifest,
+                        previous_manifest=previous_manifest,
+                        maintenance_approved=maintenance_approved,
+                    )
+                    if after_materialize is not None:
+                        after_materialize()
+                    verification = verify_runtime_manifest(target_manifest)
+                    if verification.verified_manifest_hash is None:
+                        raise RuntimeError(
+                            "Materialized runtime did not exactly match target manifest."
+                        )
+            except Exception as exc:
+                failure_message = str(exc) or type(exc).__name__
+                # The savepoint restored database state; replaying the prior
+                # manifest repairs process-local registries and cached topology.
+                materialize_world_manifest(
+                    previous_manifest,
+                    previous_manifest=previous_manifest,
+                    maintenance_approved=True,
+                )
+                restored = verify_runtime_manifest(previous_manifest)
+                if restored.verified_manifest_hash is None:
+                    failure_message += "; baseline registry restoration failed"
+                target_revision.status = "failed"
+                target_revision.error = failure_message
+                target_revision.finished_at = timezone.now()
+                target_revision.save(update_fields=("status", "error", "finished_at"))
+                failed_revision = target_revision
+            else:
+                now = timezone.now()
+                applied_revision.status = "superseded"
+                applied_revision.finished_at = now
+                applied_revision.save(update_fields=("status", "finished_at"))
+                target_revision.status = "applied"
+                target_revision.applied_at = now
+                target_revision.finished_at = now
+                target_revision.save(
+                    update_fields=("status", "applied_at", "finished_at")
+                )
+                result = ContentApplyResult(state="applied", revision=target_revision)
+
+    if failure_message is not None:
+        error = ContentApplyError(failure_message)
+        error.revision_id = failed_revision.pk
+        raise error
+    assert result is not None
+    return result

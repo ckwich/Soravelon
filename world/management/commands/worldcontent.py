@@ -6,8 +6,11 @@ from django.core.management.base import BaseCommand, CommandError
 
 from world.content_compiler import compile_world_manifest
 from world.content_revisions import (
+    ApplyPreconditionError,
     BootstrapAdoptionError,
+    ContentApplyError,
     adopt_bootstrap,
+    apply_world_content,
     get_world_content_status,
     serialize_change_plan,
 )
@@ -26,6 +29,7 @@ class Command(BaseCommand):
                 "status",
                 "bootstrap-check",
                 "bootstrap-adopt",
+                "apply",
             ),
         )
         parser.add_argument(
@@ -35,13 +39,14 @@ class Command(BaseCommand):
             dest="output_format",
         )
         parser.add_argument("--git-commit")
+        parser.add_argument("--maintenance-approved", action="store_true")
 
     def handle(self, *args, **options):
         action = options["action"]
         output_format = options["output_format"]
         areas_dir = Path(settings.GAME_DIR) / "world" / "areas"
 
-        if action in {"validate", "bootstrap-check", "bootstrap-adopt"}:
+        if action in {"validate", "bootstrap-check", "bootstrap-adopt", "apply"}:
             result = compile_world_manifest(areas_dir)
             valid = result.manifest is not None
             payload = {
@@ -107,6 +112,25 @@ class Command(BaseCommand):
                             "revision_id": revision.pk,
                         }
                     )
+            elif action == "apply" and result.manifest is not None:
+                git_commit = options.get("git_commit")
+                if not git_commit:
+                    raise CommandError("apply requires an explicit --git-commit.")
+                try:
+                    apply_result = apply_world_content(
+                        result.manifest,
+                        git_commit=git_commit,
+                        maintenance_approved=options["maintenance_approved"],
+                    )
+                except (ApplyPreconditionError, ContentApplyError) as exc:
+                    raise CommandError(str(exc)) from exc
+                payload.update(
+                    {
+                        "state": apply_result.state,
+                        "git_commit": apply_result.revision.git_commit,
+                        "revision_id": apply_result.revision.pk,
+                    }
+                )
         else:
             status = get_world_content_status(areas_dir)
             valid = not status.state.startswith("invalid")

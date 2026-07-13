@@ -1184,7 +1184,7 @@ class WorldContentRevision(models.Model):
         ("rolled_back", "Rolled Back"),
     ]
 
-    manifest_hash = models.CharField(max_length=64, unique=True)
+    manifest_hash = models.CharField(max_length=64, db_index=True)
     schema_version = models.CharField(max_length=64)
     manifest = models.JSONField()
     plan = models.JSONField(default=dict)
@@ -1229,3 +1229,13 @@ class WorldContentRevision(models.Model):
 
     def __str__(self):
         return f"{self.manifest_hash[:12]}:{self.status}"
+
+
+class WorldContentDeploymentLock(models.Model):
+    """Singleton row used as the cross-process content deployment mutex."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "world-content-deployment-lock"
