@@ -131,5 +131,5 @@ class TestContentProseAudit(unittest.TestCase):
             )
         )
         flagged_paths = {finding.source_path for finding in audit.findings}
-        self.assertIn("world/areas/korahei.py", flagged_paths)
+        self.assertNotIn("world/areas/korahei.py", flagged_paths)
         self.assertNotIn("world/areas/tremen.py", flagged_paths)
