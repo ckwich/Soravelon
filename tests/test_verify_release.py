@@ -72,6 +72,8 @@ raise SystemExit(0 if repo_root in sys.path else 29)
                 "--dry-run",
                 "--expected-database-name",
                 "soravelon_rehearsal_candidate_1",
+                "--test-database-name",
+                "test_soravelon_rehearsal_candidate_1",
                 "--git-commit",
                 "a" * 40,
                 "--protocol-host",
@@ -92,6 +94,7 @@ raise SystemExit(0 if repo_root in sys.path else 29)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("--database-kind prepared", result.stdout)
         self.assertIn("soravelon_rehearsal_candidate_1", result.stdout)
+        self.assertIn("--keepdb", result.stdout)
         self.assertIn("Authored content prose", result.stdout)
         self.assertIn("Live player protocols", result.stdout)
 
@@ -183,6 +186,7 @@ class TestReleasePlan(unittest.TestCase):
     def test_candidate_plan_names_every_mud_release_surface(self):
         candidate = verify_release.ReleaseCandidateInputs(
             expected_database_name="soravelon_rehearsal_candidate_1",
+            test_database_name="test_soravelon_rehearsal_candidate_1",
             git_commit="a" * 40,
             protocol_host="127.0.0.1",
             telnet_port=4000,
@@ -231,9 +235,10 @@ class TestReleasePlan(unittest.TestCase):
             self.assertIn(label, verticals)
         self.assertEqual(
             commands["Canonical tests"],
-            (sys.executable, "scripts/run_tests.py"),
+            (sys.executable, "scripts/run_tests.py", "--keepdb"),
         )
         rollback = commands["Transactional failure injection"]
+        self.assertIn("--keepdb", rollback)
         for label in (
             "tests.test_content_revisions.TestWorldContentApplyLifecycle.test_injected_failure_rolls_back_runtime_and_persists_failure",
             "tests.test_economy_transactions.TestAtomicCashAndBankOperations.test_deposit_rolls_back_after_every_write",
@@ -261,6 +266,7 @@ class TestReleasePlan(unittest.TestCase):
     def test_candidate_plan_does_not_allow_test_sharding(self):
         candidate = verify_release.ReleaseCandidateInputs(
             expected_database_name="soravelon_rehearsal_restored_1",
+            test_database_name="test_soravelon_rehearsal_restored_1",
             git_commit="a" * 40,
             protocol_host="127.0.0.1",
             telnet_port=4000,
@@ -279,12 +285,44 @@ class TestReleasePlan(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "soravelon_rehearsal"):
             verify_release.ReleaseCandidateInputs(
                 expected_database_name="soravelon",
+                test_database_name="test_soravelon_rehearsal_candidate_1",
                 git_commit="a" * 40,
                 protocol_host="127.0.0.1",
                 telnet_port=4000,
                 web_port=4001,
                 websocket_port=4002,
             )
+
+    def test_candidate_inputs_reject_non_disposable_test_database_name(self):
+        with self.assertRaisesRegex(ValueError, "test_soravelon_rehearsal"):
+            verify_release.ReleaseCandidateInputs(
+                expected_database_name="soravelon_rehearsal_candidate_1",
+                test_database_name="soravelon",
+                git_commit="a" * 40,
+                protocol_host="127.0.0.1",
+                telnet_port=4000,
+                web_port=4001,
+                websocket_port=4002,
+            )
+
+
+class TestCanonicalTestRunner(unittest.TestCase):
+    def test_keepdb_is_a_runner_option_not_a_test_label(self):
+        from scripts import run_tests
+
+        with (
+            patch("django.setup"),
+            patch("django.core.management.call_command") as call_command,
+        ):
+            result = run_tests.main(["--keepdb", "tests.test_example"])
+
+        self.assertEqual(result, 0)
+        call_command.assert_called_once_with(
+            "test",
+            "tests.test_example",
+            verbosity=1,
+            keepdb=True,
+        )
 
 
 class TestEconomyInventoryReconciliation(unittest.TestCase):

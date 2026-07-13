@@ -20,6 +20,7 @@ PRODUCTION_ENV_KEYS = {
     "DATABASE_NAME",
     "DATABASE_PASSWORD",
     "DATABASE_PORT",
+    "DATABASE_TEST_NAME",
     "DATABASE_USER",
     "DEBUG",
     "SECRET_KEY",
@@ -147,6 +148,21 @@ raise SystemExit(
 
 
 class TestProductionEnvironmentValidation(unittest.TestCase):
+    def test_disposable_rehearsal_can_name_a_precreated_test_database(self):
+        result = _run_production_import(
+            overrides={
+                "DATABASE_NAME": "soravelon_rehearsal_candidate_1",
+                "DATABASE_TEST_NAME": "test_soravelon_rehearsal_candidate_1",
+            },
+            probe="print(settings.DATABASES['default']['TEST']['NAME'])",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            result.stdout.strip().splitlines()[-1],
+            "test_soravelon_rehearsal_candidate_1",
+        )
+
     def test_unsafe_or_implicit_production_configuration_fails_closed(self):
         cases = (
             (
@@ -179,6 +195,15 @@ class TestProductionEnvironmentValidation(unittest.TestCase):
                 {"DATABASE_PASSWORD": "replace-me"},
                 (),
                 "DATABASE_PASSWORD",
+            ),
+            (
+                "unsafe test database",
+                {
+                    "DATABASE_NAME": "soravelon_rehearsal_candidate_1",
+                    "DATABASE_TEST_NAME": "soravelon",
+                },
+                (),
+                "test_soravelon_rehearsal",
             ),
             (
                 "debug enabled",

@@ -113,12 +113,19 @@ so it cannot silently change content underneath the live protocol checks.
 ```bash
 python scripts/verify_release.py candidate \
   --expected-database-name soravelon_rehearsal_candidate_1 \
+  --test-database-name test_soravelon_rehearsal_candidate_1 \
   --git-commit "$(git rev-parse HEAD)" \
   --protocol-host 127.0.0.1 \
   --telnet-port 4000 \
   --web-port 4001 \
   --websocket-port 4002
 ```
+
+The candidate test database must be pre-created as an empty database owned by
+the restricted application role. Candidate mode reuses it with Django's
+`keepdb` path, so the production-like role does not need the cluster-wide
+`CREATEDB` privilege. Both names are explicit and restricted to disposable
+rehearsal naming contracts.
 
 This candidate mode runs the release preflight, prepared content verification,
 world connectivity and prose audits, explicit content/economy/inventory/quest

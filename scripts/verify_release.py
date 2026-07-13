@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shlex
 import subprocess
@@ -27,6 +28,7 @@ class ReleaseStep:
 @dataclass(frozen=True)
 class ReleaseCandidateInputs:
     expected_database_name: str
+    test_database_name: str
     git_commit: str
     protocol_host: str
     telnet_port: int
@@ -42,6 +44,18 @@ class ReleaseCandidateInputs:
             raise ValueError(
                 "Candidate database must use the soravelon_rehearsal_* "
                 "disposable naming contract."
+            )
+        if (
+            re.fullmatch(
+                r"test_soravelon_rehearsal_[a-z0-9][a-z0-9_]*",
+                self.test_database_name,
+            )
+            is None
+            or len(self.test_database_name) > 63
+        ):
+            raise ValueError(
+                "Candidate test database must use the "
+                "test_soravelon_rehearsal_* disposable naming contract."
             )
         if re.fullmatch(r"[0-9a-f]{7,64}", self.git_commit) is None:
             raise ValueError(
@@ -125,8 +139,14 @@ def _preflight_steps() -> list[ReleaseStep]:
     ]
 
 
-def _test_step(shard: str | None = None) -> ReleaseStep:
+def _test_step(
+    shard: str | None = None,
+    *,
+    keepdb: bool = False,
+) -> ReleaseStep:
     command = list(_python_command("scripts/run_tests.py"))
+    if keepdb:
+        command.append("--keepdb")
     if shard:
         command.extend(_test_labels_for_shard(shard))
     return ReleaseStep("Canonical tests", tuple(command))
@@ -180,6 +200,7 @@ def _candidate_steps(candidate: ReleaseCandidateInputs) -> list[ReleaseStep]:
             "Transactional failure injection",
             _python_command(
                 "scripts/run_tests.py",
+                "--keepdb",
                 "tests.test_content_revisions.TestWorldContentApplyLifecycle.test_injected_failure_rolls_back_runtime_and_persists_failure",
                 "tests.test_economy_transactions.TestAtomicCashAndBankOperations.test_deposit_rolls_back_after_every_write",
                 "tests.test_inventory_transactions.TestAtomicPickup.test_pickup_rolls_back_location_and_ownership_after_every_write",
@@ -190,13 +211,14 @@ def _candidate_steps(candidate: ReleaseCandidateInputs) -> list[ReleaseStep]:
             "Release gameplay verticals",
             _python_command(
                 "scripts/run_tests.py",
+                "--keepdb",
                 "tests.test_m3_golden_path",
                 "tests.test_m4_living_world_vertical",
                 "tests.test_social_web_warden_route",
                 "tests.test_cooperative_combat_vertical",
             ),
         ),
-        _test_step(),
+        _test_step(keepdb=True),
         ReleaseStep("Live player protocols", tuple(protocol_command)),
     ]
 
@@ -444,6 +466,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "--expected-database-name",
         help="Candidate-only exact soravelon_rehearsal_* database name.",
     )
+    parser.add_argument(
+        "--test-database-name",
+        help=(
+            "Candidate-only pre-created "
+            "test_soravelon_rehearsal_* database name."
+        ),
+    )
     parser.add_argument("--git-commit", help="Candidate-only Git object identity.")
     parser.add_argument(
         "--protocol-host",
@@ -470,6 +499,7 @@ def _candidate_inputs_from_args(
 ) -> ReleaseCandidateInputs | None:
     candidate_values = {
         "expected_database_name": args.expected_database_name,
+        "test_database_name": args.test_database_name,
         "git_commit": args.git_commit,
         "protocol_host": args.protocol_host,
         "telnet_port": args.telnet_port,
@@ -506,6 +536,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     candidate = _candidate_inputs_from_args(parser, args)
+    if candidate is not None:
+        os.environ["DATABASE_TEST_NAME"] = candidate.test_database_name
     if args.mode == "reconcile":
         if args.shard or args.dry_run:
             parser.error("reconcile mode does not accept --shard or --dry-run")

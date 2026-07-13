@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import re
 from urllib.parse import urlsplit
 
 from evennia.settings_default import MIDDLEWARE as EVENNIA_MIDDLEWARE
@@ -200,13 +201,38 @@ if database_engine not in {"postgres", "postgresql", "psql"}:
         f"Production requires PostgreSQL; got DATABASE_ENGINE '{database_engine}'."
     )
 
+database_name = _env("DATABASE_NAME", required=True)
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": _env("DATABASE_NAME", required=True),
+        "NAME": database_name,
         "USER": _env("DATABASE_USER", required=True),
         "PASSWORD": _production_database_password(),
         "HOST": _env("DATABASE_HOST", "127.0.0.1"),
         "PORT": _env("DATABASE_PORT", "5432"),
     }
 }
+
+test_database_name = str(_env("DATABASE_TEST_NAME", "") or "").strip()
+if test_database_name:
+    if re.fullmatch(
+        r"soravelon_rehearsal_[a-z0-9][a-z0-9_]*",
+        str(database_name),
+    ) is None:
+        raise RuntimeError(
+            "DATABASE_TEST_NAME is allowed only with a disposable "
+            "soravelon_rehearsal_* database."
+        )
+    if (
+        re.fullmatch(
+            r"test_soravelon_rehearsal_[a-z0-9][a-z0-9_]*",
+            test_database_name,
+        )
+        is None
+        or len(test_database_name) > 63
+    ):
+        raise RuntimeError(
+            "DATABASE_TEST_NAME must use the "
+            "test_soravelon_rehearsal_* disposable naming contract."
+        )
+    DATABASES["default"]["TEST"] = {"NAME": test_database_name}
