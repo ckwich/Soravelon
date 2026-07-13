@@ -453,10 +453,20 @@ def build():
     area.exit(fe_old_quarry, fe_mushroom_hollow, "south")
 
     # Cross-zone exits from forest edge
-    area.exit(fe_trailhead, "vaels_crossing:hg_west_road", "east",
-              desc="The Cantera Trail leads east toward Vael's Crossing.")
-    area.exit(fe_south_plains_exit, "ashreach_plains:ash_road_01", "south",
-              desc="A game trail descends south into the Ashreach plains.")
+    area.exit(
+        fe_trailhead,
+        "vaels_crossing:hg_west_road",
+        "east",
+        desc="The Cantera Trail leads east toward Vael's Crossing.",
+        one_way=True,
+    )
+    area.exit(
+        fe_south_plains_exit,
+        "ashreach_plains:ash_road_01",
+        "south",
+        desc="A game trail descends south into the Ashreach plains.",
+        one_way=True,
+    )
 
     # Region 1 spawns
     area.spawn(fe_fern_glade, "wild_boar", count_min=1, count_max=1,

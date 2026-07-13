@@ -1887,9 +1887,15 @@ def build():
     area.exit(outpost_16, outpost_01, "southeast")
 
     # -- Cross-zone exits (D-25) --
-    area.exit(outpost_12, "stormhaven_coast:hr_junction", "east")       # east to coast
-    area.exit(outpost_16, "cantera_edge:fe_trailhead", "west")         # west to forest
-    area.exit(ash_road_16, "stormhaven_coast:cn_trailhead", "east")    # crossroads east
+    area.exit(
+        outpost_12, "stormhaven_coast:hr_junction", "east", one_way=True
+    )  # east to coast
+    area.exit(
+        outpost_16, "cantera_edge:fe_trailhead", "west", one_way=True
+    )  # west to forest
+    area.exit(
+        ash_road_16, "stormhaven_coast:cn_trailhead", "east", one_way=True
+    )  # crossroads east
 
     # -- Outpost spawns --
     area.spawn(outpost_02, "plains_viper", count_min=1, count_max=1,

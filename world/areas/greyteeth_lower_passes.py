@@ -367,7 +367,7 @@ def build():
     area.exit(wt_windcut_turn, sp_hammer_tap_14, 'south')
     area.exit(wt_sleet_bite_14, tg_tremen_gate, 'north')
     area.exit(tg_tremen_gate, wt_sleet_bite_14, 'south')
-    area.exit(tg_tremen_gate, 'tremen:gt_lower_gate', 'north')
+    area.exit(tg_tremen_gate, 'tremen:gt_lower_gate', 'north', one_way=True)
 
     # NPCs
     _route_warden = area.npc(ra_rethward_arrival, 'npc_route_warden_mirren', name='Route Warden Mirren', faction='warden', dialogue={'greeting': 'Mirren counts your party twice and your rope three times.', 'topics': {'route': 'The road is generous if you respect its bookkeeping.'}, 'base_hints': []})

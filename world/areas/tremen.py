@@ -367,7 +367,7 @@ def build():
     area.exit(ug_underhall_gate, sc_rain_trough_14, 'south')
     area.exit(ug_stone_witness_14, hl_high_lift, 'north')
     area.exit(hl_high_lift, ug_stone_witness_14, 'south')
-    area.exit(gt_lower_gate, 'greyteeth_lower_passes:ra_rethward_arrival', 'south')
+    area.exit(gt_lower_gate, 'greyteeth_lower_passes:ra_rethward_arrival', 'south', one_way=True)
     area.exit(hl_high_lift, 'tremeneth_high_passes:ps_patrol_stair', 'up')
     area.exit(fh_mine_lift, 'tremeneth_deep_mines:cg_claim_gate', 'down')
     area.exit(ug_underhall_gate, 'tremeneth_underhalls:ug_underhall_gate', 'down')

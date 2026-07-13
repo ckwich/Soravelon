@@ -9,6 +9,9 @@ import json
 from pathlib import Path
 from typing import Mapping
 
+from world.area_validator import VALID_DIRECTIONS
+from world.social_taxonomy import EDGE_TYPES, NODE_TYPES
+
 SUPPORTED_AREA_OPERATIONS = frozenset(
     {
         "build",
@@ -104,6 +107,22 @@ class WorldManifest:
 class WorldManifestCompilation:
     manifest: WorldManifest | None
     diagnostics: tuple[CompilationDiagnostic, ...]
+
+
+def _frozen_map_get(mapping: FrozenMap, key: str, default: object = None) -> object:
+    return dict(mapping.entries).get(key, default)
+
+
+def _diagnostic(
+    operation: AreaOperation, code: str, message: str
+) -> CompilationDiagnostic:
+    return CompilationDiagnostic(
+        source_path=operation.source_path,
+        line=operation.line,
+        column=operation.column,
+        code=code,
+        message=message,
+    )
 
 
 def _attribute_chain(node: ast.AST) -> tuple[str, ...]:
@@ -426,6 +445,175 @@ def _semantic_manifest_payload(
     }
 
 
+def _validate_world_definitions(
+    definitions: tuple[ZoneSourceDefinition, ...],
+) -> tuple[CompilationDiagnostic, ...]:
+    diagnostics: list[CompilationDiagnostic] = []
+    rooms_by_zone: dict[str, set[str]] = {}
+    social_node_keys: set[str] = set()
+    authored_exits: set[tuple[str, str, str]] = set()
+    inverse_directions = {
+        "north": "south",
+        "south": "north",
+        "east": "west",
+        "west": "east",
+        "northeast": "southwest",
+        "southwest": "northeast",
+        "northwest": "southeast",
+        "southeast": "northwest",
+        "up": "down",
+        "down": "up",
+        "in": "out",
+        "out": "in",
+    }
+
+    for definition in definitions:
+        room_ids = {
+            operation.arguments[0]
+            for operation in definition.operations
+            if operation.method == "room"
+            and operation.arguments
+            and isinstance(operation.arguments[0], str)
+        }
+        rooms_by_zone[definition.zone_id] = room_ids
+        for operation in definition.operations:
+            if operation.method == "exit" and len(operation.arguments) >= 3:
+                source, destination, direction = operation.arguments[:3]
+                if isinstance(source, SymbolicReference) and isinstance(direction, str):
+                    source_key = f"{definition.zone_id}:{source.key}"
+                    destination_key = (
+                        f"{definition.zone_id}:{destination.key}"
+                        if isinstance(destination, SymbolicReference)
+                        else destination
+                    )
+                    if isinstance(destination_key, str):
+                        authored_exits.add((source_key, destination_key, direction))
+            if operation.method != "social_node" or len(operation.arguments) < 2:
+                continue
+            node_type, identifier = operation.arguments[:2]
+            if node_type not in NODE_TYPES:
+                diagnostics.append(
+                    _diagnostic(
+                        operation,
+                        "unsupported-social-node-type",
+                        f"Social node type '{node_type}' is not in the approved taxonomy.",
+                    )
+                )
+            if isinstance(node_type, str) and isinstance(identifier, str):
+                social_node_keys.add(f"{node_type}:{identifier}")
+
+    for definition in definitions:
+        room_ids = rooms_by_zone[definition.zone_id]
+        exit_destinations: dict[tuple[str, str], object] = {}
+        for operation in definition.operations:
+            if operation.method == "exit" and len(operation.arguments) >= 3:
+                source, destination, direction = operation.arguments[:3]
+                if direction not in VALID_DIRECTIONS:
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "unsupported-exit-direction",
+                            f"Exit direction '{direction}' is not supported.",
+                        )
+                    )
+                if isinstance(source, SymbolicReference):
+                    key = (source.key, str(direction))
+                    previous = exit_destinations.get(key)
+                    if previous is not None and previous != destination:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "duplicate-exit-direction",
+                                f"Room '{source.key}' has multiple '{direction}' destinations.",
+                            )
+                        )
+                    exit_destinations[key] = destination
+                if isinstance(destination, str):
+                    parts = destination.split(":", 1)
+                    target_rooms = (
+                        rooms_by_zone.get(parts[0]) if len(parts) == 2 else None
+                    )
+                    if target_rooms is None or parts[1] not in target_rooms:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "unresolved-cross-zone-room",
+                                f"Cross-zone room '{destination}' is not authored in this manifest.",
+                            )
+                        )
+
+                if (
+                    isinstance(source, SymbolicReference)
+                    and isinstance(direction, str)
+                    and not _frozen_map_get(
+                        operation.keyword_arguments, "one_way", False
+                    )
+                ):
+                    source_key = f"{definition.zone_id}:{source.key}"
+                    destination_key = (
+                        f"{definition.zone_id}:{destination.key}"
+                        if isinstance(destination, SymbolicReference)
+                        else destination
+                    )
+                    inverse = inverse_directions.get(direction)
+                    if (
+                        isinstance(destination_key, str)
+                        and inverse is not None
+                        and (destination_key, source_key, inverse) not in authored_exits
+                    ):
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "missing-reciprocal-intent",
+                                "Exit has no inverse edge; declare one_way=True if this is intentional.",
+                            )
+                        )
+
+            if operation.method == "gathering_pool":
+                authored_rooms = _frozen_map_get(
+                    operation.keyword_arguments, "rooms", ()
+                )
+                for room_id in (
+                    authored_rooms if isinstance(authored_rooms, tuple) else ()
+                ):
+                    if room_id not in room_ids:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "unresolved-local-room",
+                                f"Room '{room_id}' is not authored in zone '{definition.zone_id}'.",
+                            )
+                        )
+
+            if operation.method == "social_edge" and len(operation.arguments) >= 2:
+                source_key, target_key = operation.arguments[:2]
+                edge_type = _frozen_map_get(operation.keyword_arguments, "edge_type")
+                if edge_type not in EDGE_TYPES:
+                    diagnostics.append(
+                        _diagnostic(
+                            operation,
+                            "unsupported-social-edge-type",
+                            f"Social edge type '{edge_type}' is not in the approved taxonomy.",
+                        )
+                    )
+                for node_key in (source_key, target_key):
+                    if node_key not in social_node_keys:
+                        diagnostics.append(
+                            _diagnostic(
+                                operation,
+                                "unresolved-social-node",
+                                f"Social node '{node_key}' is not authored in this manifest.",
+                            )
+                        )
+
+    return tuple(
+        sorted(
+            diagnostics,
+            key=lambda item: (item.source_path, item.line, item.column, item.code),
+        )
+    )
+
+
 def compile_world_sources(
     sources: Mapping[str, str],
 ) -> WorldManifestCompilation:
@@ -467,6 +655,9 @@ def compile_world_sources(
         return WorldManifestCompilation(manifest=None, diagnostics=ordered_diagnostics)
 
     frozen_definitions = tuple(definitions)
+    semantic_diagnostics = _validate_world_definitions(frozen_definitions)
+    if semantic_diagnostics:
+        return WorldManifestCompilation(manifest=None, diagnostics=semantic_diagnostics)
     payload = _semantic_manifest_payload(frozen_definitions)
     canonical = json.dumps(
         payload,

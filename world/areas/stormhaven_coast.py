@@ -190,7 +190,7 @@ def build():
     area.exit(hr_bridge, hr_coastal_scrub, "west")
 
     # Cross-zone exit: west to Vael's Crossing
-    area.exit(hr_junction, "vaels_crossing:hg_east_road", "west")
+    area.exit(hr_junction, "vaels_crossing:hg_east_road", "west", one_way=True)
 
     # ==================================================================
     #  SUB-AREA 2: CLIFF PATH NORTH (~14 rooms)
@@ -1880,7 +1880,7 @@ def build():
     area.exit(cs_south_junction, cs_cliff_face, "northwest")
 
     # Cross-zone exit: south to plains zone
-    area.exit(cs_south_junction, "ashreach_plains:outpost_01", "south")
+    area.exit(cs_south_junction, "ashreach_plains:outpost_01", "south", one_way=True)
 
     # ==================================================================
     #  SUB-AREA 10: STORM BLUFFS (~6 rooms)

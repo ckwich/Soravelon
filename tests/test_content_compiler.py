@@ -169,6 +169,91 @@ class TestLiveAreaAuthorityAudit(unittest.TestCase):
 
 
 class TestWorldManifest(unittest.TestCase):
+    def test_unresolved_local_and_cross_zone_exit_references_fail_closed(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("broken")
+    area.zone(name="Broken", zone_type="frontier", continent="varath")
+    room = area.room("entry", name="Entry", desc="A threshold.")
+    area.exit(room, "missing_zone:gate", "north", one_way=True)
+    area.gathering_pool("ore", rooms=["missing_room"], materials=["iron_ore"])
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/broken.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(
+            [diagnostic.code for diagnostic in result.diagnostics],
+            ["unresolved-cross-zone-room", "unresolved-local-room"],
+        )
+        self.assertEqual([diagnostic.line for diagnostic in result.diagnostics], [6, 7])
+
+    def test_duplicate_exit_direction_fails_closed(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("fork")
+    area.zone(name="Fork", zone_type="frontier", continent="varath")
+    entry = area.room("entry", name="Entry", desc="A threshold.")
+    left = area.room("left", name="Left", desc="A left path.")
+    right = area.room("right", name="Right", desc="A right path.")
+    area.exit(entry, left, "north", one_way=True)
+    area.exit(entry, right, "north", one_way=True)
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/fork.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(len(result.diagnostics), 1)
+        self.assertEqual(result.diagnostics[0].code, "duplicate-exit-direction")
+        self.assertEqual(result.diagnostics[0].line, 9)
+
+    def test_nonreciprocal_exit_requires_explicit_one_way_intent(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("intent")
+    area.zone(name="Intent", zone_type="frontier", continent="varath")
+    entry = area.room("entry", name="Entry", desc="A threshold.")
+    ledge = area.room("ledge", name="Ledge", desc="A narrow ledge.")
+    area.exit(entry, ledge, "down")
+    return area.build()
+"""
+        explicit = source.replace('"down")', '"down", one_way=True)')
+
+        missing = compile_world_sources({"world/areas/intent.py": source})
+        accepted = compile_world_sources({"world/areas/intent.py": explicit})
+
+        self.assertIsNone(missing.manifest)
+        self.assertEqual(missing.diagnostics[0].code, "missing-reciprocal-intent")
+        self.assertIsNotNone(accepted.manifest)
+
+    def test_social_edges_require_taxonomy_and_authored_nodes(self):
+        from world.content_compiler import compile_world_sources
+
+        source = """from world.area_builder import AreaBuilder
+def build():
+    area = AreaBuilder("social")
+    area.zone(name="Social", zone_type="frontier", continent="varath")
+    area.social_node("npc", "keeper", display_name="Keeper")
+    area.social_edge("npc:keeper", "npc:missing", edge_type="invented")
+    return area.build()
+"""
+
+        result = compile_world_sources({"world/areas/social.py": source})
+
+        self.assertIsNone(result.manifest)
+        self.assertEqual(
+            [diagnostic.code for diagnostic in result.diagnostics],
+            ["unresolved-social-node", "unsupported-social-edge-type"],
+        )
+
     def test_manifest_hash_is_semantic_and_deterministic(self):
         from world.content_compiler import compile_world_sources
 

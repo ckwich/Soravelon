@@ -266,7 +266,7 @@ def build():
     area.exit(ra_ridge_base, ra_old_camp, "southwest")
 
     # Cross-zone exit south to Vael's Crossing
-    area.exit(ra_road_south, "vaels_crossing:hg_north_road", "south")
+    area.exit(ra_road_south, "vaels_crossing:hg_north_road", "south", one_way=True)
 
     # ==================================================================
     #  SUB-AREA 2: LOWER SWITCHBACKS (~14 rooms)
@@ -1291,7 +1291,7 @@ def build():
     area.exit(wr_peak_trail, wr_eagles_nest, "down")
 
     # Cross-zone exit west to forest zone
-    area.exit(wr_treeline, "cantera_edge:fe_trailhead", "west")
+    area.exit(wr_treeline, "cantera_edge:fe_trailhead", "west", one_way=True)
 
     # ==================================================================
     #  SUB-AREA 6: MOUNTAIN OVERLOOKS (~10 rooms)
