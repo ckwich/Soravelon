@@ -18,7 +18,9 @@ class TestDependencySecurityPolicy(unittest.TestCase):
     def test_ci_audits_dependencies_with_only_the_reviewed_exception(self):
         workflow = CI_PATH.read_text()
 
+        self.assertIn("bandit==1.8.6", workflow)
         self.assertIn("pip-audit==2.10.0", workflow)
+        self.assertIn("python -m bandit -r . -ll -ii -x .git", workflow)
         self.assertIn(
             "python -m pip_audit --ignore-vuln PYSEC-2026-160",
             workflow,
