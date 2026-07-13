@@ -286,7 +286,12 @@ def derive_max_hp(character, effective_stats=None):
     stats = effective_stats
     endurance = stats.get("endurance", 10)
     backend_level = character.db.backend_level or 1
-    return BASE_HP + (endurance * HP_PER_ENDURANCE) + (backend_level * HP_PER_LEVEL)
+    base_value = BASE_HP + (endurance * HP_PER_ENDURANCE) + (
+        backend_level * HP_PER_LEVEL
+    )
+    from world.ancestry_effects import maximum_health_multiplier
+
+    return round(base_value * maximum_health_multiplier(character))
 
 
 def derive_max_stamina(character, effective_stats=None):
