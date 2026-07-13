@@ -97,14 +97,16 @@ def rehearse_content_revision(
 ) -> ContentRehearsalEvidence:
     """Apply one revision, verify runtime truth, and require a no-op reapply."""
 
-    if database_kind not in {"fresh", "restored"}:
+    if database_kind not in {"fresh", "restored", "prepared"}:
         raise ContentRehearsalError(
-            "Database kind must be exactly 'fresh' or 'restored'."
+            "Database kind must be exactly 'fresh', 'restored', or 'prepared'."
         )
     initial = load_status()
-    expected_initial_states = (
-        {"uninitialized"} if database_kind == "fresh" else {"current", "drifted"}
-    )
+    expected_initial_states = {
+        "fresh": {"uninitialized"},
+        "restored": {"current", "drifted"},
+        "prepared": {"current"},
+    }[database_kind]
     if initial.state not in expected_initial_states:
         expected = " or ".join(sorted(expected_initial_states))
         details = _status_failure(initial)
@@ -124,11 +126,18 @@ def rehearse_content_revision(
             raise ContentRehearsalError(
                 f"Fresh rehearsal must initialize content; got {first.state}."
             )
-    else:
+    elif database_kind == "restored":
         first = apply(manifest, git_commit=git_commit)
         if first.state not in {"applied", "no-op"}:
             raise ContentRehearsalError(
                 f"Restored rehearsal must apply or be current; got {first.state}."
+            )
+    else:
+        first = apply(manifest, git_commit=git_commit)
+        if first.state != "no-op":
+            raise ContentRehearsalError(
+                "Prepared candidate verification must not mutate content; "
+                f"got {first.state}."
             )
 
     repeated = apply(manifest, git_commit=git_commit)
@@ -224,7 +233,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--database-kind",
         required=True,
-        choices=("fresh", "restored"),
+        choices=("fresh", "restored", "prepared"),
     )
     parser.add_argument("--expected-database-name", required=True)
     parser.add_argument("--git-commit", required=True)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shlex
 import subprocess
 import sys
@@ -21,6 +22,39 @@ if str(REPO_ROOT) not in sys.path:
 class ReleaseStep:
     name: str
     command: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ReleaseCandidateInputs:
+    expected_database_name: str
+    git_commit: str
+    protocol_host: str
+    telnet_port: int
+    web_port: int
+    websocket_port: int
+    allow_remote_protocol: bool = False
+
+    def __post_init__(self) -> None:
+        if re.fullmatch(
+            r"soravelon_rehearsal_[a-z0-9][a-z0-9_]{0,62}",
+            self.expected_database_name,
+        ) is None:
+            raise ValueError(
+                "Candidate database must use the soravelon_rehearsal_* "
+                "disposable naming contract."
+            )
+        if re.fullmatch(r"[0-9a-f]{7,64}", self.git_commit) is None:
+            raise ValueError(
+                "Candidate Git commit must be a 7-64 character lowercase "
+                "hexadecimal object ID."
+            )
+        if not self.protocol_host.strip():
+            raise ValueError("Candidate protocol host cannot be empty.")
+        ports = (self.telnet_port, self.web_port, self.websocket_port)
+        if any(not 1 <= port <= 65535 for port in ports):
+            raise ValueError("Candidate protocol ports must be between 1 and 65535.")
+        if len(set(ports)) != len(ports):
+            raise ValueError("Candidate protocol ports must be distinct.")
 
 
 def _python_command(*args: str) -> tuple[str, ...]:
@@ -90,6 +124,62 @@ def _test_step(shard: str | None = None) -> ReleaseStep:
     return ReleaseStep("Canonical tests", tuple(command))
 
 
+def _candidate_steps(candidate: ReleaseCandidateInputs) -> list[ReleaseStep]:
+    protocol_command = list(
+        _python_command(
+            "scripts/smoke_protocols.py",
+            "--host",
+            candidate.protocol_host,
+            "--telnet-port",
+            str(candidate.telnet_port),
+            "--web-port",
+            str(candidate.web_port),
+            "--websocket-port",
+            str(candidate.websocket_port),
+        )
+    )
+    if candidate.allow_remote_protocol:
+        protocol_command.append("--allow-remote")
+    prepared_content_step = ReleaseStep(
+        "Prepared world-content verification",
+        _python_command(
+            "scripts/rehearse_content_release.py",
+            "--database-kind",
+            "prepared",
+            "--expected-database-name",
+            candidate.expected_database_name,
+            "--git-commit",
+            candidate.git_commit,
+            "--format",
+            "json",
+        ),
+    )
+    return [
+        prepared_content_step,
+        *_preflight_steps(),
+        ReleaseStep(
+            "Playable world connectivity",
+            _python_command("scripts/audit_world_connectivity.py"),
+        ),
+        ReleaseStep(
+            "Authored content prose",
+            _python_command("scripts/audit_content_prose.py"),
+        ),
+        ReleaseStep(
+            "Release gameplay verticals",
+            _python_command(
+                "scripts/run_tests.py",
+                "tests.test_m3_golden_path",
+                "tests.test_m4_living_world_vertical",
+                "tests.test_social_web_warden_route",
+                "tests.test_cooperative_combat_vertical",
+            ),
+        ),
+        _test_step(),
+        ReleaseStep("Live player protocols", tuple(protocol_command)),
+    ]
+
+
 def _parse_shard(shard: str) -> tuple[int, int]:
     try:
         raw_index, raw_total = shard.split("/", 1)
@@ -122,7 +212,12 @@ def _test_labels_for_shard(shard: str) -> list[str]:
     return selected
 
 
-def build_release_steps(mode: str, shard: str | None = None) -> list[ReleaseStep]:
+def build_release_steps(
+    mode: str,
+    shard: str | None = None,
+    *,
+    candidate: ReleaseCandidateInputs | None = None,
+) -> list[ReleaseStep]:
     if mode == "preflight":
         if shard:
             raise ValueError("--shard is valid only for full or tests mode.")
@@ -131,6 +226,12 @@ def build_release_steps(mode: str, shard: str | None = None) -> list[ReleaseStep
         return [_test_step(shard)]
     if mode == "full":
         return [*_preflight_steps(), _test_step(shard)]
+    if mode == "candidate":
+        if candidate is None:
+            raise ValueError("Release candidate inputs are required for candidate mode.")
+        if shard:
+            raise ValueError("Release candidate verification must be unsharded.")
+        return _candidate_steps(candidate)
     raise ValueError(f"Mode '{mode}' does not have a command plan.")
 
 
@@ -307,7 +408,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "mode",
         nargs="?",
         default="full",
-        choices=("full", "preflight", "tests", "reconcile"),
+        choices=("full", "preflight", "tests", "reconcile", "candidate"),
     )
     parser.add_argument(
         "--shard",
@@ -318,19 +419,80 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the selected command plan without executing it.",
     )
+    parser.add_argument(
+        "--expected-database-name",
+        help="Candidate-only exact soravelon_rehearsal_* database name.",
+    )
+    parser.add_argument("--git-commit", help="Candidate-only Git object identity.")
+    parser.add_argument(
+        "--protocol-host",
+        help="Candidate-only live Evennia protocol host.",
+    )
+    parser.add_argument("--telnet-port", type=int, help="Candidate-only Telnet port.")
+    parser.add_argument("--web-port", type=int, help="Candidate-only HTTP port.")
+    parser.add_argument(
+        "--websocket-port",
+        type=int,
+        help="Candidate-only WebSocket port.",
+    )
+    parser.add_argument(
+        "--allow-remote-protocol",
+        action="store_true",
+        help="Explicitly permit candidate protocol checks beyond loopback.",
+    )
     return parser
 
 
+def _candidate_inputs_from_args(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> ReleaseCandidateInputs | None:
+    candidate_values = {
+        "expected_database_name": args.expected_database_name,
+        "git_commit": args.git_commit,
+        "protocol_host": args.protocol_host,
+        "telnet_port": args.telnet_port,
+        "web_port": args.web_port,
+        "websocket_port": args.websocket_port,
+    }
+    if args.mode != "candidate":
+        if any(value is not None for value in candidate_values.values()) or (
+            args.allow_remote_protocol
+        ):
+            parser.error("candidate inputs are valid only in candidate mode")
+        return None
+
+    missing = [name for name, value in candidate_values.items() if value is None]
+    if missing:
+        parser.error(
+            "candidate mode requires: "
+            + ", ".join(f"--{name.replace('_', '-')}" for name in missing)
+        )
+    for name in ("telnet_port", "web_port", "websocket_port"):
+        value = candidate_values[name]
+        if not 1 <= value <= 65535:
+            parser.error(f"--{name.replace('_', '-')} must be between 1 and 65535")
+    try:
+        return ReleaseCandidateInputs(
+            **candidate_values,
+            allow_remote_protocol=args.allow_remote_protocol,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    args = _build_parser().parse_args(argv)
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    candidate = _candidate_inputs_from_args(parser, args)
     if args.mode == "reconcile":
         if args.shard or args.dry_run:
-            _build_parser().error("reconcile mode does not accept --shard or --dry-run")
+            parser.error("reconcile mode does not accept --shard or --dry-run")
         return _run_reconciliation()
     try:
-        steps = build_release_steps(args.mode, args.shard)
+        steps = build_release_steps(args.mode, args.shard, candidate=candidate)
     except ValueError as exc:
-        _build_parser().error(str(exc))
+        parser.error(str(exc))
     return execute_steps(steps, dry_run=args.dry_run)
 
 

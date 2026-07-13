@@ -62,6 +62,50 @@ raise SystemExit(0 if repo_root in sys.path else 29)
         self.assertNotIn("tls verified", result.stdout.lower())
         self.assertNotIn("systemd verified", result.stdout.lower())
 
+    def test_candidate_dry_run_requires_and_prints_exact_live_inputs(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(VERIFY_RELEASE),
+                "candidate",
+                "--dry-run",
+                "--expected-database-name",
+                "soravelon_rehearsal_candidate_1",
+                "--git-commit",
+                "a" * 40,
+                "--protocol-host",
+                "127.0.0.1",
+                "--telnet-port",
+                "4000",
+                "--web-port",
+                "4001",
+                "--websocket-port",
+                "4002",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--database-kind prepared", result.stdout)
+        self.assertIn("soravelon_rehearsal_candidate_1", result.stdout)
+        self.assertIn("Authored content prose", result.stdout)
+        self.assertIn("Live player protocols", result.stdout)
+
+    def test_candidate_refuses_implicit_database_or_protocol_targets(self):
+        result = subprocess.run(
+            [sys.executable, str(VERIFY_RELEASE), "candidate", "--dry-run"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("candidate mode requires", result.stderr)
+
 
 class TestReleasePlan(unittest.TestCase):
     def test_full_plan_uses_the_canonical_commands(self):
@@ -126,6 +170,106 @@ class TestReleasePlan(unittest.TestCase):
 
         self.assertEqual(return_code, 7)
         self.assertEqual(run.call_count, 2)
+
+    def test_candidate_plan_requires_exact_rehearsal_and_protocol_inputs(self):
+        with self.assertRaisesRegex(ValueError, "candidate inputs"):
+            verify_release.build_release_steps("candidate")
+
+    def test_candidate_plan_names_every_mud_release_surface(self):
+        candidate = verify_release.ReleaseCandidateInputs(
+            expected_database_name="soravelon_rehearsal_candidate_1",
+            git_commit="a" * 40,
+            protocol_host="127.0.0.1",
+            telnet_port=4000,
+            web_port=4001,
+            websocket_port=4002,
+        )
+
+        steps = verify_release.build_release_steps(
+            "candidate",
+            candidate=candidate,
+        )
+        commands = {step.name: step.command for step in steps}
+
+        self.assertEqual(steps[0].name, "Prepared world-content verification")
+        self.assertEqual(
+            commands["Prepared world-content verification"],
+            (
+                sys.executable,
+                "scripts/rehearse_content_release.py",
+                "--database-kind",
+                "prepared",
+                "--expected-database-name",
+                "soravelon_rehearsal_candidate_1",
+                "--git-commit",
+                "a" * 40,
+                "--format",
+                "json",
+            ),
+        )
+        self.assertEqual(
+            commands["Playable world connectivity"],
+            (sys.executable, "scripts/audit_world_connectivity.py"),
+        )
+        self.assertEqual(
+            commands["Authored content prose"],
+            (sys.executable, "scripts/audit_content_prose.py"),
+        )
+        verticals = commands["Release gameplay verticals"]
+        for label in (
+            "tests.test_m3_golden_path",
+            "tests.test_m4_living_world_vertical",
+            "tests.test_social_web_warden_route",
+            "tests.test_cooperative_combat_vertical",
+        ):
+            self.assertIn(label, verticals)
+        self.assertEqual(
+            commands["Canonical tests"],
+            (sys.executable, "scripts/run_tests.py"),
+        )
+        self.assertEqual(
+            commands["Live player protocols"],
+            (
+                sys.executable,
+                "scripts/smoke_protocols.py",
+                "--host",
+                "127.0.0.1",
+                "--telnet-port",
+                "4000",
+                "--web-port",
+                "4001",
+                "--websocket-port",
+                "4002",
+            ),
+        )
+
+    def test_candidate_plan_does_not_allow_test_sharding(self):
+        candidate = verify_release.ReleaseCandidateInputs(
+            expected_database_name="soravelon_rehearsal_restored_1",
+            git_commit="a" * 40,
+            protocol_host="127.0.0.1",
+            telnet_port=4000,
+            web_port=4001,
+            websocket_port=4002,
+        )
+
+        with self.assertRaisesRegex(ValueError, "unsharded"):
+            verify_release.build_release_steps(
+                "candidate",
+                shard="1/4",
+                candidate=candidate,
+            )
+
+    def test_candidate_inputs_reject_normal_database_name_before_execution(self):
+        with self.assertRaisesRegex(ValueError, "soravelon_rehearsal"):
+            verify_release.ReleaseCandidateInputs(
+                expected_database_name="soravelon",
+                git_commit="a" * 40,
+                protocol_host="127.0.0.1",
+                telnet_port=4000,
+                web_port=4001,
+                websocket_port=4002,
+            )
 
 
 class TestEconomyInventoryReconciliation(unittest.TestCase):

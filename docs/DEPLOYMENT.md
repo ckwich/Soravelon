@@ -101,6 +101,27 @@ The restored database must come from a verified dump rehearsal and already
 contain world-content revision authority. Never rename or repoint a production
 database merely to satisfy this safety gate.
 
+After the fresh/restored mutation rehearsal passes, stop the mutation phase,
+start the service against a clean restored candidate database, and run the
+single MUD candidate gate. Candidate mode uses the `prepared` content path: it
+requires the target manifest to be current and proves two no-op applications,
+so it cannot silently change content underneath the live protocol checks.
+
+```bash
+python scripts/verify_release.py candidate \
+  --expected-database-name soravelon_rehearsal_candidate_1 \
+  --git-commit "$(git rev-parse HEAD)" \
+  --protocol-host 127.0.0.1 \
+  --telnet-port 4000 \
+  --web-port 4001 \
+  --websocket-port 4002
+```
+
+This candidate mode runs the release preflight, prepared content verification,
+world connectivity and prose audits, named M3/M4/Social/co-op verticals, the
+complete unsharded canonical suite, and real Telnet/HTTP/WebSocket checks. It is
+supposed to fail while any release blocker, including authored prose, remains.
+
 ## Systemd units
 
 Install the tracked `deploy/systemd/soravelon.service` unit. It runs

@@ -145,6 +145,41 @@ class TestContentRevisionRehearsal(unittest.TestCase):
         self.assertEqual(evidence.first_state, "applied")
         self.assertEqual(evidence.reapply_state, "no-op")
 
+    def test_prepared_path_requires_current_and_performs_only_noops(self):
+        from scripts.rehearse_content_release import rehearse_content_revision
+
+        manifest = SimpleNamespace(manifest_hash="a" * 64)
+        statuses = iter(
+            [
+                _status("current", applied="a" * 64),
+                _status("current", applied="a" * 64),
+            ]
+        )
+        apply_calls = []
+
+        evidence = rehearse_content_revision(
+            database_kind="prepared",
+            database_name="soravelon_rehearsal_candidate_1",
+            manifest=manifest,
+            git_commit="b" * 40,
+            load_status=lambda: next(statuses),
+            initialize=lambda *_args, **_kwargs: self.fail(
+                "prepared rehearsal must not initialize"
+            ),
+            apply=lambda *_args, **_kwargs: (
+                apply_calls.append("apply")
+                or SimpleNamespace(state="no-op", revision=SimpleNamespace(pk=20))
+            ),
+            verify_runtime=lambda target: SimpleNamespace(
+                verified_manifest_hash=target.manifest_hash,
+                diagnostics=(),
+            ),
+        )
+
+        self.assertEqual(apply_calls, ["apply", "apply"])
+        self.assertEqual(evidence.first_state, "no-op")
+        self.assertEqual(evidence.reapply_state, "no-op")
+
     def test_rejects_wrong_initial_state_or_non_idempotent_reapply(self):
         from scripts.rehearse_content_release import ContentRehearsalError
         from scripts.rehearse_content_release import rehearse_content_revision
