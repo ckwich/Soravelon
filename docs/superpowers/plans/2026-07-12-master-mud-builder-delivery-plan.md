@@ -303,6 +303,36 @@ reopen, and compare a Social area without a manual sidecar artifact.
 
 ## 9. B2 — Full Builder UI Rebuild
 
+### B2 execution status — 2026-07-13
+
+**Status:** active. Builder commits `3f5fcba`, `b4209b3`, and `9fff200`
+establish the first truthful vertical slice of the rebuild. With no area open,
+the application now presents an explicit offline local-workspace home for area
+roots, recent/local files, new areas, world overview, and the local template
+library; the area explorer, inspector, and Problems action do not appear until
+an area document is active. `CLAUDE.md` now matches the explicit versioned
+compiler/materializer contract and no longer describes startup rebuilds.
+
+The live browser gate at compact and wide desktop widths transitions from Home
+into real 108-room and 221-exit area workbenches. Same-zone layout writes are
+serialized through the typed IPC client, preventing overlapping atomic
+transactions during first-layout creation. Cross-area ghost nodes expose the
+same directional target-handle contract used by exit edges; the reproduced
+Ashreach load moved from two layout errors and twenty repeated edge warnings to
+zero browser errors and zero warnings. A clean disposable checkout with the
+committed source passes the production frontend build, 52 frontend tests, 69
+sidecar tests with 16 platform skips, 14 Rust tests, and `npm audit` with zero
+vulnerabilities.
+
+This evidence does not complete B2. The task-based Content, Narrative, Social,
+and Review workbenches; explicit local-library document flow; store
+decomposition; required state/accessibility matrix; screenshot/interaction
+coverage; and observed usability gates remain open. Hosted run `29301882363`
+at exact Builder SHA `9fff200058d85ff00965f34436a8c8e2233b1599`
+was rejected before checkout on all four runners by the existing GitHub
+payment/spending-limit gate. GitHub Actions is required only for the native
+package certification matrix, not for Lightsail hosting or live-game uptime.
+
 ### B2.0 Design brief
 
 **Surface:** Soravelon Builder desktop authoring workbench.
