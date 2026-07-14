@@ -305,7 +305,8 @@ reopen, and compare a Social area without a manual sidecar artifact.
 
 ### B2 execution status — 2026-07-13
 
-**Status:** active. Builder commits `3f5fcba`, `b4209b3`, and `9fff200`
+**Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`, and
+`ac46bdf`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -313,16 +314,27 @@ library; the area explorer, inspector, and Problems action do not appear until
 an area document is active. `CLAUDE.md` now matches the explicit versioned
 compiler/materializer contract and no longer describes startup rebuilds.
 
+Home is now a real workspace route rather than an empty-map inference. An
+author can keep an area open, press `Ctrl+0` to return to a rail-free Home, and
+resume the same local document through the explicit `Resume Map & exits`
+action; closing the document returns to Home and area-only routes fail closed
+when no area is loaded. World and template tools remain explicit local
+documents rather than competing area tabs.
+
 The live browser gate at compact and wide desktop widths transitions from Home
-into real 108-room and 221-exit area workbenches. Same-zone layout writes are
+into real 108-room and 221-exit area workbenches, returns to Home without
+discarding the active area, and resumes Map & exits with zero console errors or
+warnings. Same-zone layout writes are
 serialized through the typed IPC client, preventing overlapping atomic
 transactions during first-layout creation. Cross-area ghost nodes expose the
 same directional target-handle contract used by exit edges; the reproduced
 Ashreach load moved from two layout errors and twenty repeated edge warnings to
-zero browser errors and zero warnings. A clean disposable checkout with the
-committed source passes the production frontend build, 52 frontend tests, 69
-sidecar tests with 16 platform skips, 14 Rust tests, and `npm audit` with zero
-vulnerabilities.
+zero browser errors and zero warnings. The `9fff200` clean-checkout gate passed
+the production frontend build, 52 frontend tests, 69 sidecar tests with 16
+platform skips, 14 Rust tests, and `npm audit` with zero vulnerabilities. At
+exact `ac46bdf`, the changed frontend source matches the committed diff and
+passes the production build, all 54 frontend tests, and `npm audit` with zero
+vulnerabilities; the sidecar and Rust sources are unchanged from `9fff200`.
 
 This evidence does not complete B2. The task-based Content, Narrative, Social,
 and Review workbenches; explicit local-library document flow; store
