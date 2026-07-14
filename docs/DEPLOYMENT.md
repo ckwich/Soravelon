@@ -8,7 +8,7 @@ Soravelon public v1 is designed for a single Linux host running Evennia with Pos
 - Python 3.12
 - PostgreSQL 16
 - One system user, for example `soravelon`
-- HTTPS reverse proxy required for the authenticated public web client
+- Nginx HTTPS reverse proxy required for the authenticated public web client
 
 ## First-time setup
 
@@ -35,6 +35,29 @@ Soravelon public v1 is designed for a single Linux host running Evennia with Pos
    service preflight rejects an absent or non-admin account `#1` instead of
    allowing Evennia's interactive first-run prompt to restart-loop under
    systemd.
+
+## Public HTTPS and WebSocket proxy
+
+The public website and the webclient WebSocket use separate hostnames so the
+reverse proxy cannot confuse ordinary HTTP requests with upgraded socket
+traffic:
+
+- `soravelon.com` and `www.soravelon.com` proxy to `127.0.0.1:4001`;
+- `ws.soravelon.com` proxies WebSocket upgrades to `127.0.0.1:4002`;
+- `WEBSOCKET_CLIENT_URL` must be `wss://ws.soravelon.com` in production.
+
+Install Nginx and the Certbot Nginx integration, copy
+`deploy/nginx/soravelon.conf` to `/etc/nginx/sites-available/soravelon`, enable
+that site, and remove the default site. Require a clean `nginx -t` before
+reloading. After the apex, `www`, and `ws` DNS names resolve to the host, use
+Certbot to obtain one certificate for all three names and require automatic
+HTTP-to-HTTPS redirection. The tracked configuration intentionally contains no
+certificate paths so it can pass its first syntax check before certificate
+issuance.
+
+Do not expose ports 4001, 4002, or 4005 in the cloud firewall. Production binds
+the public-web and WebSocket listeners to loopback; only Nginx should reach
+them. Raw Telnet, when explicitly enabled, remains a separate public port.
 
 ## Automated release verification
 

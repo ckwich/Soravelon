@@ -38,6 +38,7 @@ PRODUCTION_ENV_KEYS = {
     "WEBSERVER_INTERNAL_PORT",
     "WEBSERVER_PORT",
     "WEBSOCKET_CLIENT_PORT",
+    "WEBSOCKET_CLIENT_URL",
 }
 
 
@@ -62,6 +63,7 @@ def _valid_production_env() -> dict[str, str]:
                 "0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             ),
             "SORAVELON_ENV": "production",
+            "WEBSOCKET_CLIENT_URL": "wss://ws.game.example.test",
         }
     )
     return env
@@ -207,6 +209,24 @@ class TestProductionEnvironmentValidation(unittest.TestCase):
                 "HTTPS origins",
             ),
             (
+                "implicit websocket url",
+                {},
+                ("WEBSOCKET_CLIENT_URL",),
+                "WEBSOCKET_CLIENT_URL",
+            ),
+            (
+                "insecure websocket url",
+                {"WEBSOCKET_CLIENT_URL": "ws://ws.game.example.test"},
+                (),
+                "secure WebSocket URL",
+            ),
+            (
+                "websocket url with path",
+                {"WEBSOCKET_CLIENT_URL": "wss://ws.game.example.test/socket"},
+                (),
+                "secure WebSocket URL",
+            ),
+            (
                 "sqlite production database",
                 {"DATABASE_ENGINE": "sqlite3"},
                 (),
@@ -338,6 +358,7 @@ class TestProductionListenerConfiguration(unittest.TestCase):
         self.assertEqual(values["TELNET_PORT"], "4000")
         self.assertEqual(values["WEBSERVER_PORT"], "4001")
         self.assertEqual(values["WEBSOCKET_CLIENT_PORT"], "4002")
+        self.assertTrue(values["WEBSOCKET_CLIENT_URL"].startswith("wss://"))
         self.assertEqual(values["SSL_PORT"], "4003")
         self.assertEqual(values["SSH_PORT"], "4004")
         self.assertEqual(values["WEBSERVER_INTERNAL_PORT"], "4005")
@@ -355,8 +376,12 @@ print(json.dumps({
     "ssl_ports": settings.SSL_PORTS,
     "telnet_ports": settings.TELNET_PORTS,
     "webserver_internal_port": settings.WEBSERVER_INTERNAL_PORT,
+    "webserver_interfaces": settings.WEBSERVER_INTERFACES,
     "webserver_ports": settings.WEBSERVER_PORTS,
+    "upstream_ips": settings.UPSTREAM_IPS,
+    "websocket_client_interface": settings.WEBSOCKET_CLIENT_INTERFACE,
     "websocket_client_port": settings.WEBSOCKET_CLIENT_PORT,
+    "websocket_client_url": settings.WEBSOCKET_CLIENT_URL,
 }))
 """
         )
@@ -367,7 +392,14 @@ print(json.dumps({
         self.assertEqual(listeners["telnet_ports"], [])
         self.assertEqual(listeners["webserver_ports"], [[4001, 4005]])
         self.assertEqual(listeners["webserver_internal_port"], 4005)
+        self.assertEqual(listeners["webserver_interfaces"], ["127.0.0.1"])
+        self.assertEqual(listeners["upstream_ips"], ["127.0.0.1"])
+        self.assertEqual(listeners["websocket_client_interface"], "127.0.0.1")
         self.assertEqual(listeners["websocket_client_port"], 4002)
+        self.assertEqual(
+            listeners["websocket_client_url"],
+            "wss://ws.game.example.test",
+        )
         self.assertFalse(listeners["ssh_enabled"])
         self.assertEqual(listeners["ssh_ports"], [])
         self.assertFalse(listeners["ssl_enabled"])

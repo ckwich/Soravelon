@@ -180,6 +180,29 @@ X_FRAME_OPTIONS = "DENY"
 
 SERVER_HOSTNAME = _env("SERVER_HOSTNAME", ALLOWED_HOSTS[0] if ALLOWED_HOSTS else "localhost")
 
+WEBSOCKET_CLIENT_URL = str(_env("WEBSOCKET_CLIENT_URL", required=True)).strip()
+try:
+    _websocket_url = urlsplit(WEBSOCKET_CLIENT_URL)
+    _websocket_url.port
+except ValueError as exc:
+    raise RuntimeError(
+        "WEBSOCKET_CLIENT_URL must be a secure WebSocket URL without a path."
+    ) from exc
+if not all(
+    (
+        _websocket_url.scheme == "wss",
+        _websocket_url.hostname is not None,
+        _websocket_url.username is None,
+        _websocket_url.password is None,
+        _websocket_url.path in {"", "/"},
+        not _websocket_url.query,
+        not _websocket_url.fragment,
+    )
+):
+    raise RuntimeError(
+        "WEBSOCKET_CLIENT_URL must be a secure WebSocket URL without a path."
+    )
+
 TELNET_PORT = _env_port("TELNET_PORT", 4000)
 WEBSERVER_PORT = _env_port("WEBSERVER_PORT", 4001)
 WEBSOCKET_CLIENT_PORT = _env_port("WEBSOCKET_CLIENT_PORT", 4002)
@@ -193,6 +216,9 @@ TELNET_ENABLED = _env_bool("TELNET_ENABLED", False)
 
 TELNET_PORTS = [TELNET_PORT] if TELNET_ENABLED else []
 WEBSERVER_PORTS = [(WEBSERVER_PORT, WEBSERVER_INTERNAL_PORT)]
+WEBSERVER_INTERFACES = ["127.0.0.1"]
+UPSTREAM_IPS = ["127.0.0.1"]
+WEBSOCKET_CLIENT_INTERFACE = "127.0.0.1"
 SSH_PORTS = [SSH_PORT] if SSH_ENABLED else []
 SSL_PORTS = [SSL_PORT] if SSL_ENABLED else []
 
