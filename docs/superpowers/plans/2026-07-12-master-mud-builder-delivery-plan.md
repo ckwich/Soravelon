@@ -306,7 +306,7 @@ reopen, and compare a Social area without a manual sidecar artifact.
 ### B2 execution status — 2026-07-13
 
 **Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
-`ac46bdf`, `258b215`, and `343715f`
+`ac46bdf`, `258b215`, `343715f`, and `09afc3f`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -337,6 +337,15 @@ reference validation, serialization, and persistence remain owned by the
 existing data and store services. The workbench adds no alternate schema,
 write path, server authority, or direct Builder-to-MUD connection.
 
+Narrative is now one explicit `Ctrl+4` area-workbench route instead of a
+top-level Descriptions tab plus a disconnected Dialogue route. Searchable
+groups project quests, lore fragments, triggers, custom commands, practice
+opportunities, and NPC conversations into their existing Inspector or focused
+editor. Room descriptions still use the established virtualized bulk editor;
+NPC conversations still use the established dialogue canvas and store. Both
+focused editors return to Narrative, and no alternate quest, dialogue,
+validation, or persistence authority was introduced.
+
 The live browser gate at compact and wide desktop widths transitions from Home
 into real 108-room and 221-exit area workbenches, returns to Home without
 discarding the active area, and resumes Map & exits with zero console errors or
@@ -361,15 +370,23 @@ projected 88 entries across all three Content groups; searching for the
 quartermaster produced one result and opened the existing NPC Inspector. Wide
 1440x900 and compact 900x700-with-Navigator-collapsed passes had no horizontal
 overflow and reported zero console errors or warnings. The sidecar and Rust
-sources are unchanged from `9fff200`.
+sources are unchanged from `9fff200`. At exact `09afc3f`, the staged source
+again matched a clean clone byte-for-byte and passed the production build, all
+62 frontend tests, and `npm audit` with zero vulnerabilities. A live Vael's
+Crossing pass projected 85 Narrative entries; quest search opened the real
+Quest Inspector, the room-description entry opened all 108 rooms in the
+existing virtualized editor, and NPC search opened the real dialogue canvas
+with Topic and Greeting Tier controls. Both focused editors returned to
+Narrative. Wide and compact-with-Navigator-collapsed passes had no horizontal
+overflow and zero browser errors or warnings.
 
-This evidence does not complete B2. The task-based Narrative and Social
-workbenches; all-entity semantic review, source preview, explicit
+This evidence does not complete B2. The task-based Social workbench;
+all-entity semantic review, source preview, explicit
 save/recovery detail, and batch cross-area checks; explicit local-library
 document flow; store decomposition; required state/accessibility matrix;
 screenshot/interaction coverage; and observed usability gates remain open.
-Hosted run `29303633471` at exact Builder SHA
-`343715fba382e2af466dc584dadd16e943fcfe00`
+Hosted run `29304058902` at exact Builder SHA
+`09afc3f0404e023319db223b6a1e8663674a0c04`
 was rejected before checkout on all four runners by the existing GitHub
 payment/spending-limit gate. GitHub Actions is required only for the native
 package certification matrix, not for Lightsail hosting or live-game uptime.
