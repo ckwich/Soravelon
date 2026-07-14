@@ -306,7 +306,7 @@ reopen, and compare a Social area without a manual sidecar artifact.
 ### B2 execution status — 2026-07-13
 
 **Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
-`ac46bdf`, `258b215`, `343715f`, and `09afc3f`
+`ac46bdf`, `258b215`, `343715f`, `09afc3f`, and `8785ce1`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -346,6 +346,17 @@ NPC conversations still use the established dialogue canvas and store. Both
 focused editors return to Narrative, and no alternate quest, dialogue,
 validation, or persistence authority was introduced.
 
+Social is now the fifth explicit area-workbench mode at `Ctrl+5`. It projects
+the literal parsed `social_nodes` and `social_edges` into searchable Nodes and
+Connections groups and routes selection into the existing Social Node and
+Social Edge Inspector panels. Endpoint coverage distinguishes local references
+from external-or-unresolved references without declaring either valid; the
+existing validator remains the authority. The workbench describes Social Web
+truth as local trust, rumor, and subjective knowledge routing rather than a
+global morality score, and does not simulate runtime propagation or connect to
+the MUD. World and template local-document shortcuts move to `Ctrl+6` and
+`Ctrl+7` respectively.
+
 The live browser gate at compact and wide desktop widths transitions from Home
 into real 108-room and 221-exit area workbenches, returns to Home without
 discarding the active area, and resumes Map & exits with zero console errors or
@@ -380,13 +391,22 @@ with Topic and Greeting Tier controls. Both focused editors returned to
 Narrative. Wide and compact-with-Navigator-collapsed passes had no horizontal
 overflow and zero browser errors or warnings.
 
-This evidence does not complete B2. The task-based Social workbench;
-all-entity semantic review, source preview, explicit
+At exact `8785ce1`, the staged source matched a clean clone byte-for-byte and
+passed the production build, all 64 frontend tests, and `npm audit` with zero
+vulnerabilities. A live Vael's Crossing pass projected five Social nodes and
+two connections, identified one external-or-unresolved endpoint reference,
+opened the real Social Edge Inspector for `warden_report`, and opened the real
+Social Node Inspector for Agent Calloway. Wide and compact passes with the
+Navigator collapsed had no horizontal overflow and zero browser errors or
+warnings.
+
+This evidence does not complete B2. All-entity semantic review, source
+preview, explicit
 save/recovery detail, and batch cross-area checks; explicit local-library
 document flow; store decomposition; required state/accessibility matrix;
 screenshot/interaction coverage; and observed usability gates remain open.
-Hosted run `29304058902` at exact Builder SHA
-`09afc3f0404e023319db223b6a1e8663674a0c04`
+Hosted run `29304352169` at exact Builder SHA
+`8785ce1e1cd20a2bd9171cf15a6ca2cad8e4cc47`
 was rejected before checkout on all four runners by the existing GitHub
 payment/spending-limit gate. GitHub Actions is required only for the native
 package certification matrix, not for Lightsail hosting or live-game uptime.
