@@ -307,7 +307,7 @@ reopen, and compare a Social area without a manual sidecar artifact.
 
 **Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
 `ac46bdf`, `258b215`, `343715f`, `09afc3f`, `8785ce1`, `bce55a8`,
-`af60e2c`, `2f6f839`, and `b5aaa41`
+`af60e2c`, `2f6f839`, `b5aaa41`, and `558b0d9`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -454,17 +454,33 @@ byte-for-byte and passed the production build, all 82 frontend tests, and both
 Node dependency audit scopes with zero vulnerabilities. Sidecar and Rust
 sources are unchanged from `bce55a8`.
 
-This evidence does not complete B2. Explicit backup path, recovery-backup
-state, and last-safe-save timestamp/detail;
-batch cross-area checks; explicit local-library document flow; store
+At exact `558b0d9`, the existing authorized recovery inspection contract now
+reports real paths and modified times for the authored source, authored
+transaction backup, current recovery copy, and previous recovery copy in both
+browser development and native Tauri paths. Review exposes those facts in one
+read-only provenance panel that refreshes when the recovery state changes and
+explicitly cannot write, restore, or publish files. A live 900x700 Vael's
+Crossing pass first showed the last-safe authored timestamp and the truthful
+absence of all transaction siblings, then refreshed after one real recovery
+write to the exact `.py.tmp` path and after the second recovery transaction to
+the exact `.py.tmp.bak` path. The semantic edit stayed visible, the authored
+source hash stayed unchanged, there was no document-level horizontal overflow,
+and the browser reported zero errors or warnings. Both recovery artifacts were
+then discarded through the typed endpoint. The exact staged diff matched a
+clean clone byte-for-byte and passed the production build, all 84 frontend
+tests, 69 sidecar tests with 16 platform skips, all 16 Rust tests, Rust format,
+and both Node dependency audit scopes with zero vulnerabilities.
+
+This evidence does not complete B2. Batch cross-area checks; explicit
+local-library document flow; store
 decomposition; the required state/accessibility matrix;
 screenshot/interaction coverage; and observed usability gates remain open.
 Hosted run `29305692460` at exact Builder SHA
 `bce55a8f7287ababd7925177fd75d645b43ad456`
 was rejected before checkout on all four runners by the existing GitHub
-payment/spending-limit gate. No hosted run exists for `af60e2c` or `2f6f839`;
-no hosted run exists for `b5aaa41` either. Their evidence is the exact
-clean-clone gates above. GitHub Actions is required
+payment/spending-limit gate. No hosted run exists for `af60e2c`, `2f6f839`,
+`b5aaa41`, or `558b0d9`; their evidence is the exact clean-clone gates above.
+GitHub Actions is required
 only for the native package certification matrix, not for Lightsail hosting or
 live-game uptime.
 
