@@ -305,8 +305,8 @@ reopen, and compare a Social area without a manual sidecar artifact.
 
 ### B2 execution status — 2026-07-13
 
-**Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`, and
-`ac46bdf`
+**Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
+`ac46bdf`, and `258b215`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -321,6 +321,14 @@ action; closing the document returns to Home and area-only routes fail closed
 when no area is loaded. World and template tools remain explicit local
 documents rather than competing area tabs.
 
+Review is now one explicit area-workbench route instead of a semantic Diff tab
+competing with a separate right-rail Problems tab. `Ctrl+3`, the workbench tab,
+the header action, and save-blocking validation all enter the same full-width
+local Review surface. It reads the existing zone/world validation stores and
+saved model snapshot, shows current save state, keeps the contextual right rail
+inspector-only, and removes the unused legacy `ValidationDrawer`; it does not
+introduce another validator, serializer, save path, or MUD connection.
+
 The live browser gate at compact and wide desktop widths transitions from Home
 into real 108-room and 221-exit area workbenches, returns to Home without
 discarding the active area, and resumes Map & exits with zero console errors or
@@ -334,13 +342,20 @@ the production frontend build, 52 frontend tests, 69 sidecar tests with 16
 platform skips, 14 Rust tests, and `npm audit` with zero vulnerabilities. At
 exact `ac46bdf`, the changed frontend source matches the committed diff and
 passes the production build, all 54 frontend tests, and `npm audit` with zero
-vulnerabilities; the sidecar and Rust sources are unchanged from `9fff200`.
+vulnerabilities. At exact `258b215`, the changed frontend source passes the
+production build, all 58 frontend tests, and `npm audit` with zero
+vulnerabilities. The 1440x900 and 900x700 browser gates open Review from both
+Map and the header, preserve compact access to semantic changes, and report
+zero console errors or warnings. The sidecar and Rust sources are unchanged
+from `9fff200`.
 
-This evidence does not complete B2. The task-based Content, Narrative, Social,
-and Review workbenches; explicit local-library document flow; store
-decomposition; required state/accessibility matrix; screenshot/interaction
-coverage; and observed usability gates remain open. Hosted run `29301882363`
-at exact Builder SHA `9fff200058d85ff00965f34436a8c8e2233b1599`
+This evidence does not complete B2. The task-based Content, Narrative, and
+Social workbenches; all-entity semantic review, source preview, explicit
+save/recovery detail, and batch cross-area checks; explicit local-library
+document flow; store decomposition; required state/accessibility matrix;
+screenshot/interaction coverage; and observed usability gates remain open.
+Hosted run `29303021940` at exact Builder SHA
+`258b215948c0e68d18afa8471884a0fe91cc8c81`
 was rejected before checkout on all four runners by the existing GitHub
 payment/spending-limit gate. GitHub Actions is required only for the native
 package certification matrix, not for Lightsail hosting or live-game uptime.
