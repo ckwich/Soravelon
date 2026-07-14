@@ -51,6 +51,7 @@ class TestServerStartup(unittest.TestCase):
             "WEBSERVER_PORT": "4401",
             "WEBSERVER_INTERNAL_PORT": "4405",
             "WEBSOCKET_CLIENT_PORT": "4402",
+            "WEBSOCKET_CLIENT_URL": "wss://ws.game.example.test",
             "SSH_PORT": "4404",
             "SSH_ENABLED": "true",
         }
@@ -60,4 +61,5 @@ class TestServerStartup(unittest.TestCase):
 
         self.assertEqual(module.WEBSERVER_PORTS, [(4401, 4405)])
         self.assertEqual(module.WEBSOCKET_CLIENT_PORT, 4402)
+        self.assertEqual(module.WEBSOCKET_CLIENT_URL, "wss://ws.game.example.test")
         self.assertEqual(module.SSH_PORTS, [4404])
