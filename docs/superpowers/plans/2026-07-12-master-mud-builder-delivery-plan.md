@@ -307,7 +307,7 @@ reopen, and compare a Social area without a manual sidecar artifact.
 
 **Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
 `ac46bdf`, `258b215`, `343715f`, `09afc3f`, `8785ce1`, `bce55a8`,
-and `af60e2c`
+`af60e2c`, and `2f6f839`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -426,17 +426,29 @@ a clean clone byte-for-byte and passed the production build, all 74 frontend
 tests, and both dependency audits with zero vulnerabilities. Sidecar and Rust
 sources are unchanged from `bce55a8`.
 
-This evidence does not complete B2. Source preview; explicit backup and
-last-safe-save detail; batch cross-area checks; explicit local-library document
-flow; store decomposition; the required state/accessibility matrix;
+At exact `2f6f839`, Review adds an on-demand exact source preview backed by the
+same typed Python serializer used by save. It has explicit idle, loading,
+failure, current, and stale-result states, exposes the generated source as a
+keyboard-focusable labelled region, and neither writes a file nor introduces a
+network or MUD authority path. A live Vael's Crossing pass generated the full
+literal AreaBuilder output, including Social content, at wide and 900x700
+desktop widths with no document-level horizontal overflow and zero browser
+errors or warnings. The authored source remained unchanged and the test
+recovery sibling was explicitly discarded. The exact staged diff matched a
+clean clone byte-for-byte and passed the production build, all 75 frontend
+tests, and both Node dependency audit scopes with zero vulnerabilities.
+
+This evidence does not complete B2. Explicit backup and last-safe-save detail;
+batch cross-area checks; explicit local-library document flow; store
+decomposition; the required state/accessibility matrix;
 screenshot/interaction coverage; and observed usability gates remain open.
 Hosted run `29305692460` at exact Builder SHA
 `bce55a8f7287ababd7925177fd75d645b43ad456`
 was rejected before checkout on all four runners by the existing GitHub
-payment/spending-limit gate. No hosted run exists for `af60e2c`; its evidence is
-the exact clean-clone gate above. GitHub Actions is required only for the
-native package certification matrix, not for Lightsail hosting or live-game
-uptime.
+payment/spending-limit gate. No hosted run exists for `af60e2c` or `2f6f839`;
+their evidence is the exact clean-clone gates above. GitHub Actions is required
+only for the native package certification matrix, not for Lightsail hosting or
+live-game uptime.
 
 ### B2.0 Design brief
 
