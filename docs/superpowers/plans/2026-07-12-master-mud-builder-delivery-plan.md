@@ -307,7 +307,7 @@ reopen, and compare a Social area without a manual sidecar artifact.
 
 **Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
 `ac46bdf`, `258b215`, `343715f`, `09afc3f`, `8785ce1`, `bce55a8`,
-`af60e2c`, `2f6f839`, `b5aaa41`, and `558b0d9`
+`af60e2c`, `2f6f839`, `b5aaa41`, `558b0d9`, and `92c13fb`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -471,16 +471,36 @@ clean clone byte-for-byte and passed the production build, all 84 frontend
 tests, 69 sidecar tests with 16 platform skips, all 16 Rust tests, Rust format,
 and both Node dependency audit scopes with zero vulnerabilities.
 
-This evidence does not complete B2. Batch cross-area checks; explicit
-local-library document flow; store
+At exact `92c13fb`, World Overview runs one read-only batch check over every
+authorized non-private `.py` candidate instead of silently inheriting the
+normal file browser's supported-only filter. A separate typed browser/native
+candidate command retains unsupported files with their exact sidecar
+inspection failure, excludes symlinks on both paths, and does not change
+ordinary file browsing. Supported candidates pass through the existing parser
+and validator, partial parse or validator failures remain attached to their
+file, and parsed zones continue into the existing cross-zone authority. The
+result panel separates file-level errors and warnings, unsupported/failed
+files, and world-link findings; it can rerun locally and explicitly does not
+save files or connect to the MUD. In the live 900x700 workspace, all 21 local
+candidates were accounted for: the 20 canonical areas passed parse and local
+validation, the unrelated dirty `vaels_crossing 2.py` remained visible as one
+unsupported file with its exact player-stock round-trip-contract reason, and
+the existing 11 world-link findings remained separate. All browser resources
+used the local `127.0.0.1` origin, the document had no horizontal overflow, and
+the browser reported zero errors or warnings. The exact staged diff matched a
+clean clone byte-for-byte and passed the production build, all 90 frontend
+tests, 69 sidecar tests with 16 platform skips, all 17 Rust tests, Rust format,
+and both Node dependency audit scopes with zero vulnerabilities.
+
+This evidence does not complete B2. Explicit local-library document flow; store
 decomposition; the required state/accessibility matrix;
 screenshot/interaction coverage; and observed usability gates remain open.
 Hosted run `29305692460` at exact Builder SHA
 `bce55a8f7287ababd7925177fd75d645b43ad456`
 was rejected before checkout on all four runners by the existing GitHub
 payment/spending-limit gate. No hosted run exists for `af60e2c`, `2f6f839`,
-`b5aaa41`, or `558b0d9`; their evidence is the exact clean-clone gates above.
-GitHub Actions is required
+`b5aaa41`, `558b0d9`, or `92c13fb`; their evidence is the exact clean-clone
+gates above. GitHub Actions is required
 only for the native package certification matrix, not for Lightsail hosting or
 live-game uptime.
 
