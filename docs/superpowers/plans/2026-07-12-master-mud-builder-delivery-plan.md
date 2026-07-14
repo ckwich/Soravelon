@@ -306,7 +306,8 @@ reopen, and compare a Social area without a manual sidecar artifact.
 ### B2 execution status — 2026-07-13
 
 **Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
-`ac46bdf`, `258b215`, `343715f`, `09afc3f`, and `8785ce1`
+`ac46bdf`, `258b215`, `343715f`, `09afc3f`, `8785ce1`, `bce55a8`,
+and `af60e2c`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -400,16 +401,42 @@ Social Node Inspector for Agent Calloway. Wide and compact passes with the
 Navigator collapsed had no horizontal overflow and zero browser errors or
 warnings.
 
-This evidence does not complete B2. All-entity semantic review, source
-preview, explicit
-save/recovery detail, and batch cross-area checks; explicit local-library
-document flow; store decomposition; required state/accessibility matrix;
+At exact `bce55a8`, recovery is keyed by the authorized authored `.py` source
+through typed browser and native commands. Auto-save derives and validates the
+exact `.py.tmp` sibling, repeated recovery saves preserve a recovery backup,
+and successful authored saves or explicit discard remove obsolete recovery
+artifacts without touching the source or its backup. Recovering keeps the
+authored source snapshot and file identity, marks the recovered model dirty,
+and retains the recovery file until the author saves or discards it. A live
+Vael's Crossing pass changed Social content, waited through auto-save, proved
+the source hash stayed unchanged, reloaded and recovered the edit, showed the
+recovered semantic change as unsaved, and then discarded only recovery
+artifacts with zero browser errors or warnings. The exact clean-clone gate
+passed the production build, 71 frontend tests, 69 sidecar tests with 16
+platform skips, 15 Rust tests, and both dependency audits with zero
+vulnerabilities.
+
+At exact `af60e2c`, Review compares the saved local model with every authored
+collection rather than rooms alone. It covers area metadata, rooms, exits,
+spawns, mobs, NPCs and dialogue, quests, nodes, lore, materials, gathering,
+flight, triggers, custom commands, practice, patrols, items, loot, and Social
+nodes and connections; stable semantic identities prevent collection
+reordering from appearing as authored change. The exact staged source matched
+a clean clone byte-for-byte and passed the production build, all 74 frontend
+tests, and both dependency audits with zero vulnerabilities. Sidecar and Rust
+sources are unchanged from `bce55a8`.
+
+This evidence does not complete B2. Source preview; explicit backup and
+last-safe-save detail; batch cross-area checks; explicit local-library document
+flow; store decomposition; the required state/accessibility matrix;
 screenshot/interaction coverage; and observed usability gates remain open.
-Hosted run `29304352169` at exact Builder SHA
-`8785ce1e1cd20a2bd9171cf15a6ca2cad8e4cc47`
+Hosted run `29305692460` at exact Builder SHA
+`bce55a8f7287ababd7925177fd75d645b43ad456`
 was rejected before checkout on all four runners by the existing GitHub
-payment/spending-limit gate. GitHub Actions is required only for the native
-package certification matrix, not for Lightsail hosting or live-game uptime.
+payment/spending-limit gate. No hosted run exists for `af60e2c`; its evidence is
+the exact clean-clone gate above. GitHub Actions is required only for the
+native package certification matrix, not for Lightsail hosting or live-game
+uptime.
 
 ### B2.0 Design brief
 
