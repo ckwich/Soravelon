@@ -307,7 +307,7 @@ reopen, and compare a Social area without a manual sidecar artifact.
 
 **Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
 `ac46bdf`, `258b215`, `343715f`, `09afc3f`, `8785ce1`, `bce55a8`,
-`af60e2c`, `2f6f839`, `b5aaa41`, `558b0d9`, and `92c13fb`
+`af60e2c`, `2f6f839`, `b5aaa41`, `558b0d9`, `92c13fb`, and `48efe06`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -492,15 +492,43 @@ clean clone byte-for-byte and passed the production build, all 90 frontend
 tests, 69 sidecar tests with 16 platform skips, all 17 Rust tests, Rust format,
 and both Node dependency audit scopes with zero vulnerabilities.
 
-This evidence does not complete B2. Explicit local-library document flow; store
-decomposition; the required state/accessibility matrix;
+At exact `48efe06`, the reusable-creature Template Library is an explicit
+offline local document rather than a template-shaped view leaking area state.
+It owns its file identity, supported mob-template grammar label, clean/dirty
+state, primary save action, compact status, browser-exit protection, and
+replacement guard. Opening another library while dirty now requires an
+accessible Save and Open, Discard and Open, or Cancel decision. `Ctrl+S` routes
+to the active template document's existing typed atomic transaction, while
+area Save As cannot fire from Home, World, or the library. A completed write
+updates the serializer source baseline without erasing edits made while that
+write was in flight. Header and status surfaces no longer expose a background
+area's Review/save controls while a local library or read-only World Overview
+is active. The compact catalog uses one real scroll region, and registered
+template fields no longer change uncontrolled defaults after initialization.
+
+In a disposable Soravelon clone at 900x700, the real 81-template library opened
+from Home, the first row remained genuinely clickable, an HP edit changed only
+the template document to dirty, a second open request displayed the guarded
+decision, and real `Ctrl+S` produced a new parseable source plus an exact backup
+of the prior file before returning all save surfaces to clean. Home preserved
+and resumed that loaded library; a 1440x900 pass remained clean. Both widths
+had no document-level horizontal overflow, every browser resource stayed on
+the local `127.0.0.1` origin, and the browser reported zero errors or warnings.
+The exact staged diff SHA
+`f0b3ca5bb619c6d42392a076e6579ec8087b5123df74c21e76d6c72e2965d5b0`
+matched the clean clone byte-for-byte and passed the production build, all 100
+frontend tests, 69 sidecar tests with 16 platform skips, all 17 Rust tests,
+Rust format, and both Node dependency audit scopes with zero vulnerabilities.
+
+This evidence does not complete B2. Store decomposition; the required
+state/accessibility matrix;
 screenshot/interaction coverage; and observed usability gates remain open.
 Hosted run `29305692460` at exact Builder SHA
 `bce55a8f7287ababd7925177fd75d645b43ad456`
 was rejected before checkout on all four runners by the existing GitHub
 payment/spending-limit gate. No hosted run exists for `af60e2c`, `2f6f839`,
-`b5aaa41`, `558b0d9`, or `92c13fb`; their evidence is the exact clean-clone
-gates above. GitHub Actions is required
+`b5aaa41`, `558b0d9`, `92c13fb`, or `48efe06`; their evidence is the exact
+clean-clone gates above. GitHub Actions is required
 only for the native package certification matrix, not for Lightsail hosting or
 live-game uptime.
 
