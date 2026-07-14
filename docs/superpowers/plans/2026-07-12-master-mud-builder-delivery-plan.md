@@ -307,7 +307,7 @@ reopen, and compare a Social area without a manual sidecar artifact.
 
 **Status:** active. Builder commits `3f5fcba`, `b4209b3`, `9fff200`,
 `ac46bdf`, `258b215`, `343715f`, `09afc3f`, `8785ce1`, `bce55a8`,
-`af60e2c`, and `2f6f839`
+`af60e2c`, `2f6f839`, and `b5aaa41`
 establish the first truthful vertical slice of the rebuild. With no area open,
 the application now presents an explicit offline local-workspace home for area
 roots, recent/local files, new areas, world overview, and the local template
@@ -438,7 +438,24 @@ recovery sibling was explicitly discarded. The exact staged diff matched a
 clean clone byte-for-byte and passed the production build, all 75 frontend
 tests, and both Node dependency audit scopes with zero vulnerabilities.
 
-This evidence does not complete B2. Explicit backup and last-safe-save detail;
+At exact `b5aaa41`, the header, compact status bar, and Review derive their
+local-save presentation from one shared model and no longer describe a saved
+recovery sibling as a saved authored file. Dirty recovery success explicitly
+states that the recovery copy is saved while the authored file remains
+unsaved; recovery failure is assertive for assistive technology; and a clean
+document is described as matching its last safe save. A live Vael's Crossing
+Social edit passed through the real 30-second recovery timer: both full-width
+surfaces and the compact status remained truthful during recovery success,
+Review still exposed the semantic edit, the authored source hash remained
+unchanged, the 900x700 document had no horizontal overflow, and the browser
+reported zero errors or warnings. The recovery sibling was then discarded
+through the typed endpoint. The exact staged diff matched a clean clone
+byte-for-byte and passed the production build, all 82 frontend tests, and both
+Node dependency audit scopes with zero vulnerabilities. Sidecar and Rust
+sources are unchanged from `bce55a8`.
+
+This evidence does not complete B2. Explicit backup path, recovery-backup
+state, and last-safe-save timestamp/detail;
 batch cross-area checks; explicit local-library document flow; store
 decomposition; the required state/accessibility matrix;
 screenshot/interaction coverage; and observed usability gates remain open.
@@ -446,7 +463,8 @@ Hosted run `29305692460` at exact Builder SHA
 `bce55a8f7287ababd7925177fd75d645b43ad456`
 was rejected before checkout on all four runners by the existing GitHub
 payment/spending-limit gate. No hosted run exists for `af60e2c` or `2f6f839`;
-their evidence is the exact clean-clone gates above. GitHub Actions is required
+no hosted run exists for `b5aaa41` either. Their evidence is the exact
+clean-clone gates above. GitHub Actions is required
 only for the native package certification matrix, not for Lightsail hosting or
 live-game uptime.
 
